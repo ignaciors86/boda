@@ -1,0 +1,3 @@
+export default function isPre() {
+	return /lab-pre/.test(process.env.STRAPI_URL); // GONZALO: Esto se debería de mejorar...
+};

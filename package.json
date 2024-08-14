@@ -1,0 +1,68 @@
+{
+	"name": "${PROJECT_NAME}",
+	"private": true,
+	"sideEffects": false,
+	"version": "2.3.1",
+	"description": "A Lab RTVE application",
+	"scripts": {
+		"dev": "concurrently \"npm run sassWatch\" \"npm run remixDev\"",
+		"build:staging": "cross-env PORT=${PROJECT_PORT_PRE} REMIX_BASEPATH=${PROJECT_NAME} STRAPI_URL=https://lab-pre.rtve.es/strapi-${PROJECT_NAME}/graphql remix build",
+		"build:production": "cross-env PORT=${PROJECT_PORT_PRO} REMIX_BASEPATH=${PROJECT_NAME} STRAPI_URL=https://lab.rtve.es/strapi-${PROJECT_NAME}/graphql remix build",
+		"staging": "cross-env PORT=${PROJECT_PORT_PRE} REMIX_BASEPATH=${PROJECT_NAME} STRAPI_URL=https://lab-pre.rtve.es/strapi-${PROJECT_NAME}/graphql remix-serve ./build/index.js",
+		"production": "cross-env PORT=${PROJECT_PORT_PRO} REMIX_BASEPATH=${PROJECT_NAME} STRAPI_URL=https://lab.rtve.es/strapi-${PROJECT_NAME}/graphql remix-serve ./build/index.js",
+		"remixDev": "remix dev",
+		"sass": "sass styles/:app/styles/ styles/components/components.scss:app/styles/components.css --style=compressed",
+		"sassWatch": "sass --watch styles/:app/styles/ styles/components/components.scss:app/styles/components.css --style=compressed",
+		"create-element": "node scripts/create-element.js",
+		"create-elements": "node scripts/create-elements.js",
+		"remove-element": "node scripts/remove-element.js",
+		"make-usable": "node scripts/make-usable.js"
+	},
+	"dependencies": {
+		"@emotion/react": "^11.11.1",
+		"@emotion/styled": "^11.11.0",
+		"@fseehawer/react-circular-slider": "^2.6.4",
+		"@mui/material": "^5.14.20",
+		"@react-three/drei": "^9.92.0",
+		"@react-three/fiber": "^8.15.12",
+		"@remix-run/css-bundle": "^2.5.1",
+		"@remix-run/node": "^2.5.1",
+		"@remix-run/react": "^2.5.1",
+		"@remix-run/serve": "^2.5.1",
+		"@types/three": "^0.159.0",
+		"concurrently": "^8.2.0",
+		"cross-env": "^7.0.3",
+		"graphql": "^16.7.1",
+		"gsap": "npm:@gsap/shockingly@^3.12.2",
+		"html-to-image": "^1.11.11",
+		"isbot": "^3.6.8",
+		"markdown-to-jsx": "^7.3.2",
+		"prop-types": "^15.8.1",
+		"r3f-perf": "^7.1.2",
+		"react": "^18.2.0",
+		"react-copy-to-clipboard": "^5.1.0",
+		"react-dom": "^18.2.0",
+		"react-fast-marquee": "^1.6.2",
+		"react-markdown": "^9.0.1",
+		"react-svg": "^16.1.27",
+		"remix-utils": "^7.3.0",
+		"three": "^0.159.0"
+	},
+	"devDependencies": {
+		"@remix-run/dev": "^2.5.1",
+		"@remix-run/eslint-config": "^2.5.1",
+		"concurrently": "^8.2.0",
+		"eslint": "^8.38.0",
+		"inquirer": "^9.2.7",
+		"remix-development-tools": "^3.6.2",
+		"remix-flat-routes": "^0.6.4",
+		"sass": "^1.63.6"
+	},
+	"author": {
+		"name": "Evoluciona Dev Team - Lab RTVE"
+	},
+	"engines": {
+		"node": ">=18.19.0"
+	},
+	"license": "MIT"
+}

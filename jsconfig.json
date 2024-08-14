@@ -1,0 +1,22 @@
+{
+	"compilerOptions": {
+		"jsx": "react-jsx",
+		"resolveJsonModule": true,
+		"baseUrl": ".",
+		"paths": {
+			"~/*": ["./app/*"],
+			// "~/assets": ["/app/assets/"],
+			"~/components": ["./app/components/*"],
+			// "~/containers": ["./app/containers/"],
+			"~/contexts": ["./app/contexts/"],
+			"~/core": ["./app/core/"],
+			// "~/modules": ["./app/modules/"],
+			// "~/providers": ["./app/providers/"],
+			// "~/queries": ["./app/queries/"],
+			// "~/routes": ["/app/routes/"],
+			"~/styles": ["/app/styles/*"],
+			// "~/themes": ["./app/themes/"],
+			"~/utils": ["./app/utils/"]
+		}
+	}
+}

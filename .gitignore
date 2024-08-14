@@ -1,0 +1,19 @@
+
+#---------------#
+#----( APP )----#
+#---------------#
+node_modules
+.env
+package-lock.json
+npm-debug.log
+
+#-----------------#
+#----( Remix )----#
+#-----------------#
+/.cache
+/build
+/public/build
+## Este se ignora para evitar errores de conflictos con los compilados.
+/app/styles
+/${PROJECT_NAME}
+*sandbox*

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64px" height="64px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Boton subtitulos Copy 2</title>
+    <defs>
+        <filter x="0.0%" y="0.0%" width="100.0%" height="100.0%" filterUnits="objectBoundingBox" id="filter-1">
+            <feGaussianBlur stdDeviation="0" in="SourceGraphic"></feGaussianBlur>
+        </filter>
+    </defs>
+    <g id="Guia-de-estilo" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Guia-P3---Elementos" transform="translate(-683, -5736)">
+            <g id="Boton-subtitulos-Copy-2" transform="translate(683, 5736)">
+                <!-- <g id="Circunferencias" opacity="0.731300717" stroke="#FFFFFF">
+                    <circle id="Oval" stroke-width="0.35" filter="url(#filter-1)" cx="32" cy="32" r="31.825"></circle>
+                    <circle id="Oval" stroke-width="0.7" cx="32.0661576" cy="32.0661576" r="24.8590147"></circle>
+                </g> -->
+                <g id="Subtitulos" transform="translate(16.825, 22.4334)" fill="#FFFFFF" fill-rule="nonzero">
+                    <path d="M26.2966746,1.28847526 C27.711137,1.28847526 28.8619996,2.44507524 28.8619996,3.86508936 L28.8619996,14.172555 C28.8619996,15.5939148 27.710802,16.7491691 26.2966746,16.7491691 L24.5854531,16.7491691 L24.0254291,16.7491691 L23.6439296,17.1622886 L20.5242747,20.5479844 L20.5242747,18.0376444 L20.5242747,16.7491691 L19.2417796,16.7491691 L3.84815496,16.7491691 C2.43369257,16.7491691 1.28282997,15.5935784 1.28282997,14.172555 L1.28282997,3.86508936 C1.28282997,2.44473882 2.43402751,1.28847526 3.84815496,1.28847526 L26.2966746,1.28847526 M3.84815496,0 C1.72327942,0 0,1.73153581 0,3.86508936 L0,14.172555 C0,16.3077906 1.72327942,18.0376444 3.84815496,18.0376444 L19.2414447,18.0376444 L19.2414447,23.8354466 L24.5851181,18.0376444 L26.2963396,18.0376444 C28.4212152,18.0376444 30.1448295,16.3077906 30.1448295,14.172555 L30.1448295,3.86508936 C30.1448295,1.73153581 28.4212152,0 26.2966746,0 L3.84815496,0 Z" id="Shape"></path>
+                    <rect id="Rectangle" x="2.80417019" y="11.2166808" width="8.41251057" height="1" rx="0.5"></rect>
+                    <rect id="Rectangle" x="12.6187658" y="11.2166808" width="5.60834038" height="1" rx="0.5"></rect>
+                    <rect id="Rectangle" x="19.6291913" y="11.2166808" width="7.01042547" height="1" rx="0.5"></rect>
+                    <rect id="Rectangle" x="21.0312764" y="13.0861275" width="4.20625528" height="1" rx="0.5"></rect>
+                    <rect id="Rectangle" x="9.11355311" y="13.0861275" width="11.2166808" height="1" rx="0.5"></rect>
+                    <rect id="Rectangle" x="3.50521274" y="13.0861275" width="4.20625528" height="1" rx="0.5"></rect>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
