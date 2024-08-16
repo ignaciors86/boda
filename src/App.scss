@@ -2,9 +2,14 @@
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.App{
+  &-logo {
+    height: 40vmin;
+    pointer-events: none;
+  }
+  &-header{
+    opacity: 0;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
