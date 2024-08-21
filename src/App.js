@@ -2,15 +2,16 @@ import logo from './logo.svg';
 import './App.scss';
 import gsap from 'gsap';
 import { useEffect, useState } from 'react';
+import TimelineSlider  from './components/horarios/horarios';
 
 
 
 const App = () => {
 
   const tlApp = gsap.timeline();
-  useEffect(() => {
-    tlApp.to(".App-header", { opacity: 1, duration: 2, })
-  }, []);
+  // useEffect(() => {
+  //   tlApp.to(".App-header", { opacity: 1, duration: 2, })
+  // }, []);
   
   const [articles, setArticles] = useState([]);
 
@@ -22,12 +23,12 @@ const App = () => {
 
   return (
     <div className="App">
-
-      {articles?.map(article => (
+      <TimelineSlider  />
+      {/* {articles?.map(article => (
         <div key={article.id}>
           <h2>{article.nombre}</h2>
         </div>
-      ))}
+      ))} */}
 
     </div>
   );
