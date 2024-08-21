@@ -1,7 +1,111 @@
-:root{
-  --mainBackground: "#f2f5f1";
+/* Horarios.scss */
+
+/* Variables para los estilos comunes */
+$container-padding: 20px;
+$container-height: 100vh;
+$slider-size: 50px;
+$item-width: 150px;
+$max-width: 1200px;
+$button-margin: 20px;
+
+/* Imágenes de fondo */
+$background-image-1: url('https://picsum.photos/50');
+$background-image-2: url('https://picsum.photos/100');
+$background-image-3: url('https://picsum.photos/150');
+$background-image-4: url('https://picsum.photos/250');
+$background-image-5: url('https://picsum.photos/150');
+
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: $container-height;
+  padding: $container-padding;
+  transition: background-image 0.5s ease; // Transición suave para el cambio de imagen de fondo
+
+  // Disposición basada en la orientación
+  &.portrait {
+    flex-direction: row;
+  }
+
+  &.landscape {
+    flex-direction: column;
+  }
+
+  // Cambio de imagen de fondo basado en la clase activa
+  &.background-1 { background-image: $background-image-1; }
+  &.background-2 { background-image: $background-image-2; }
+  &.background-3 { background-image: $background-image-3; }
+  &.background-4 { background-image: $background-image-4; }
+  &.background-5 { background-image: $background-image-5; }
 }
 
-.App{
-  background: var(--mainBackground);
+.progress-bar {
+  position: relative;
+  background: #ddd;
+  margin: auto;
+
+  &.portrait {
+    width: 5px;
+    height: 87%;
+  }
+
+  &.landscape {
+    width: 87%;
+    height: 5px;
+  }
+}
+
+.slider {
+  width: $slider-size;
+  height: $slider-size;
+  position: absolute;
+  cursor: pointer;
+
+  &.portrait {
+    top: 0;
+    left: -25px;
+  }
+
+  &.landscape {
+    top: -25px;
+    left: 0;
+  }
+}
+
+.elements {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: $max-width;
+  margin-top: $button-margin;
+
+  &.portrait {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: 0;
+    margin-left: $button-margin;
+  }
+
+  &.landscape {
+    flex-direction: row;
+    align-items: center;
+    margin-top: $button-margin;
+    margin-left: 0;
+  }
+}
+
+.item {
+  opacity: 0;
+  width: $item-width;
+  text-align: center;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 24px;
+  color: #333;
 }

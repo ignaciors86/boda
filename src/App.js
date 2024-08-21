@@ -2,9 +2,7 @@ import logo from './logo.svg';
 import './App.scss';
 import gsap from 'gsap';
 import { useEffect, useState } from 'react';
-import TimelineSlider  from './components/horarios/horarios';
-
-
+import TimelineSlider from './components/Horarios/Horarios';
 
 const App = () => {
 
