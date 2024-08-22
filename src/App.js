@@ -2,7 +2,7 @@ import logo from './logo.svg';
 import './App.scss';
 import gsap from 'gsap';
 import { useEffect, useState } from 'react';
-import TimelineSlider from './components/Horarios/Timeline';
+import Timeline from './components/Horarios/Timeline';
 
 const App = () => {
 
@@ -21,7 +21,7 @@ const App = () => {
 
   return (
     <div className="App">
-      <TimelineSlider  />
+      <Timeline  />
       {/* {articles?.map(article => (
         <div key={article.id}>
           <h2>{article.nombre}</h2>
