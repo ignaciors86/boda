@@ -22,8 +22,9 @@ $background-image-5: url('https://picsum.photos/150');
   height: $container-height;
   padding: $container-padding;
   transition: background-image 0.5s ease; // Transición suave para el cambio de imagen de fondo
+  background-size: cover;
+  background-position: center;
 
-  // Disposición basada en la orientación
   &.portrait {
     flex-direction: row;
   }
@@ -32,12 +33,16 @@ $background-image-5: url('https://picsum.photos/150');
     flex-direction: column;
   }
 
-  // Cambio de imagen de fondo basado en la clase activa
   &.background-1 { background-image: $background-image-1; }
   &.background-2 { background-image: $background-image-2; }
   &.background-3 { background-image: $background-image-3; }
   &.background-4 { background-image: $background-image-4; }
   &.background-5 { background-image: $background-image-5; }
+
+  // Ocultar la imagen de fondo antes de que cualquier elemento sea visible
+  &.background-0 {
+    background-image: none;
+  }
 }
 
 .progress-bar {

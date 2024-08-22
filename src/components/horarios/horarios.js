@@ -9,12 +9,11 @@ const Horarios = () => {
   const sliderRef = useRef(null);
   const progressBarRef = useRef(null);
   const timelineRef = useRef(gsap.timeline({ paused: true }));
-  
+
   const [isPortrait, setIsPortrait] = useState(window.matchMedia('(orientation: portrait)').matches);
-  const [activeItem, setActiveItem] = useState(1); // Estado para el elemento activo
+  const [activeItem, setActiveItem] = useState(-1); // Estado para el elemento activo
   const [imagesLoaded, setImagesLoaded] = useState(false);
 
-  // Lista de URLs de las imágenes a precargar
   const imageUrls = [
     'https://picsum.photos/50',
     'https://picsum.photos/100',
@@ -23,26 +22,22 @@ const Horarios = () => {
     'https://picsum.photos/150'
   ];
 
-  // Precarga de imágenes
   const preloadImages = (urls) => {
-    const promises = urls.map(url => {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.src = url;
-        img.onload = () => resolve(url);
-        img.onerror = () => reject(new Error(`Failed to load image at ${url}`));
-      });
-    });
-
+    const promises = urls.map(url => new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = url;
+      img.onload = () => resolve(url);
+      img.onerror = () => reject(new Error(`Failed to load image at ${url}`));
+    }));
     return Promise.all(promises);
   };
 
   const setupDraggableAndTimeline = () => {
-    // Destruir Draggable anterior si existe
     Draggable.get(sliderRef.current)?.kill();
 
     const commonTimeline = timelineRef.current.clear();
-    commonTimeline.to('.item1', { opacity: 1, duration: 0.5 }, 0)
+    commonTimeline
+      .to('.item1', { opacity: 1, duration: 0.5 }, 0)
       .to('.item2', { opacity: 1, duration: 0.5 }, 0.2)
       .to('.item1', { opacity: 0, duration: 0.5 }, 0.4)
       .to('.item3', { opacity: 1, duration: 0.5 }, 0.4)
@@ -51,30 +46,26 @@ const Horarios = () => {
       .to('.item3', { opacity: 0, duration: 0.5 }, 0.8)
       .to('.item5', { opacity: 1, duration: 0.5 }, 0.8)
       .to('.item4', { opacity: 0, duration: 0.5 }, 1)
-      .to('.item5', { opacity: 1, duration: 0.5 }, 1); // Asegura que el último elemento siga visible
+      .to('.item5', { opacity: 1, duration: 0.5 }, 1);
 
-    const draggableConfig = {
+    Draggable.create(sliderRef.current, {
       type: isPortrait ? 'y' : 'x',
       bounds: progressBarRef.current,
-      onDrag: function () {
+      onDrag() {
         const progress = isPortrait ? this.y / progressBarRef.current.clientHeight : this.x / progressBarRef.current.clientWidth;
         timelineRef.current.progress(progress);
         updateActiveItem(progress);
       },
-    };
-
-    Draggable.create(sliderRef.current, draggableConfig);
+    });
   };
 
   const updateActiveItem = (progress) => {
-    // Determinar el elemento activo basado en el progreso
     const items = ['item1', 'item2', 'item3', 'item4', 'item5'];
-    const index = Math.min(Math.floor(progress * (items.length - 1)), items.length - 1);
-    setActiveItem(index + 1);
+    const index = Math.min(Math.floor(progress * items.length), items.length - 1);
+    setActiveItem(index);
   };
 
   useEffect(() => {
-    // Precargar las imágenes
     preloadImages(imageUrls)
       .then(() => setImagesLoaded(true))
       .catch(err => console.error(err));
@@ -84,11 +75,10 @@ const Horarios = () => {
     };
 
     window.addEventListener('resize', handleResize);
-
     return () => {
       window.removeEventListener('resize', handleResize);
       Draggable.get(sliderRef.current)?.kill();
-      timelineRef.current.kill(); // Cleanup timeline as well
+      timelineRef.current.clear(); // Cleanup timeline as well
     };
   }, [isPortrait]);
 
@@ -98,11 +88,11 @@ const Horarios = () => {
     }
   }, [imagesLoaded, isPortrait]);
 
-  // Determinar la clase de fondo activa
-  const backgroundClass = `background-${activeItem}`;
+  // Generar la clase de fondo correcta basada en el elemento activo
+  const backgroundClass = activeItem > -1 ? `background-${activeItem + 1}` : '';
 
   if (!imagesLoaded) {
-    return <div className="loading">Loading...</div>; // Mostrar un mensaje o un spinner mientras se cargan las imágenes
+    return <div className="loading">Loading...</div>;
   }
 
   return (
