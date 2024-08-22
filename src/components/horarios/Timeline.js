@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { Draggable } from 'gsap/Draggable';
-import './Horarios.scss';  // Importa el archivo SCSS
+import './Timeline.scss';  // Importa el archivo SCSS
 
 gsap.registerPlugin(Draggable);
 
-const Horarios = () => {
+const Timeline = () => {
   const sliderRef = useRef(null);
   const progressBarRef = useRef(null);
   const timelineRef = useRef(gsap.timeline({ paused: true }));
@@ -135,4 +135,4 @@ const Horarios = () => {
   );
 };
 
-export default Horarios;
+export default Timeline;
