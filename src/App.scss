@@ -1,11 +1,35 @@
-:root{
+:root {
   --mainBackground: "#f2f5f1";
+  --color-alfombra: #b42e81;
 }
 
-.App{
-  background: var(--mainBackground);
+@font-face {
+  font-family: 'PreloadImages';
+  src: url('https://picsum.photos/50') format('jpeg'),
+       url('https://picsum.photos/100') format('jpeg'),
+       url('https://picsum.photos/150') format('jpeg'),
+       url('https://picsum.photos/200') format('jpeg'),
+       url('https://picsum.photos/250') format('jpeg');
+}
+
+.App {
+  background-color: var(--mainBackground);
+  background-image: url('https://picsum.photos/50');
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
   width: 100%;
   height: 100dvh;
   display: flex;
   align-items: center;
+  overflow: hidden;
+}
+
+body::before {
+  content: '';
+  font-family: 'PreloadImages';
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
 }
