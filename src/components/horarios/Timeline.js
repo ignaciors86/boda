@@ -11,8 +11,6 @@ import tercerTiempo from "./tercerTiempo.jpg";
 import paella from "./paella.jpg";
 
 import ositosDrag from "./ositos-drag.png";
-import ositosDragPreboda from "./ositos-drag-preboda.png";
-import ositosDragPostboda from "./ositos-drag-postboda.png";
 
 gsap.registerPlugin(Draggable);
 
@@ -20,7 +18,6 @@ const Timeline = () => {
   const sliderRef = useRef(null);
   const progressBarRef = useRef(null);
   const timelineRef = useRef(gsap.timeline({ paused: true }));
-  const [isPortrait, setIsPortrait] = useState(window.matchMedia('(orientation: portrait)').matches);
   const [imagesLoaded, setImagesLoaded] = useState(false);
 
   const imageUrls = [
@@ -69,9 +66,8 @@ const Timeline = () => {
     Draggable.get(sliderRef.current)?.kill();
 
     const totalItems = 7;
-    const durationPerItem = 3;
+    const durationPerItem = 6;
     const transitionDuration = 0.5;
-    const totalDuration = totalItems * durationPerItem + (totalItems - 1) * transitionDuration;
 
     const items = [
       { bgImage: preboda },
@@ -93,30 +89,24 @@ const Timeline = () => {
       commonTimeline
         .set(`.item${index + 1}`, { opacity: 0 })
         .to(`.item${index + 1}`, { opacity: 1, duration: durationPerItem }, ">")
-        .to(`.item${index + 1}`, { opacity: 0, duration: transitionDuration }, nextItemOpacityStart)
-        .set('.elements', { className: `elements background-${index + 1}` }, opacityStart)
+        .to(`.item${index + 1}`, { opacity: 0, duration: transitionDuration, }, nextItemOpacityStart)
+        .to('.elements', { opacity: 0, duration: transitionDuration }, nextItemOpacityStart)
         .to('.elements', { opacity: 1, duration: 0.5 }, ">")
-        .to('.elements', { opacity: 0, duration: transitionDuration }, nextItemOpacityStart);
-        index > 1 && commonTimeline.set(`.slider`, { paddingTop: 0 })
+
     });
 
     Draggable.create(sliderRef.current, {
-      type: isPortrait ? 'y' : 'x',
+      type: 'y', // Siempre vertical, independientemente de la orientación
       bounds: progressBarRef.current,
       onDrag() {
         const progress = Math.min(
-          Math.max(
-            isPortrait 
-              ? this.y / progressBarRef.current.clientHeight
-              : this.x / progressBarRef.current.clientWidth,
-            0
-          ), 
+          Math.max(this.y / progressBarRef.current.clientHeight, 0), 
           1
         );
         timelineRef.current.progress(progress);
 
         // Cambia el tamaño de la imagen durante el arrastre
-        const penultimateItemProgress = (totalItems - 3) / totalItems;
+        const penultimateItemProgress = (totalItems - 2) / totalItems;
         const lastItemProgress = 1;
 
         if (progress >= penultimateItemProgress && progress < lastItemProgress || progress < 0.15) {
@@ -136,12 +126,7 @@ const Timeline = () => {
 
     if (slider && progressBar) {
       const initialProgress = Math.min(
-        Math.max(
-          isPortrait 
-            ? slider.y / progressBar.clientHeight
-            : slider.x / progressBar.clientWidth,
-          0
-        ), 
+        Math.max(slider.y / progressBar.clientHeight, 0), 
         1
       );
       timelineRef.current.progress(initialProgress);
@@ -153,41 +138,33 @@ const Timeline = () => {
       .then(() => setImagesLoaded(true))
       .catch(err => console.error(err));
 
-    const handleResize = () => {
-      setIsPortrait(window.matchMedia('(orientation: portrait)').matches);
-    };
-
-    window.addEventListener('resize', handleResize);
     return () => {
-      window.removeEventListener('resize', handleResize);
       Draggable.get(sliderRef.current)?.kill();
       timelineRef.current.clear();
     };
-  }, [isPortrait]);
+  }, []);
 
   useEffect(() => {
     if (imagesLoaded) {
       setupDraggableAndTimeline();
     }
-  }, [imagesLoaded, isPortrait]);
+  }, [imagesLoaded]);
 
   if (!imagesLoaded) {
     return <div className="loading">Loading...</div>;
   }
 
-  const orientationClass = isPortrait ? 'portrait' : 'landscape';
-
   return (
-    <div className={`container ${orientationClass}`}>
-      <div className={`elements ${orientationClass} background-1`}>
+    <div className="container portrait">
+      <div className="elements portrait">
         {renderItems()}
       </div>
-      <div className={`progress-bar ${orientationClass}`} ref={progressBarRef}>
+      <div className="progress-bar portrait" ref={progressBarRef}>
         <img
           src={ositosDrag}
           alt="Slider"
           ref={sliderRef}
-          className={`slider ${orientationClass}`}
+          className="slider portrait"
         />
       </div>
     </div>
@@ -195,4 +172,3 @@ const Timeline = () => {
 };
 
 export default Timeline;
-

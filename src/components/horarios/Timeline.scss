@@ -8,7 +8,7 @@
   min-width: 100%;
   flex-direction: column;
 
-
+  background: var(--mainBackground);
   &.portrait {
     flex-direction: row;
   }
@@ -32,24 +32,24 @@
   position: absolute;
   left: 6%;
   height: calc(100% - 0px);
-  .slider {
-    cursor: pointer;
-    top: 0;
-    padding-top: 15px;
-    position: absolute;
-    width: 94%;
-    height: auto;
-  }
-
+  display: flex;
+  justify-content: center;
   &.portrait {
-    width: 23%;
-    display: flex;
-    justify-content: center;
+    width: 15vw;
   }
 
   &.landscape {
-    width: 87%;
+    width: 10vw;
   }
+  .slider {
+    cursor: pointer;
+    top: 0;
+    position: absolute;
+    width: 94%;
+    height: auto;
+    border: 0px solid transparent;
+  }
+
 
 
 }
@@ -72,30 +72,14 @@
     margin-left: 0;
   }
 
-  transition: background-image .5s ease; // Transición suave para el cambio de imagen de fondo
 
-  background-size: cover;
-  background-position: center;
-
-  
-  &.background-1 { background-image: url('./ceremonia.jpg'); }
-  &.background-2 { 
-    background-image: url('./ceremonia.jpg'); 
-    background-position: calc(50% + 15vw) -24dvh;
-    background-size: auto 124dvh;
-  }
-  &.background-3 { background-image: url('./coctel.jpg'); }
-  &.background-4 { background-image: url('./comida.jpg'); }
-  &.background-5 { background-image: url('./paella.jpg'); }
-  &.background-6 { background-image: url('./tercerTiempo.jpg'); }
-  &.background-7 { background-image: url('./paella.jpg'); }
 
   .item {
     position: absolute;
     width: 100%;
     height: 100%;
     top: 0;
-    background-color: #595959c4;
+    background-color: var(--mainBackground);
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     display: flex;
@@ -103,16 +87,36 @@
     justify-content: center;
     align-items: center;
     opacity: 0;
+
+    transition: background-image 1s ease; // Transición suave para el cambio de imagen de fondo
+
+    background-size: cover;
+    background-position: center;
+  
+    
+    &.item1 { itemimage: url('./ceremonia.jpg'); }
+    &.item2 { 
+      background-image: url('./ceremonia.jpg'); 
+      background-position: calc(50% + 15vw) -24dvh;
+      background-size: auto 124dvh;
+    }
+    &.item3 { background-image: url('./coctel.jpg'); }
+    &.item4 { background-image: url('./comida.jpg'); }
+    &.item5 { background-image: url('./paella.jpg'); }
+    &.item6 { background-image: url('./tercerTiempo.jpg'); }
+    &.item7 { background-image: url('./paella.jpg'); }
+
     &:not(:first-of-type){
       opacity: 0;
     }
     .info{
       z-index: 1;
-      background: rgb(255 255 255 / 25%);
+      z-index: 1;
+      background: rgba(255, 255, 255, 0.25);
       position: absolute;
       bottom: 0%;
       right: 0;
-      width: 71%;
+      width: 80vw;
       height: 100%;
       border-radius: 15px;
       overflow: hidden;
