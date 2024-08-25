@@ -31,11 +31,11 @@
   z-index: 1;
   position: absolute;
   left: 6%;
-  padding: 15px 0;
-  height: calc(100% - 30px);
+  height: calc(100% - 0px);
   .slider {
     cursor: pointer;
-    top: 15px;
+    top: 0;
+    padding-top: 15px;
     position: absolute;
     width: 94%;
     height: auto;
@@ -72,9 +72,12 @@
     margin-left: 0;
   }
 
-  transition: background-image 0.5s ease; // Transición suave para el cambio de imagen de fondo
+  transition: background-image .5s ease; // Transición suave para el cambio de imagen de fondo
+
   background-size: cover;
   background-position: center;
+
+  
   &.background-1 { background-image: url('./ceremonia.jpg'); }
   &.background-2 { 
     background-image: url('./ceremonia.jpg'); 
@@ -99,6 +102,7 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    opacity: 0;
     &:not(:first-of-type){
       opacity: 0;
     }
