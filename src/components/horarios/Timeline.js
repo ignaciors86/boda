@@ -155,16 +155,16 @@ const Timeline = () => {
   }
 
   return (
-    <div className="container portrait">
-      <div className="elements portrait">
+    <div className="container">
+      <div className="elements">
         {renderItems()}
       </div>
-      <div className="progress-bar portrait" ref={progressBarRef}>
+      <div className="progress-bar" ref={progressBarRef}>
         <img
           src={ositosDrag}
           alt="Slider"
           ref={sliderRef}
-          className="slider portrait"
+          className="slider"
         />
       </div>
     </div>

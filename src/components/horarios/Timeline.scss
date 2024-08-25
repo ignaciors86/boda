@@ -9,13 +9,7 @@
   flex-direction: column;
 
   background: var(--mainBackground);
-  &.portrait {
-    flex-direction: row;
-  }
-
-  &.landscape {
-
-  }
+  flex-direction: row;
 
 }
 
@@ -34,12 +28,12 @@
   height: calc(100% - 0px);
   display: flex;
   justify-content: center;
-  &.portrait {
+  @media (orientation: portrait) {
     width: 15vw;
   }
 
-  &.landscape {
-    width: 10vw;
+  @media (orientation: landscape) {
+    width: 3vw;
   }
   .slider {
     cursor: pointer;
@@ -59,18 +53,9 @@
   justify-content: space-between;
   width: 100%;
   height: 100%;
-
-  &.portrait {
-    flex-direction: column;
-    align-items: flex-start;
-    margin-top: 0;
-  }
-
-  &.landscape {
-    flex-direction: row;
-    align-items: center;
-    margin-left: 0;
-  }
+  flex-direction: column;
+  align-items: flex-start;
+  margin-top: 0;
 
 
 
