@@ -2,15 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { Draggable } from 'gsap/Draggable';
 import './Timeline.scss';
-import preboda from "./preboda.jpg";
-import ceremonia from "./ceremonia.jpg";
-import coctel from "./coctel.jpg";
-import comida from "./comida.jpg";
-import baile from "./baile.jpg";
-import tercerTiempo from "./tercerTiempo.jpg";
-import paella from "./paella.jpg";
+import Loading from './Loading.js';
+import {imageUrls, items, renderItems} from "./items.js"
+import ositosDrag from "./assets/images/ositos-drag.png";
 
-import ositosDrag from "./ositos-drag.png";
+
 
 gsap.registerPlugin(Draggable);
 
@@ -19,16 +15,6 @@ const Timeline = () => {
   const progressBarRef = useRef(null);
   const timelineRef = useRef(gsap.timeline({ paused: true }));
   const [imagesLoaded, setImagesLoaded] = useState(false);
-
-  const imageUrls = [
-    preboda,
-    ceremonia,
-    coctel,
-    comida,
-    baile,
-    tercerTiempo,
-    paella,
-  ];
 
   const preloadImages = (urls) => {
     const promises = urls.map(url => new Promise((resolve, reject) => {
@@ -40,27 +26,6 @@ const Timeline = () => {
     return Promise.all(promises);
   };
 
-  const renderItems = () => {
-    const items = [
-      { title: "Preboda", description: "Preparativos de la boda", buttonText: "Inicio", bgImage: preboda },
-      { title: "Ceremonia", description: "Ceremonia", buttonText: "Botón 1", bgImage: ceremonia },
-      { title: "Cóctel", description: "Cóctel", buttonText: "Botón 2", bgImage: coctel },
-      { title: "Comida", description: "Comida", buttonText: "Botón 3", bgImage: comida },
-      { title: "Baile", description: "Baile", buttonText: "Botón 4", bgImage: baile },
-      { title: "3er Tiempo", description: "3er Tiempo", buttonText: "¿?", bgImage: tercerTiempo },
-      { title: "Paellada", description: "Paellada final", buttonText: "Final", bgImage: paella }
-    ];
-
-    return items.map((item, index) => (
-      <div key={index} className={`item item${index + 1}`}>
-        <div className="info">
-          <h2>{item.title}</h2>
-          <p>{item.description}</p>
-          <button>{item.buttonText}</button>
-        </div>
-      </div>
-    ));
-  };
 
   const setupDraggableAndTimeline = () => {
     Draggable.get(sliderRef.current)?.kill();
@@ -68,16 +33,6 @@ const Timeline = () => {
     const totalItems = 7;
     const durationPerItem = 6;
     const transitionDuration = 0.5;
-
-    const items = [
-      { bgImage: preboda },
-      { bgImage: ceremonia },
-      { bgImage: coctel },
-      { bgImage: comida },
-      { bgImage: baile },
-      { bgImage: tercerTiempo },
-      { bgImage: paella }
-    ];
 
     const commonTimeline = timelineRef.current.clear();
 
@@ -151,7 +106,7 @@ const Timeline = () => {
   }, [imagesLoaded]);
 
   if (!imagesLoaded) {
-    return <div className="loading">Loading...</div>;
+    return <Loading></Loading>;
   }
 
   return (

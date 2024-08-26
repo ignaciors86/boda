@@ -1,5 +1,6 @@
 :root {
-  --mainBackground: #91a288;
+  --mainColor: #91a288;
+  --mainColorTransparent: #91a28882;
   --color-alfombra: #72396c;
 }
 
@@ -12,8 +13,20 @@
        url('https://picsum.photos/250') format('jpeg');
 }
 
+@font-face {
+  font-family: 'evelins';
+  src:  url('../assets/fonts/evelins/EvelinsRegular.ttf') format('ttf'),
+        url('../assets/fonts/evelins/EvelinsRegular.woff2') format('woff2'),
+        url('../assets/fonts/evelins/EvelinsRegular.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'plante';
+  src: url('../assets/fonts/Plante.ttf') format('ttf'),
+}
+
 .App {
-  background-color: var(--mainBackground);
+  background-color: var(--mainColor);
   background-repeat: no-repeat;
   background-position: center center;
   background-size: cover;
@@ -32,4 +45,17 @@ body::before {
   width: 0;
   height: 0;
   overflow: hidden;
+}
+
+h2{
+  font-size: 10vw;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  font-family: "evelins";
+}
+p{
+  font-size: 6dvh;
+  letter-spacing: -0.02px;
+  line-height: 6dvh;
 }

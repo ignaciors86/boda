@@ -8,7 +8,7 @@
   min-width: 100%;
   flex-direction: column;
 
-  background: var(--mainBackground);
+  background: var(--mainColor);
   flex-direction: row;
 
 }
@@ -24,17 +24,11 @@
   box-shadow: 0px 0px 6px #2f2f2f;
   z-index: 1;
   position: absolute;
-  left: 6%;
+  left: 5dvh;
   height: calc(100% - 0px);
   display: flex;
   justify-content: center;
-  @media (orientation: portrait) {
-    width: 15vw;
-  }
-
-  @media (orientation: landscape) {
-    width: 3vw;
-  }
+  width: 7dvh;
   .slider {
     cursor: pointer;
     top: 0;
@@ -64,7 +58,7 @@
     width: 100%;
     height: 100%;
     top: 0;
-    background-color: var(--mainBackground);
+    background-color: var(--mainColor);
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     display: flex;
@@ -79,29 +73,31 @@
     background-position: center;
   
     
-    &.item1 { itemimage: url('./ceremonia.jpg'); }
+    &.item1 { background-image: url('./assets/images/ceremonia.jpg'); }
     &.item2 { 
-      background-image: url('./ceremonia.jpg'); 
-      background-position: calc(50% + 15vw) -24dvh;
+      background-image: url('./assets/images/ceremonia.jpg'); 
+      background-position: calc(50% + 7dvh) -27dvh;
       background-size: auto 124dvh;
     }
-    &.item3 { background-image: url('./coctel.jpg'); }
-    &.item4 { background-image: url('./comida.jpg'); }
-    &.item5 { background-image: url('./paella.jpg'); }
-    &.item6 { background-image: url('./tercerTiempo.jpg'); }
-    &.item7 { background-image: url('./paella.jpg'); }
+    &.item3 { background-image: url('./assets/images/coctel.jpg'); }
+    &.item4 { background-image: url('./assets/images/comida.jpg'); }
+    &.item5 { background-image: url('./assets/images/paella.jpg'); }
+    &.item6 { 
+      background-image: url('./assets/images/tercerTiempo.jpg'); 
+      background-position: 50% 20%;
+    }
+    &.item7 { background-image: url('./assets/images/paella.jpg'); }
 
     &:not(:first-of-type){
       opacity: 0;
     }
     .info{
       z-index: 1;
-      z-index: 1;
-      background: rgba(255, 255, 255, 0.25);
+      background: var(--mainColorTransparent);
       position: absolute;
       bottom: 0%;
       right: 0;
-      width: 80vw;
+      width: calc(100% - 12dvh);
       height: 100%;
       border-radius: 15px;
       overflow: hidden;
@@ -110,6 +106,23 @@
       align-items: center;
       justify-content: center;
       border-radius: 0;
+      h2{
+        position: absolute;
+        bottom: -7vw;
+        right: 3vw;
+      }
+      .texts{
+        position: absolute;
+        top: 13dvh;
+        font-family: "evelins";
+        color: white;
+        width: 100%;
+        max-height: 70dvh;
+        overflow: hidden;
+        background: rgba(0, 0, 0, 0.4509803922);
+        padding: 0 4vw;
+        box-sizing: border-box;
+      }
     }
   }
   
@@ -123,3 +136,4 @@
   font-size: 24px;
   color: #333;
 }
+
