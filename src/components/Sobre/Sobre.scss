@@ -21,7 +21,7 @@
     position: relative;
     width: calc(var(--border-size)* 3 - 1px);
     height: calc(var(--border-size)* 3);
-    perspective: calc(var(--border-size)* 3.5);
+    perspective: calc(var(--border-size)* 5);
     border: 0px solid black;
     background: darkgray;
     transition: calc(var(--duration) / 2) ease calc(var(--duration) / 4);
@@ -37,7 +37,7 @@
         border-top: calc(var(--border-size) + 1vw) solid black;
         transform-origin: top center;
         transform: translateX(-50%) rotateX(0deg);
-        transition: calc(var(--duration)/2) ease calc(var(--duration)/4);
+        transition: calc(var(--duration)) ease calc(var(--duration)*2);
         z-index: 3;
     }
 
@@ -97,7 +97,7 @@
         justify-content: center;
         align-items: center;
         transform: translateY(calc(var(--border-size) / -5)) translateX(calc(var(--border-size)*1.2 / -1)) rotateX(-10deg); /* Inicialmente desplazado y girado */
-        transition: opacity calc(var(--duration)/2) ease, translate calc(var(--duration)) ease, transform calc(var(--duration)/2) ease;
+        transition: calc(var(--duration)*2) ease calc(var(--duration)/2);
         z-index: 2;
 
         
@@ -108,15 +108,56 @@
             text-align: center;
             width: calc(var(--border-size)*5);
             overflow: hidden;
-            transition: opacity 0 ease calc(var(--duration));
             display: flex;
             height: auto;
             margin-top: calc(var(--border-size)* -.7);
             box-shadow: var(--box-shadow);
             cursor: pointer;
+            position: absolute; 
+            width: 100%;
+            height: auto;
+            transition: .5s ease 0s;
+            &.invitacion{
+                transition: calc(var(--duration)) ease 0s;
+            }
+            &:not(.invitacion){
+                transition: calc(var(--duration)) ease 0s;
+            }
             img{
                 width: 100%;
                 height: auto;
+            }
+            &:hover:not(.invitacion) {
+                scale: 1.2;
+                transition: .5s ease 0s;
+            }
+            &.horarios{
+                background: orange;
+                width: calc(var(--border-size)* 1);
+                height: calc(var(--border-size)* 1);
+                z-index: 1;
+                margin-top: 0;
+                margin-left: 0;
+                rotate: none;
+            }
+            &.asistencia{
+                background: yellow;
+                width: calc(var(--border-size)* 1.5);
+                        height: calc(var(--border-size)* 1);
+                        z-index: 1;
+            }
+            &.ubicaciones{
+                background: lightblue;
+                width: calc(var(--border-size)* 1.5);
+                height: calc(var(--border-size)* 1);
+                z-index: 2;
+            }
+            &.regalo{
+                background: purple;
+                width: calc(var(--border-size)* 1);
+                height: calc(var(--border-size)* 1);
+                z-index: 2;
+                transform: rotateZ(51deg);
             }
         }
     }
@@ -137,8 +178,8 @@
     }
 
     &.open {
-        transform: translateY(calc(var(--border-size) * 3)) rotateZ(-14deg) translateX(calc(var(--border-size)*0.7));
-        transition: calc(var(--duration)) ease calc(var(--duration));
+        transform: translateY(calc(var(--border-size) * 4)) rotateZ(-14deg) translateX(calc(var(--border-size)*0.7));
+        transition: calc(var(--duration)) ease;
         .envelope{
             &-flap {
                 transform: translateX(-50%) rotateX(180deg);
@@ -146,12 +187,36 @@
                 transition: calc(var(--duration)) ease 0s;
             }
             &-content {
-                transform: translateY(calc(var(--border-size)*3 / -1)) rotateZ(3deg) translateX(calc(var(--border-size)*1.2 / -1)) rotateX(0deg) rotateZ(15deg);
-                transition: opacity 0s ease calc(var(--duration)*.5), transform calc(var(--duration)) ease calc(var(--duration));
+                transform: translateY(calc(var(--border-size)* -5)) rotateZ(3deg) translateX(calc(var(--border-size)* -.6 )) rotateX(0deg) rotateZ(15deg);
+                transition: opacity 0s ease calc(var(--duration)*.5), transform calc(var(--duration)) ease calc(var(--duration)*.5);
                 z-index: 3;
-                .letter{
-                    height: auto;
-                    transition: height calc(var(--duration)) ease calc(var(--duration)/2)
+                .letter{   
+                    transition: calc(var(--duration)) ease calc(var(--duration));
+                    &.invitacion{
+                        height: auto;
+                        margin-top: calc(var(--border-size)* -1.2);
+                        margin-left: calc(var(--border-size) * -0.3);
+                    }
+                    &.horarios{
+                        // transform: rotateZ(-16deg) translateY(calc(var(--border-size)* 2)) translateX(calc(var(--border-size)* -0.5));
+                        margin-top: calc(var(--border-size)* 4);
+                        margin-left: calc(var(--border-size)* -1);
+                        rotate: -16deg;
+                    }
+                    &.asistencia{
+                        margin-top: calc(var(--border-size)* 2);
+                        margin-left: calc(var(--border-size)* -1);
+                        rotate: -6deg;
+                    }
+                    &.ubicaciones{
+                        margin-top: calc(var(--border-size)* 5);
+                        margin-left: calc(var(--border-size)* 1.7);
+                        rotate: -2deg;
+                    }
+                    &.regalo{
+                        margin-top: calc(var(--border-size)* 3);
+                        margin-left: calc(var(--border-size)* 2);
+                    }
                 }
             }
 
