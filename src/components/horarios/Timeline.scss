@@ -7,7 +7,10 @@
   height: 100%;
   min-width: 100%;
   flex-direction: column;
-  background: var(--mainColor);
+  background: var(--green);
+  opacity: 0;
+  visibility: hidden;
+  position: absolute;
 }
 
 .hidden {
@@ -15,26 +18,42 @@
 }
 
 .progress-bar {
-  background: var(--color-alfombra);
+  background: var(--purpleTransparent);
   margin: auto;
   box-shadow: 0px 0px 6px #2f2f2f;
   z-index: 1;
   position: absolute;
-  bottom: 5dvh; /* Barra de progreso ahora abajo */
-  height: 7dvh;
-  width: calc(100% - 0px); /* Ancho completo */
+  bottom: 8dvh;
+  height: 1.5dvh;
+  width: calc(90% - 0px);
   display: flex;
   justify-content: center;
-  
+  left: 5%;
   .slider {
     cursor: pointer;
     left: 0;
     position: absolute;
     height: 10dvh;
-    margin-top: -2dvh;
+    margin-top: -4.5dvh;
     width: 8dvh;
     margin-left: -4dvh;
     border: 0px solid transparent;
+    &:before{
+      content: "";
+      width: 11dvh;
+      height: 11dvh;
+      position: absolute;
+      left: -2dvh;
+      top: -.5dvh;
+      background: var(--purple);
+      border-radius: 10vw;
+    }
+    img{
+      height: 100%;
+      width: auto;
+      text-align: center;
+      position: relative;
+    }
   }
 }
 
@@ -51,7 +70,7 @@
     position: absolute;
     width: 100%; /* Ajustado para que cada elemento sea responsivo */
     height: 100%;
-    background-color: var(--mainColor);
+    background-color: var(--green);
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     display: flex;
@@ -85,7 +104,7 @@
 
     .info {
       z-index: 1;
-      background: var(--mainColorTransparent);
+      background: var(--greenTransparent);
       position: absolute;
       bottom: 0;
       right: 0;
@@ -101,22 +120,27 @@
       
       h2 {
         position: absolute;
-        top: 76dvh;
-        right: 3vw;
+        top: 60dvh;
+        width: 100%;
+        text-align: center;
+        background: var(--purple);
       }
       p{
-        text-shadow: 1px 1px 30px black;
+        text-align: center;
+        padding-top: 20dvh;
+        width: 90%;
+        margin: 0 auto;
       }
 
       .texts {
         position: absolute;
         top: 0dvh;
-        font-family: "evelins";
+        // font-family: "evelins";
         color: white;
         width: 100%;
         height: 100dvh;
         overflow: hidden;
-        background: linear-gradient(var(--mainColor), transparent);
+        background: linear-gradient(var(--green), transparent);
         padding: 0 4vw;
         box-sizing: border-box;
       }

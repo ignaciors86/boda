@@ -19,7 +19,20 @@ const App = () => {
   //     .then(response => response.json())
   //     .then(data => setArticles(data));
   // }, []);      
-
+  const [seccion, setSeccion] = useState("home");
+  const duration = 1;
+  useEffect(() => {
+    console.log(seccion);
+    seccion === "home" ? tlApp
+      .to(".seccion", { opacity: 0, duration: duration, }, 0)
+      .to(".seccion", { visibility: "hidden", duration: 0, }, ">")
+    : tlApp
+      .to(`.seccion.${seccion}, .back`, { x: "100vw", duration: 0, opacity: 1, visibility: "visible", }, 0)
+      .to(`.seccion.${seccion}, .back`, { x: seccion ? 0 : "100vw", opacity: seccion ? 1 : 0, duration: duration, }, ">")
+  
+      tlApp.to(".back", { opacity: seccion !== "home" ? 1 : 0, duration: duration, }, 0)
+    
+  }, [seccion]);
   return (
     <div className="App">
       {/* <Timeline  /> */}
@@ -28,9 +41,11 @@ const App = () => {
           <h2>{article.nombre}</h2>
         </div>
       ))} */}
-
-      <Sobre />
-
+      <Sobre setSeccion={setSeccion} />
+      <Timeline />
+      
+      <button className="back" onClick={() => setSeccion("home")} />
+      
     </div>
   );
 }
