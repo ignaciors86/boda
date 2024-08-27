@@ -3,6 +3,7 @@ import './App.scss';
 import gsap from 'gsap';
 import { useEffect, useState } from 'react';
 import Timeline from './components/Horarios/Timeline';
+import Sobre from './components/Sobre/Sobre';
 
 const App = () => {
 
@@ -11,7 +12,7 @@ const App = () => {
   //   tlApp.to(".App-header", { opacity: 1, duration: 2, })
   // }, []);
   
-  const [articles, setArticles] = useState([]);
+  // const [articles, setArticles] = useState([]);
 
   // useEffect(() => {
   //   fetch('http://localhost:1337/invitados')
@@ -21,12 +22,14 @@ const App = () => {
 
   return (
     <div className="App">
-      <Timeline  />
+      {/* <Timeline  /> */}
       {/* {articles?.map(article => (
         <div key={article.id}>
           <h2>{article.nombre}</h2>
         </div>
       ))} */}
+
+      <Sobre />
 
     </div>
   );

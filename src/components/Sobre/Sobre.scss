@@ -1,0 +1,139 @@
+:root{
+    --duration: .8s;
+    --border-size: 10vw;
+}
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #99a199;
+    margin: 0;
+
+    .home{
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .envelope {
+        position: relative;
+        width: calc(var(--border-size)* 5.6);
+        height: calc(var(--border-size)* 3);
+        perspective: 48vw;
+        border: 1px solid black;
+        background: darkgray;
+
+        &-flap {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 64.5%;
+            height: 0;
+            border-left: var(--border-size) solid transparent;
+            border-right: var(--border-size) solid transparent;
+            border-top: calc(var(--border-size) + 1vw) solid black;
+            transform-origin: top center;
+            transform: translateX(-50%) rotateX(0deg);
+            transition: transform calc(var(--duration)/2) ease calc(var(--duration)/4);
+            z-index: 3;
+        }
+
+        &-flap-bg {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 64%;
+            height: 0;
+            overflow: hidden;
+            border-left: var(--border-size) solid lightgray;
+            border-right: var(--border-size) solid lightgray;
+            border-top: var(--border-size) solid transparent;
+            transform-origin: top center;
+            transform: translateX(-50%) rotateX(0deg);
+            transition: transform calc(var(--duration)/2) ease;
+            z-index: 2;
+        }
+
+        &-body {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 67%;
+            background-color: #e0e0e0;
+            z-index: 1;
+
+            &:before {
+                content: "";
+                width: 100%;
+                z-index: 5;
+                height: 100%;
+                background: lightgray;
+                position: absolute;
+                bottom: 0;
+            }
+        }
+
+        &-content {
+            position: absolute;
+            bottom: 0; /* Cambiado para que esté en la parte inferior del sobre */
+            left: 50%;
+            width: 80%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 1;
+            transform: translateY(-2vw) translateX(-22vw) rotateX(-10deg); /* Inicialmente desplazado y girado */
+            transition: opacity calc(var(--duration)/2) ease, transform calc(var(--duration)/2) ease;
+            z-index: 2;
+        }
+
+        .letter {
+            background-color: blue;
+            padding: 20px 20px 0px 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            text-align: center;
+            width: 80%;
+            overflow: hidden;
+            // height: 50%;
+        }
+
+        .wax-seal {
+            position: absolute;
+            top: 71%;
+            left: 50%;
+            width: calc(var(--border-size)/2);
+            height: calc(var(--border-size)/2);
+            background-color: #99a199;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            z-index: 3;
+        }
+
+        &.open {
+            .envelope{
+                &-flap {
+                transform: translateX(-50%) rotateX(180deg);
+                z-index: 1;
+                transition: calc(var(--duration)) ease 0s;
+                }
+                &-content {
+                    opacity: 1;
+                    transform: translateY(-10vw) rotateZ(3deg) translateX(-22vw) rotateX(0deg);
+                    transition: calc(var(--duration)/4) ease calc(var(--duration)/3);
+                    z-index: 3;
+                    .letter{
+                        height: inherit;
+                    }
+                }
+
+            }
+        }
+    }
+}
