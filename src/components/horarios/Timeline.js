@@ -3,10 +3,8 @@ import { gsap } from 'gsap';
 import { Draggable } from 'gsap/Draggable';
 import './Timeline.scss';
 import Loading from './Loading.js';
-import {imageUrls, items, renderItems} from "./items.js"
+import { imageUrls, items, renderItems } from "./items.js";
 import ositosDrag from "./assets/images/ositos-drag.png";
-
-
 
 gsap.registerPlugin(Draggable);
 
@@ -15,6 +13,8 @@ const Timeline = () => {
   const progressBarRef = useRef(null);
   const timelineRef = useRef(gsap.timeline({ paused: true }));
   const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0); // Estado para seguir el ítem actual
+  const [hasVibrated, setHasVibrated] = useState(false); // Estado para controlar la vibración
 
   const preloadImages = (urls) => {
     const promises = urls.map(url => new Promise((resolve, reject) => {
@@ -26,13 +26,12 @@ const Timeline = () => {
     return Promise.all(promises);
   };
 
-
   const setupDraggableAndTimeline = () => {
     Draggable.get(sliderRef.current)?.kill();
 
-    const totalItems = 7;
+    const totalItems = items.length;
     const durationPerItem = 6;
-    const transitionDuration = 0.5;
+    const transitionDuration = 0.3;
 
     const commonTimeline = timelineRef.current.clear();
 
@@ -42,20 +41,17 @@ const Timeline = () => {
       const nextItemOpacityStart = opacityEnd + transitionDuration;
 
       commonTimeline
-        .set(`.item${index + 1}`, { opacity: 0 })
-        .to(`.item${index + 1}`, { opacity: 1, duration: durationPerItem }, ">")
-        .to(`.item${index + 1}`, { opacity: 0, duration: transitionDuration, }, nextItemOpacityStart)
-        .to('.elements', { opacity: 0, duration: transitionDuration }, nextItemOpacityStart)
-        .to('.elements', { opacity: 1, duration: 0.5 }, ">")
-
+        .to(`.item${index + 1}`, { opacity: 1, duration: durationPerItem })
+        .to(`.item${index + 1}`, { opacity: 0, duration: transitionDuration }, nextItemOpacityStart)
+        .set(`.item${index}`, { opacity: 0 }, ">");
     });
 
     Draggable.create(sliderRef.current, {
-      type: 'y', // Siempre vertical, independientemente de la orientación
+      type: 'x', // Ahora horizontal
       bounds: progressBarRef.current,
       onDrag() {
         const progress = Math.min(
-          Math.max(this.y / progressBarRef.current.clientHeight, 0), 
+          Math.max(this.x / progressBarRef.current.clientWidth, 0), 
           1
         );
         timelineRef.current.progress(progress);
@@ -65,14 +61,38 @@ const Timeline = () => {
         const lastItemProgress = 1;
 
         if (progress >= penultimateItemProgress && progress < lastItemProgress || progress < 0.15) {
-          gsap.to(sliderRef.current, { scale: 1, duration: 0.3 });
+          gsap.to(sliderRef.current, { scale: 1, y: "-0dvh", duration: 0.3 });
         } else {
-          gsap.to(sliderRef.current, { scale: 1.6, duration: 0.3 });
+          gsap.to(sliderRef.current, { scale: 1.6, y: "-2dvh", duration: 0.3 });
+        }
+
+        // Detectar el cambio de ítem
+        const newIndex = Math.floor(progress * totalItems);
+        if (newIndex !== currentIndex) {
+          setCurrentIndex(newIndex);
+          setHasVibrated(false); // Asegúrate de que la vibración se pueda activar en el siguiente punto de cambio
         }
       },
       onRelease() {
         // Restaura el tamaño de la imagen al soltar
         gsap.to(sliderRef.current, { scale: 1, duration: 0.3 });
+        let ultimo = true;
+        // Verificar qué item tiene opacidad mayor que 0 y ajustarlo a 1
+        items.forEach((item, index) => {
+          const element = document.querySelector(`.item${index}`);
+
+          // Verifica si el elemento existe en el DOM antes de acceder a su opacidad
+          if (element) {
+            const opacity = parseFloat(window.getComputedStyle(element).opacity);
+            console.log(opacity);
+            if (opacity > 0) {
+              gsap.to(element, { opacity: 1, duration: 0.3 });
+              gsap.to(sliderRef.current, { scale: 1, y: "-0dvh", duration: 0.3 });
+              ultimo = false;
+            }
+          }
+        });
+        ultimo && gsap.to(`.item${items.length}`, { opacity: 1, duration: 0.3 });
       },
     });
 
@@ -81,10 +101,11 @@ const Timeline = () => {
 
     if (slider && progressBar) {
       const initialProgress = Math.min(
-        Math.max(slider.y / progressBar.clientHeight, 0), 
+        Math.max(slider.x / progressBar.clientWidth, 0), 
         1
       );
       timelineRef.current.progress(initialProgress);
+      setCurrentIndex(Math.floor(initialProgress * items.length)); // Establecer el índice inicial
     }
   };
 
@@ -105,8 +126,16 @@ const Timeline = () => {
     }
   }, [imagesLoaded]);
 
+  useEffect(() => {
+    // Vibrar solo si ha cambiado el índice y no ha vibrado aún
+    if (currentIndex > -1 && navigator.vibrate) {
+      navigator.vibrate(40); // Vibración de 50 milisegundos
+      setHasVibrated(true); // Marca como vibrado para evitar vibraciones repetidas
+    }
+  }, [currentIndex]);
+
   if (!imagesLoaded) {
-    return <Loading></Loading>;
+    return <Loading />;
   }
 
   return (

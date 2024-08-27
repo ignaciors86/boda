@@ -5,9 +5,10 @@ import comida from "./assets/images/comida.jpg";
 import baile from "./assets/images/baile.jpg";
 import tercerTiempo from "./assets/images/tercerTiempo.jpg";
 import paella from "./assets/images/paella.jpg";
-import ositosDrag from "./assets/images/ositos-drag.png";
+import inicial from "./assets/images/ositos-drag.png";
 
 const imageUrls = [
+    inicial,
     preboda,
     ceremonia,
     coctel,
@@ -18,6 +19,12 @@ const imageUrls = [
 ];
 
 const items = [
+    {
+      title: "Inicio",
+      description: "AQUI EXPLICO COSAS",
+      buttonText: "Inicio",
+      bgImage: inicial
+    },
     {
       title: "Preboda",
       description: "Los novios se preparan para el gran día, ajustando los últimos detalles y compartiendo momentos especiales con sus seres queridos.",
@@ -55,7 +62,7 @@ const items = [
       bgImage: tercerTiempo
     },
     {
-      title: "Paellada",
+      title: "Domingo",
       description: "La fiesta culmina con una gran paellada, donde los invitados se despiden del evento disfrutando de un último plato tradicional.",
       buttonText: "Final",
       bgImage: paella
