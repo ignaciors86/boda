@@ -9,6 +9,8 @@ import ositosDrag from "./assets/images/ositos-drag.png";
 gsap.registerPlugin(Draggable);
 
 const Timeline = () => {
+
+  const MAINCLASS = "horarios";
   const sliderRef = useRef(null);
   const progressBarRef = useRef(null);
   const timelineRef = useRef(gsap.timeline({ paused: true }));
@@ -63,7 +65,7 @@ const Timeline = () => {
         if (progress >= penultimateItemProgress && progress < lastItemProgress || progress < 0.15) {
           gsap.to(sliderRef.current, { scale: 1, y: "-0dvh", duration: 0.3 });
         } else {
-          gsap.to(sliderRef.current, { scale: 1.6, y: "-2dvh", duration: 0.3 });
+          gsap.to(sliderRef.current, { scale: 1.6, y: "-0dvh", duration: 0.3 });
         }
 
         // Detectar el cambio de ítem
@@ -139,17 +141,17 @@ const Timeline = () => {
   }
 
   return (
-    <div className="container">
+    <div className={`${MAINCLASS} container seccion`}>
       <div className="elements">
         {renderItems()}
       </div>
       <div className="progress-bar" ref={progressBarRef}>
-        <img
-          src={ositosDrag}
-          alt="Slider"
-          ref={sliderRef}
-          className="slider"
-        />
+        <div className="slider" ref={sliderRef}>
+          <img
+            src={ositosDrag}
+            alt="Slider"
+          />
+        </div>
       </div>
     </div>
   );

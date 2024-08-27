@@ -1,26 +1,18 @@
 import { useEffect } from 'react';
 import './Sobre.scss';
 import invitacion from "./assets/images/invitacion.jpg";
-const Sobre = () => {
+const Sobre = ({setSeccion}) => {
 
     const handleClick = () => {
         const envelope = document.querySelector('.envelope');
-        envelope.classList.toggle('open');
+        envelope.classList.toggle('open');     
     };
 
-    useEffect(() => {
-        const horarios = document.querySelector('.horarios');
-        horarios.addEventListener('click', handleClick);
-        
-        return () => {
-            horarios.removeEventListener('click', handleClick);
-        };
-    }, []);
     return (
         <div className="home">
             <div className="envelope">
                 <div className="envelope-flap">
-                    <div className="wax-seal" onClick={handleClick}></div>
+                    <div className="wax-seal back" onClick={handleClick} />
                 </div>
                 <div className="envelope-flap-bg"></div>
                 <div className="envelope-body">
@@ -28,17 +20,17 @@ const Sobre = () => {
                         <div className="letter invitacion" onClick={handleClick}>
                             <img src={invitacion} alt="Imagen de la carta" />
                         </div>
-                        <div className="letter regalo">
+                        <div className="letter regalo" onClick={() => setSeccion("regalo")}>
                             Regalo
                         </div>
-                        <div className="letter ubicaciones">
+                        <div className="letter ubicaciones" onClick={() => setSeccion("ubicaciones")}>
                             Ubicaciones
                         </div>
-                        <div className="letter asistencia">
+                        <div className="letter asistencia" onClick={() => setSeccion("asistencia")}>
                             {/* <img src={invitacion} alt="Imagen de la carta" /> */}
                             Confirma tu asistencia
                         </div>
-                        <div className="letter horarios">
+                        <div className="letter horarios" onClick={() => setSeccion("horarios")}>
                             Horarios
                         </div>
                         
