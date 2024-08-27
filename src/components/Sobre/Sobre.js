@@ -9,31 +9,39 @@ const Sobre = () => {
     };
 
     useEffect(() => {
-        const waxSeal = document.querySelector('.wax-seal');
-        waxSeal.addEventListener('click', handleClick);
-
-        const letter = document.querySelector('.letter');
-        letter.addEventListener('click', handleClick);
+        const horarios = document.querySelector('.horarios');
+        horarios.addEventListener('click', handleClick);
         
         return () => {
-            waxSeal.removeEventListener('click', handleClick);
-            letter.removeEventListener('click', handleClick);
+            horarios.removeEventListener('click', handleClick);
         };
     }, []);
     return (
         <div className="home">
             <div className="envelope">
                 <div className="envelope-flap">
-                    <div className="wax-seal"></div>
+                    <div className="wax-seal" onClick={handleClick}></div>
                 </div>
                 <div className="envelope-flap-bg"></div>
                 <div className="envelope-body">
                     <div className="envelope-content">
-                        <div className="letter">
+                        <div className="letter invitacion" onClick={handleClick}>
                             <img src={invitacion} alt="Imagen de la carta" />
-                            {/* <h1>¡Bienvenido!</h1>
-                            <p>Este es el contenido de la carta.</p> */}
                         </div>
+                        <div className="letter regalo">
+                            Regalo
+                        </div>
+                        <div className="letter ubicaciones">
+                            Ubicaciones
+                        </div>
+                        <div className="letter asistencia">
+                            {/* <img src={invitacion} alt="Imagen de la carta" /> */}
+                            Confirma tu asistencia
+                        </div>
+                        <div className="letter horarios">
+                            Horarios
+                        </div>
+                        
                     </div>
                 </div>
                 <p className='nombre-invitado'>Invitados 1 y 2</p>
