@@ -7,12 +7,8 @@
   height: 100%;
   min-width: 100%;
   flex-direction: column;
-
   background: var(--mainColor);
-  flex-direction: row;
-
 }
-
 
 .hidden {
   display: none;
@@ -24,22 +20,22 @@
   box-shadow: 0px 0px 6px #2f2f2f;
   z-index: 1;
   position: absolute;
-  left: 5dvh;
-  height: calc(100% - 0px);
+  bottom: 5dvh; /* Barra de progreso ahora abajo */
+  height: 7dvh;
+  width: calc(100% - 0px); /* Ancho completo */
   display: flex;
   justify-content: center;
-  width: 7dvh;
+  
   .slider {
     cursor: pointer;
-    top: 0;
+    left: 0;
     position: absolute;
-    width: 94%;
-    height: auto;
+    height: 10dvh;
+    margin-top: -2dvh;
+    width: 8dvh;
+    margin-left: -4dvh;
     border: 0px solid transparent;
   }
-
-
-
 }
 
 .elements {
@@ -47,17 +43,14 @@
   justify-content: space-between;
   width: 100%;
   height: 100%;
-  flex-direction: column;
+  flex-direction: row; /* Cambiar a fila */
   align-items: flex-start;
   margin-top: 0;
 
-
-
   .item {
     position: absolute;
-    width: 100%;
+    width: 100%; /* Ajustado para que cada elemento sea responsivo */
     height: 100%;
-    top: 0;
     background-color: var(--mainColor);
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -66,38 +59,37 @@
     justify-content: center;
     align-items: center;
     opacity: 0;
-
-    transition: background-image 1s ease; // Transición suave para el cambio de imagen de fondo
-
     background-size: cover;
     background-position: center;
+    transition: background-image 1s ease; /* Transición suave para el cambio de imagen de fondo */
   
-    
-    &.item1 { background-image: url('./assets/images/ceremonia.jpg'); }
-    &.item2 { 
+    &.inicio { background-image: url('./assets/images/paella.jpg'); }
+    &.preboda { background-image: url('./assets/images/ceremonia.jpg'); }
+    &.ceremonia { 
       background-image: url('./assets/images/ceremonia.jpg'); 
       background-position: calc(50% + 7dvh) -27dvh;
       background-size: auto 124dvh;
     }
-    &.item3 { background-image: url('./assets/images/coctel.jpg'); }
-    &.item4 { background-image: url('./assets/images/comida.jpg'); }
-    &.item5 { background-image: url('./assets/images/paella.jpg'); }
-    &.item6 { 
+    &.coctel { background-image: url('./assets/images/coctel.jpg'); }
+    &.comida { background-image: url('./assets/images/comida.jpg'); }
+    &.baile { background-image: url('./assets/images/baile.jpg'); }
+    &.tiempo { 
       background-image: url('./assets/images/tercerTiempo.jpg'); 
       background-position: 50% 20%;
     }
-    &.item7 { background-image: url('./assets/images/paella.jpg'); }
+    &.domingo { background-image: url('./assets/images/paella.jpg'); }
 
-    &:not(:first-of-type){
-      opacity: 0;
+    &:first-of-type{
+      opacity: 1;
     }
-    .info{
+
+    .info {
       z-index: 1;
       background: var(--mainColorTransparent);
       position: absolute;
-      bottom: 0%;
+      bottom: 0;
       right: 0;
-      width: calc(100% - 12dvh);
+      width: calc(100% - 0dvh);
       height: 100%;
       border-radius: 15px;
       overflow: hidden;
@@ -106,26 +98,27 @@
       align-items: center;
       justify-content: center;
       border-radius: 0;
-      h2{
+      
+      h2 {
         position: absolute;
-        bottom: -7vw;
+        top: 76dvh;
         right: 3vw;
       }
-      .texts{
+
+      .texts {
         position: absolute;
-        top: 13dvh;
+        top: 0dvh;
         font-family: "evelins";
         color: white;
         width: 100%;
-        max-height: 70dvh;
+        height: 100dvh;
         overflow: hidden;
-        background: rgba(0, 0, 0, 0.4509803922);
+        background: linear-gradient(var(--mainColor), transparent);
         padding: 0 4vw;
         box-sizing: border-box;
       }
     }
   }
-  
 }
 
 .loading {
@@ -136,4 +129,3 @@
   font-size: 24px;
   color: #333;
 }
-

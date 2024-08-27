@@ -13,11 +13,11 @@ const App = () => {
   
   const [articles, setArticles] = useState([]);
 
-  useEffect(() => {
-    fetch('http://localhost:1337/invitados')
-      .then(response => response.json())
-      .then(data => setArticles(data));
-  }, []);      
+  // useEffect(() => {
+  //   fetch('http://localhost:1337/invitados')
+  //     .then(response => response.json())
+  //     .then(data => setArticles(data));
+  // }, []);      
 
   return (
     <div className="App">
