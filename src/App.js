@@ -35,7 +35,6 @@ const App = () => {
   }, [seccion]);
   return (
     <div className="App">
-      {/* <Timeline  /> */}
       {/* {articles?.map(article => (
         <div key={article.id}>
           <h2>{article.nombre}</h2>
