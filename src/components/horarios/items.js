@@ -6,6 +6,7 @@ import baile from "./assets/images/baile.jpg";
 import tercerTiempo from "./assets/images/tercerTiempo.jpg";
 import paella from "./assets/images/paella.jpg";
 import inicial from "./assets/images/ositos-drag.png";
+import Item from './Item.js';
 
 const imageUrls = [
     inicial,
@@ -70,17 +71,10 @@ const items = [
   ];
 
   const renderItems = () => {
-    return items.map((item, index) => (
-      <div key={index} className={`item item${index + 1} ${item.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`}>
-      <div className="info">
-        <h2>{item.title}</h2>
-        <div className="texts">
-          {item.description}
-        </div>
-        <button>{item.buttonText}</button>
-      </div>
-      </div>
-    ));
+    console.log(items);
+    return items.map((item, index) => {
+      return item && <Item data={item} index={index} key={"item"+index} />
+    });
   };
 
   export { items, imageUrls, renderItems };
