@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import './Sobre.scss';
 import invitacion from "./assets/images/invitacion.jpg";
+import Card from './Card';
 const Sobre = ({setSeccion}) => {
 
     const handleClick = () => {
@@ -17,23 +18,13 @@ const Sobre = ({setSeccion}) => {
                 <div className="envelope-flap-bg"></div>
                 <div className="envelope-body">
                     <div className="envelope-content">
-                        <div className="letter invitacion" onClick={handleClick}>
-                            <img src={invitacion} alt="Imagen de la carta" />
-                        </div>
-                        <div className="letter regalo" onClick={() => setSeccion("regalo")}>
-                            Regalo
-                        </div>
-                        <div className="letter ubicaciones" onClick={() => setSeccion("ubicaciones")}>
-                            Ubicaciones
-                        </div>
-                        <div className="letter asistencia" onClick={() => setSeccion("asistencia")}>
-                            {/* <img src={invitacion} alt="Imagen de la carta" /> */}
-                            Confirma tu asistencia
-                        </div>
-                        <div className="letter horarios" onClick={() => setSeccion("horarios")}>
-                            Horarios
-                        </div>
-                        
+                        <Card seccion="invitacion" onClick={handleClick}>
+                            <img src={invitacion} alt="Invitacion" />
+                        </Card>
+                        <Card seccion="regalo" onClick={handleClick}>Regalo</Card>
+                        <Card seccion="ubicaciones" onClick={handleClick}>Lugar</Card>
+                        <Card seccion="asistencia" onClick={handleClick}>Asistencia</Card>                        
+                        <Card seccion="horarios" onClick={handleClick}>Horarios</Card>                              
                     </div>
                 </div>
                 <p className='nombre-invitado'>Invitados 1 y 2</p>
