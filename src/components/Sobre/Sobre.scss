@@ -97,7 +97,10 @@
         
         .card {
             &.invitacion{
-                transition: calc(var(--duration)) ease 0s;
+                transition: calc(var(--duration))/4 ease 0s;
+                width: calc(var(--border-size)* 2.5);
+                height: calc(var(--border-size)* 2.5);
+                transition: 0s ease;
             }
             &:not(.invitacion){
                 transition: calc(var(--duration)) ease 0s;
@@ -177,7 +180,7 @@
                     transition: .5s ease 0s, margin calc(var(--duration)) ease calc(var(--duration));
                     &.flipped {
                         transform: rotateY(180deg);
-                        // transition: calc(var(--duration)) ease-in-out;
+                        transition: .5s ease 0s, margin calc(var(--duration)) ease calc(var(--duration)*.5);
                     }
                     &:hover:not(.invitacion) {
                         scale: 1.2;
@@ -186,6 +189,14 @@
                     &.invitacion{
                         margin-top: calc(var(--border-size)* -1);
                         margin-left: calc(var(--border-size)* -.6);
+                        transition: calc(var(--duration)/2) ease;
+                        &.flipped{
+                            margin-top: calc(var(--border-size)* 1);
+                            margin-left: calc(var(--border-size)* -.2);
+                            width: calc(var(--border-size)* 2.5);
+                            height: calc(var(--border-size)* 2.5);
+                            rotate: -5deg !important;
+                        }
                     }
                     &.horarios{
                         margin-top: calc(var(--border-size)* 5);
@@ -202,12 +213,12 @@
                     &.asistencia{
                         margin-top: calc(var(--border-size)* 2.6);
                         margin-left: calc(var(--border-size)* -1);
-                        rotate: -1deg;
+                        rotate: -10deg !important;
                         &.flipped{
                             margin-top: calc(var(--border-size)* 1.6);
-                            margin-left: calc(var(--border-size)* -0.5);
+                            margin-left: calc(var(--border-size)* -0.2);
                             rotate: -1deg !important;
-                            width: calc(var(--border-size)* 3);
+                            width: calc(var(--border-size)* 2.5);
                             height: calc(var(--border-size)* 4);
                         }
                     }
@@ -226,10 +237,11 @@
                     &.regalo{
                         margin-top: calc(var(--border-size)* 1.7);
                         margin-left: calc(var(--border-size)* 2);
+                        rotate: -40deg !important;
                         &.flipped{
                             margin-top: calc(var(--border-size)* 1.7);
                             margin-left: calc(var(--border-size)* 0);
-                            rotate: -53deg !important;
+                            rotate: -60deg !important;
                             width: calc(var(--border-size)* 2.5);
                             height: calc(var(--border-size)* 2.5);
                         }
