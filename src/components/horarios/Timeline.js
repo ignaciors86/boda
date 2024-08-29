@@ -10,7 +10,7 @@ gsap.registerPlugin(Draggable);
 
 const Timeline = () => {
 
-  const MAINCLASS = "horarios";
+  const MAINCLASS = "timeline";
   const sliderRef = useRef(null);
   const progressBarRef = useRef(null);
   const timelineRef = useRef(gsap.timeline({ paused: true }));
@@ -141,7 +141,7 @@ const Timeline = () => {
   }
 
   return (
-    <div className={`${MAINCLASS} container seccion`}>
+    <div className={`${MAINCLASS} seccion`}>
       <div className="elements">
         {renderItems()}
       </div>

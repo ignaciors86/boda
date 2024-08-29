@@ -1,16 +1,14 @@
 /* Timeline.scss */
 
-.container {
+.timeline {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100%;
-  min-width: 100%;
+  width: 100%;
   flex-direction: column;
   background: var(--green);
-  opacity: 0;
-  visibility: hidden;
-  position: absolute;
+  position: relative;
 }
 
 .hidden {
