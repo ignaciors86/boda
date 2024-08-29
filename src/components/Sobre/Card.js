@@ -29,7 +29,7 @@ const Card = ({ seccion, children, trasera }) => {
         },
         onRelease() {
           gsap.to(cardElement, {
-            duration: 0.3,
+            duration: 0.05,
             x: 0,
             y: 0,
             ease: 'power2.out'
@@ -67,7 +67,7 @@ const Card = ({ seccion, children, trasera }) => {
         onComplete: () => {
           gsap.to(cardElement, {
             scale: 1.2,
-            duration: 0.15,
+            duration: 0.3,
             ease: 'power2.inOut'
           });
         }
