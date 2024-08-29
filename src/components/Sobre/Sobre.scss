@@ -1,13 +1,7 @@
 :root{
     --duration: 1s;
     --box-shadow: 1vw 1vw 2vw #00000057;
-    @media (orientation: portrait) {
-        --border-size: 30vw;
-    }
-
-    @media (orientation: landscape) {
-        --border-size: 10vw;
-    }
+    --border-size: 17dvh;
 }
 
 .home{
@@ -99,6 +93,45 @@
         transform: translateY(calc(var(--border-size) / -5)) translateX(calc(var(--border-size)*1.2 / -1)) rotateX(-10deg); /* Inicialmente desplazado y girado */
         transition: calc(var(--duration)*2) ease calc(var(--duration)/2);
         z-index: 2;
+
+        
+        .card {
+            &.invitacion{
+                transition: calc(var(--duration)) ease 0s;
+            }
+            &:not(.invitacion){
+                transition: calc(var(--duration)) ease 0s;
+            }
+        
+            &.horarios{
+                background: orange;
+                width: calc(var(--border-size)* 1);
+                height: calc(var(--border-size)* 1);
+                z-index: 1;
+                margin-top: 0;
+                margin-left: 0;
+                rotate: none;
+            }
+            &.asistencia{
+                background: yellow;
+                width: calc(var(--border-size)* 1.5);
+                height: calc(var(--border-size)* 1);
+                z-index: 1;
+            }
+            &.ubicaciones{
+                background: lightblue;
+                width: calc(var(--border-size)* 1.5);
+                height: calc(var(--border-size)* 1);
+                z-index: 2;
+            }
+            &.regalo{
+                background: purple;
+                width: calc(var(--border-size)* 1);
+                height: calc(var(--border-size)* 1);
+                z-index: 2;
+                transform: rotateZ(51deg);
+            }
+        }
     }
 
 
@@ -142,12 +175,15 @@
                 z-index: 3;
                 .card{   
                     transition: .5s ease 0s, margin calc(var(--duration)) ease calc(var(--duration));
+                    &.flipped {
+                        transform: rotateY(180deg);
+                        // transition: calc(var(--duration)) ease-in-out;
+                    }
                     &:hover:not(.invitacion) {
                         scale: 1.2;
                         transition: .5s ease 0s !important;
                     }
                     &.invitacion{
-                        height: auto;
                         margin-top: calc(var(--border-size)* -1);
                         margin-left: calc(var(--border-size)* -.6);
                     }
@@ -155,20 +191,48 @@
                         margin-top: calc(var(--border-size)* 5);
                         margin-left: calc(var(--border-size)* -2);
                         rotate: -16deg;
+                        &.flipped{
+                            margin-top: calc(var(--border-size)* 1);
+                            margin-left: calc(var(--border-size)* -0);
+                            rotate: -3deg !important;
+                            width: calc(var(--border-size)* 3);
+                            height: calc(var(--border-size)* 5);
+                        }
                     }
                     &.asistencia{
                         margin-top: calc(var(--border-size)* 2.6);
                         margin-left: calc(var(--border-size)* -1);
                         rotate: -1deg;
+                        &.flipped{
+                            margin-top: calc(var(--border-size)* 1.6);
+                            margin-left: calc(var(--border-size)* -0.5);
+                            rotate: -1deg !important;
+                            width: calc(var(--border-size)* 3);
+                            height: calc(var(--border-size)* 4);
+                        }
                     }
                     &.ubicaciones{
                         margin-top: calc(var(--border-size)* 4);
                         margin-left: calc(var(--border-size)* 2.3);
                         rotate: 4deg;
+                        &.flipped{
+                            margin-top: calc(var(--border-size)* 1);
+                            margin-left: calc(var(--border-size)* -0.1);
+                            rotate: -8deg !important;
+                            width: calc(var(--border-size)* 2.6);
+                            height: calc(var(--border-size)* 2);
+                        }
                     }
                     &.regalo{
                         margin-top: calc(var(--border-size)* 1.7);
                         margin-left: calc(var(--border-size)* 2);
+                        &.flipped{
+                            margin-top: calc(var(--border-size)* 1.7);
+                            margin-left: calc(var(--border-size)* 0);
+                            rotate: -53deg !important;
+                            width: calc(var(--border-size)* 2.5);
+                            height: calc(var(--border-size)* 2.5);
+                        }
                     }
                 }
             }
