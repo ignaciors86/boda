@@ -19,7 +19,8 @@ const Card = ({ seccion, children, trasera }) => {
     if (!flipped && !isOtherDraggableActive) {
       const dragInstance = Draggable.create(cardElement, {
         type: 'x,y',
-        edgeResistance: 0.05,
+        edgeResistance: 0,
+        inertia: true,
         throwProps: true,
         onDrag() {
           const dragDistance = Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
@@ -102,7 +103,7 @@ const Card = ({ seccion, children, trasera }) => {
       className={`card ${seccion} ${flipped ? 'flipped' : ''}`}
       ref={cardRef}
       onClick={flipCard}
-      style={{ zIndex: flipped ? 10 : 1 }} // Ajusta el z-index
+      style={{ zIndex: flipped ? 10 : 1, }} // Ajusta el z-index
     >
       <div className="card-front">
         {children}
