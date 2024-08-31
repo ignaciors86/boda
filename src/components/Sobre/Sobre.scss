@@ -1,7 +1,7 @@
 :root{
     --duration: 1s;
     --box-shadow: 1vw 1vw 2vw #00000057;
-    --border-size: 17dvh;
+    --border-size: 15dvh;
 }
 
 .home{
@@ -24,7 +24,7 @@
         position: absolute;
         top: 0;
         left: 50%;
-        width: 33%;
+        width: calc(100% / 3);
         height: 0;
         border-left: var(--border-size) solid transparent;
         border-right: var(--border-size) solid transparent;
@@ -39,7 +39,7 @@
         position: absolute;
         top: 0;
         left: 50%;
-        width: 33%;
+        width: calc(100% / 3);
         height: 0;
         overflow: hidden;
         border-left: var(--border-size) solid lightgray;
@@ -96,14 +96,14 @@
 
         
         .card {
+            transition: calc(var(--duration)) ease 0s;
             &.invitacion{
-                transition: calc(var(--duration))/4 ease 0s;
+                // transition: calc(var(--duration)) ease 0s;
                 width: calc(var(--border-size)* 2.5);
                 height: calc(var(--border-size)* 2.5);
-                transition: 0s ease;
             }
             &:not(.invitacion){
-                transition: calc(var(--duration)) ease 0s;
+                // transition: calc(var(--duration)) ease 0s;
             }
         
             &.horarios{
@@ -180,16 +180,16 @@
                     transition: .5s ease 0s, margin calc(var(--duration)) ease calc(var(--duration));
                     &.flipped {
                         transform: rotateY(180deg);
-                        transition: .5s ease 0s, margin calc(var(--duration)) ease calc(var(--duration)*.5);
+                        transition: .5s ease 0s, margin calc(var(--duration)) ease calc(var(--duration)*.25);
                     }
-                    &:hover:not(.invitacion) {
+                    &:hover{
                         scale: 1.2;
                         transition: .5s ease 0s !important;
                     }
                     &.invitacion{
                         margin-top: calc(var(--border-size)* -1);
                         margin-left: calc(var(--border-size)* -.6);
-                        transition: calc(var(--duration)/2) ease;
+                        transition: calc(var(--duration)/2) ease calc(var(--duration)/2);
                         &.flipped{
                             margin-top: calc(var(--border-size)* 1);
                             margin-left: calc(var(--border-size)* -.2);
@@ -204,10 +204,10 @@
                         rotate: -16deg;
                         &.flipped{
                             margin-top: calc(var(--border-size)* 1);
-                            margin-left: calc(var(--border-size)* -0);
+                            margin-left: calc(var(--border-size)* 0);
                             rotate: -3deg !important;
-                            width: calc(var(--border-size)* 3);
-                            height: calc(var(--border-size)* 5);
+                            width: calc(var(--border-size)* 2.5);
+                            height: calc(var(--border-size)* 4);
                         }
                     }
                     &.asistencia{
