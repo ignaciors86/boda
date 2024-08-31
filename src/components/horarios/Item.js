@@ -6,8 +6,7 @@ const Item = ({data, index}) => {
           <h2>{data?.title}</h2>
           <div className="texts">
             {data?.description}
-          </div>
-          <button>{data?.buttonText}</button>
+          </div>  
         </div>
     </div>
 }

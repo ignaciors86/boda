@@ -21,54 +21,47 @@ const imageUrls = [
 
 const items = [
   {
-    title: "Inicio",
-    description: <div>AQUI EXPLICO COSAS</div>,
-    buttonText: "Inicio",
+    title: "Agenda del finde",
+    description: <div><p>AQUI EXPLICO COSAS</p></div>,
     bgImage: inicial
   },
   {
     title: "Preboda",
     description: <p>Los novios se preparan para el gran día, ajustando los últimos detalles y compartiendo momentos especiales con sus seres queridos.</p>,
-    buttonText: "Inicio",
     bgImage: preboda
   },
   {
     title: "Ceremonia",
     description: <p>La ceremonia nupcial donde los novios intercambian sus votos, rodeados de amigos y familiares en un ambiente lleno de emoción.</p>,
-    buttonText: "Botón 1",
     bgImage: ceremonia
   },
   {
     title: "Cóctel",
     description: <p>Después de la ceremonia, los invitados disfrutan de un cóctel refrescante mientras los novios se toman un respiro para las fotos.</p>,
-    buttonText: "Botón 2",
     bgImage: coctel
   },
   {
     title: "Comida",
     description: <p>Un banquete delicioso es servido para todos los presentes, celebrando la unión de los novios con comida y bebida exquisitas.</p>,
-    buttonText: "Botón 3",
     bgImage: comida
   },
   {
     title: "Baile",
     description: <p>El baile de los recién casados abre la pista, seguido de una noche de música y diversión para todos los invitados.</p>,
-    buttonText: "Botón 4",
     bgImage: baile
   },
   {
     title: "3er Tiempo",
     description: <p>Un momento para relajarse después de las celebraciones principales, disfrutando de una charla y de bebidas en un ambiente más tranquilo.</p>,
-    buttonText: "¿?",
     bgImage: tercerTiempo
   },
   {
     title: "Domingo",
     description: <p>La fiesta culmina con una gran paellada, donde los invitados se despiden del evento disfrutando de un último plato tradicional.</p>,
-    buttonText: "Final",
     bgImage: paella
   }
-  ];
+];
+
 
   const renderItems = () => {
     console.log(items);

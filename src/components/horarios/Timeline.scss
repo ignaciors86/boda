@@ -16,13 +16,14 @@
 }
 
 .progress-bar {
-  background: var(--purpleTransparent);
+  background: var(--darkGreen);
   margin: auto;
-  box-shadow: 0px 0px 6px #2f2f2f;
+  border: calc(var(--size-unit)* 0.02) solid var(--greenTransparent);
+  border-radius: calc(var(--size-unit)* 0.05);
   z-index: 1;
   position: absolute;
-  bottom: 8dvh;
-  height: 1.5dvh;
+  bottom: calc(var(--size-unit)* 0.5);
+  height: calc(var(--size-unit)* 0.2);
   width: calc(90% - 0px);
   display: flex;
   justify-content: center;
@@ -31,21 +32,16 @@
     cursor: pointer;
     left: 0;
     position: absolute;
-    height: 10dvh;
-    margin-top: -4.5dvh;
-    width: 8dvh;
-    margin-left: -4dvh;
-    border: 0px solid transparent;
-    &:before{
-      content: "";
-      width: 11dvh;
-      height: 11dvh;
-      position: absolute;
-      left: -2dvh;
-      top: -.5dvh;
-      background: var(--purple);
-      border-radius: 10vw;
-    }
+    height: calc(var(--size-unit)* 0.5);
+    margin-top: calc(var(--size-unit)* -0.15);
+    width: calc(var(--size-unit)* 0.5);
+    margin-left: calc(var(--size-unit)* -0.25);
+    border: calc(var(--size-unit)* 0.02) solid var(--darkGreen);
+    background: var(--purple);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
     img{
       height: 100%;
       width: auto;

@@ -1,10 +1,29 @@
 :root {
-  --grey: #f1f1f1;
-  --green: #91a288;
-  --greenTransparent: #91a28882;
-  --darkGreen: #535f4d;
+  --gray: #f1f1f1;
+  --darkGray: #5a5a5a;
+  --darkGrayTransparent: #535f4df7;
+  --green: #535f4d;
+  --greenTransparent: #535f4de8;
+  --greenSuperTransparent: #9daca67d;
+  --darkGreen: #3f4841;
+  --purple: #746d73;
   --purple: #72396c;
   --purpleTransparent: #72396cb0;
+  --orange: #ffa600;
+  --orangeTransparent: #ffa600d2;
+
+  --duration: 1s;
+  --box-shadow: 1vw 1vw 2vw #00000057;
+  --box-shadow-inverted: -1vw -1vw 2vw #00000057;
+
+
+  @media (orientation: portrait) {
+    --size-unit: 30vw;
+  }
+
+  @media (orientation: landscape) {
+    --size-unit: 15dvh;
+  }
 }
 
 @font-face {
@@ -27,9 +46,11 @@
   font-family: 'plante';
   src: url('../assets/fonts/Plante.ttf') format('ttf'),
 }
-
+html, body{
+  background-color: var(--greenSuperTransparent);
+}
 .App {
-  background-color: var(--green);
+  background-color: var(--greenSuperTransparent);
   background-repeat: no-repeat;
   background-position: center center;
   background-size: cover;
@@ -54,16 +75,31 @@ body::before {
 }
 
 h2{
-  font-size: 10dvh;
+  font-size: calc(var(--size-unit)* 0.3);
+  letter-spacing: calc(var(--size-unit)* 0.01);
   color: white;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   font-family: "evelins";
+  text-align: center;
 }
-p{
-  font-size: 4dvh;
+p, a{
+  font-size: calc(var(--size-unit)* 0.15);
   letter-spacing: -0.02px;
-  line-height: 4.5dvh;
+  line-height: calc(var(--size-unit)* 0.2);
   color: white;
+  margin: 0;
+  text-align: center;
+}
+a{
+  text-decoration: none;
+  &:hover{
+    text-decoration: underline;
+  }
+}
+em{
+  font-size: calc(var(--size-unit)* .12);
+  display: flex;
+  justify-content: center;
 }
 
 .back{
@@ -74,10 +110,8 @@ p{
   width: 8dvh;
   height: 8dvh;
   border-radius: 50%;
-  background: var(--darkGreen);
-  
-  border: 2px solid var(--darkGreen);
-  background: var(--darkGreen);
+  background: var(--green);
+  border: 2px solid var(--green);
   cursor: pointer;
       opacity: 0;
   &:before{

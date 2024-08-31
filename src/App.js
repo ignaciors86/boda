@@ -22,16 +22,16 @@ const App = () => {
   const [seccion, setSeccion] = useState("home");
   const duration = 1;
 
-  useEffect(() => {
-    console.log(seccion);
-    seccion === "home" ? tlApp
-      .to(".seccion", { opacity: 0, duration: duration })
-      .to(".seccion", { visibility: "hidden", duration: 0 }, ">")
-    : tlApp
-      .to(`.seccion.${seccion}, .back`, { x: "100vw", duration: 0, opacity: 1, visibility: "visible" })
-      .to(`.seccion.${seccion}, .back`, { x: seccion ? 0 : "100vw", opacity: seccion ? 1 : 0, duration: duration }, ">")
-      .to(".back", { opacity: seccion !== "home" ? 1 : 0, duration: duration }, 0);
-  }, [seccion]);
+  // useEffect(() => {
+  //   console.log(seccion);
+  //   seccion === "home" ? tlApp
+  //     .to(".seccion", { opacity: 0, duration: duration })
+  //     .to(".seccion", { visibility: "hidden", duration: 0 }, ">")
+  //   : tlApp
+  //     .to(`.seccion.${seccion}, .back`, { x: "100vw", duration: 0, opacity: 1, visibility: "visible" })
+  //     .to(`.seccion.${seccion}, .back`, { x: seccion ? 0 : "100vw", opacity: seccion ? 1 : 0, duration: duration }, ">")
+  //     .to(".back", { opacity: seccion !== "home" ? 1 : 0, duration: duration }, 0);
+  // }, [seccion]);
 
   return (
     <DragProvider>
