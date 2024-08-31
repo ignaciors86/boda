@@ -1,45 +1,56 @@
 .card {
-    width: 300px;
-    height: 400px;
+  width: 300px;
+  height: 400px;
+  position: absolute;
+  perspective: 1000px;
+  /* Necesario para el giro 3D */
+  transform-style: preserve-3d;
+  /* Mantener el contexto 3D para las caras */
+  transition: transform 0.6s ease;
+  /* Suavizar el giro */
+  cursor: pointer;
+  border-radius: 1dvh;
+  overflow: hidden;
+
+  .card-front,
+  .card-back {
+    width: 100%;
+    height: 100%;
     position: absolute;
-    perspective: 1000px; /* Necesario para el giro 3D */
-    transform-style: preserve-3d; /* Mantener el contexto 3D para las caras */
-    transition: transform 0.6s ease; /* Suavizar el giro */
-    cursor: pointer;
-    border-radius: 1dvh;
+    top: 0;
+    left: 0;
+    backface-visibility: hidden;
+    /* Esconder la cara trasera */
+    display: flex;
+    justify-content: center;
+    align-items: center;
     overflow: hidden;
-  
-    /* Aplicar el giro al activar la clase flipped */
-    &.flipped {
-      transform: rotateY(180deg);
+  }
+
+  .card-front {
+    z-index: 2;
+    /* Frente visible por defecto */
+  }
+
+  .card-back {
+    transform: rotateY(180deg);
+    opacity: 0;
+    /* Voltear la parte trasera inicialmente */
+  }
+
+
+
+  img {
+    width: 100%;
+    height: auto;
+  }
+
+  /* Aplicar el giro al activar la clase flipped */
+  &.flipped {
+    transform: rotateY(180deg);
     //   transition: width 0.3s ease-in-out 3s, height 0.3s ease-in-out 3s;
-    }
-  
-    .card-front,
-    .card-back {
-      width: 100%;
-      height: 100%;
-      position: absolute;
-      top: 0;
-      left: 0;
-      backface-visibility: hidden; /* Esconder la cara trasera */
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-    }
-  
-    .card-front {
-      z-index: 2; /* Frente visible por defecto */
-    }
-  
-    .card-back {
-      transform: rotateY(180deg); /* Voltear la parte trasera inicialmente */
-    }
-  
-    img {
-      width: 100%;
-      height: auto;
+    .card-back{
+      opacity: 1;
     }
   }
-  
+}
