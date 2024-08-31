@@ -2,113 +2,133 @@ import React, { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { Draggable } from 'gsap/Draggable';
 import './Card.scss';
-import { useDragContext } from './DragContext'; // Importa el contexto
+import { useDragContext } from '../DragContext';
 
 gsap.registerPlugin(Draggable);
 
 const Card = ({ seccion, children, trasera }) => {
   const cardRef = useRef(null);
-  const [flipped, setFlipped] = useState(false);
-  const { isOtherDraggableActive, setIsOtherDraggableActive } = useDragContext(); // Usa el contexto
-  const [draggableInstance, setDraggableInstance] = useState(null);
+  const frontRef = useRef(null);
+  const backRef = useRef(null);
+  const [flipped, setFlipped] = useState(null);
+  const { isOtherDraggableActive, setIsOtherDraggableActive, activeCard, setActiveCard } = useDragContext();
 
   useEffect(() => {
     const cardElement = cardRef.current;
 
-    // Solo crea una instancia Draggable si no está activada otra carta
-    if (!flipped && !isOtherDraggableActive) {
+    if (!isOtherDraggableActive) {
       const dragInstance = Draggable.create(cardElement, {
         type: 'x,y',
-        edgeResistance: 0,
+        edgeResistance: 0.65,
         inertia: true,
         throwProps: true,
         onDrag() {
+          cardElement.classList.remove("undragged");
           const dragDistance = Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
-          if (dragDistance > window.innerHeight * 0.3 && !flipped && !isOtherDraggableActive) {
+          if (dragDistance > window.innerHeight * 0.1) {
             flipCard();
           }
         },
         onRelease() {
-          gsap.to(cardElement, {
-            duration: 0.05,
-            x: 0,
-            y: 0,
-            ease: 'power2.out'
-          });
+          cardElement.classList.add("undragged");
+          if (flipped) {
+            gsap.to(cardElement, {
+              rotateY: 0,
+              scale: 1,
+              duration: 0.5,
+              ease: 'power2.inOut',
+              onComplete: () => {
+                gsap.set(cardElement, { x: 0, y: 0 });
+              }
+            });
+            setFlipped(false);
+            setIsOtherDraggableActive(false);
+          } else {
+            gsap.to(cardElement, {
+              duration: 0.2,
+              x: 0,
+              y: 0,
+              ease: 'power2.out'
+            });
+          }
         }
       });
-
-      setDraggableInstance(dragInstance[0]);
 
       return () => {
         dragInstance[0].kill();
       };
-    } else if (draggableInstance && isOtherDraggableActive) {
-      draggableInstance.disable();
     }
-
   }, [flipped, isOtherDraggableActive]);
+
+  useEffect(() => {
+    if (seccion !== activeCard && flipped) {
+      resetCardPosition();
+    }
+  }, [seccion, activeCard]);
+
+  const giroTarjeta = (back) => {
+    const cardElement = cardRef.current;
+    const frontElement = frontRef.current;
+    const backElement = backRef.current;
+    console.log("girotarjeta" + back);
+    gsap.timeline()
+    .to(cardElement, {
+      rotateY: !back ? 90 : 0,
+      duration: 0.125,
+      ease: 'power2.inOut',
+    }, 0)
+    .to(frontElement, {
+      opacity: !back ? 0 : 1,
+      duration: 0,
+      ease: 'power2.inOut',
+    }, ">")
+    .to(backElement, {
+      opacity: !back ? 1 : 0,
+      visibility: !back ? "visible" : "hidden",
+      duration: 0,
+      ease: 'power2.inOut',
+    }, "<")
+    .to(cardElement, {
+      rotateY: !back ? 180 : 0,
+      duration: !back ? 0 : 0.125,
+      ease: 'power2.inOut',
+      onComplete: () => {
+        gsap.set(cardElement, { x: 0, y: 0 });
+      }
+    }, ">")
+  }
 
   function flipCard() {
     const cardElement = cardRef.current;
+    setActiveCard(seccion);
 
-    // Evita girar la carta si otra ya está girada
-    if (!flipped && !isOtherDraggableActive) {
+    if (!flipped) {
       setFlipped(true);
-      setIsOtherDraggableActive(true);
-
-      // Restablece la posición antes de girar
-      gsap.set(cardElement, { x: 0, y: 0 });
-
-      // Anima la rotación de la carta
-      gsap.to(cardElement, {
-        rotateY: 180,
-        duration: 0.15,
-        ease: 'power2.inOut',
-        onComplete: () => {
-          gsap.to(cardElement, {
-            scale: 1.2,
-            duration: 0.3,
-            ease: 'power2.inOut'
-          });
-        }
-      });
-    } else {
+      gsap.set(cardElement, { x: 0, y: 0, z: 0 });
+      giroTarjeta();
+    }else{
       resetCardPosition();
     }
   }
 
   function resetCardPosition() {
-    if (flipped) {
-      setFlipped(false);
-      const cardElement = cardRef.current;
-
-      gsap.to(cardElement, {
-        rotateY: 0,
-        scale: 1,
-        duration: 0.3,
-        ease: 'power2.inOut',
-        onComplete: () => {
-          if (draggableInstance) {
-            draggableInstance.enable();
-          }
-          setIsOtherDraggableActive(false); // Permite que otras cartas puedan girarse nuevamente
-        }
-      });
-    }
+    console.log("reset");
+    giroTarjeta(true);
+    setIsOtherDraggableActive(false);
+    setFlipped(false);
   }
 
   return (
     <div
-      className={`card ${seccion} ${flipped ? 'flipped' : ''}`}
+      className={`card ${seccion} ${flipped ? 'flipped' : flipped === false ? 'unflipped' : ''}`}
       ref={cardRef}
       onClick={flipCard}
-      style={{ zIndex: flipped ? 10 : 1, }} // Ajusta el z-index
+      style={{ zIndex: flipped ? 10 : 1 }}
     >
-      <div className="card-front">
+      <div className="card-front" ref={frontRef}>
         {children}
       </div>
-      <div className="card-back">
+      <div className="card-back" ref={backRef}>
         {trasera}
       </div>
     </div>

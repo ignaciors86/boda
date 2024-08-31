@@ -47,31 +47,31 @@
     /* Voltear la parte trasera inicialmente */
   }
 
-
+  /* Aplicar el giro al activar la clase flipped */
+  &.flipped {
+    transform: rotateY(180deg);
+    box-shadow: var(--box-shadow-inverted);
+    // .card {
+    //   &-front {
+    //     opacity: 0;
+    //   }
+    //   &-back{
+    //     opacity: 1;
+    //     visibility: visible;
+    //   }
+    //   &-front,
+    //   &-back{
+    //     transition: calc(var(--duration)*0) ease calc(var(--duration)*1);
+    //   }
+    // }
+  }
 
   img {
     width: 100%;
     height: auto;
   }
 
-  /* Aplicar el giro al activar la clase flipped */
-  &.flipped {
-    transform: rotateY(180deg);
-    box-shadow: var(--box-shadow-inverted);
-    .card {
-      &-front {
-        opacity: 0;
-      }
-      &-back{
-        opacity: 1;
-        visibility: visible;
-      }
-      &-front,
-      &-back{
-        transition: 0s ease calc(var(--duration) * .5);
-      }
-    }
-  }
+
   .seccion{
     display: flex;
     flex-direction: column;
