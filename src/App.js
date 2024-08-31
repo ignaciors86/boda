@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import gsap from 'gsap';
-import Timeline from './components/Horarios/Timeline';
 import Sobre from './components/Sobre/Sobre';
 import './App.scss';
-import { DragProvider } from './components/Sobre/DragContext';
+import { DragProvider } from './components/DragContext';
 
 const App = () => {
   const tlApp = gsap.timeline();

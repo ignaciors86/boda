@@ -5,19 +5,21 @@ import './Timeline.scss';
 import Loading from './Loading.js';
 import { imageUrls, items, renderItems } from "./items.js";
 import ositosDrag from "./assets/images/ositos-drag.png";
+import { useDragContext } from '../DragContext.js';
 
 gsap.registerPlugin(Draggable);
 
 const Timeline = () => {
-
   const MAINCLASS = "timeline";
   const sliderRef = useRef(null);
   const progressBarRef = useRef(null);
   const timelineRef = useRef(gsap.timeline({ paused: true }));
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0); // Estado para seguir el ítem actual
+  const { isOtherDraggableActive, setIsOtherDraggableActive } = useDragContext();
   const [hasVibrated, setHasVibrated] = useState(false); // Estado para controlar la vibración
 
+  // Pre-cargar imágenes
   const preloadImages = (urls) => {
     const promises = urls.map(url => new Promise((resolve, reject) => {
       const img = new Image();
@@ -28,6 +30,7 @@ const Timeline = () => {
     return Promise.all(promises);
   };
 
+  // Configurar Draggable y la línea de tiempo
   const setupDraggableAndTimeline = () => {
     Draggable.get(sliderRef.current)?.kill();
 
@@ -49,9 +52,14 @@ const Timeline = () => {
     });
 
     Draggable.create(sliderRef.current, {
-      type: 'x', // Ahora horizontal
+      type: 'x',
       bounds: progressBarRef.current,
       onDrag() {
+        setIsOtherDraggableActive(true);
+        document.querySelectorAll('.card').forEach(card => {
+          card.classList.add('dragging');
+        });
+
         const progress = Math.min(
           Math.max(this.x / progressBarRef.current.clientWidth, 0), 
           1
@@ -76,8 +84,14 @@ const Timeline = () => {
         }
       },
       onRelease() {
+        setIsOtherDraggableActive(false);
+        document.querySelectorAll('.card').forEach(card => {
+          card.classList.remove('dragging');
+        });
+
         // Restaura el tamaño de la imagen al soltar
         gsap.to(sliderRef.current, { scale: 1, duration: 0.3 });
+
         let ultimo = true;
         // Verificar qué item tiene opacidad mayor que 0 y ajustarlo a 1
         items.forEach((item, index) => {
@@ -86,7 +100,6 @@ const Timeline = () => {
           // Verifica si el elemento existe en el DOM antes de acceder a su opacidad
           if (element) {
             const opacity = parseFloat(window.getComputedStyle(element).opacity);
-            console.log(opacity);
             if (opacity > 0) {
               gsap.to(element, { opacity: 1, duration: 0.3 });
               gsap.to(sliderRef.current, { scale: 1, y: "-0dvh", duration: 0.3 });
@@ -131,7 +144,7 @@ const Timeline = () => {
   useEffect(() => {
     // Vibrar solo si ha cambiado el índice y no ha vibrado aún
     if (currentIndex > -1 && navigator.vibrate) {
-      navigator.vibrate(40); // Vibración de 50 milisegundos
+      !hasVibrated && navigator.vibrate(40); // Vibración de 40 milisegundos
       setHasVibrated(true); // Marca como vibrado para evitar vibraciones repetidas
     }
   }, [currentIndex]);
@@ -150,6 +163,7 @@ const Timeline = () => {
           <img
             src={ositosDrag}
             alt="Slider"
+            onClick={() => setIsOtherDraggableActive(true)}
           />
         </div>
       </div>
