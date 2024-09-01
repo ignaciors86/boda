@@ -163,7 +163,7 @@ const Timeline = () => {
           <img
             src={ositosDrag}
             alt="Slider"
-            onClick={() => setIsOtherDraggableActive(true)}
+            // onClick={() => setIsOtherDraggableActive(true)}
           />
         </div>
       </div>
