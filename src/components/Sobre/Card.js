@@ -15,34 +15,23 @@ const Card = ({ seccion, children, trasera }) => {
 
   useEffect(() => {
     const cardElement = cardRef.current;
-
+    
     if (!isOtherDraggableActive) {
       const dragInstance = Draggable.create(cardElement, {
         type: 'x,y',
-        edgeResistance: 0.65,
-        inertia: true,
+        edgeResistance: 0.1,
+        inertia: false,
         throwProps: true,
         onDrag() {
-          cardElement.classList.remove("undragged");
+          cardElement.classList.add("dragged");
           const dragDistance = Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
           if (dragDistance > window.innerHeight * 0.1) {
             flipCard();
           }
         },
         onRelease() {
-          cardElement.classList.add("undragged");
           if (flipped) {
-            gsap.to(cardElement, {
-              rotateY: 0,
-              scale: 1,
-              duration: 0.5,
-              ease: 'power2.inOut',
-              onComplete: () => {
-                gsap.set(cardElement, { x: 0, y: 0 });
-              }
-            });
-            setFlipped(false);
-            setIsOtherDraggableActive(false);
+            resetCardPosition();
           } else {
             gsap.to(cardElement, {
               duration: 0.2,
@@ -66,63 +55,67 @@ const Card = ({ seccion, children, trasera }) => {
     }
   }, [seccion, activeCard]);
 
-  const giroTarjeta = (back) => {
+  const flipCard = () => {
     const cardElement = cardRef.current;
     const frontElement = frontRef.current;
     const backElement = backRef.current;
-    console.log("girotarjeta" + back);
-    gsap.timeline()
-    .to(cardElement, {
-      rotateY: !back ? 90 : 0,
-      duration: 0.125,
-      ease: 'power2.inOut',
-    }, 0)
-    .to(frontElement, {
-      opacity: !back ? 0 : 1,
-      duration: 0,
-      ease: 'power2.inOut',
-    }, ">")
-    .to(backElement, {
-      opacity: !back ? 1 : 0,
-      visibility: !back ? "visible" : "hidden",
-      duration: 0,
-      ease: 'power2.inOut',
-    }, "<")
-    .to(cardElement, {
-      rotateY: !back ? 180 : 0,
-      duration: !back ? 0 : 0.125,
-      ease: 'power2.inOut',
-      onComplete: () => {
-        gsap.set(cardElement, { x: 0, y: 0 });
-      }
-    }, ">")
-  }
 
-  function flipCard() {
-    const cardElement = cardRef.current;
     setActiveCard(seccion);
 
     if (!flipped) {
       setFlipped(true);
+      setIsOtherDraggableActive(seccion === "horarios");
       gsap.set(cardElement, { x: 0, y: 0, z: 0 });
-      giroTarjeta();
-    }else{
+      gsap.to(cardElement, {
+        rotateY: 90,
+        duration: 0.25,
+        ease: 'power2.inOut',
+        onComplete: () => {
+          gsap.set(frontElement, { opacity: 0, visibility: "hidden" });
+          gsap.set(backElement, { opacity: 1, visibility: "visible" });
+          gsap.to(cardElement, {
+            rotateY: 180,
+            duration: 0.25,
+            ease: 'power2.inOut'
+          });
+        }
+      });
+    } else {
       resetCardPosition();
     }
-  }
+  };
 
-  function resetCardPosition() {
-    console.log("reset");
-    giroTarjeta(true);
-    setIsOtherDraggableActive(false);
-    setFlipped(false);
-  }
+  const resetCardPosition = () => {
+    const cardElement = cardRef.current;
+    const frontElement = frontRef.current;
+    const backElement = backRef.current;
+
+    gsap.to(cardElement, {
+      rotateY: 90,
+      duration: 0.25,
+      ease: 'power2.inOut',
+      onComplete: () => {
+        gsap.set(frontElement, { opacity: 1, visibility: "visible" });
+        gsap.set(backElement, { opacity: 0, visibility: "hidden" });
+        gsap.to(cardElement, {
+          rotateY: 0,
+          duration: 0.25,
+          ease: 'power2.inOut',
+          onComplete: () => {
+            gsap.set(cardElement, { x: 0, y: 0 });
+            setFlipped(false);
+            setIsOtherDraggableActive(false);
+          }
+        });
+      }
+    });
+  };
 
   return (
     <div
-      className={`card ${seccion} ${flipped ? 'flipped' : flipped === false ? 'unflipped' : ''}`}
+      className={`card ${seccion} ${flipped ? 'flipped' : 'unflipped'}`}
       ref={cardRef}
-      onClick={flipCard}
+      onClick={() => { cardRef.current.classList.remove("dragged"); flipCard() }}
       style={{ zIndex: flipped ? 10 : 1 }}
     >
       <div className="card-front" ref={frontRef}>
