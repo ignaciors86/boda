@@ -26,7 +26,8 @@
     align-items: center;
     overflow: hidden;
     z-index: 2;
-    transition: 0s linear calc(var(--duration)*.3),
+    transition: 0s linear calc(var(--duration)*.12), // Este valor tiene que cambiarse proporcionalmente al valor que se está aplicando con esa variable
+    // en Card.js > open -> flipped, unflipped
   }
 
   &-front {
@@ -51,19 +52,7 @@
   &.flipped {
     transform: rotateY(180deg);
     box-shadow: var(--box-shadow-inverted);
-    // .card {
-    //   &-front {
-    //     opacity: 0;
-    //   }
-    //   &-back{
-    //     opacity: 1;
-    //     visibility: visible;
-    //   }
-    //   &-front,
-    //   &-back{
-    //     transition: calc(var(--duration)*0) ease calc(var(--duration)*1);
-    //   }
-    // }
+
   }
 
   img {
