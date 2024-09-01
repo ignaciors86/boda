@@ -9,7 +9,7 @@
     position: relative;
     width: calc(var(--size-unit)* 3 - 1px);
     height: calc(var(--size-unit)* 3);
-    perspective: 1000;
+    perspective: 1000px;
     border: 0px solid black;
     background: darkgray;
     transition: calc(var(--duration-envelope)) ease calc(var(--duration-envelope) / 2);
@@ -22,7 +22,7 @@
         height: 0;
         border-left: var(--size-unit) solid transparent;
         border-right: var(--size-unit) solid transparent;
-        border-top: calc(var(--size-unit)) solid var(--purple);
+        border-top: calc(var(--size-unit)*1.2) solid var(--purple);
         transform-origin: top center;
         transform: translateX(-50%) rotateX(0deg);
         transition: calc(var(--duration-envelope)*3) ease calc(var(--duration-envelope)* 2.5);
@@ -204,9 +204,6 @@
                         scale: 1.2;
                         transition: calc(var(--duration-envelope)*.5) linear 0s !important;
                     }
-                    &.invitacion:not(.flipped):not(.unflipped){
-                        // transition: calc(var(--duration-envelope)* 0.5) ease 0s, margin calc(var(--duration-envelope)*0.5) ease-out calc(var(--duration-envelope)* 1), rotate calc(var(--duration-envelope)* 5) ease calc(var(--duration-envelope)* 0);
-                    }
                     &.invitacion{
                         margin-top: calc(var(--size-unit)* -1);
                         margin-left: calc(var(--size-unit)* -0.2);
@@ -224,9 +221,10 @@
                     &.horarios{
                         margin-top: calc(var(--size-unit)* 5);
                         margin-left: calc(var(--size-unit)* -1.5);
-                        rotate: -32deg !important;
+                        rotate: -40deg !important;
                         &:not(.flipped):not(.unflipped){
-                            transition: calc(var(--duration-envelope)*1) linear calc(var(--duration-envelope)*2.5);
+                            transition: calc(var(--duration-envelope)*1) ease-in calc(var(--duration-envelope)*2.3),
+                            rotate calc(var(--duration-envelope)*.75) ease-in-out calc(var(--duration-envelope)*3);
                         }
                         
                         &.flipped{
@@ -246,7 +244,8 @@
                         margin-left: calc(var(--size-unit)* -1);
                         rotate: -10deg !important;
                         &:not(.flipped):not(.unflipped){
-                            transition: calc(var(--duration-envelope)*1) linear calc(var(--duration-envelope)*2.3);
+                            transition: calc(var(--duration-envelope)*1) linear calc(var(--duration-envelope)*2.3),
+                            rotate calc(var(--duration-envelope)*.75) ease-in-out calc(var(--duration-envelope)*2.8);
                         }
                         &.flipped{
                             margin-top: calc(var(--size-unit)* 1.6);
@@ -257,9 +256,10 @@
                     &.ubicaciones{
                         margin-top: calc(var(--size-unit)* 4.4);
                         margin-left: calc(var(--size-unit)* 2.3);
-                        rotate: 4deg;
+                        rotate: -40deg !important;
                         &:not(.flipped):not(.unflipped){
-                            transition: calc(var(--duration-envelope)*1) linear calc(var(--duration-envelope)*2);
+                            transition: calc(var(--duration-envelope)*1) linear calc(var(--duration-envelope)*2),
+                            rotate calc(var(--duration-envelope)*1) ease-in-out calc(var(--duration-envelope)*2.7);
                         }
                         &.flipped{
                             margin-top: calc(var(--size-unit)* 1);
@@ -268,11 +268,12 @@
                         }
                     }
                     &.regalo{
-                        margin-top: calc(var(--size-unit)* 2.7);
-                        margin-left: calc(var(--size-unit)* 1);
-                        rotate: -40deg !important;
+                        margin-top: calc(var(--size-unit)* 3);
+                        margin-left: calc(var(--size-unit)* 1.2);
+                        rotate: 10deg !important;
                         &:not(.flipped):not(.unflipped){
-                            transition: calc(var(--duration-envelope)*1) linear calc(var(--duration-envelope)*2.25);
+                            transition: calc(var(--duration-envelope)*1) linear calc(var(--duration-envelope)*2.25),
+                            rotate calc(var(--duration-envelope)*1) ease-in-out calc(var(--duration-envelope)*2.7);
                         }
                         &.flipped{
                             margin-top: calc(var(--size-unit)* 1.7);

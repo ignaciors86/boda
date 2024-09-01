@@ -18,7 +18,7 @@ const Card = ({ seccion, children, trasera }) => {
     
     if (!isOtherDraggableActive) {
       const dragInstance = Draggable.create(cardElement, {
-        type: 'x,y',
+        type: 'x,y,z',
         edgeResistance: 0.1,
         inertia: false,
         throwProps: true,
