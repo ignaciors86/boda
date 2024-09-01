@@ -90,17 +90,19 @@
 
         
         .card {
-            transition: calc(var(--duration)) ease 0s;
+            transition: calc(var(--duration)) linear 0s;
             z-index: 2;
             background: var(--darkGreen) !important;
-            &.invitacion{
-                width: calc(var(--size-unit)* 2.5);
-                height: calc(var(--size-unit)* 2.5);
-            }
+
             &:not(.invitacion){
                 scale: .5 !important;
             }
         
+            &.invitacion{
+                width: calc(var(--size-unit)* 2.5);
+                height: calc(var(--size-unit)* 2.5);
+            }
+            
             &.horarios{
                 background: orange;
                 width: calc(var(--size-unit)* 2.5);
@@ -175,7 +177,7 @@
                 transition: opacity 0s ease calc(var(--duration)*.5), transform calc(var(--duration)) ease calc(var(--duration)*.5);
                 z-index: 3;
                 .card{   
-                    transition: calc(var(--duration)*.5) ease 0s, margin calc(var(--duration)) ease calc(var(--duration)*.75);
+                    transition: calc(var(--duration)*.5) linear 0s, margin calc(var(--duration)) linear calc(var(--duration)*.75);
  
                     
                     @media (orientation: landscape) {
@@ -183,22 +185,24 @@
                         margin-bottom: calc(var(--size-unit)* -1.3);
                         margin-right: calc(var(--size-unit)* 4);                
                     }
-                    &.flipped {
-                        transform: rotateY(180deg);
-                        transition: calc(var(--duration)*1.5) ease 0s, margin calc(var(--duration)) ease calc(var(--duration)*.25);
+                    &.flipped{
                         scale: 1 !important;
                     }
+                    
+                    &.flipped,
                     &.unflipped{
-                        transition: calc(var(--duration)*1) ease 0s, margin calc(var(--duration)) ease calc(var(--duration)*.25);
+                        transition: calc(var(--duration)*.5) linear 0s, margin calc(var(--duration)) linear calc(var(--duration)*0), scale calc(var(--duration)) linear calc(var(--duration)*0);
                     }
-                    &:hover{
+   
+                    &:not(.flipped):not(.unflipped):hover{
                         scale: 1.2;
-                        transition: calc(var(--duration)*.5) ease 0s !important;
+                        transition: calc(var(--duration)*.5) linear 0s !important;
                     }
-                    &.invitacion{
+                    &.invitacion:not(.flipped):not(.unflipped){
                         margin-top: calc(var(--size-unit)* -1);
-                        margin-left: calc(var(--size-unit)* -.6);
-                        // transition: calc(var(--duration)/2) ease calc(var(--duration)/2);
+                        margin-left: calc(var(--size-unit)* -0.2);
+                        transition: calc(var(--duration)* 0.5) ease 0s, margin calc(var(--duration)*0.5) ease-out calc(var(--duration)* 1), rotate calc(var(--duration)* 5) ease calc(var(--duration)* 0);
+                        rotate: 4deg !important;
                         &.flipped{
                             margin-top: calc(var(--size-unit)* 1);
                             margin-left: calc(var(--size-unit)* -.2);

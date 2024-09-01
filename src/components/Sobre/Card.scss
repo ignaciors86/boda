@@ -26,7 +26,7 @@
     align-items: center;
     overflow: hidden;
     z-index: 2;
-    transition: 0s ease calc(var(--duration) * 0.4);
+    transition: 0s linear calc(var(--duration)*.3),
   }
 
   &-front {
