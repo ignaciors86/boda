@@ -13,6 +13,7 @@
   border-radius: calc(var(--size-unit)* 0.1);
   overflow: hidden;
   box-shadow: var(--box-shadow);
+  margin-top: calc(var(--size-unit)* -.2);
   &-front,
   &-back {
     width: 100%;

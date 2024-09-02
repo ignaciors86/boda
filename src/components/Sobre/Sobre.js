@@ -18,13 +18,19 @@ const Sobre = ({ setSeccion }) => {
       card.classList.remove('flipped');
       card.classList.remove('unflipped');
       card.style.transform = 'none';
+      const front = card.querySelector('.card-front');
+      const back = card.querySelector('.card-back');
+      front.style.visibility = 'visible';
+      front.style.opacity = '1';
+      back.style.visibility = 'hidden';
+      back.style.opacity = '0';
     });
     const envelope = document.querySelector('.envelope');
     envelope.classList.toggle('open');
   };
 
   // Función para obtener un ángulo de rotación aleatorio
-  const getRandomRotation = () => {
+  const getRandomValues = () => {
     // Generar un número entero aleatorio entre 6 y 16
     const angle = Math.floor(Math.random() * (16 - 6 + 1)) + 6;
     // Decidir aleatoriamente si el ángulo será positivo o negativo
@@ -42,16 +48,20 @@ const Sobre = ({ setSeccion }) => {
     if (home) {
       // Usar función para rotación aleatoria
       tlSobre.to(home, {
-        scale: 1.1,
-        rotate: () => getRandomRotation(),  // Aplicar rotación aleatoria en cada iteración
+        scale: 1.05,
+        rotate: () => getRandomValues(),  // Aplicar rotación aleatoria en cada iteración
+        x: () => getRandomValues(),
+        y: () => getRandomValues(),
         duration: duracion * 0.1,
         yoyo: true,
-        repeat: 8, // Hacer palpitaciones durante 5 segundos
+        repeat: 7, // Hacer palpitaciones durante 5 segundos
         ease: "power1.inOut",
         repeatRefresh: true // Asegurar que la animación se actualice para cada repetición
       }).to(home, {
         scale: 1,
         rotate: 0, // Asegurarse de que la rotación vuelva a 0
+        y: 0,
+        x: 0,
         duration: duracion,
         onComplete: () => {
           toggle();
