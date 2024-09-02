@@ -101,7 +101,7 @@
             background: var(--darkGreen) !important;
 
             &:not(.invitacion){
-                scale: .5 !important;
+                scale: .4 !important;
             }
         
             &.invitacion{
@@ -119,18 +119,18 @@
             }
             &.asistencia{
                 background: yellow;
-                width: calc(var(--size-unit)* 2.5);
-                height: calc(var(--size-unit)* 2);
+                width: calc(var(--size-unit)* 3);
+                height: calc(var(--size-unit)* 2.5);
             }
             &.ubicaciones{
                 background: lightblue;
-                width: calc(var(--size-unit)* 2.6);
-                height: calc(var(--size-unit)* 2);
+                width: calc(var(--size-unit)* 3);
+                height: calc(var(--size-unit)* 2.5);
             }
             &.regalo{
                 background: purple;
                 width: calc(var(--size-unit)* 2.5);
-                height: calc(var(--size-unit)* 3);
+                height: calc(var(--size-unit)* 2.9);
                 transform: rotateZ(51deg);
             }
         }
@@ -198,12 +198,12 @@
                     }
                     
                     &.flipped{
-                        transition: calc(var(--duration-card)*.2) linear 0s;
+                        transition: calc(var(--duration-card)*1) linear 0s;
                         // transition: calc(var(--duration)*.5) linear 0s, margin calc(var(--duration)) linear calc(var(--duration)*0), scale calc(var(--duration)) linear calc(var(--duration)*0);
                     }
 
                     &.unflipped{
-                        transition: calc(var(--duration-card)*.2) linear 0s;
+                        transition: calc(var(--duration-card)*1) linear 0s;
                     }
    
    
@@ -242,8 +242,13 @@
 
                     &.horarios{
                         margin-top: calc(var(--size-unit)* 5);
-                        margin-left: calc(var(--size-unit)* -1.5);
                         rotate: -40deg !important;
+                        @media (orientation: landscape) {
+                            margin-left: calc(var(--size-unit)* -.3);
+                        }
+                        @media (orientation: portrait) {
+                            margin-left: calc(var(--size-unit)* -1.5);
+                        }
                         &:not(.flipped):not(.unflipped){
                             transition: calc(var(--duration-envelope)*1) ease-in calc(var(--duration-envelope)*2.6),
                             rotate calc(var(--duration-envelope)*1) ease-in-out calc(var(--duration-envelope)*3);
@@ -262,7 +267,7 @@
                         }
                     }
                     &.asistencia{
-                        margin-top: calc(var(--size-unit)* 2.6);
+                        margin-top: calc(var(--size-unit)* 2.5);
                         margin-left: calc(var(--size-unit)* -1);
                         rotate: -10deg !important;
                         &:not(.flipped):not(.unflipped){
@@ -278,7 +283,7 @@
                     &.ubicaciones{
                         margin-top: calc(var(--size-unit)* 4.4);
                         margin-left: calc(var(--size-unit)* 2.3);
-                        rotate: -40deg !important;
+                        rotate: -20deg !important;
                         &:not(.flipped):not(.unflipped){
                             transition: calc(var(--duration-envelope)*1) linear calc(var(--duration-envelope)*3),
                             rotate calc(var(--duration-envelope)*1) ease-in-out calc(var(--duration-envelope)*3.3);
@@ -298,9 +303,16 @@
                         }
                     }
                     &.regalo{
-                        margin-top: calc(var(--size-unit)* 3);
-                        margin-left: calc(var(--size-unit)* 1.2);
-                        rotate: -40deg !important;
+                        
+                        rotate: 4deg !important;
+                        @media (orientation: landscape) {
+                            margin-left: calc(var(--size-unit)* 1.5);
+                            margin-top: calc(var(--size-unit)* 2.8);
+                        }
+                        @media (orientation: portrait) {
+                            margin-left: calc(var(--size-unit)* 1.8);
+                            margin-top: calc(var(--size-unit)* 3);
+                        }
                         &:not(.flipped):not(.unflipped){
                             transition: calc(var(--duration-envelope)*1) linear calc(var(--duration-envelope)*2.25),
                             rotate calc(var(--duration-envelope)*1) ease-in-out calc(var(--duration-envelope)*2.7);

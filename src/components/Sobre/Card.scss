@@ -27,7 +27,7 @@
     align-items: center;
     overflow: hidden;
     z-index: 2;
-    transition: 0s linear calc(var(--duration-card)*0.1), // Este valor tiene que cambiarse proporcionalmente al valor que se está aplicando con esa variable
+    transition: 0s linear calc(var(--duration-card)*0.5), // Tiene que ser la mitad de la duración de la carta
     // en Card.js > open -> flipped, unflipped
   }
 
