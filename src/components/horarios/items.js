@@ -22,7 +22,7 @@ const imageUrls = [
 const items = [
   {
     title: "Agenda del finde",
-    description: <div><p>AQUI EXPLICO COSAS</p></div>,
+    description: <div><p>Aquí, además de explicar cosas a modo de resumen (si veo que me interesa) pondré una imagen con el cronograma resumido, para que se pueda ver de un vistazo</p></div>,
     bgImage: inicial
   },
   {

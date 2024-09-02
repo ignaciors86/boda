@@ -14,7 +14,10 @@
 
   --duration: 1s;
   --duration-envelope: calc(var(--duration)*.75);
-  --duration-card: calc(var(--duration)*30);
+  --duration-card-seg: 1;
+  --duration-card: calc(var(--duration)*var(--duration-card-seg));
+  
+
 
   @media (orientation: portrait) {
     --size-unit: 30vw;
