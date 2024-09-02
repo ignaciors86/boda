@@ -64,7 +64,7 @@ const items = [
 
 
   const renderItems = () => {
-    console.log(items);
+    // console.log(items);
     return items.map((item, index) => {
       return item && <Item data={item} index={index} key={"item"+index} />
     });

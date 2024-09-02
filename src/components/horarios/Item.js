@@ -1,6 +1,6 @@
 import './Item.scss';
 const Item = ({data, index}) => {
-    console.log(index);
+    // console.log(index);
     return <div key={index} className={`item item${(parseInt(index) + 1)} ${data?.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`}>
         <div className="info">
           <h2>{data?.title}</h2>

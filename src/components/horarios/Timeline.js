@@ -73,7 +73,7 @@ const Timeline = () => {
         if (progress >= penultimateItemProgress && progress < lastItemProgress || progress < 0.15) {
           gsap.to(sliderRef.current, { scale: 1, y: "-0dvh", duration: 0.3 });
         } else {
-          gsap.to(sliderRef.current, { scale: 1.6, y: "-0dvh", duration: 0.3 });
+          gsap.to(sliderRef.current, { scale: 1.3, y: "-0dvh", duration: 0.3 });
         }
 
         // Detectar el cambio de ítem

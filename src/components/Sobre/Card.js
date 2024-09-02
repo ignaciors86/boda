@@ -12,7 +12,7 @@ const Card = ({ seccion, children, trasera }) => {
   const backRef = useRef(null);
   const [flipped, setFlipped] = useState(null);
   const { isOtherDraggableActive, setIsOtherDraggableActive, activeCard, setActiveCard } = useDragContext();
-
+  const duracion = getComputedStyle(document.documentElement).getPropertyValue('--duration-card').trim().replace('s', '');
   useEffect(() => {
     const cardElement = cardRef.current;
     
@@ -34,7 +34,7 @@ const Card = ({ seccion, children, trasera }) => {
             resetCardPosition();
           } else {
             gsap.to(cardElement, {
-              duration: 0.2,
+              duration: duracion,
               x: 0,
               y: 0,
               ease: 'power2.out'
@@ -68,14 +68,14 @@ const Card = ({ seccion, children, trasera }) => {
       gsap.set(cardElement, { x: 0, y: 0, z: 0 });
       gsap.to(cardElement, {
         rotateY: 90,
-        duration: 0.25,
+        duration: duracion,
         ease: 'power2.inOut',
         onComplete: () => {
           gsap.set(frontElement, { opacity: 0, visibility: "hidden" });
           gsap.set(backElement, { opacity: 1, visibility: "visible" });
           gsap.to(cardElement, {
             rotateY: 180,
-            duration: 0.25,
+            duration: duracion,
             ease: 'power2.inOut'
           });
         }
@@ -92,14 +92,14 @@ const Card = ({ seccion, children, trasera }) => {
 
     gsap.to(cardElement, {
       rotateY: 90,
-      duration: 0.25,
+      duration: duracion,
       ease: 'power2.inOut',
       onComplete: () => {
         gsap.set(frontElement, { opacity: 1, visibility: "visible" });
         gsap.set(backElement, { opacity: 0, visibility: "hidden" });
         gsap.to(cardElement, {
           rotateY: 0,
-          duration: 0.25,
+          duration: duracion,
           ease: 'power2.inOut',
           onComplete: () => {
             gsap.set(cardElement, { x: 0, y: 0 });
