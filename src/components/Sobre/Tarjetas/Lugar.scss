@@ -12,9 +12,11 @@
     a{  
         margin: 0 auto;
         text-align: center;
-    }
-    img{
-       width: 30%;
-        
+        &.imagen{
+            width: 30%;
+        }
+        img{
+            width: 100%; 
+        }
     }
 }

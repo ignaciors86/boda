@@ -13,11 +13,8 @@
   --orangeTransparent: #ffa600d2;
 
   --duration: 1s;
-  --duration-envelope: calc(var(--duration)*1);
-  --duration-card: calc(var(--duration)*10);
-  --box-shadow: 1vw 1vw 2vw #00000057;
-  --box-shadow-inverted: -1vw -1vw 2vw #00000057;
-
+  --duration-envelope: calc(var(--duration)*.75);
+  --duration-card: calc(var(--duration)*30);
 
   @media (orientation: portrait) {
     --size-unit: 30vw;
@@ -26,6 +23,11 @@
   @media (orientation: landscape) {
     --size-unit: 15dvh;
   }
+  --box-shadow: calc(var(--size-unit)*0.06) calc(var(--size-unit)* 0.06) calc(var(--size-unit)*0.12) #00000057;
+  --box-shadow-inverted: -1vw -1vw 2vw #00000057;
+
+
+
 }
 
 @font-face {
@@ -100,8 +102,11 @@ a{
 }
 em{
   font-size: calc(var(--size-unit)* .12);
+  letter-spacing: -0.02px;
+  line-height: calc(var(--size-unit)* 0.12);
   display: flex;
   justify-content: center;
+  text-align: center;
 }
 
 .back{

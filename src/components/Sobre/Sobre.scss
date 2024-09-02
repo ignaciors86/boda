@@ -51,7 +51,13 @@
         width: 100%;
         display: flex;
         justify-content: center;
-        height: calc(var(--size-unit)* 1.3);
+        
+        @media (orientation: portrait) {
+            height: calc(var(--size-unit)* 1.3);
+        }
+        @media (orientation: landscape) {
+            height: calc(var(--size-unit)* 1.3);
+        }
         font-size: calc(var(--size-unit)* 0.2);
         color: var(--green);
     }
@@ -123,8 +129,8 @@
             }
             &.regalo{
                 background: purple;
-                width: calc(var(--size-unit)* 1.5);
-                height: calc(var(--size-unit)* 1.5);
+                width: calc(var(--size-unit)* 2.5);
+                height: calc(var(--size-unit)* 3);
                 transform: rotateZ(51deg);
             }
         }
@@ -153,12 +159,12 @@
     &.open {
         
         
-        transition: calc(var(--duration-envelope)) ease;
+        transition: calc(var(--duration-envelope)) ease calc(var(--duration-envelope)*2);
         @media (orientation: portrait) {
             transform: translateY(calc(var(--size-unit) * 4)) rotateZ(-14deg) translateX(calc(var(--size-unit)*0.7));
         }
         @media (orientation: landscape) {
-            transform: translateY(calc(var(--size-unit)* 3.5)) rotateZ(-14deg) translateX(calc(var(--size-unit)* 2));
+            transform: translateY(calc(var(--size-unit) * 3.2)) rotateZ(-14deg) translateX(calc(var(--size-unit) * 2))
         }
         .wax-seal {
             &:before{
@@ -170,20 +176,21 @@
             &-flap {
                 transform: translateX(-50%) rotateX(180deg);
                 z-index: 1;
-                transition: calc(var(--duration-envelope)*1) ease;
+                // transition: calc(var(--duration-envelope)*1) ease;
+                transition: calc(var(--duration-envelope)*3) ease calc(var(--duration-envelope)* 0);
             }
             &-content {
                 transform: translateY(calc(var(--size-unit)* -5)) rotateZ(3deg) translateX(calc(var(--size-unit)* -.6 )) rotateX(0deg) rotateZ(15deg);
-                transition: opacity 0s, transform calc(var(--duration-envelope)*3) ease calc(var(--duration-envelope)*.5);
+                transition: opacity 0s, transform calc(var(--duration-envelope)*3) ease calc(var(--duration-envelope)*1);
                 z-index: 3;
                 .card{   
-                    transition: calc(var(--duration-card)*.5) ease 0s, 
-                                margin calc(var(--duration-card)*1) ease-in-out calc(var(--duration-card)*2.2);
+                    transition: calc(var(--duration-card)*.5) ease 0s;
+                                // margin calc(var(--duration-card)*1) ease-in-out calc(var(--duration-card)*.5);
  
                     
                     @media (orientation: landscape) {
                         margin-right: calc(var(--size-unit)* 5.8);
-                        margin-bottom: calc(var(--size-unit)* -1.3);
+                        margin-bottom: calc(var(--size-unit)* -1);
                         margin-right: calc(var(--size-unit)* 4);                
                     }
                     &.flipped{
@@ -206,14 +213,29 @@
                     }
                     &.invitacion{
                         margin-top: calc(var(--size-unit)* -1);
-                        margin-left: calc(var(--size-unit)* -0.2);
                         rotate: 0deg !important;
+                        @media (orientation: landscape) {
+                            margin-left: calc(var(--size-unit)* 1.8);
+                        }
+                        @media (orientation: portrait) {
+                            margin-left: calc(var(--size-unit)* -0.2);
+                        }
+                        &:not(.flipped):not(.unflipped){
+                            transition: calc(var(--duration-envelope)*1) ease-in calc(var(--duration-envelope)*2.6),
+                            rotate calc(var(--duration-envelope)*.75) ease-in-out calc(var(--duration-envelope)*3.3);
+                        }
                         &.flipped{
                             margin-top: calc(var(--size-unit)* 1);
-                            margin-left: calc(var(--size-unit)* -.2);
                             width: calc(var(--size-unit)* 3);
                             height: calc(var(--size-unit)* 3);
                             rotate: -4deg !important;
+                            @media (orientation: landscape) {
+                                margin-left: calc(var(--size-unit)* 1);
+                            }
+                            @media (orientation: portrait) {
+                                margin-left: calc(var(--size-unit)* -.2);
+                            }
+                                                        
                         }
                     }
 
@@ -223,14 +245,14 @@
                         margin-left: calc(var(--size-unit)* -1.5);
                         rotate: -40deg !important;
                         &:not(.flipped):not(.unflipped){
-                            transition: calc(var(--duration-envelope)*1) ease-in calc(var(--duration-envelope)*2.3),
-                            rotate calc(var(--duration-envelope)*.75) ease-in-out calc(var(--duration-envelope)*3);
+                            transition: calc(var(--duration-envelope)*1) ease-in calc(var(--duration-envelope)*2.6),
+                            rotate calc(var(--duration-envelope)*1) ease-in-out calc(var(--duration-envelope)*3);
                         }
                         
                         &.flipped{
                             rotate: -2deg !important;
                             @media (orientation: landscape) {
-                                margin-top: calc(var(--size-unit)* 0.8);
+                                margin-top: calc(var(--size-unit)* 2);
                                 margin-left: calc(var(--size-unit)* 1.5);
                             }
                             @media (orientation: portrait) {
@@ -245,7 +267,7 @@
                         rotate: -10deg !important;
                         &:not(.flipped):not(.unflipped){
                             transition: calc(var(--duration-envelope)*1) linear calc(var(--duration-envelope)*2.3),
-                            rotate calc(var(--duration-envelope)*.75) ease-in-out calc(var(--duration-envelope)*2.8);
+                            rotate calc(var(--duration-envelope)*1) ease-in-out calc(var(--duration-envelope)*3);
                         }
                         &.flipped{
                             margin-top: calc(var(--size-unit)* 1.6);
@@ -258,27 +280,42 @@
                         margin-left: calc(var(--size-unit)* 2.3);
                         rotate: -40deg !important;
                         &:not(.flipped):not(.unflipped){
-                            transition: calc(var(--duration-envelope)*1) linear calc(var(--duration-envelope)*2),
-                            rotate calc(var(--duration-envelope)*1) ease-in-out calc(var(--duration-envelope)*2.7);
+                            transition: calc(var(--duration-envelope)*1) linear calc(var(--duration-envelope)*3),
+                            rotate calc(var(--duration-envelope)*1) ease-in-out calc(var(--duration-envelope)*3.3);
                         }
                         &.flipped{
-                            margin-top: calc(var(--size-unit)* 1);
-                            margin-left: calc(var(--size-unit)* -0.1);
                             rotate: -8deg !important;
+                            @media (orientation: portrait) {
+                                margin-top: calc(var(--size-unit)* 1);
+                                margin-left: calc(var(--size-unit)* -0.1);
+                            }
+                            @media (orientation: landscape) {
+                                margin-top: calc(var(--size-unit)* 3);
+                                margin-left: calc(var(--size-unit)* 2.9);
+                            }
+
+
                         }
                     }
                     &.regalo{
                         margin-top: calc(var(--size-unit)* 3);
                         margin-left: calc(var(--size-unit)* 1.2);
-                        rotate: 10deg !important;
+                        rotate: -40deg !important;
                         &:not(.flipped):not(.unflipped){
                             transition: calc(var(--duration-envelope)*1) linear calc(var(--duration-envelope)*2.25),
                             rotate calc(var(--duration-envelope)*1) ease-in-out calc(var(--duration-envelope)*2.7);
                         }
                         &.flipped{
-                            margin-top: calc(var(--size-unit)* 1.7);
-                            margin-left: calc(var(--size-unit)* 0);
+
                             rotate: -57deg !important;
+                            @media (orientation: portrait) {
+                                margin-top: calc(var(--size-unit)* 1.7);
+                                margin-left: calc(var(--size-unit)* 0);
+                            }
+                            @media (orientation: landscape) {
+                                margin-top: calc(var(--size-unit)* 3);
+                                margin-left: calc(var(--size-unit)* 1);
+                            }
                         }
                     }
                 }

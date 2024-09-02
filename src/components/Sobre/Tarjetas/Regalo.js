@@ -2,9 +2,10 @@ import "./Regalo.scss";
 const Regalo = () => {
     return (
         <div className="regalo seccion">
-            <p>Todos los eventos tendrán lugar en Villas de Pomar</p>
+            <p>Links a nuestros bizum</p>
 
-            <em>Habrá autobus disponible a las XX:XX en XXXXX</em>
+            <em>Si alguien cercano piensa en no asistir a la boda por cuestiones económicas, por favor, que nos lo diga en confianza.</em>
+            <em>Querremos que estés.</em>
             
         </div>
     );
