@@ -7,6 +7,7 @@ import Lugar from './Tarjetas/Lugar';
 import Regalo from './Tarjetas/Regalo';
 import Invitacion from './Tarjetas/Invitacion';
 import gsap from 'gsap';
+import Asistencia from './Tarjetas/Asistencia';
 
 const Sobre = ({ setSeccion }) => {
   const tlSobre = gsap.timeline();
@@ -83,7 +84,7 @@ const Sobre = ({ setSeccion }) => {
             <Card seccion="ubicaciones" onClick={handleClick} trasera={<Lugar />}>
               <h2>Lugar</h2>
             </Card>
-            <Card seccion="asistencia" onClick={handleClick} trasera={<Lugar />}>
+            <Card seccion="asistencia" onClick={handleClick} trasera={<Asistencia />}>
               <h2>Asistencia</h2>
             </Card>
           </div>

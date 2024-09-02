@@ -12,8 +12,9 @@
   --orange: #ffa600;
   --orangeTransparent: #ffa600d2;
 
-  --duration: 2s;
-  --duration-envelope: calc(var(--duration)*.6);
+  --duration: 1s;
+  --duration-envelope: calc(var(--duration)*1);
+  --duration-card: calc(var(--duration)*10);
   --box-shadow: 1vw 1vw 2vw #00000057;
   --box-shadow-inverted: -1vw -1vw 2vw #00000057;
 

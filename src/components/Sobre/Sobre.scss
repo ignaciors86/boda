@@ -177,8 +177,8 @@
                 transition: opacity 0s, transform calc(var(--duration-envelope)*3) ease calc(var(--duration-envelope)*.5);
                 z-index: 3;
                 .card{   
-                    transition: calc(var(--duration-envelope)*.5) ease 0s, 
-                                margin calc(var(--duration-envelope)*1) ease-in-out calc(var(--duration-envelope)*2.2);
+                    transition: calc(var(--duration-card)*.5) ease 0s, 
+                                margin calc(var(--duration-card)*1) ease-in-out calc(var(--duration-card)*2.2);
  
                     
                     @media (orientation: landscape) {
@@ -191,12 +191,12 @@
                     }
                     
                     &.flipped{
-                        transition: calc(var(--duration)*.2) linear 0s;
+                        transition: calc(var(--duration-card)*.2) linear 0s;
                         // transition: calc(var(--duration)*.5) linear 0s, margin calc(var(--duration)) linear calc(var(--duration)*0), scale calc(var(--duration)) linear calc(var(--duration)*0);
                     }
 
                     &.unflipped{
-                        transition: calc(var(--duration)*.2) linear 0s;
+                        transition: calc(var(--duration-card)*.2) linear 0s;
                     }
    
    

@@ -38,6 +38,7 @@
     .info {
       z-index: 1;
       background: var(--greenTransparent);
+      background: linear-gradient(var(--greenSuperTransparent), var(--greenTransparent));
       width: 100%;
       min-height: 20%;
       display: flex;
@@ -45,11 +46,12 @@
       align-items: center;
       justify-content: space-evenly;
       border-radius: 0;
+      position: absolute;
+      padding-bottom: calc(var(--size-unit)* 0.8);
+      bottom: 0;
       h2 {
-        position: absolute;
-        top: calc(var(--size-unit)* 0.5);
         width: 100%;
-        background: var(--purple);
+        background: var(--purpleTransparent);
         display: flex;
         align-items: center;
         justify-content: center;
