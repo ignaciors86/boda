@@ -1,6 +1,6 @@
 :root {
   --gray: #f1f1f1;
-  --darkGray: #5a5a5a;
+  --darkGray: #302f2f82;
   --darkGrayTransparent: #535f4df7;
   --green: #535f4d;
   --greenTransparent: #535f4de8;
@@ -14,10 +14,8 @@
 
   --duration: 1s;
   --duration-envelope: calc(var(--duration)*.75);
-  --duration-card-seg: 1;
+  --duration-card-seg: .6;
   --duration-card: calc(var(--duration)*var(--duration-card-seg));
-  
-
 
   @media (orientation: portrait) {
     --size-unit: 30vw;
@@ -26,8 +24,8 @@
   @media (orientation: landscape) {
     --size-unit: 15dvh;
   }
-  --box-shadow: calc(var(--size-unit)*0.06) calc(var(--size-unit)* 0.06) calc(var(--size-unit)*0.12) #00000057;
-  --box-shadow-inverted: -1vw -1vw 2vw #00000057;
+  --box-shadow: calc(var(--size-unit)*0.04) calc(var(--size-unit)* 0.04) calc(var(--size-unit)*0.08) var(--darkGray);
+  --box-shadow-inverted: -calc(var(--size-unit)*0.06) -calc(var(--size-unit)*0.06) -calc(var(--size-unit)*0.12) var(--darkGray);
 
 
 
@@ -104,9 +102,9 @@ a{
   }
 }
 em{
-  font-size: calc(var(--size-unit)* .12);
+  font-size: calc(var(--size-unit)* 0.12);
   letter-spacing: -0.02px;
-  line-height: calc(var(--size-unit)* 0.12);
+  line-height: calc(var(--size-unit)* 0.18);
   display: flex;
   justify-content: center;
   text-align: center;
@@ -123,7 +121,7 @@ em{
   background: var(--green);
   border: 2px solid var(--green);
   cursor: pointer;
-      opacity: 0;
+  // opacity: 0;
   &:before{
       content: "";
       position: absolute;
@@ -135,8 +133,14 @@ em{
       mask-repeat: no-repeat;
       background: white;
       left: 0;
-      top: 0;
-      
+      top: 0;   
   }
-
+}
+.seccion + .back{
+    right: -3dvh;
+    top: -3dvh;
+    width: 6dvh;
+    height: 6dvh;
+    background: var(--orangeTransparent);
+    border: 2px solid var(--orange);
 }

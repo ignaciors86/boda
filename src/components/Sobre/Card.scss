@@ -9,11 +9,9 @@
   transition: transform calc(var(--duration-envelope) * 1) ease;
   /* Suavizar el giro */
   cursor: pointer;
-  border: calc(var(--size-unit)* 0.05) transparent;
-  border-radius: calc(var(--size-unit)* 0.1);
-  overflow: hidden;
-  box-shadow: var(--box-shadow);
+
   margin-top: calc(var(--size-unit)* -.2);
+
   &-front,
   &-back {
     width: 100%;
@@ -25,15 +23,23 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
+    // overflow: hidden;
     z-index: 2;
-    transition: 0s linear calc(var(--duration-card)*0.5), // Tiene que ser la mitad de la duración de la carta
-    // en Card.js > open -> flipped, unflipped
+    box-shadow: var(--box-shadow);
+    border-radius: calc(var(--size-unit)* 0.1);
+    transition: 0s linear calc(var(--duration-card)*0.5);// Tiene que ser la mitad de la duración de la carta en Card.js > open -> flipped, unflipped
+    img{
+      border-radius: calc(var(--size-unit)* 0.1);
+    }
   }
 
   &-front {
     opacity: 1;
     backface-visibility: hidden;
+    background: var(--darkGreen);
+
+    border: calc(var(--size-unit)* 0.05) transparent;
+    border-radius: calc(var(--size-unit)* 0.1);
     /* Frente visible por defecto */
     h2{
       width: 100%;
@@ -45,7 +51,7 @@
   &-back {
     transform: rotateY(180deg);
     visibility: hidden;
-    opacity: 0;
+    // opacity: 0;
     /* Voltear la parte trasera inicialmente */
   }
 
@@ -53,7 +59,6 @@
   &.flipped {
     transform: rotateY(180deg);
     box-shadow: var(--box-shadow-inverted);
-
   }
 
   img {
@@ -70,12 +75,14 @@
     width: 100%;
     box-sizing: border-box;
     padding: calc(var(--size-unit)* 0.1);
-    background: var(--greenSuperTransparent);
+    background: var(--green);
     display: flex;
     align-items: center;
     position: relative;
+    overflow: hidden;
+    border-radius: calc(var(--size-unit)* 0.1);
     p,
-    a{
+    a, em{
       color: var(--gray);
     }
   }

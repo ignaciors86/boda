@@ -11,6 +11,7 @@ gsap.registerPlugin(Draggable);
 
 const Timeline = () => {
   const MAINCLASS = "timeline";
+  const { activeCard, setActiveCard } = useDragContext();
   const sliderRef = useRef(null);
   const progressBarRef = useRef(null);
   const timelineRef = useRef(gsap.timeline({ paused: true }));
@@ -153,7 +154,7 @@ const Timeline = () => {
     return <Loading />;
   }
 
-  return (
+  return (<>
     <div className={`${MAINCLASS} seccion`}>
       <div className="elements">
         {renderItems()}
@@ -168,7 +169,8 @@ const Timeline = () => {
         </div>
       </div>
     </div>
-  );
+    <button className="back" onClick={() => setActiveCard("home")} />
+    </>);
 };
 
 export default Timeline;

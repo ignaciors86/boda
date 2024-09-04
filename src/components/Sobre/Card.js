@@ -13,6 +13,7 @@ const Card = ({ seccion, children, trasera }) => {
   const [flipped, setFlipped] = useState(null);
   const { isOtherDraggableActive, setIsOtherDraggableActive, activeCard, setActiveCard } = useDragContext();
   const duracion = getComputedStyle(document.documentElement).getPropertyValue('--duration-card').trim().replace('s', '');
+  const duracionSeg = getComputedStyle(document.documentElement).getPropertyValue('--duration-card-seg');
   useEffect(() => {
     const cardElement = cardRef.current;
     
@@ -21,11 +22,9 @@ const Card = ({ seccion, children, trasera }) => {
         type: 'x,y,z',
         edgeResistance: 0.1,
         inertia: false,
-        throwProps: true,
         onDrag() {
-          cardElement.classList.add("dragged");
           const dragDistance = Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
-          if (dragDistance > window.innerHeight * 0.1) {
+          if (dragDistance > window.innerHeight * 0.2) {
             flipCard();
           }
         },
@@ -34,10 +33,10 @@ const Card = ({ seccion, children, trasera }) => {
             resetCardPosition();
           } else {
             gsap.to(cardElement, {
-              duration: duracion,
+              duration: duracionSeg*1000,
               x: 0,
               y: 0,
-              ease: 'power2.out'
+              // ease: 'power2.out',
             });
           }
         }
@@ -64,20 +63,25 @@ const Card = ({ seccion, children, trasera }) => {
 
     if (!flipped) {
       setFlipped(true);
-      setIsOtherDraggableActive(seccion === "horarios");
-      gsap.set(cardElement, { x: 0, y: 0, z: 0 });
+      setIsOtherDraggableActive(seccion === "horarios" || seccion === "asistencia");
+      gsap.set(cardElement, { x: 0, y: 0, z: 0, });
       gsap.to(cardElement, {
         rotateY: 90,
         duration: duracion,
-        ease: 'power2.inOut',
+        // ease: 'power2.inOut',
         onComplete: () => {
           gsap.set(frontElement, { opacity: 0, visibility: "hidden" });
           gsap.set(backElement, { opacity: 1, visibility: "visible" });
           gsap.to(cardElement, {
             rotateY: 180,
             duration: duracion,
-            ease: 'power2.inOut'
+            // ease: 'power2.inOut,',
           });
+          setTimeout(() => {
+            const cardContainer = cardElement.parentNode;
+            cardContainer.appendChild(cardElement);
+          }, duracionSeg*1000);
+          
         }
       });
     } else {
@@ -93,16 +97,16 @@ const Card = ({ seccion, children, trasera }) => {
     gsap.to(cardElement, {
       rotateY: 90,
       duration: duracion,
-      ease: 'power2.inOut',
+      // ease: 'power2.inOut',
       onComplete: () => {
         gsap.set(frontElement, { opacity: 1, visibility: "visible" });
         gsap.set(backElement, { opacity: 0, visibility: "hidden" });
         gsap.to(cardElement, {
           rotateY: 0,
           duration: duracion,
-          ease: 'power2.inOut',
+          // ease: 'power2.inOut',
           onComplete: () => {
-            gsap.set(cardElement, { x: 0, y: 0 });
+            gsap.set(cardElement, { x: 0, y: 0, });
             setFlipped(false);
             setIsOtherDraggableActive(false);
           }
@@ -115,8 +119,8 @@ const Card = ({ seccion, children, trasera }) => {
     <div
       className={`card ${seccion} ${flipped ? 'flipped' : 'unflipped'}`}
       ref={cardRef}
-      onClick={() => { cardRef.current.classList.remove("dragged"); flipCard() }}
-      style={{ zIndex: flipped ? 10 : 1 }}
+      onClick={() => (!isOtherDraggableActive || seccion !== activeCard) && flipCard()}
+      style={{ zIndex: flipped ? 10 : 1, }}
     >
       <div className="card-front" ref={frontRef}>
         {children}

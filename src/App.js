@@ -41,7 +41,6 @@ const App = () => {
           </div>
         ))} */}
         <Sobre setSeccion={setSeccion} />
-        <button className="back" onClick={() => setSeccion("home")} />
       </div>
     </DragProvider>
   );
