@@ -3,6 +3,7 @@
   height: 400px;
   position: absolute;
   perspective: 1000px;
+  will-change: transform, opacity;
   /* Necesario para el giro 3D */
   transform-style: preserve-3d;
   /* Mantener el contexto 3D para las caras */

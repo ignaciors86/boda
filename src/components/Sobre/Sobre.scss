@@ -115,8 +115,8 @@
                 height: calc(var(--size-unit)* 4.5);
             }
             &.ubicaciones{
-                width: calc(var(--size-unit)* 2.2);
-                height: calc(var(--size-unit)* 2);
+                width: calc(var(--size-unit)* 3.2);
+                height: calc(var(--size-unit)* 3);
             }
             &.regalo{
                 width: calc(var(--size-unit)* 2.5);
@@ -308,22 +308,30 @@
                             rotate: -20deg !important;
                         }
 
-                        margin-top: calc(var(--size-unit)* 2.5);
-                        margin-left: calc(var(--size-unit)* -1.5);
-                        rotate: -20deg !important;
+                        // margin-top: calc(var(--size-unit)* 2.5);
+                        // margin-left: calc(var(--size-unit)* -1.5);
+                        // rotate: -20deg !important;
 
                         &:not(.flipped):not(.unflipped){
                             transition: calc(var(--duration-envelope)*1) linear calc(var(--duration-envelope)*2.3),
                             rotate calc(var(--duration-envelope)*1) ease-in-out calc(var(--duration-envelope)*3);
                         }
                         &.flipped{
-                            margin-top: calc(var(--size-unit)* 1.6);
-                            margin-left: calc(var(--size-unit)* -0.2);
-                            rotate: -1deg !important;
+                            @media (orientation: portrait) {
+                                margin-top: calc(var(--size-unit)* 1.6);
+                                margin-left: calc(var(--size-unit)* -0.2);
+                                rotate: -1deg !important;
+                            }
+                            @media (orientation: landscape) {
+                                margin-top: calc(var(--size-unit)* 1.5);
+                                margin-left: calc(var(--size-unit)* 1.2);
+                                rotate: -1deg !important;
+                            }
+
                         }
                     }
                     &.ubicaciones{
-                        margin-top: calc(var(--size-unit)* 5.3);
+                        margin-top: calc(var(--size-unit)* 4.8);
                         margin-left: calc(var(--size-unit)* 2.3);
                         rotate: 20deg !important;
                         &:not(.flipped):not(.unflipped){
@@ -331,13 +339,13 @@
                             rotate calc(var(--duration-envelope)*1) ease-in-out calc(var(--duration-envelope)*3.3);
                         }
                         &.flipped{
-                            rotate: -8deg !important;
+                            rotate: -5deg !important;
                             @media (orientation: portrait) {
                                 margin-top: calc(var(--size-unit)* 1);
-                                margin-left: calc(var(--size-unit)* -0.1);
+                                margin-left: calc(var(--size-unit)* -0.2);
                             }
                             @media (orientation: landscape) {
-                                margin-top: calc(var(--size-unit)* 3);
+                                margin-top: calc(var(--size-unit)* 2);
                                 margin-left: calc(var(--size-unit)* 2.9);
                             }
                         }

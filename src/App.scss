@@ -51,6 +51,16 @@
   font-family: 'plante';
   src: url('../assets/fonts/Plante.ttf') format('ttf'),
 }
+
+a,
+button,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent; /* Oculta el color de resaltado en iOS */
+  -webkit-touch-callout: none; /* Evita la aparición del menú contextual al hacer tap */
+}
+
 html, body{
   background-color: var(--greenSuperTransparent);
 }
@@ -81,12 +91,19 @@ body::before {
 
 h2, h3, h4{
   font-size: calc(var(--size-unit)* 0.3);
-  letter-spacing: calc(var(--size-unit)* 0.01);
+  
   color: white;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   font-family: "evelins";
   text-align: center;
   margin: 0;
+  @media (orientation: portrait) {
+    letter-spacing: calc(var(--size-unit)* -0.01);
+  }
+
+  @media (orientation: landscape) {
+    letter-spacing: calc(var(--size-unit)* -0.0001);
+  }
 }
 h4{
   font-size: calc(var(--size-unit)* 0.175);
