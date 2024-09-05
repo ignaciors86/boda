@@ -1,10 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { gsap } from 'gsap';
 import './OsitoBox.scss';
-import { TimelineMax, TweenMax } from 'gsap';
 
-const OsitoBox = () => {
-  const [checked, setChecked] = useState(false);
-  const [count, setCount] = useState(0);
+const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
+  const [checked, setChecked] = useState(true);
+  const [count, setCount] = useState(1);
 
   const bearRef = useRef(null);
   const armWrapRef = useRef(null);
@@ -13,100 +13,136 @@ const OsitoBox = () => {
   const swearRef = useRef(null);
   const bgRef = useRef(null);
   const indicatorRef = useRef(null);
-
+  const yesTextRef = useRef(null);
+  const noTextRef = useRef(null);
+  
+  const [vueltaHecha, setVueltaHecha] = useState(false);
   const randomInRange = (max, min = 1) => Math.random() * (max - min) + min;
-
-  const armLimit = randomInRange(2, 0);
-  const headLimit = randomInRange(armLimit + 3, armLimit + 1);
-  const angerLimit = randomInRange(headLimit + 3, headLimit + 1);
-
+  const TOQUES = 3;
+  const armLimit = 0;
+  const headLimit = 2;
+  const angerLimit = TOQUES;
+  const cociente = .5;
+  const armDuration = cociente * 0.2;
+  const bearDuration = cociente * 1;
+  const checkboxDuration = cociente * 0.1;
+  const pawDuration = cociente * 0.5;
   const grabBearTL = () => {
-    const armDuration = 0.2;
-    const bearDuration = 0.25;
-    const checkboxDuration = 0.25;
-    const pawDuration = 0.1;
+
 
     let bearTranslation = '100%';
-    if (count > armLimit && count < headLimit) {
+    if (count === 1) {
+      bearTranslation = '100%';
+    } else if (count === 2) {
       bearTranslation = '40%';
-    } else if (count >= headLimit) {
+    } else if (count === 3) {
       bearTranslation = '0%';
     }
 
     const onComplete = () => {
-      setChecked(false);
-      setCount(prevCount => prevCount + 1);
+      // setChecked(count < TOQUES);
+      // setCount(prevCount => prevCount + 1);
+      // Disparar onChange con el nuevo estado
+      if (onChange) {
+        onChange({ target: { checked: !checked } });
+      }
     };
 
     let onBearComplete = () => {};
-    if (Math.random() > 0.5 && count > angerLimit) {
+
+    
+
+    if (count > 1) {
       onBearComplete = () => (swearRef.current.style.display = 'block');
     }
 
-    const base = armDuration + armDuration + pawDuration;
-    const preDelay = randomInRange(1, 0);
+    const base = armDuration + pawDuration;
+    const preDelay = 0;
     const delay = count > armLimit ? base + bearDuration + preDelay : base;
 
-    const bearTL = new TimelineMax({ delay: Math.random(), onComplete });
+    const bearTL = gsap.timeline({ delay: Math.random(), onComplete });
+    
+    console.log(count);
+    
     bearTL
       .add(
-        count > armLimit
-          ? TweenMax.to(bearRef.current, bearDuration, {
-              onComplete: onBearComplete,
-              y: bearTranslation,
-            })
-          : () => {}
+        count <= TOQUES
+          ? gsap.to(bearRef.current, { duration: bearDuration, onComplete: onBearComplete, y: bearTranslation })
+          : null
       )
-      .to(armWrapRef.current, armDuration, { x: 50 }, count > armLimit ? preDelay : 0)
-      .to(armRef.current, armDuration, { scaleX: 0.7 })
-      .to(pawRef.current, pawDuration, {
-        scaleX: 0.8,
-        onComplete: () => (swearRef.current.style.display = 'none'),
-      })
-      .to(bgRef.current, checkboxDuration, { backgroundColor: '#aaa' }, delay)
-      .to(indicatorRef.current, checkboxDuration, { x: '0%' }, delay)
-      .to(pawRef.current, pawDuration, { scaleX: 0 }, delay)
-      .to(armRef.current, pawDuration, { scaleX: 1 }, delay + pawDuration)
-      .to(armWrapRef.current, armDuration, { x: 0 }, delay + pawDuration)
-      .to(bearRef.current, bearDuration, { y: '100%' }, delay + pawDuration);
+      // count < TOQUES && bearTL.to(armWrapRef.current, { duration: armDuration, x: 50 }, 0)
+      count < TOQUES && bearTL.to(armWrapRef.current, { duration: armDuration, marginLeft: "calc(var(--size-unit)* .45)" }, 0)
+      .to(armRef.current, { duration: armDuration, scaleX: 1 }, count === 1 ? 0 : armDuration)
 
+      .to(pawRef.current, { scaleX: 0.8,}, ">")
+
+      count < TOQUES && bearTL
+      // .to(bgRef.current, { duration: checkboxDuration, backgroundColor: 'var(--darkGreen)' }, delay + pawDuration)
+      .to(indicatorRef.current, { duration: checkboxDuration, x: '0%' }, delay + pawDuration)
+      .to(yesTextRef.current, { duration: checkboxDuration, opacity: 1 }, "<")
+      .to(noTextRef.current, { duration: checkboxDuration, opacity: 0 }, "<")
+    
+      .to(pawRef.current, { duration: pawDuration, scaleX: 0 }, ">")
+      .to(armRef.current, {duration: pawDuration, scaleX: 1 }, ">")
+      .to(armWrapRef.current, { duration: armDuration, marginLeft: 0 }, delay + pawDuration)
+      // .to(pawRef.current, { duration: pawDuration, marginLeft: 0, scaleX: 0 }, delay + pawDuration)
+      bearTL.to(bearRef.current, { duration: bearDuration, y: '100%', onComplete: () => {
+        setCount(count === TOQUES ? 1 : (count + 1));
+        count === TOQUES && setVueltaHecha(true);
+        swearRef.current.style.display = 'none';
+      } }, delay + pawDuration);
+
+      setConfirmacion(count < TOQUES);
     return bearTL;
   };
 
   const showTimeline = () => {
     const checkboxDuration = 0.25;
 
-    const checkTL = new TimelineMax({});
+    const checkTL = gsap.timeline();
     checkTL
-      .add(TweenMax.to(bgRef.current, checkboxDuration, { backgroundColor: '#2eec71' }))
-      .add(TweenMax.to(indicatorRef.current, checkboxDuration, { x: '100%' }), 0)
+      // .to(armRef.current, { duration: armDuration, scaleX: 1 }, 0)
+      .to(bgRef.current, { duration: checkboxDuration, backgroundColor: checked ? 'var(--darkGreen)' : 'var(--darkGray)' })
+      .to(indicatorRef.current, { duration: checkboxDuration, x: checked ? '144%' : 0, }, 0)
+      .to(yesTextRef.current, { duration: checkboxDuration, opacity: checked ? 0 : 1 }, "<")
+      .to(noTextRef.current, { duration: checkboxDuration, opacity: checked ? 1 : 0 }, "<")
       .add(grabBearTL(), checkboxDuration);
   };
 
-  const handleChange = () => {
-    if (checked) return;
-    setChecked(true);
+  const handleCheckbox = () => {
+    setChecked(count < TOQUES);
     showTimeline();
-  };
+  }
 
   const handleHover = () => {
-    if (Math.random() > 0.5 && count > armLimit) {
-      TweenMax.to(bearRef.current, 0.125, { y: '40%' });
-    }
+    
+      gsap.to(bearRef.current, { duration: 0.125, y: '40%' });
+    
   };
 
   const handleMouseOut = () => {
     if (!checked) {
-      TweenMax.to(bearRef.current, 0.125, { y: '100%' });
+      gsap.to(bearRef.current, { duration: 0.125, y: '100%' });
     }
   };
+
+  useEffect(() => {
+    console.log(confirmacion);
+    // if (confirmacion) {
+    //   gsap.to(yesTextRef.current, { duration: 1, opacity: 1 });
+    //   gsap.to(noTextRef.current, { duration: .2, opacity: 0 });
+    // } else {
+    //   gsap.to(yesTextRef.current, { duration: 0.2, opacity: 0 });
+    //   gsap.to(noTextRef.current, { duration: 1, opacity: 1 });
+    // }
+  }, [confirmacion])
 
   return (
     <div className='ositoBox'>
       <div className="bear__wrap">
-        <div ref={swearRef} className="bear__swear">
-        $#@ NO PUEDES $%*!
-        </div>
+        <p ref={swearRef} className="bear__swear">
+          {count === 2 ? "NO FUNCIONA, TENDRÁS QUE VENIR" : "$%* VALE! $#@"}
+        </p>
         <svg
           ref={bearRef}
           className="bear"
@@ -149,12 +185,6 @@ const OsitoBox = () => {
                   rx="34.5"
                   ry="33.289474"
                 />
-                {/* <path
-                  style={{ fill: '#e9c6af', fillOpacity: 1 }}
-                  d="M 69,47.310547 A 24.25,23.399124 0 0 0 44.75,70.710938 24.25,23.399124 0 0 0 64.720703,93.720703 c 0.276316,-0.40734 0.503874,-0.867778 0.787109,-1.267578 1.70087,-2.400855 3.527087,-4.666237 5.470704,-6.798828 1.943616,-2.132591 4.004963,-4.133318 6.179687,-6.003906 2.174725,-1.870589 4.461274,-3.611714 6.855469,-5.226563 2.394195,-1.614848 4.896019,-3.10338 7.498047,-4.46875 2.602027,-1.36537 5.301956,-2.607051 8.095703,-3.720703 a 24.25,23.399124 0 0 0 -2.220703,-1.208985 24.25,23.399124 0 0 0 -10.335937,-2.939453 24.25,23.399124 0 0 0 -24.25,-23.400391 z"
-                  id="path5659"
-                  transform="translate(0,750.76214)"
-                /> */}
                 <path
                   transform="translate(0,750.76214)"
                   id="path5659"
@@ -194,7 +224,7 @@ const OsitoBox = () => {
                 rx="9.2701159"
                 ry="9.6790915"
               />
-              {count >= angerLimit && (
+              {count === 3 && (
                 <g>
                   <path
                     id="path4396"
@@ -249,16 +279,41 @@ const OsitoBox = () => {
             />
           </g>
         </svg>
-        <div ref={pawRef} className="bear__paw" />
+
       </div>
       <div className="mask" />
       <div
         className={`checkbox ${checked ? 'checked' : ''}`}
-        onClick={handleChange}
+        onClick={handleCheckbox}
       >
         <input type="checkbox" checked={checked} readOnly />
         <div ref={bgRef} className="checkbox__bg" />
-        <div ref={indicatorRef} className="checkbox__indicator" />
+
+        
+        <div ref={indicatorRef} className="checkbox__indicator">
+
+          
+        </div>
+        <div ref={noTextRef} className="checkbox__text no-text">
+            <h3>No puedo ir</h3>
+          </div>
+          <div ref={yesTextRef} className="checkbox__text yes-text">
+            <h3>Asistiré</h3>
+          </div>
+
+          <svg
+          ref={pawRef}
+          className={"bear__paw"}
+          viewBox="0 0 50 50"
+          xmlns="http://www.w3.org/2000/svg"
+          preserveAspectRatio="xMinYMin"
+          
+        >
+            <circle cx="25" cy="25" r="20" style={{ fill: '#784421' }} />
+            <circle cx="15" cy="15" r="5" style={{ fill: '#e9c6af' }} />
+            <circle cx="35" cy="15" r="5" style={{ fill: '#e9c6af' }} />
+            <circle cx="25" cy="35" r="5" style={{ fill: '#e9c6af' }} />
+          </svg>
       </div>
     </div>
   );

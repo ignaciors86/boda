@@ -269,8 +269,8 @@
 
 
                     &.horarios{
-                        margin-top: calc(var(--size-unit)* 5);
-                        rotate: -40deg !important;
+                        margin-top: calc(var(--size-unit)* 5.5);
+                        rotate: -47deg !important;
                         @media (orientation: landscape) {
                             margin-left: calc(var(--size-unit)* -.3);
                         }
@@ -296,9 +296,22 @@
                         }
                     }
                     &.asistencia{
+                        @media (orientation: portrait) {
+                            margin-top: calc(var(--size-unit)* 2);
+                            margin-left: calc(var(--size-unit)* -2.5);
+                            rotate: -28deg !important;
+                        }
+
+                        @media (orientation: landscape) {
+                            margin-top: calc(var(--size-unit)* 2.5);
+                            margin-left: calc(var(--size-unit)* -1.5);
+                            rotate: -20deg !important;
+                        }
+
                         margin-top: calc(var(--size-unit)* 2.5);
-                        margin-left: calc(var(--size-unit)* -1);
-                        rotate: -10deg !important;
+                        margin-left: calc(var(--size-unit)* -1.5);
+                        rotate: -20deg !important;
+
                         &:not(.flipped):not(.unflipped){
                             transition: calc(var(--duration-envelope)*1) linear calc(var(--duration-envelope)*2.3),
                             rotate calc(var(--duration-envelope)*1) ease-in-out calc(var(--duration-envelope)*3);
@@ -310,9 +323,9 @@
                         }
                     }
                     &.ubicaciones{
-                        margin-top: calc(var(--size-unit)* 4.3);
+                        margin-top: calc(var(--size-unit)* 5.3);
                         margin-left: calc(var(--size-unit)* 2.3);
-                        rotate: -20deg !important;
+                        rotate: 20deg !important;
                         &:not(.flipped):not(.unflipped){
                             transition: calc(var(--duration-envelope)*1) linear calc(var(--duration-envelope)*3),
                             rotate calc(var(--duration-envelope)*1) ease-in-out calc(var(--duration-envelope)*3.3);

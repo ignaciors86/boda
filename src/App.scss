@@ -79,13 +79,17 @@ body::before {
   overflow: hidden;
 }
 
-h2{
+h2, h3, h4{
   font-size: calc(var(--size-unit)* 0.3);
   letter-spacing: calc(var(--size-unit)* 0.01);
   color: white;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   font-family: "evelins";
   text-align: center;
+  margin: 0;
+}
+h4{
+  font-size: calc(var(--size-unit)* 0.175);
 }
 p, a{
   font-size: calc(var(--size-unit)* 0.15);
@@ -137,10 +141,11 @@ em{
   }
 }
 .seccion + .back{
-    right: -3dvh;
-    top: -3dvh;
-    width: 6dvh;
-    height: 6dvh;
-    background: var(--orangeTransparent);
-    border: 2px solid var(--orange);
+  right: 2dvh;
+  top: 2dvh;
+  width: 5dvh;
+  height: 5dvh;
+  background: var(--orangeTransparent);
+  border: 2px solid var(--orange);
+  z-index: 2;
 }
