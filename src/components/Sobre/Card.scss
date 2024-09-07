@@ -1,8 +1,7 @@
 .card {
-  width: 300px;
-  height: 400px;
+  width: calc(var(--size-unit)* 3);
+  height: calc(var(--size-unit)* 4);
   position: absolute;
-  perspective: 1000px;
   will-change: transform, opacity;
   /* Necesario para el giro 3D */
   transform-style: preserve-3d;

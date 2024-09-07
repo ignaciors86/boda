@@ -10,7 +10,8 @@ const Asistencia = () => {
         nombre: "",
         asistencia: "",
         comentarios: "",
-        enviarANacho: true, // Nuevo estado para el switch
+        enviarANacho: true,
+        eventos: { preboda: false, postboda: false } // Checkboxes para eventos
     });
 
     const handleChange = (e) => {
@@ -20,26 +21,37 @@ const Asistencia = () => {
         });
     };
 
+    const handleCheckboxChange = (e) => {
+        setFormData({
+            ...formData,
+            eventos: {
+                ...formData.eventos,
+                [e.target.name]: e.target.checked,
+            },
+        });
+    };
+
     const handleSwitchChange = () => {
         setFormData({
             ...formData,
-            enviarANacho: !formData.enviarANacho, // Cambia el valor del switch
+            enviarANacho: !formData.enviarANacho,
         });
     };
 
     const handleSendWhatsApp = () => {
-        const { nombre, asistencia, comentarios, enviarANacho } = formData;
+        const { nombre, comentarios, enviarANacho, eventos } = formData;
 
-        // Definir el número según el switch
-        const numeroTelefono = enviarANacho ? "679692422" : "626767895"; // Nacho o Mario
+        const numeroTelefono = enviarANacho ? "679692422" : "626767895"; 
 
-        // Crear el mensaje con saltos de línea
+        const eventosSeleccionados = [
+            eventos.preboda && "Preboda",
+            eventos.postboda && "Postboda"
+        ].filter(Boolean).join(", ");
+
         const mensaje = `Hola, soy ${nombre}.\nConfirmo mi asistencia: ${confirmacion ? "Sí" : "No"}.\nComentarios: ${comentarios}`;
 
-        // Construir la URL de WhatsApp
         const urlWhatsApp = `https://wa.me/34${numeroTelefono}?text=${encodeURIComponent(mensaje)}`;
 
-        // Abrir WhatsApp
         window.open(urlWhatsApp, "_blank");
     };
 
@@ -63,11 +75,44 @@ const Asistencia = () => {
                             value={formData.nombre}
                             onChange={handleChange}
                             required 
-                            placeholder="Nombre (y mote, si procede)"
+                            placeholder="Quién/quienes sois"
                         />
                     </div>
                     <div className="form-group">
-                        <h2><label htmlFor="comentarios">Comentarios:</label></h2>
+                        
+                        <div className="eventos-checkboxes">
+                            <h2>También estaré en:</h2>
+
+                            
+                            <div className="checkbox-group">
+                                <label>
+                                    <input 
+                                        type="checkbox" 
+                                        name="preboda"
+                                        checked={formData.eventos.preboda}
+                                        onChange={handleCheckboxChange}
+                                    />
+                                    <p>Preboda<em>(viernes)</em></p>
+                                </label>
+                                
+                            </div>
+                            <div className="checkbox-group">
+
+                                <label className="raro">    
+                                    <input 
+                                        type="checkbox" 
+                                        name="postboda"
+                                        checked={formData.eventos.postboda}
+                                        onChange={handleCheckboxChange}
+                                    />
+                                    <p>Postboda<em>(domingo)</em></p>
+                                </label>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div className="form-group">
+                        {/* <h2><label htmlFor="comentarios">Comentarios:</label></h2> */}
                         <textarea 
                             id="comentarios" 
                             name="comentarios" 
@@ -77,28 +122,34 @@ const Asistencia = () => {
                         />
                     </div>
                     <div className="form-group horizontal quien">
-                        <label><h4>Enviar a:</h4></label>
-                        <div className="switch">
-                            <label>
-                                <em>Mario</em>
-                                <input 
-                                    type="checkbox" 
-                                    checked={formData.enviarANacho}
-                                    onChange={handleSwitchChange}
-                                />
-                                <span className="slider"></span>
-                                <em>Nacho</em>
-                            </label>
+                        <div className="wrap">
+                            
+                            <label><h4>Enviar a:</h4></label>
+                            
+                            <div className="switch">
+                                <label>
+                                    <em>Mario</em>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={formData.enviarANacho}
+                                        onChange={handleSwitchChange}
+                                    />
+                                    <span className="slider"></span>
+                                    <em>Nacho</em>
+                                </label>
+                            </div>
+                            
+                            <button 
+                                type="button" 
+                                className="btn-enviar" 
+                                onClick={handleSendWhatsApp}
+                                disabled={isButtonDisabled}
+                            >
+                                <h2>{isButtonDisabled ? "Relléname" : "DILOOO!!"}</h2>
+                            </button>
                         </div>
                     </div>
-                    <button 
-                        type="button" 
-                        className="btn-enviar" 
-                        onClick={handleSendWhatsApp}
-                        disabled={isButtonDisabled}
-                    >
-                        <h2>{isButtonDisabled ? "Relléname" : "DILOOO!!"}</h2>
-                    </button>
+                    
                 </form>
             </div>
             <button className="back" onClick={() => setActiveCard("home")} />

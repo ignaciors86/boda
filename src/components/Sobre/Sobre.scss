@@ -1,15 +1,20 @@
 .home{
-    width: 100%;
+    width: auto;
     display: flex;
     align-items: center;
     justify-content: center;
+    position: absolute;
+    left: 50%;
+    margin-left: calc(var(--size-unit)* -1.5);
+    top: 50%;
+    margin-top: calc(var(--size-unit)* -1.5);
 }
 
 .envelope {
     position: relative;
     width: calc(var(--size-unit)* 3 - 1px);
     height: calc(var(--size-unit)* 3);
-    perspective: 1000px;
+    perspective: calc(var(--size-unit)* 4);
     border: 0px solid black;
     background: darkgray;
     transition: calc(var(--duration-envelope)) ease calc(var(--duration-envelope) / 2);
