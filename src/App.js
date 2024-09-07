@@ -34,14 +34,14 @@ const App = () => {
 
   return (
     <DragProvider>
-      <div className="App">
+      {/* <div className="App"> */}
         {/* {articles?.map(article => (
           <div key={article.id}>
             <h2>{article.nombre}</h2>
           </div>
         ))} */}
         <Sobre setSeccion={setSeccion} />
-      </div>
+      {/* </div> */}
     </DragProvider>
   );
 }

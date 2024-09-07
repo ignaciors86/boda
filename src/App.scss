@@ -52,20 +52,16 @@
   src: url('../assets/fonts/Plante.ttf') format('ttf'),
 }
 
-a,
-button,
-input,
-textarea,
-select {
+* {
   -webkit-tap-highlight-color: transparent; /* Oculta el color de resaltado en iOS */
   -webkit-touch-callout: none; /* Evita la aparición del menú contextual al hacer tap */
 }
 
 html, body{
-  background-color: var(--greenSuperTransparent);
+  // background-color: var(--greenSuperTransparent);
 }
 .App {
-  background-color: var(--greenSuperTransparent);
+  // background-color: var(--greenSuperTransparent);
   background-repeat: no-repeat;
   background-position: center center;
   background-size: cover;
@@ -80,13 +76,16 @@ html, body{
   justify-content: center;
 }
 
-body::before {
-  content: '';
-  font-family: 'PreloadImages';
-  position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
+body{
+  background: var(--greenSuperTransparent);
+  &::before {
+    content: '';
+    font-family: 'PreloadImages';
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
 }
 
 h2, h3, h4{
