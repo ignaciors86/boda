@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
 import './OsitoBox.scss';
+import { Draggable } from 'gsap/all';
 
 const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
   const [checked, setChecked] = useState(true);
   const [count, setCount] = useState(1);
-
+  const [ dragging, setDragging ] = useState(false);
   const bearRef = useRef(null);
   const armWrapRef = useRef(null);
   const armRef = useRef(null);
@@ -22,7 +23,7 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
   const armLimit = 0;
   const headLimit = 2;
   const angerLimit = TOQUES;
-  const cociente = .5;
+  const cociente = .35;
   const armDuration = cociente * 0.2;
   const bearDuration = cociente * 1;
   const checkboxDuration = cociente * 0.1;
@@ -72,16 +73,18 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
       )
       // count < TOQUES && bearTL.to(armWrapRef.current, { duration: armDuration, x: 50 }, 0)
       count < TOQUES && bearTL.to(armWrapRef.current, { duration: armDuration, marginLeft: "calc(var(--size-unit)* .45)" }, 0)
-      .to(armRef.current, { duration: armDuration, scaleX: 1 }, count === 1 ? 0 : armDuration)
-
+      .to(armRef.current, { duration: armDuration, scaleX: 1 }, armDuration)
       .to(pawRef.current, { scaleX: 0.8,}, ">")
 
       count < TOQUES && bearTL
       // .to(bgRef.current, { duration: checkboxDuration, backgroundColor: 'var(--darkGreen)' }, delay + pawDuration)
-      .to(indicatorRef.current, { duration: checkboxDuration, x: '0%' }, delay + pawDuration)
+      .to(indicatorRef.current, { duration: checkboxDuration, x: '0%',
+        onComplete: () => {
+          dragging && setDragging(false);
+        }
+       }, delay + pawDuration)
       .to(yesTextRef.current, { duration: checkboxDuration, opacity: 1 }, "<")
       .to(noTextRef.current, { duration: checkboxDuration, opacity: 0 }, "<")
-    
       .to(pawRef.current, { duration: pawDuration, scaleX: 0 }, ">")
       .to(armRef.current, {duration: pawDuration, scaleX: 1 }, ">")
       .to(armWrapRef.current, { duration: armDuration, marginLeft: 0 }, delay + pawDuration)
@@ -103,7 +106,7 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
     checkTL
       // .to(armRef.current, { duration: armDuration, scaleX: 1 }, 0)
       .to(bgRef.current, { duration: checkboxDuration, backgroundColor: checked ? 'var(--darkGreen)' : 'var(--darkGray)' })
-      .to(indicatorRef.current, { duration: checkboxDuration, x: checked ? '144%' : 0, }, 0)
+      .to(indicatorRef.current, { duration: checkboxDuration, x: checked ? '269%' : 0, }, 0)
       .to(yesTextRef.current, { duration: checkboxDuration, opacity: checked ? 0 : 1 }, "<")
       .to(noTextRef.current, { duration: checkboxDuration, opacity: checked ? 1 : 0 }, "<")
       .add(grabBearTL(), checkboxDuration);
@@ -112,6 +115,7 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
   const handleCheckbox = () => {
     setChecked(count < TOQUES);
     showTimeline();
+    // setTimeout(() => dragging && setDragging(false), 1000);
   }
 
   const handleHover = () => {
@@ -137,6 +141,41 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
     // }
   }, [confirmacion])
 
+  useEffect(() => {
+    const bgWidth = bgRef.current.offsetWidth;
+    const suelo = bgWidth * 0.5;
+    const techo = bgWidth * 0.8;
+
+    Draggable.create(indicatorRef.current, {
+      type: 'x',
+      bounds: bgRef.current,
+      onDrag: function () {
+        // this.x = -this.x;
+        console.log(this.x);
+        // console.log(suelo);
+        // this.enable();
+        setDragging(true);
+        console.log(dragging);
+        if ((this.x < techo || this.x < suelo)) {
+          console.log("Cruce");
+          
+          dragging && handleCheckbox();
+          
+          // console.log("hacia la izquierda");
+          // handleCheckbox( this.x <= techo ?? false);
+        }
+        // if (this.x >= techo && !draggedToLimit) {
+        //   handleCheckbox();
+        //   console.log("hacia la derecha");
+        //   setDragging(true); // Reset if dragged back before reaching 10%
+        // }        
+      },
+      onDragEnd: function(){
+        // setDragging(false);
+      }
+    });
+  }, []);
+
   return (
     <div className='ositoBox'>
       <div className="bear__wrap">
@@ -148,8 +187,8 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
           className="bear"
           viewBox="0 0 284.94574 359.73706"
           preserveAspectRatio="xMinYMin"
-          onMouseOver={handleHover}
-          onMouseOut={handleMouseOut}
+          // onMouseOver={handleHover}
+          // onMouseOut={handleMouseOut}
         >
           <g id="layer1" transform="translate(-7.5271369,-761.38595)">
             <g

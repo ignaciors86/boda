@@ -1,4 +1,4 @@
-.home{
+.sobre{
     width: auto;
     display: flex;
     align-items: center;
@@ -8,6 +8,8 @@
     margin-left: calc(var(--size-unit)* -1.5);
     top: 50%;
     margin-top: calc(var(--size-unit)* -1.5);
+    opacity: 0;
+    z-index: -1;
 }
 
 .envelope {
@@ -95,24 +97,25 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        transform: translateY(calc(var(--size-unit) / -5)) translateX(calc(var(--size-unit)*1.2 / -1)) rotateX(-10deg); /* Inicialmente desplazado y girado */
+        transform: translateY(calc(var(--size-unit) / -2)) translateX(calc(var(--size-unit)*1.2 / -1)) rotateX(-10deg); /* Inicialmente desplazado y girado */
         transition: calc(var(--duration-envelope)*2) ease-out calc(var(--duration-envelope)*1);
         z-index: 2;
-
+        
         
         .card {
-            transition: calc(var(--duration-envelope)*2) ease 0s;
+            transition: calc(var(--duration-envelope)* 2) ease 0s;
             z-index: 2;
+            top: -50%;
+            left: 0;
             &.invitacion{
                 width: calc(var(--size-unit)* 2.5);
                 height: calc(var(--size-unit)* 2.5);
+                top: -12%;
             }
             
             &.horarios{
-                width: calc(var(--size-unit)* 2.5);
-                height: calc(var(--size-unit)* 4);
-                margin-top: 0;
-                margin-left: 0;
+                width: calc(var(--size-unit)* 3);
+                height: calc(var(--size-unit)* 5);
                 rotate: -2deg !important;
             }
             &.asistencia{
@@ -155,6 +158,7 @@
         .envelope{
             &-content{
                 .card{
+                    // transition: calc(var(--duration-envelope)* 0) ease 0s;
                     &:not(.invitacion){
                         scale: .4;
                     }  
@@ -245,13 +249,13 @@
                     }
 
                     &.invitacion{
-                        margin-top: calc(var(--size-unit)* -1);
+                        top: calc(var(--size-unit)* -1);
                         rotate: 0deg !important;
                         @media (orientation: landscape) {
-                            margin-left: calc(var(--size-unit)* 1.8);
+                            left: calc(var(--size-unit)* 1.8);
                         }
                         @media (orientation: portrait) {
-                            margin-left: calc(var(--size-unit)* -0.2);
+                            left: calc(var(--size-unit)* -0.2);
                         }
                         &:not(.flipped):not(.unflipped){
                             transition: calc(var(--duration-envelope)*1) ease-in calc(var(--duration-envelope)*2.6),
@@ -262,25 +266,25 @@
                             height: calc(var(--size-unit)* 3);
                             rotate: -4deg !important;
                             @media (orientation: landscape) {
-                                margin-left: calc(var(--size-unit)* 2);
-                                margin-top: calc(var(--size-unit)* 1);
+                                left: calc(var(--size-unit)* 2);
+                                top: calc(var(--size-unit)* 1);
                             }
                             @media (orientation: portrait) {
-                                margin-left: calc(var(--size-unit)* -.2);
-                                margin-top: calc(var(--size-unit)* 1);
+                                left: calc(var(--size-unit)* -.2);
+                                top: calc(var(--size-unit)* 1);
                             }              
                         }
                     }
 
 
                     &.horarios{
-                        margin-top: calc(var(--size-unit)* 5.5);
+                        top: calc(var(--size-unit)* 1.2);
                         rotate: -47deg !important;
                         @media (orientation: landscape) {
-                            margin-left: calc(var(--size-unit)* -.3);
+                            left: calc(var(--size-unit)* -1);
                         }
                         @media (orientation: portrait) {
-                            margin-left: calc(var(--size-unit)* -1.5);
+                            left: calc(var(--size-unit)* -1);
                         }
                         &:not(.flipped):not(.unflipped){
                             transition: calc(var(--duration-envelope)*1) ease-in calc(var(--duration-envelope)*2.6),
@@ -291,30 +295,30 @@
                         &.flipped{
                             rotate: -2deg !important;
                             @media (orientation: landscape) {
-                                margin-top: calc(var(--size-unit)* 2);
-                                margin-left: calc(var(--size-unit)* 1.5);
+                                top: calc(var(--size-unit)* -0.7);
+                                left: calc(var(--size-unit)* -0.4);
                             }
                             @media (orientation: portrait) {
-                                margin-top: calc(var(--size-unit)* 1.5);
-                                margin-left: calc(var(--size-unit)* -0.3);
+                                top: calc(var(--size-unit)* -0.7);
+                                left: calc(var(--size-unit)* -0.4);
                             }
                         }
                     }
                     &.asistencia{
                         @media (orientation: portrait) {
-                            margin-top: calc(var(--size-unit)* 2);
-                            margin-left: calc(var(--size-unit)* -2.5);
+                            top: calc(var(--size-unit)* 0);
+                            left: calc(var(--size-unit)* -1.5);
                             rotate: -28deg !important;
                         }
 
                         @media (orientation: landscape) {
-                            margin-top: calc(var(--size-unit)* 2.5);
-                            margin-left: calc(var(--size-unit)* -1.5);
-                            rotate: -20deg !important;
+                            top: calc(var(--size-unit)* 0);
+                            left: calc(var(--size-unit)* -1.5);
+                            rotate: -28deg !important;
                         }
 
-                        // margin-top: calc(var(--size-unit)* 2.5);
-                        // margin-left: calc(var(--size-unit)* -1.5);
+                        // top: calc(var(--size-unit)* 2.5);
+                        // left: calc(var(--size-unit)* -1.5);
                         // rotate: -20deg !important;
 
                         &:not(.flipped):not(.unflipped){
@@ -323,21 +327,21 @@
                         }
                         &.flipped{
                             @media (orientation: portrait) {
-                                margin-top: calc(var(--size-unit)* 1.6);
-                                margin-left: calc(var(--size-unit)* -0.2);
-                                rotate: -1deg !important;
+                                top: calc(var(--size-unit)* -0.5);
+                                left: calc(var(--size-unit)* -0.4);
+                                rotate: -5deg !important;
                             }
                             @media (orientation: landscape) {
-                                margin-top: calc(var(--size-unit)* 1.5);
-                                margin-left: calc(var(--size-unit)* 1.2);
-                                rotate: -1deg !important;
+                                top: calc(var(--size-unit)* -0.5);
+                                left: calc(var(--size-unit)* -0.4);
+                                rotate: -5deg !important;
                             }
 
                         }
                     }
                     &.ubicaciones{
-                        margin-top: calc(var(--size-unit)* 4.8);
-                        margin-left: calc(var(--size-unit)* 2.3);
+                        top: calc(var(--size-unit)* 1.7);
+                        left: calc(var(--size-unit)* 0.7);
                         rotate: 20deg !important;
                         &:not(.flipped):not(.unflipped){
                             transition: calc(var(--duration-envelope)*1) linear calc(var(--duration-envelope)*3),
@@ -346,12 +350,12 @@
                         &.flipped{
                             rotate: -5deg !important;
                             @media (orientation: portrait) {
-                                margin-top: calc(var(--size-unit)* 1);
-                                margin-left: calc(var(--size-unit)* -0.2);
+                                top: calc(var(--size-unit)* .5);
+                                left: calc(var(--size-unit)* -0.45);
                             }
                             @media (orientation: landscape) {
-                                margin-top: calc(var(--size-unit)* 2);
-                                margin-left: calc(var(--size-unit)* 2.9);
+                                top: calc(var(--size-unit)* .5);
+                                left: calc(var(--size-unit)* -0.45);
                             }
                         }
                     }
@@ -359,12 +363,12 @@
                         
                         rotate: -40deg !important;
                         @media (orientation: landscape) {
-                            margin-left: calc(var(--size-unit)* 1.5);
-                            margin-top: calc(var(--size-unit)* 2.8);
+                            left: calc(var(--size-unit)* 0.8);
+                            top: calc(var(--size-unit)* 0.6);
                         }
                         @media (orientation: portrait) {
-                            margin-left: calc(var(--size-unit)* 1.8);
-                            margin-top: calc(var(--size-unit)* 3);
+                            left: calc(var(--size-unit)* 0.8);
+                            top: calc(var(--size-unit)* 0.6);
                         }
                         &:not(.flipped):not(.unflipped){
                             transition: calc(var(--duration-envelope)*1) linear calc(var(--duration-envelope)*2.25),
@@ -374,12 +378,12 @@
 
                             rotate: -57deg !important;
                             @media (orientation: portrait) {
-                                margin-top: calc(var(--size-unit)* 1.7);
-                                margin-left: calc(var(--size-unit)* 0);
+                                top: calc(var(--size-unit)* 0.7);
+                                left: calc(var(--size-unit)* 0);
                             }
                             @media (orientation: landscape) {
-                                margin-top: calc(var(--size-unit)* 3);
-                                margin-left: calc(var(--size-unit)* 1);
+                                top: calc(var(--size-unit)* 0.7);
+                                left: calc(var(--size-unit)* 0);
                             }
                         }
                     }

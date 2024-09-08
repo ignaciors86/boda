@@ -10,7 +10,7 @@
   /* Suavizar el giro */
   cursor: pointer;
 
-  margin-top: calc(var(--size-unit)* -.2);
+
 
   &-front,
   &-back {
@@ -36,7 +36,7 @@
   &-front {
     opacity: 1;
     backface-visibility: hidden;
-    background: var(--darkGreen);
+    background: var(--green);
 
     border: calc(var(--size-unit)* 0.05) transparent;
     border-radius: calc(var(--size-unit)* 0.1);

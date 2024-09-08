@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './Sobre.scss';
 import invitacion from './assets/images/invitacion.jpg';
 import Card from './Card';
@@ -44,7 +44,7 @@ const Sobre = ({ setSeccion }) => {
   };
 
   const handleClick = (seccion) => {
-    const home = document.querySelector('.home.closed');
+    const sobre = document.querySelector('.sobre.closed');
 
     // Animación de palpitación con GSAP
     const duracion = getComputedStyle(document.documentElement).getPropertyValue('--duration').trim().replace('s', '');
@@ -52,9 +52,9 @@ const Sobre = ({ setSeccion }) => {
 
     setSeccion(seccion);
 
-    if (home) {
+    if (sobre) {
       // Usar función para rotación aleatoria
-      tlSobre.to(home, {
+      tlSobre.to(sobre, {
         scale: 1.05,
         rotate: () => getRandomValues(),  // Aplicar rotación aleatoria en cada iteración
         x: () => getRandomValues(),
@@ -64,7 +64,7 @@ const Sobre = ({ setSeccion }) => {
         repeat: 7, // Hacer palpitaciones durante 5 segundos
         ease: "power1.inOut",
         repeatRefresh: true // Asegurar que la animación se actualice para cada repetición
-      }).to(home, {
+      }).to(sobre, {
         scale: 1,
         rotate: 0, // Asegurarse de que la rotación vuelva a 0
         y: 0,
@@ -72,7 +72,7 @@ const Sobre = ({ setSeccion }) => {
         duration: duracion,
         onComplete: () => {
           toggle();
-          home.classList.toggle('closed');
+          sobre.classList.toggle('closed');
         },
       }, ">");
     } else {
@@ -80,11 +80,57 @@ const Sobre = ({ setSeccion }) => {
     }
   };
 
+  useEffect(() => {
+    // Función para animar la opacidad de #root
+  function animateOpacity() {
+    gsap.to(".sobre", { opacity: 1, zIndex: 0, duration: 0.5 });
+  }
+
+  // Variables para manejar el temporizador
+  let hoverTimer;
+  let touchTimer;
+
+  // Seleccionar elementos
+  const canvas = document.getElementById('myCanvas');
+  const root = document.getElementById('root');
+
+  // Evento de hover en escritorio
+  canvas.addEventListener('mouseenter', () => {
+    hoverTimer = setTimeout(() => {
+      animateOpacity();
+    }, 1000); // 1 segundo
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    clearTimeout(hoverTimer);
+  });
+
+  // Evento de touch en dispositivos móviles
+  canvas.addEventListener('touchstart', (event) => {
+    touchTimer = setTimeout(() => {
+      animateOpacity();
+    }, 1000); // 1 segundo
+    event.preventDefault(); // Prevenir el comportamiento por defecto del touch
+  });
+
+  // canvas.addEventListener('touchend', () => {
+  //   clearTimeout(touchTimer);
+  // });
+
+  // canvas.addEventListener('touchmove', () => {
+  //   // Mantener el temporizador activo mientras el usuario mueve el dedo
+  //   clearTimeout(touchTimer);
+  //   touchTimer = setTimeout(() => {
+  //     animateOpacity();
+  //   }, 1000); // 1 segundo
+  // });
+  }, [])
+
   return (
-    <div className="home closed">
+    <div className="sobre closed">
       <div className="envelope closed">
         <div className="envelope-flap">
-          <div className="wax-seal back" onClick={() => handleClick("home")} />
+          <div className="wax-seal back" onClick={() => handleClick("sobre")} />
         </div>
         <div className="envelope-flap-bg"></div>
         <div className="envelope-body">
@@ -108,7 +154,7 @@ const Sobre = ({ setSeccion }) => {
         </div>
         <p className="nombre-invitado">Invitados 1 y 2</p>
       </div>
-      {/* <button className="back" onClick={() => setActiveCard("home")} /> */}
+      {/* <button className="back" onClick={() => setActiveCard("sobre")} /> */}
     </div>
   );
 }
