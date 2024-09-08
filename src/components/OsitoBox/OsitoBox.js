@@ -63,7 +63,7 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
 
     const bearTL = gsap.timeline({ delay: Math.random(), onComplete });
     
-    console.log(count);
+    // console.log(count);
     
     bearTL
       .add(
@@ -140,40 +140,36 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
   }, [confirmacion])
 
   useEffect(() => {
+    // console.log('bgRef:', bgRef.current);
+    // console.log('indicatorRef:', indicatorRef.current);
+  
+    if (!bgRef.current || !indicatorRef.current) return;
+  
     const bgWidth = bgRef.current.offsetWidth;
     const suelo = bgWidth * 0.5;
     const techo = bgWidth * 0.8;
-
-    Draggable.create(indicatorRef.current, {
+    setDraggedToLimit(true);
+    draggedToLimit !== null && Draggable.create(indicatorRef.current, {
       type: 'x',
       bounds: bgRef.current,
       touchAction: 'none',
       onDrag: function () {
-        // this.x = -this.x;
-        console.log(this.x);
-        // console.log(suelo);
+        // console.log('this.x:', this.x);
         this.enable();
-        setDraggedToLimit(count < TOQUES);
-        console.log(draggedToLimit);
+        
+        // console.log('draggedToLimit:', draggedToLimit);
         if ((this.x < techo || this.x < suelo)) {
-          console.log("Cruce");
+          // console.log("Cruce");
           draggedToLimit && this.disable();
           draggedToLimit && handleCheckbox();
-          
-          // console.log("hacia la izquierda");
-          // handleCheckbox( this.x <= techo ?? false);
         }
-        // if (this.x >= techo && !draggedToLimit) {
-        //   handleCheckbox();
-        //   console.log("hacia la derecha");
-        //   setDraggedToLimit(true); // Reset if dragged back before reaching 10%
-        // }        
       },
       onDragEnd: function () {
         this.enable();
       }
     });
-  }, []);
+  }, [draggedToLimit]);
+  
 
   return (
     <div className='ositoBox'>
