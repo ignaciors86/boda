@@ -32,7 +32,7 @@
 
         &.horizontal {
             flex-direction: row;
-            margin: calc(var(--size-unit)* 0.15) 0 calc(var(--size-unit)* 0);
+            margin: calc(var(--size-unit)* 0.15) 0 calc(var(--size-unit)* .1);
             .label {
                 margin: 0;
             }
@@ -147,7 +147,7 @@
         align-items: center;
         justify-content: space-between;
         width: 50%;
-        margin-top: calc(var(--size-unit)* 0.2);
+        margin-top: calc(var(--size-unit)* 0);
         label {
             font-weight: normal;
             display: flex;
@@ -174,7 +174,7 @@
             transition: 0.4s;
             background-color: var(--darkGreen);
             margin: 0 calc(var(--size-unit)* 0.15);
-            bottom: calc(var(--size-unit)* 0.525);
+            bottom: calc(var(--size-unit)* 0.25);
 
             &:before {
                 content: "";
@@ -207,11 +207,11 @@
         color: var(--darkGray);
         padding: calc(var(--size-unit)* 0.1) calc(var(--size-unit)* 0.15);
         border: none;
-        border-radius: calc(var(--size-unit)* 0.05);
+        border-radius: calc(var(--size-unit)* 0.2);
         cursor: pointer;
         width: auto;
         transition: calc(var(--duration)* 0.2) ease 0s;
-        margin-top: calc(var(--size-unit)* -0.25);
+        margin-top: calc(var(--size-unit)* -0.2);
         &:hover {
             background-color: var(--purple);
         }
