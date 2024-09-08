@@ -390,37 +390,27 @@ canvas.addEventListener( 'mousemove', function ( e ) {
 
 } );
 
-canvas.addEventListener( 'touchmove', function ( e ) {
-
-    e.preventDefault();
-
-    var touches = e.targetTouches;
+canvas.addEventListener('touchmove', function (e) {
+    e.preventDefault(); // Para prevenir el scroll del navegador en dispositivos táctiles
 
     count++;
 
-    ( count > 25 ) && (colorArr = [ Math.random() + 0.2, Math.random() + 0.2, Math.random() + 0.2 ], count = 0);
-
-    for ( var i = 0, len = touches.length; i < len; i++ ) {
-
-        if ( i >= pointers.length ) pointers.push( new pointerPrototype() );
-
-        pointers[ i ].id    = touches[ i ].identifier;
-        pointers[ i ].down  = true;
-        pointers[ i ].x     = touches[ i ].pageX;
-        pointers[ i ].y     = touches[ i ].pageY;
-        pointers[ i ].color = colorArr;
-
-        var pointer = pointers[ i ];
-
-        pointer.moved = pointer.down;
-        pointer.dx    = (touches[ i ].pageX - pointer.x) * 10.0;
-        pointer.dy    = (touches[ i ].pageY - pointer.y) * 10.0;
-        pointer.x     = touches[ i ].pageX;
-        pointer.y     = touches[ i ].pageY;
-
+    if (count > 25) {
+        colorArr = [Math.random() + 0.2, Math.random() + 0.2, Math.random() + 0.2];
+        count = 0;
     }
 
-}, false );
+    // Accede al primer punto táctil (e.touches[0])
+    var touch = e.touches[0];
+
+    pointers[0].down = true;
+    pointers[0].color = colorArr;
+    pointers[0].moved = pointers[0].down;
+    pointers[0].dx = (touch.clientX - pointers[0].x) * 10.0;
+    pointers[0].dy = (touch.clientY - pointers[0].y) * 10.0;
+    pointers[0].x = touch.clientX;
+    pointers[0].y = touch.clientY;
+});
 
 function m( t ) {
 

@@ -169,7 +169,7 @@ const Timeline = () => {
         </div>
       </div>
     </div>
-    <button className="back" onClick={() => setActiveCard("home")} />
+    <button className="back" onClick={() => setActiveCard("sobre")} />
     </>);
 };
 

@@ -152,7 +152,7 @@ const Asistencia = () => {
                     
                 </form>
             </div>
-            <button className="back" onClick={() => setActiveCard("home")} />
+            <button className="back" onClick={() => setActiveCard("sobre")} />
         </>
     );
 };

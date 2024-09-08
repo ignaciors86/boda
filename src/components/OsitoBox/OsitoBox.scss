@@ -173,24 +173,24 @@
 
       &__indicator {
         height: 100%;
-        width: 50%;
+        width: 27%;
         border-radius: 100%;
         position: absolute;
         top: 0;
-        left: -10%;
+        left: 0%;
         transform: translateX(100%);
         display: flex;
-        
+        z-index: 10;
         &:before {
-            content: "";
-            border-radius: 100%;
-            height: 85%;
-            width: 47%;
-            background-color: var(--orange);
-            position: absolute;
-            top: 50%;
-            left: 48%;
-            transform: translate(-50%, -50%);
+          content: "";
+          border-radius: 100%;
+          height: 90%;
+          width: 90%;
+          background-color: var(--orange);
+          position: absolute;
+          top: 50%;
+          left: -35%;
+          transform: translate(44%, -50%);
         }
         h3{
             color: black;

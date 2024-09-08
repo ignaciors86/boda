@@ -119,7 +119,13 @@ const Card = ({ seccion, children, trasera }) => {
     <div
       className={`card ${seccion} ${flipped ? 'flipped' : 'unflipped'}`}
       ref={cardRef}
-      onClick={() => seccion !== activeCard && flipCard()}
+      onDrag={() => {
+        setIsOtherDraggableActive(true);
+        seccion !== activeCard && flipCard();
+      }}
+      onDragEnd={() => setIsOtherDraggableActive(false)}
+      onClick={() => (!isOtherDraggableActive && seccion !== activeCard) && flipCard()}
+      onTouchEnd={() => (!isOtherDraggableActive && seccion !== activeCard) && flipCard()}
       style={{ zIndex: flipped ? 10 : 1, }}
     >
       <div className="card-front" ref={frontRef}>
