@@ -31,8 +31,8 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
   const grabBearTL = () => {
 
 
-    let bearTranslation = '100%';
-    if (count === 1) {
+    let bearTranslation = '0%';
+    if (count === 1 && !vueltaHecha) {
       bearTranslation = '100%';
     } else if (count === 2) {
       bearTranslation = '40%';
@@ -53,7 +53,7 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
 
     
 
-    if (count > 1) {
+    if (count > 1 || vueltaHecha) {
       onBearComplete = () => (swearRef.current.style.display = 'block');
     }
 
@@ -175,7 +175,7 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
     <div className='ositoBox'>
       <div className="bear__wrap">
         <p ref={swearRef} className="bear__swear">
-          {count === 2 ? "NO FUNCIONA, TENDRÁS QUE VENIR" : "$%* VALE! $#@"}
+          {vueltaHecha && count === 1? "Bien hecho..." : count === 2 ? "NO FUNCIONA, TENDRÁS QUE VENIR" : "$%* VALE! $#@"}
         </p>
         <svg
           ref={bearRef}
@@ -258,7 +258,7 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
                 rx="9.2701159"
                 ry="9.6790915"
               />
-              {count === 3 && (
+              {(count === 3 || (vueltaHecha && count === 1)) && (
                 <g>
                   <path
                     id="path4396"
