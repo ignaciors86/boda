@@ -18,7 +18,7 @@
   --duration-card: calc(var(--duration)*var(--duration-card-seg));
 
   @media (orientation: portrait) {
-    --size-unit: 30vw;
+    --size-unit: 28vw;
   }
 
   @media (orientation: landscape) {
@@ -157,10 +157,10 @@ em{
   }
 }
 .seccion + .back{
-  right: 2dvh;
-  top: 2dvh;
-  width: 5dvh;
-  height: 5dvh;
+  right: calc(var(--size-unit)* .15);
+  top: calc(var(--size-unit)* .15);
+  width: calc(var(--size-unit)* .3);
+  height: calc(var(--size-unit)* .3);
   background: var(--orangeTransparent);
   border: 2px solid var(--orange);
   z-index: 2;
