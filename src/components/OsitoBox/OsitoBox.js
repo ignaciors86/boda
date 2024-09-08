@@ -6,7 +6,7 @@ import { Draggable } from 'gsap/all';
 const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
   const [checked, setChecked] = useState(true);
   const [count, setCount] = useState(1);
-  const [ dragging, setDragging ] = useState(false);
+  const [ draggedToLimit, setDraggedToLimit ] = useState(false);
   const bearRef = useRef(null);
   const armWrapRef = useRef(null);
   const armRef = useRef(null);
@@ -74,17 +74,15 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
       // count < TOQUES && bearTL.to(armWrapRef.current, { duration: armDuration, x: 50 }, 0)
       count < TOQUES && bearTL.to(armWrapRef.current, { duration: armDuration, marginLeft: "calc(var(--size-unit)* .45)" }, 0)
       .to(armRef.current, { duration: armDuration, scaleX: 1 }, armDuration)
+
       .to(pawRef.current, { scaleX: 0.8,}, ">")
 
       count < TOQUES && bearTL
       // .to(bgRef.current, { duration: checkboxDuration, backgroundColor: 'var(--darkGreen)' }, delay + pawDuration)
-      .to(indicatorRef.current, { duration: checkboxDuration, x: '0%',
-        onComplete: () => {
-          dragging && setDragging(false);
-        }
-       }, delay + pawDuration)
+      .to(indicatorRef.current, { duration: checkboxDuration, x: '0%' }, delay + pawDuration)
       .to(yesTextRef.current, { duration: checkboxDuration, opacity: 1 }, "<")
       .to(noTextRef.current, { duration: checkboxDuration, opacity: 0 }, "<")
+    
       .to(pawRef.current, { duration: pawDuration, scaleX: 0 }, ">")
       .to(armRef.current, {duration: pawDuration, scaleX: 1 }, ">")
       .to(armWrapRef.current, { duration: armDuration, marginLeft: 0 }, delay + pawDuration)
@@ -93,6 +91,7 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
         setCount(count === TOQUES ? 1 : (count + 1));
         count === TOQUES && setVueltaHecha(true);
         swearRef.current.style.display = 'none';
+        setDraggedToLimit(false);
       } }, delay + pawDuration);
 
       setConfirmacion(count < TOQUES);
@@ -115,7 +114,6 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
   const handleCheckbox = () => {
     setChecked(count < TOQUES);
     showTimeline();
-    // setTimeout(() => dragging && setDragging(false), 1000);
   }
 
   const handleHover = () => {
@@ -149,17 +147,18 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
     Draggable.create(indicatorRef.current, {
       type: 'x',
       bounds: bgRef.current,
+      touchAction: 'none',
       onDrag: function () {
         // this.x = -this.x;
         console.log(this.x);
         // console.log(suelo);
-        // this.enable();
-        setDragging(true);
-        console.log(dragging);
+        this.enable();
+        setDraggedToLimit(count < TOQUES);
+        console.log(draggedToLimit);
         if ((this.x < techo || this.x < suelo)) {
           console.log("Cruce");
-          
-          dragging && handleCheckbox();
+          draggedToLimit && this.disable();
+          draggedToLimit && handleCheckbox();
           
           // console.log("hacia la izquierda");
           // handleCheckbox( this.x <= techo ?? false);
@@ -167,11 +166,11 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
         // if (this.x >= techo && !draggedToLimit) {
         //   handleCheckbox();
         //   console.log("hacia la derecha");
-        //   setDragging(true); // Reset if dragged back before reaching 10%
+        //   setDraggedToLimit(true); // Reset if dragged back before reaching 10%
         // }        
       },
-      onDragEnd: function(){
-        // setDragging(false);
+      onDragEnd: function () {
+        this.enable();
       }
     });
   }, []);
