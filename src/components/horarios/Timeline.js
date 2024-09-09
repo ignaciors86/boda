@@ -149,6 +149,10 @@ const Timeline = () => {
       setHasVibrated(true); // Marca como vibrado para evitar vibraciones repetidas
     }
   }, [currentIndex]);
+  
+  useEffect(() => {
+    setIsOtherDraggableActive(activeCard === "horarios");
+  }, [activeCard]);
 
   if (!imagesLoaded) {
     return <Loading />;
@@ -169,7 +173,7 @@ const Timeline = () => {
         </div>
       </div>
     </div>
-    <button className="back" onClick={() => setActiveCard("sobre")} />
+    <button className="back" onClick={() => setActiveCard("home")} />
     </>);
 };
 
