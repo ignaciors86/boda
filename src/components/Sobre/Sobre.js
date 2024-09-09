@@ -10,10 +10,12 @@ import gsap from 'gsap';
 import Asistencia from './Tarjetas/Asistencia';
 import { useDragContext } from '../DragContext';
 
-const Sobre = ({ setSeccion }) => {
+const Sobre = () => {
   const [envelopeClosed, setEnvelopeClosed] = useState(null);
+  const [seccion, setSeccion] = useState("sobre");
   // const { activeCard, setActiveCard } = useDragContext();
   const tlSobre = gsap.timeline(); 
+  console.log(seccion);
 
   const toggle = () => {
     const cards = document.querySelectorAll('.card');
@@ -82,8 +84,12 @@ const Sobre = ({ setSeccion }) => {
 
   useEffect(() => {
     // Función para animar la opacidad de #root
+    const duracion = getComputedStyle(document.documentElement).getPropertyValue('--duration').trim().replace('s', '');
   function animateOpacity() {
-    gsap.to(".sobre", { opacity: 1, zIndex: 0, duration: 0.5 });
+    gsap.timeline()
+      .to("body", { background: "var(--greenSuperTransparent)", duration: duracion }, 0)
+      .to(".sobre", { opacity: 1, zIndex: 0, duration: duracion, delay: duracion }, ">");
+  
   }
 
   // Variables para manejar el temporizador

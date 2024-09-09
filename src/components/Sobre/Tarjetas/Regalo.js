@@ -1,15 +1,21 @@
 import "./Regalo.scss";
+import bizum from "../assets/images/bizum.png";
 const Regalo = () => {
+    
     return (
         <div className="regalo seccion">
 
+            <div className="link">
+                <a href="ruta_del_primer_bizum">
+                    <img src={bizum} alt="Imagen 1" />
+                    Bizum Nacho
+                </a>
+                <a href="ruta_del_segundo_bizum">
+                    <img src={bizum} alt="Imagen 1" />
+                    Bizum Mario
+                </a>    
+            </div>
             
-            <a href="ruta_del_primer_bizum">
-                <img src="ruta_de_la_primera_imagen" alt="Imagen 1" />
-            </a>
-            <a href="ruta_del_segundo_bizum">
-                <img src="ruta_de_la_segunda_imagen" alt="Imagen 2" />
-            </a>
 
             <em>Si alguien se plantea no asistir a la boda por cuestiones económicas, por favor, que nos lo diga en confianza.</em>
             <em>Querremos que estés.</em>

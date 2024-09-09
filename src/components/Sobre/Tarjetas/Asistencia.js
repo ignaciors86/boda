@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./Asistencia.scss";
 import { useDragContext } from "../../DragContext";
 import OsitoBox from "../../OsitoBox/OsitoBox";
 
 const Asistencia = () => {
-    const { activeCard, setActiveCard } = useDragContext();
+    const { activeCard, setActiveCard, isOtherDraggableActive, setIsOtherDraggableActive } = useDragContext();
     const [confirmacion, setConfirmacion] = useState(true);
     const [formData, setFormData] = useState({
         nombre: "",
@@ -48,7 +48,7 @@ const Asistencia = () => {
             eventos.postboda && "Postboda"
         ].filter(Boolean).join(", ");
 
-        const mensaje = `Hola, soy ${nombre}.\nConfirmo mi asistencia: ${confirmacion ? "Sí" : "No"}.\nComentarios: ${comentarios}`;
+        const mensaje = `Hola, soy ${nombre}.\nConfirmo mi asistencia: ${confirmacion ? "Sí" : "No"}.\nEventos: ${eventosSeleccionados}\nComentarios: ${comentarios}`;
 
         const urlWhatsApp = `https://wa.me/34${numeroTelefono}?text=${encodeURIComponent(mensaje)}`;
 
@@ -56,7 +56,9 @@ const Asistencia = () => {
     };
 
     const isButtonDisabled = formData.nombre.trim() === "";
-
+    useEffect(() => {
+        setIsOtherDraggableActive(activeCard === "asistencia");
+    }, [activeCard]);
     return (
         <>
             <div className="asistencia seccion">
@@ -79,11 +81,8 @@ const Asistencia = () => {
                         />
                     </div>
                     <div className="form-group">
-                        
                         <div className="eventos-checkboxes">
                             <h2>También estaré en:</h2>
-
-                            
                             <div className="checkbox-group">
                                 <label>
                                     <input 
@@ -94,10 +93,8 @@ const Asistencia = () => {
                                     />
                                     <p>Preboda<em>(viernes)</em></p>
                                 </label>
-                                
                             </div>
                             <div className="checkbox-group">
-
                                 <label className="raro">    
                                     <input 
                                         type="checkbox" 
@@ -108,24 +105,20 @@ const Asistencia = () => {
                                     <p>Postboda<em>(domingo)</em></p>
                                 </label>
                             </div>
-
                         </div>
                     </div>
                     <div className="form-group">
-                        {/* <h2><label htmlFor="comentarios">Comentarios:</label></h2> */}
                         <textarea 
                             id="comentarios" 
                             name="comentarios" 
                             value={formData.comentarios}
                             onChange={handleChange}
-                            placeholder="Si eres vegano, inviegno, alérgico o necesitas aclarar cualquier cosa, hazlo aquí."
+                            placeholder="Si eres vegano, alérgico o necesitas aclarar cualquier cosa, hazlo aquí."
                         />
                     </div>
                     <div className="form-group horizontal quien">
                         <div className="wrap">
-                            
                             <label><h4>Enviar a:</h4></label>
-                            
                             <div className="switch">
                                 <label>
                                     <em>Mario</em>
@@ -138,7 +131,6 @@ const Asistencia = () => {
                                     <em>Nacho</em>
                                 </label>
                             </div>
-                            
                             <button 
                                 type="button" 
                                 className="btn-enviar" 
@@ -149,7 +141,6 @@ const Asistencia = () => {
                             </button>
                         </div>
                     </div>
-                    
                 </form>
             </div>
             <button className="back" onClick={() => setActiveCard("sobre")} />

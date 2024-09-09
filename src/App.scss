@@ -22,7 +22,7 @@
   }
 
   @media (orientation: landscape) {
-    --size-unit: 15dvh;
+    --size-unit: 17dvh;
   }
   --box-shadow: calc(var(--size-unit)*0.04) calc(var(--size-unit)* 0.04) calc(var(--size-unit)*0.08) var(--darkGray);
   --box-shadow-inverted: -calc(var(--size-unit)*0.06) -calc(var(--size-unit)*0.06) -calc(var(--size-unit)*0.12) var(--darkGray);
@@ -59,6 +59,7 @@
 
 html, body{
   // background-color: var(--greenSuperTransparent);
+  transition: var(--duration);
 }
 .App {
   // background-color: var(--greenSuperTransparent);
@@ -77,7 +78,8 @@ html, body{
 }
 
 body{
-  background: var(--greenSuperTransparent);
+  // background: var(--greenSuperTransparent);
+  background: black;
   &::before {
     content: '';
     font-family: 'PreloadImages';

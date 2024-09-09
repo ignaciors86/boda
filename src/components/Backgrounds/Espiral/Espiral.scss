@@ -1,0 +1,117 @@
+$particles: 7; // Número de partículas (las 7 bolas de dragón)
+$particleSize: 40px; // Tamaño de las bolas
+$radius: 150px; // Radio de la espiral
+$lapDuration: 10s; // Duración de la animación
+$borderWidth: 3px; // Ancho del borde rojo
+
+html, body {
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #111;
+}
+
+.espiral {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); // Centrar la espiral
+  z-index: 2;
+  perspective: 800px;
+}
+
+i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  width: $particleSize;
+  height: $particleSize;
+  border-radius: 50%; // Bolas redondas
+  background: radial-gradient(circle, #f08030, #f05000); // Gradiente naranja para simular las bolas de dragón
+  box-shadow: 0px 0px 20px rgba(255, 165, 0, 0.8); // Añadimos brillo naranja
+  border: $borderWidth solid #c8102e; // Borde rojo aumentado
+  opacity: 0; // Iniciamos con opacidad 0 para ocultar las partículas al inicio
+  position: relative; // Para la colocación de las estrellas
+  overflow: hidden;
+  z-index: 2; // Aseguramos que las estrellas queden por encima del fondo de la bola
+
+  animation: spin $lapDuration infinite linear;
+  animation-timing-function: ease-in-out;
+
+  // Crear estrellas SVG
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 70%; // Ajustamos el tamaño de las estrellas
+    height: 70%; // Ajustamos el tamaño de las estrellas
+    z-index: 1;
+    transform: translate(-50%, -50%); // Centrar el contenido
+    background: url('data:image/svg+xml;charset=utf-8,${encodeURIComponent(starSVG)}') no-repeat center center;
+    background-size: contain;
+  }
+}
+
+// Ajustar el retraso de animación para cada bola
+@for $i from 1 through $particles {
+  i:nth-child(#{$i}) {
+    $angle: ($i / $particles) * 720; // Ajuste de los ángulos para 7 bolas
+    $delay: ($i - 1) * ($lapDuration / $particles); // Ajuste del retraso para espaciarlas correctamente
+
+    transform: rotate(#{$angle}deg) translate3d($radius, 0, 0);
+    animation-delay: $delay; // Ajuste del retraso para espaciarlas correctamente
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg) translate3d($radius, 0, 0);
+    opacity: 0; // Inicia invisible
+  }
+  50% {
+    opacity: 1; // Se vuelven visibles en la mitad del recorrido
+  }
+  100% {
+    transform: rotate(720deg) translate3d($radius, 0, 600px); // Movimiento hacia el fondo en 3D
+    opacity: 0; // Desaparecen al final del ciclo
+  }
+}
+
+// Botón para pausar la animación
+.button-container {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 3;
+
+  button {
+    padding: 10px 20px;
+    background-color: #c8102e; // Color de fondo del botón
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+
+    &:hover {
+      background-color: #a00d1b; // Color de fondo al pasar el ratón
+    }
+  }
+}
+
+// Generar estrellas SVG
+@function generate-star-svg($count) {
+  $svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">';
+  @for $i from 1 through $count {
+    $angle: ($i - 1) * 360deg / $count; // Distribuir estrellas equitativamente
+    $x: 50% + (20 * cos($angle)); // Ajustar posición
+    $y: 50% - (20 * sin($angle)); // Ajustar posición
+
+    $svg: $svg + '<polygon points="12,2 15,8 22,8 17,12 19,19 12,15 5,19 7,12 2,8 9,8" fill="#c8102e" transform="translate(#{$x}px, #{$y}px)" />';
+  }
+  $svg: $svg + '</svg>';
+  @return unquote('data:image/svg+xml;charset=utf-8,' + $svg);
+}
