@@ -267,14 +267,16 @@
                         &.flipped{
                             width: calc(var(--size-unit)* 3);
                             height: calc(var(--size-unit)* 3);
-                            rotate: -4deg !important;
+     
                             @media (orientation: landscape) {
-                                left: calc(var(--size-unit)* -0.4);
+                                left: calc(var(--size-unit)* -0.1);
                                 top: calc(var(--size-unit)* 0);
+                                rotate: 35deg !important;
                             }
                             @media (orientation: portrait) {
                                 left: calc(var(--size-unit)* -0.4);
                                 top: calc(var(--size-unit)* 0);
+                                rotate: -4deg !important;
                             }              
                         }
                     }
@@ -355,14 +357,17 @@
                             rotate calc(var(--duration-envelope)*1) ease-in-out calc(var(--duration-envelope)*3.3);
                         }
                         &.flipped{
-                            rotate: -5deg !important;
+                            
                             @media (orientation: portrait) {
                                 top: calc(var(--size-unit)* .5);
                                 left: calc(var(--size-unit)* -0.45);
+                                rotate: -5deg !important;
                             }
                             @media (orientation: landscape) {
                                 top: calc(var(--size-unit)* .5);
-                                left: calc(var(--size-unit)* -0.45);
+                                left: calc(var(--size-unit)* -0.5);
+                                rotate: 31deg !important;
+
                             }
                         }
                     }
@@ -384,15 +389,15 @@
                             rotate calc(var(--duration-envelope)*1) ease-in-out calc(var(--duration-envelope)*2.7);
                         }
                         &.flipped{
-
-                            rotate: -57deg !important;
                             @media (orientation: portrait) {
                                 top: calc(var(--size-unit)* -0.3);
                                 left: calc(var(--size-unit)* -0.1);
+                                rotate: -57deg !important;
                             }
                             @media (orientation: landscape) {
-                                top: calc(var(--size-unit)* -0.3);
-                                left: calc(var(--size-unit)* -0.1);
+                                top: calc(var(--size-unit)* 0.7);
+                                left: calc(var(--size-unit)* 0.3);
+                                rotate: -18deg !important;
                             }
                         }
                     }

@@ -88,7 +88,7 @@ const Sobre = () => {
   function animateOpacity() {
     gsap.timeline()
       .to("body", { background: "var(--greenSuperTransparent)", duration: duracion }, 0)
-      .to(".sobre", { opacity: 1, zIndex: 0, duration: duracion, delay: duracion }, ">");
+      .to(".sobre", { opacity: 1, zIndex: 2, duration: duracion, delay: duracion*2 }, ">");
   
   }
 
