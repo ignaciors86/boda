@@ -2,7 +2,7 @@ $particles: 7; // Número de partículas (las 7 bolas de dragón)
 $particleSize: 40px; // Tamaño de las bolas
 $radius: 150px; // Radio de la espiral
 $lapDuration: 10s; // Duración de la animación
-$borderWidth: 3px; // Ancho del borde rojo
+$borderWidth: 2px; // Ancho del borde rojo
 
 html, body {
   overflow: hidden;
@@ -19,9 +19,13 @@ html, body {
   transform: translate(-50%, -50%); // Centrar la espiral
   z-index: 2;
   perspective: 800px;
+
+  &.paused .bola {
+    animation-play-state: paused; // Pausa la animación cuando se aplica la clase
+  }
 }
 
-i {
+.bola {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -37,27 +41,42 @@ i {
   overflow: hidden;
   z-index: 2; // Aseguramos que las estrellas queden por encima del fondo de la bola
 
+  // Añadimos animación de giro
   animation: spin $lapDuration infinite linear;
   animation-timing-function: ease-in-out;
 
-  // Crear estrellas SVG
-  &::before {
-    content: '';
+  .star-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    width: 200%;
+    height: 200%;
     position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 70%; // Ajustamos el tamaño de las estrellas
-    height: 70%; // Ajustamos el tamaño de las estrellas
-    z-index: 1;
-    transform: translate(-50%, -50%); // Centrar el contenido
-    background: url('data:image/svg+xml;charset=utf-8,${encodeURIComponent(starSVG)}') no-repeat center center;
-    background-size: contain;
+    top: -47%;
+    left: -51%;
+    scale: 0.5;
+    
+  }
+
+  .star {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px; // Ajusta el tamaño de las estrellas
+    height: 24px; // Ajusta el tamaño de las estrellas
+    &:nth-of-type(2),
+    &:nth-of-type(5),
+    &:nth-of-type(7){
+      margin-top: -30%;
+    }
+    
   }
 }
 
 // Ajustar el retraso de animación para cada bola
 @for $i from 1 through $particles {
-  i:nth-child(#{$i}) {
+  .bola:nth-child(#{$i}) {
     $angle: ($i / $particles) * 720; // Ajuste de los ángulos para 7 bolas
     $delay: ($i - 1) * ($lapDuration / $particles); // Ajuste del retraso para espaciarlas correctamente
 
@@ -100,18 +119,4 @@ i {
       background-color: #a00d1b; // Color de fondo al pasar el ratón
     }
   }
-}
-
-// Generar estrellas SVG
-@function generate-star-svg($count) {
-  $svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">';
-  @for $i from 1 through $count {
-    $angle: ($i - 1) * 360deg / $count; // Distribuir estrellas equitativamente
-    $x: 50% + (20 * cos($angle)); // Ajustar posición
-    $y: 50% - (20 * sin($angle)); // Ajustar posición
-
-    $svg: $svg + '<polygon points="12,2 15,8 22,8 17,12 19,19 12,15 5,19 7,12 2,8 9,8" fill="#c8102e" transform="translate(#{$x}px, #{$y}px)" />';
-  }
-  $svg: $svg + '</svg>';
-  @return unquote('data:image/svg+xml;charset=utf-8,' + $svg);
 }
