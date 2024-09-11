@@ -62,10 +62,13 @@ const Card = ({ seccion, children, trasera }) => {
     const frontElement = frontRef.current;
     const backElement = backRef.current;
 
-    setActiveCard(seccion);
+    
 
     if (!flipped) {
       setFlipped(true);
+
+      setIsOtherDraggableActive(seccion === "horarios" || seccion === "asistencia" || seccion === "ubicaciones");
+      setActiveCard(seccion);
       gsap.set(cardElement, { x: 0, y: 0, z: 0, });
       gsap.to(cardElement, {
         rotateY: 90,
@@ -95,7 +98,7 @@ const Card = ({ seccion, children, trasera }) => {
     const cardElement = cardRef.current;
     const frontElement = frontRef.current;
     const backElement = backRef.current;
-
+    setActiveCard("");
     gsap.to(cardElement, {
       rotateY: 90,
       duration: duracion,
@@ -122,12 +125,12 @@ const Card = ({ seccion, children, trasera }) => {
       className={`card ${seccion} ${flipped ? 'flipped' : 'unflipped'}`}
       ref={cardRef}
       onDrag={() => {
-        setIsOtherDraggableActive(true);
+        // setIsOtherDraggableActive(seccion !== activeCard);
         seccion !== activeCard && flipCard();
       }}
-      onDragEnd={() => setIsOtherDraggableActive(false)}
-      onClick={() => (!isOtherDraggableActive && seccion !== activeCard) && flipCard()}
-      onTouchEnd={() => (!isOtherDraggableActive && seccion !== activeCard) && flipCard()}
+      // onDragEnd={() => setIsOtherDraggableActive(false)}
+      onClick={() => (seccion !== activeCard) && flipCard()}
+      // onTouchEnd={() => (!isOtherDraggableActive && seccion !== activeCard) && flipCard()}
       style={{ zIndex: flipped ? 10 : 1, }}
     >
       <div className="card-front" ref={frontRef}>

@@ -43,7 +43,7 @@
     /* Frente visible por defecto */
     h2{
       width: 100%;
-      background: var(--purple);
+      background: var(--darkPurple);
       padding: calc(var(--size-unit)* 0.15);
     }
   }
@@ -51,6 +51,7 @@
   &-back {
     transform: rotateY(180deg);
     visibility: hidden;
+    background: var(--greenTransparent);
     // opacity: 0;
     /* Voltear la parte trasera inicialmente */
   }
@@ -75,7 +76,7 @@
     width: 100%;
     box-sizing: border-box;
     padding: calc(var(--size-unit)* 0.3);
-    background: var(--green);
+    background: var(--greenTransparent);
     display: flex;
     align-items: center;
     position: relative;

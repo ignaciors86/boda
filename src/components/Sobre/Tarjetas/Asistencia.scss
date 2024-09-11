@@ -184,7 +184,7 @@
                 left: calc(var(--size-unit)* -0.05);
                 bottom: calc(var(--size-unit)* -0.06);
                 background-color: var(--orange);
-                border: 2px solid var(--darkGreen);
+                border: 2px solid var(--orangeTransparent);
                 border-radius: 50%;
                 transition: 0.4s;
             }
@@ -204,16 +204,16 @@
 
     .btn-enviar {
         background-color: var(--orangeTransparent);
+        border: 5px solid var(--orange);
         color: var(--darkGray);
         padding: calc(var(--size-unit)* 0.1) calc(var(--size-unit)* 0.15);
-        border: none;
-        border-radius: calc(var(--size-unit)* 0.2);
+        border-radius: calc(var(--size-unit)* 0.15);
         cursor: pointer;
         width: auto;
         transition: calc(var(--duration)* 0.2) ease 0s;
         margin-top: calc(var(--size-unit)* -0.2);
         &:hover {
-            background-color: var(--purple);
+            background-color: var(--orange);
         }
 
         & h2 {
@@ -221,7 +221,7 @@
         }
 
         &[disabled] h2 {
-            opacity: 0.5;
+            opacity: 0.2;
         }
     }
 }

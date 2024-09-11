@@ -19,23 +19,22 @@ const Lugar = () => {
     }, []);
 
     useEffect(() => {
-        setIsOtherDraggableActive(activeCard === "ubicaciones");
-    }, [activeCard]);
-
-    
+        console.log(activeCard === "ubicaciones");
+        // setIsOtherDraggableActive(activeCard === "ubicaciones");
+    }, [activeCard]);    
 
     return (<>
         <div className="lugar seccion">
             <p>La boda tendrá lugar en Villas de Pomar</p>
-            <a className="imagen" href={url} target="_blank" rel="noopener noreferrer" onClick={() => setIsOtherDraggableActive(false)}>
+            <a className="imagen" href={url} target="_blank" rel="noopener noreferrer">
                 <img src={mapa} alt="Mapa del lugar" ref={mapRef} />
             </a>
-            <a href={url} target="_blank" rel="noopener noreferrer">
+            <a href={url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
                 <em>(Pedrosillo el Ralo, Salamanca)</em>
             </a>
         </div>
         
-        <button className="back" onClick={() => setActiveCard("sobre")} />
+        {/* <button className="back" onClick={() => setActiveCard("sobre")} /> */}
         </>
     );
 };

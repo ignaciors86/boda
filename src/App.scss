@@ -2,13 +2,13 @@
   --gray: #f1f1f1;
   --darkGray: #302f2f82;
   --darkGrayTransparent: #535f4df7;
-  --green: #5e9188;
-  --greenTransparent: #3e5954;
+  --green: #9bc4be;
+  --greenTransparent: #588179;
   --greenSuperTransparent: #3e5954;
-  --darkGreen: #253342;
-  --purple: #746d73;
+  --darkGreen: #73558c;
   --purple: #232226;
   --purpleTransparent: #72396cb0;
+  --darkPurple: #73558c;
   --orange: #ffa600;
   --orangeTransparent: #ffa600d2;
 
@@ -99,7 +99,7 @@ h2, h3, h4{
   text-align: center;
   margin: 0;
   @media (orientation: portrait) {
-    letter-spacing: calc(var(--size-unit)* -0.01);
+    letter-spacing: calc(var(--size-unit)* -0.001);
   }
 
   @media (orientation: landscape) {

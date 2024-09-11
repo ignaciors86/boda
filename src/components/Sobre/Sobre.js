@@ -15,6 +15,7 @@ const Sobre = () => {
   const [seccion, setSeccion] = useState("sobre");
   // const { activeCard, setActiveCard } = useDragContext();
   const tlSobre = gsap.timeline(); 
+  const duracion = getComputedStyle(document.documentElement).getPropertyValue('--duration').trim().replace('s', '');
   console.log(seccion);
 
   const toggle = () => {
@@ -53,7 +54,9 @@ const Sobre = () => {
     console.log(duracion);
 
     setSeccion(seccion);
-
+    gsap.to(".bubbles", { opacity: 1, duration: 1, delay: 1, ease: "ease" });
+    gsap.to(".espiral", { opacity: 0, duration: 1, delay: 0, ease: "ease" });
+    
     if (sobre) {
       // Usar función para rotación aleatoria
       tlSobre.to(sobre, {
@@ -76,7 +79,9 @@ const Sobre = () => {
           toggle();
           sobre.classList.toggle('closed');
         },
-      }, ">");
+      }, ">")
+      .to(".wax-seal", {transition: "calc(var(--duration-envelope)*.5) ease calc(var(--duration-envelope)*3.5)",}, 0 )
+      
     } else {
       toggle();
     }
@@ -84,12 +89,13 @@ const Sobre = () => {
 
   useEffect(() => {
     // Función para animar la opacidad de #root
-    const duracion = getComputedStyle(document.documentElement).getPropertyValue('--duration').trim().replace('s', '');
+    
   function animateOpacity() {
-    gsap.timeline()
-      .to("body", { background: "var(--greenSuperTransparent)", duration: duracion }, 0)
-      .to(".sobre", { opacity: 1, zIndex: 2, duration: duracion, delay: duracion*2 }, ">");
-  
+    tlSobre
+      .to(".sobre", { opacity: 0, zIndex: 2, duration: 0, scale: .7, }, 0)
+      .to("body", { background: "var(--greenSuperTransparent)", duration: duracion*2 }, ">")
+      .to(".sobre", { opacity: 1, duration: duracion*2, scale: 1, y: 0, ease: "ease", delay: duracion,}, ">")
+      .to("#myCanvas", { opacity: 0.5, duration: 1, delay: 0, ease: "ease" }, "<");
   }
 
   // Variables para manejar el temporizador
@@ -104,7 +110,7 @@ const Sobre = () => {
   canvas.addEventListener('mouseenter', () => {
     hoverTimer = setTimeout(() => {
       animateOpacity();
-    }, 1000); // 1 segundo
+    }, duracion * 1000); // 1 segundo
   });
 
   canvas.addEventListener('mouseleave', () => {
@@ -115,22 +121,23 @@ const Sobre = () => {
   canvas.addEventListener('touchstart', (event) => {
     touchTimer = setTimeout(() => {
       animateOpacity();
-    }, 1000); // 1 segundo
+    }, duracion * 1000); // 1 segundo
     event.preventDefault(); // Prevenir el comportamiento por defecto del touch
   });
 
-  // canvas.addEventListener('touchend', () => {
-  //   clearTimeout(touchTimer);
-  // });
-
-  // canvas.addEventListener('touchmove', () => {
-  //   // Mantener el temporizador activo mientras el usuario mueve el dedo
-  //   clearTimeout(touchTimer);
-  //   touchTimer = setTimeout(() => {
-  //     animateOpacity();
-  //   }, 1000); // 1 segundo
-  // });
-  }, [])
+    const waxSeal = document.querySelector('.wax-seal');
+    const sobre = document.querySelector('.sobre.closed');
+console.log(seccion);
+    if (waxSeal && sobre) {
+      gsap.to(waxSeal, {
+        scale: 1.1,
+        repeat: -1,
+        yoyo: true,
+        duration: 0.5,
+        paused: !sobre.classList.contains('closed'),
+      });
+    }
+  }, []);
 
   return (
     <div className="sobre closed">
