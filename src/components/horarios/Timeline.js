@@ -85,7 +85,7 @@ const Timeline = () => {
         }
       },
       onRelease() {
-        setIsOtherDraggableActive(false);
+        // setIsOtherDraggableActive(false);
         document.querySelectorAll('.card').forEach(card => {
           card.classList.remove('dragging');
         });

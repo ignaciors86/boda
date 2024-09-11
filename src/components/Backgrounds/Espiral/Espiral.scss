@@ -1,17 +1,8 @@
 $particles: 7; // Número de partículas (las 7 bolas de dragón)
 $particleSize: 40px; // Tamaño de las bolas
 $radius: 150px; // Radio de la espiral
-$lapDuration: 10s; // Duración de la animación
-$borderWidth: 2px; // Ancho del borde rojo
-
-html, body {
-  overflow: hidden;
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  background: #111;
-}
-
+$lapDuration: 7s; // Duración de la animación
+$borderWidth: 1px; // Ancho del borde rojo
 .espiral {
   position: absolute;
   top: 50%;
@@ -37,9 +28,9 @@ html, body {
   box-shadow: 0px 0px 20px rgba(255, 165, 0, 0.8); // Añadimos brillo naranja
   border: $borderWidth solid #c8102e; // Borde rojo aumentado
   opacity: 0; // Iniciamos con opacidad 0 para ocultar las partículas al inicio
-  position: relative; // Para la colocación de las estrellas
+  position: relative; // Para la colocación de las Bubbles
   overflow: hidden;
-  z-index: 2; // Aseguramos que las estrellas queden por encima del fondo de la bola
+  z-index: 2; // Aseguramos que las Bubbles queden por encima del fondo de la bola
 
   // Añadimos animación de giro
   animation: spin $lapDuration infinite linear;

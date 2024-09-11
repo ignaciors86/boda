@@ -4,6 +4,7 @@ import Sobre from './components/Sobre/Sobre';
 import './App.scss';
 import { DragProvider } from './components/DragContext';
 import Espiral from './components/Backgrounds/Espiral/Espiral';
+import Bubbles from './components/Backgrounds/Bubles/Bubles';
 
 const App = () => {
   const tlApp = gsap.timeline();
@@ -24,6 +25,7 @@ const App = () => {
             <h2>{article.nombre}</h2>
           </div>
         ))} */}
+        <Bubbles/>
         <Espiral/>
         <Sobre />
       {/* </div> */}
