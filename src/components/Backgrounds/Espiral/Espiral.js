@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./Espiral.scss";
+import Prompt from "../../Prompt/Prompt";
 
 const Espiral = () => {
   const [paused, setPaused] = useState(false);
@@ -36,11 +37,14 @@ const Espiral = () => {
           </div>
         ))}
       </div>
-      {/* <div className="button-container">
+
+      <Prompt />
+
+      <div className="button-container">
         <button onClick={toggleAnimation}>
           {paused ? "Reanudar Animación" : "Pausar Animación"}
         </button>
-      </div> */}
+      </div>
     </>
   );
 };

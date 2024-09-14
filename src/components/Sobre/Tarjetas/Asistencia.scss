@@ -32,7 +32,7 @@
 
         &.horizontal {
             flex-direction: row;
-            margin: calc(var(--size-unit)* 0.15) 0 calc(var(--size-unit)* .1);
+            margin: calc(var(--size-unit) * 0.1) 0 calc(var(--size-unit) * 0.1);
             .label {
                 margin: 0;
             }
@@ -48,7 +48,7 @@
             }
             label {
                 margin: 0;
-                width: 80%;
+                width: 100%;
                 display: flex;
             }
         }
@@ -167,22 +167,22 @@
 
         .slider {
             position: absolute;
-            width: calc(var(--size-unit)* 0.625);
-            height: calc(var(--size-unit)* 0.05);
+            width: calc(var(--size-unit)* 1);
+            height: calc(var(--size-unit)* 0.22);
             border-radius: calc(var(--size-unit)* 0.3);
             cursor: pointer;
             transition: 0.4s;
             background-color: var(--darkGreen);
-            margin: 0 calc(var(--size-unit)* 0.15);
-            bottom: calc(var(--size-unit)* 0.25);
+            margin: 0 calc(var(--size-unit)* 0.085);
+            bottom: calc(var(--size-unit)* 0.28);
 
             &:before {
                 content: "";
                 position: absolute;
                 height: calc(var(--size-unit)* 0.15);
                 width: calc(var(--size-unit)* 0.15);
-                left: calc(var(--size-unit)* -0.05);
-                bottom: calc(var(--size-unit)* -0.06);
+                left: calc(var(--size-unit)* 0.03);
+                bottom: calc(var(--size-unit)* .025);
                 background-color: var(--orange);
                 border: 2px solid var(--orangeTransparent);
                 border-radius: 50%;
@@ -191,7 +191,7 @@
         }
 
         input:checked + .slider:before {
-            transform: translateX(calc(var(--size-unit) * 0.6));
+            transform: translateX(calc(var(--size-unit) * 0.77));
         }
 
         label {
@@ -209,9 +209,13 @@
         padding: calc(var(--size-unit)* 0.1) calc(var(--size-unit)* 0.15);
         border-radius: calc(var(--size-unit)* 0.15);
         cursor: pointer;
-        width: auto;
+        width: 40%;
         transition: calc(var(--duration)* 0.2) ease 0s;
-        margin-top: calc(var(--size-unit)* -0.2);
+        margin-top: calc(var(--size-unit)* -0.1);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: calc(var(--size-unit)* -0.1);
         &:hover {
             background-color: var(--orange);
         }

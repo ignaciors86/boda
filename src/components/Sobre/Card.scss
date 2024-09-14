@@ -86,5 +86,14 @@
     a, em{
       color: var(--gray);
     }
+    em{
+      &.claim{
+        display: flex;
+        background: var(--darkPurple);
+        padding: calc(var(--size-unit)* .1);
+        border-radius: calc(var(--size-unit)* .085);
+        margin-top: calc(var(--size-unit)* .1);
+      }
+    }
   }
 }

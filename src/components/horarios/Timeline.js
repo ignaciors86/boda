@@ -30,9 +30,7 @@ const Timeline = () => {
     }));
     return Promise.all(promises);
   };
-  useEffect(() => {
-    setIsOtherDraggableActive(activeCard === "horarios");
-  }, [activeCard]);
+
   // Configurar Draggable y la línea de tiempo
   const setupDraggableAndTimeline = () => {
     Draggable.get(sliderRef.current)?.kill();
@@ -58,7 +56,7 @@ const Timeline = () => {
       type: 'x',
       bounds: progressBarRef.current,
       onDrag() {
-        setIsOtherDraggableActive(true);
+        // setIsOtherDraggableActive(true);
         document.querySelectorAll('.card').forEach(card => {
           card.classList.add('dragging');
         });
@@ -118,10 +116,7 @@ const Timeline = () => {
     const progressBar = progressBarRef.current;
 
     if (slider && progressBar) {
-      const initialProgress = Math.min(
-        Math.max(slider.x / progressBar.clientWidth, 0), 
-        1
-      );
+      const initialProgress = Math.min(Math.max(slider.x / progressBar.clientWidth, 0), 1);
       timelineRef.current.progress(initialProgress);
       setCurrentIndex(Math.floor(initialProgress * items.length)); // Establecer el índice inicial
     }
@@ -147,14 +142,10 @@ const Timeline = () => {
   useEffect(() => {
     // Vibrar solo si ha cambiado el índice y no ha vibrado aún
     if (currentIndex > -1 && navigator.vibrate) {
-      !hasVibrated && navigator.vibrate(40); // Vibración de 40 milisegundos
+      !hasVibrated && navigator?.vibrate(40); // Vibración de 40 milisegundos
       setHasVibrated(true); // Marca como vibrado para evitar vibraciones repetidas
     }
   }, [currentIndex]);
-  
-  useEffect(() => {
-    setIsOtherDraggableActive(activeCard === "horarios");
-  }, [activeCard]);
 
   if (!imagesLoaded) {
     return <Loading />;
@@ -170,7 +161,6 @@ const Timeline = () => {
           <img
             src={ositosDrag}
             alt="Slider"
-            // onClick={() => setIsOtherDraggableActive(true)}
           />
         </div>
       </div>

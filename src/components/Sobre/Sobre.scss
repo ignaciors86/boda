@@ -120,11 +120,11 @@
             }
             &.asistencia{
                 width: calc(var(--size-unit)* 3);
-                height: calc(var(--size-unit)* 4.5);
+                height: calc(var(--size-unit)* 4.8);
             }
             &.ubicaciones{
                 width: calc(var(--size-unit)* 3.2);
-                height: calc(var(--size-unit)* 3);
+                height: calc(var(--size-unit)* 4);
             }
             &.regalo{
                 width: calc(var(--size-unit)* 2.5);
@@ -322,7 +322,7 @@
                         @media (orientation: portrait) {
                             top: calc(var(--size-unit)* 0);
                             left: calc(var(--size-unit)* -1.5);
-                            rotate: -28deg !important;
+                            rotate: -18deg !important;
                         }
 
                         @media (orientation: landscape) {
@@ -355,7 +355,7 @@
                     }
                     &.ubicaciones{
                         top: calc(var(--size-unit)* 1.7);
-                        left: calc(var(--size-unit)* 0.7);
+                        left: calc(var(--size-unit)* 0.5);
                         rotate: 20deg !important;
                         &:not(.flipped):not(.unflipped){
                             transition: calc(var(--duration-envelope)*1) linear calc(var(--duration-envelope)*3),
@@ -364,8 +364,8 @@
                         &.flipped{
                             
                             @media (orientation: portrait) {
-                                top: calc(var(--size-unit)* .5);
-                                left: calc(var(--size-unit)* -0.45);
+                                top: calc(var(--size-unit)* -.5);
+                                left: calc(var(--size-unit)* -0.55);
                                 rotate: -5deg !important;
                             }
                             @media (orientation: landscape) {
