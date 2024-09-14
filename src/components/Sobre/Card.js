@@ -28,28 +28,29 @@ const Card = ({ seccion, children, trasera }) => {
             flipCard();
           }
         },
-        onRelease() {
-          if (flipped) {
-            resetCardPosition();
-          } else {
-            gsap.to(cardElement, {
-              duration: duracionSeg*1000,
-              x: 0,
-              y: 0,
-              // ease: 'power2.out',
-            });
-          }
-        }
+        // onRelease() {
+        //   if (flipped) {
+        //     resetCardPosition();
+        //   } else {
+        //     gsap.to(cardElement, {
+        //       duration: duracionSeg*1000,
+        //       x: 0,
+        //       y: 0,
+        //       // ease: 'power2.out',
+        //     });
+        //   }
+        // }
       });
 
       return () => {
         dragInstance[0].kill();
       };
     }
-  }, [flipped, isOtherDraggableActive]);
+  }, [flipped]);
 
   useEffect(() => {
     if (seccion !== activeCard && flipped) {
+      console.log("reset")
       resetCardPosition();
     }
     // if (seccion === activeCard) {
@@ -61,9 +62,7 @@ const Card = ({ seccion, children, trasera }) => {
     const cardElement = cardRef.current;
     const frontElement = frontRef.current;
     const backElement = backRef.current;
-
     
-
     if (!flipped) {
       setFlipped(true);
 
@@ -98,7 +97,7 @@ const Card = ({ seccion, children, trasera }) => {
     const cardElement = cardRef.current;
     const frontElement = frontRef.current;
     const backElement = backRef.current;
-    setActiveCard("");
+    // activeCard !== seccion && setActiveCard("");
     gsap.to(cardElement, {
       rotateY: 90,
       duration: duracion,
@@ -113,7 +112,7 @@ const Card = ({ seccion, children, trasera }) => {
           onComplete: () => {
             gsap.set(cardElement, { x: 0, y: 0, });
             setFlipped(false);
-            setIsOtherDraggableActive(false);
+            // setIsOtherDraggableActive(false);
           }
         });
       }
@@ -126,10 +125,10 @@ const Card = ({ seccion, children, trasera }) => {
       ref={cardRef}
       onDrag={() => {
         // setIsOtherDraggableActive(seccion !== activeCard);
-        seccion !== activeCard && flipCard();
+        (!isOtherDraggableActive || seccion === "") && flipCard();
       }}
       // onDragEnd={() => setIsOtherDraggableActive(false)}
-      onClick={() => (seccion !== activeCard) && flipCard()}
+      onClick={() => (!isOtherDraggableActive || seccion === "") && flipCard()}
       // onTouchEnd={() => (!isOtherDraggableActive && seccion !== activeCard) && flipCard()}
       style={{ zIndex: flipped ? 10 : 1, }}
     >

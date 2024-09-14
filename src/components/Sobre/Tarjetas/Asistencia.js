@@ -137,7 +137,7 @@ const Asistencia = () => {
                                 onClick={handleSendWhatsApp}
                                 disabled={isButtonDisabled}
                             >
-                                <h2>{isButtonDisabled ? "Relléname" : "DILOOO!!"}</h2>
+                                <h2>{isButtonDisabled ? "-" : "¡Listo!"}</h2>
                             </button>
                         </div>
                     </div>
