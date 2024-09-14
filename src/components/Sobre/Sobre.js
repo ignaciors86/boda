@@ -127,7 +127,7 @@ const Sobre = () => {
 
     const waxSeal = document.querySelector('.wax-seal');
     const sobre = document.querySelector('.sobre.closed');
-console.log(seccion);
+    // console.log(seccion);
     if (waxSeal && sobre) {
       gsap.to(waxSeal, {
         scale: 1.1,

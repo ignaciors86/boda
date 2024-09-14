@@ -56,9 +56,7 @@ const Asistencia = () => {
     };
 
     const isButtonDisabled = formData.nombre.trim() === "";
-    useEffect(() => {
-        setIsOtherDraggableActive(activeCard === "asistencia");
-    }, [activeCard]);
+
     return (
         <>
             <div className="asistencia seccion">
@@ -113,7 +111,7 @@ const Asistencia = () => {
                             name="comentarios" 
                             value={formData.comentarios}
                             onChange={handleChange}
-                            placeholder="Si eres vegano, alérgico o necesitas aclarar cualquier cosa, hazlo aquí."
+                            placeholder="Si eres vegano, inviegno, alérgico o necesitas aclarar cualquier cosa, hazlo aquí."
                         />
                     </div>
                     <div className="form-group horizontal quien">

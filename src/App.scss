@@ -52,6 +52,18 @@
   src: url('../assets/fonts/Plante.ttf') format('ttf'),
 }
 
+@font-face {
+  font-family: 'VCR';
+  src: url('../assets/fonts/VCR/VCR_OSD_MONO-L2BMFKOD.eot'); /* IE9 Compatibility */
+  src: url('../assets/fonts/VCR/VCR_OSD_MONO-L2BMFKOD.eot?#iefix') format('embedded-opentype'), 
+       url('../assets/fonts/VCR/VCR_OSD_MONO-BACJ7AJA.woff2') format('woff2'),
+       url('../assets/fonts/VCR/VCR_OSD_MONO-QFKAOLIE.woff') format('woff'),
+       url('../assets/fonts/VCR/VCR_OSD_MONO-ID47EYT3.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+
 * {
   -webkit-tap-highlight-color: transparent; /* Oculta el color de resaltado en iOS */
   -webkit-touch-callout: none; /* Evita la aparición del menú contextual al hacer tap */

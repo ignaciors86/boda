@@ -18,11 +18,6 @@ const Lugar = () => {
 
     }, []);
 
-    useEffect(() => {
-        console.log(activeCard === "ubicaciones");
-        // setIsOtherDraggableActive(activeCard === "ubicaciones");
-    }, [activeCard]);    
-
     return (<>
         <div className="lugar seccion">
             <p>La boda tendrá lugar en Villas de Pomar</p>
@@ -32,9 +27,11 @@ const Lugar = () => {
             <a href={url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
                 <em>(Pedrosillo el Ralo, Salamanca)</em>
             </a>
+
+            <em className="claim">El autobús saldrá a las XX:XX desde DONDESEA</em>
         </div>
         
-        {/* <button className="back" onClick={() => setActiveCard("sobre")} /> */}
+        <button className="back" onClick={() => setActiveCard("sobre")} />
         </>
     );
 };
