@@ -30,7 +30,9 @@ const Timeline = () => {
     }));
     return Promise.all(promises);
   };
-
+  useEffect(() => {
+    setIsOtherDraggableActive(activeCard === "horarios");
+  }, [activeCard]);
   // Configurar Draggable y la línea de tiempo
   const setupDraggableAndTimeline = () => {
     Draggable.get(sliderRef.current)?.kill();
