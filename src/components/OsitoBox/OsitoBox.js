@@ -78,8 +78,9 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
       .to(pawRef.current, { scaleX: 0.8,}, ">")
 
       count < TOQUES && bearTL
-      // .to(bgRef.current, { duration: checkboxDuration, backgroundColor: 'var(--darkGreen)' }, delay + pawDuration)
+      
       .to(indicatorRef.current, { duration: checkboxDuration, x: '0%' }, delay + pawDuration)
+      .to(bgRef.current, { duration: checkboxDuration, backgroundColor: 'var(--darkGreen)' }, delay + pawDuration)
       .to(yesTextRef.current, { duration: checkboxDuration, opacity: 1 }, "<")
       .to(noTextRef.current, { duration: checkboxDuration, opacity: 0 }, "<")
     
@@ -103,9 +104,8 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
 
     const checkTL = gsap.timeline();
     checkTL
-      // .to(armRef.current, { duration: armDuration, scaleX: 1 }, 0)
-      .to(bgRef.current, { duration: checkboxDuration, backgroundColor: checked ? 'var(--darkGreen)' : 'var(--darkGray)' })
       .to(indicatorRef.current, { duration: checkboxDuration, x: checked ? '269%' : 0, }, 0)
+      .to(bgRef.current, { duration: checkboxDuration, backgroundColor: !checked ? 'var(--darkGreen)' : 'var(--darkGray)' }, "<")
       .to(yesTextRef.current, { duration: checkboxDuration, opacity: checked ? 0 : 1 }, "<")
       .to(noTextRef.current, { duration: checkboxDuration, opacity: checked ? 1 : 0 }, "<")
       .add(grabBearTL(), checkboxDuration);
@@ -130,18 +130,11 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
 
   useEffect(() => {
     console.log(confirmacion);
-    // if (confirmacion) {
-    //   gsap.to(yesTextRef.current, { duration: 1, opacity: 1 });
-    //   gsap.to(noTextRef.current, { duration: .2, opacity: 0 });
-    // } else {
-    //   gsap.to(yesTextRef.current, { duration: 0.2, opacity: 0 });
-    //   gsap.to(noTextRef.current, { duration: 1, opacity: 1 });
-    // }
+
   }, [confirmacion])
 
   useEffect(() => {
-    // console.log('bgRef:', bgRef.current);
-    // console.log('indicatorRef:', indicatorRef.current);
+
   
     if (!bgRef.current || !indicatorRef.current) return;
   

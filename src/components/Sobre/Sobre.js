@@ -9,13 +9,14 @@ import Invitacion from './Tarjetas/Invitacion';
 import gsap from 'gsap';
 import Asistencia from './Tarjetas/Asistencia';
 import { useDragContext } from '../DragContext';
+import animateOpacity from '../functions';
 
 const Sobre = () => {
   const [envelopeClosed, setEnvelopeClosed] = useState(null);
   const [seccion, setSeccion] = useState("sobre");
   // const { activeCard, setActiveCard } = useDragContext();
   const tlSobre = gsap.timeline(); 
-  const duracion = getComputedStyle(document.documentElement).getPropertyValue('--duration').trim().replace('s', '');
+  
   console.log(seccion);
 
   const toggle = () => {
@@ -90,13 +91,6 @@ const Sobre = () => {
   useEffect(() => {
     // Función para animar la opacidad de #root
     
-  function animateOpacity() {
-    tlSobre
-      .to(".sobre", { opacity: 0, zIndex: 2, duration: 0, scale: .7, }, 0)
-      .to("body", { background: "var(--greenSuperTransparent)", duration: duracion*2 }, ">")
-      .to(".sobre", { opacity: 1, duration: duracion*2, scale: 1, y: 0, ease: "ease", delay: duracion,}, ">")
-      .to("#myCanvas", { opacity: 0.5, duration: 1, delay: 0, ease: "ease" }, "<");
-  }
 
   // Variables para manejar el temporizador
   let hoverTimer;
@@ -107,21 +101,13 @@ const Sobre = () => {
   const root = document.getElementById('root');
 
   // Evento de hover en escritorio
-  canvas.addEventListener('mouseenter', () => {
-    hoverTimer = setTimeout(() => {
-      animateOpacity();
-    }, duracion * 1000); // 1 segundo
-  });
+  canvas.addEventListener('mouseenter', animateOpacity);
 
-  canvas.addEventListener('mouseleave', () => {
-    clearTimeout(hoverTimer);
-  });
+  canvas.addEventListener('mouseleave', animateOpacity);
 
   // Evento de touch en dispositivos móviles
   canvas.addEventListener('touchstart', (event) => {
-    touchTimer = setTimeout(() => {
-      animateOpacity();
-    }, duracion * 1000); // 1 segundo
+    animateOpacity();
     event.preventDefault(); // Prevenir el comportamiento por defecto del touch
   });
 

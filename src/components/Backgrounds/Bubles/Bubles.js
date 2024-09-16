@@ -237,7 +237,7 @@ const Bubbles = () => {
 
                 cancelAnimationFrame(timer);
                 timer = requestAnimationFrame(animate);
-                drawBack();
+                // drawBack();
             };
 
             setCanvasHeight();
