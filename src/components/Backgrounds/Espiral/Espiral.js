@@ -40,11 +40,11 @@ const Espiral = () => {
 
       <Prompt />
 
-      <div className="button-container">
+      {/* <div className="button-container">
         <button onClick={toggleAnimation}>
           {paused ? "Reanudar Animación" : "Pausar Animación"}
         </button>
-      </div>
+      </div> */}
     </>
   );
 };
