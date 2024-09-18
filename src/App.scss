@@ -5,9 +5,7 @@
   --green: #9bc4be;
   --greenTransparent: #588179;
   --greenSuperTransparent: #a0ffed;
-  --darkGreen: #73558c;
-  --purple: #232226;
-  --purpleTransparent: #72396cb0;
+  --purpleTransparent: #73558c;
   --darkPurple: #73558c;
   --orange: #ffa600;
   --orangeTransparent: #ffa600d2;
@@ -70,11 +68,11 @@
 }
 
 html, body{
-  // background-color: var(--greenSuperTransparent);
+  // background-color: cadetblue;
   transition: var(--duration);
 }
 .App {
-  // background-color: var(--greenSuperTransparent);
+  // background-color: cadetblue;
   background-repeat: no-repeat;
   background-position: center center;
   background-size: cover;
@@ -90,7 +88,7 @@ html, body{
 }
 
 body{
-  // background: var(--greenSuperTransparent);
+  // background: cadetblue;
   background: black;
   &::before {
     content: '';
@@ -152,8 +150,8 @@ em{
   width: 8dvh;
   height: 8dvh;
   border-radius: 50%;
-  background: var(--green);
-  border: 2px solid var(--green);
+  background: cadetblue;
+  border: 2px solid cadetblue;
   cursor: pointer;
   // opacity: 0;
   &:before{

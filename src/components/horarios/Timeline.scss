@@ -7,7 +7,7 @@
   height: 100%;
   width: 100%;
   flex-direction: column;
-  background: var(--green);
+  background: cadetblue;
   position: relative;
 }
 
@@ -16,7 +16,7 @@
 }
 
 .progress-bar {
-  background: var(--darkGreen);
+  background: var(--purpleTransparent);
   margin: auto;
   border: calc(var(--size-unit)* 0.02) solid var(--greenTransparent);
   border-radius: calc(var(--size-unit)* 0.05);
@@ -36,8 +36,8 @@
     margin-top: calc(var(--size-unit)* -0.15);
     width: calc(var(--size-unit)* 0.5);
     margin-left: calc(var(--size-unit)* -0.25);
-    border: calc(var(--size-unit)* 0.02) solid var(--darkGreen);
-    background: var(--purple);
+    border: calc(var(--size-unit)* 0.04) solid var(--purpleTransparent);
+    background: cadetblue;
     display: flex;
     align-items: center;
     justify-content: center;

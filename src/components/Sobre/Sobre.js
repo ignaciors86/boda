@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import './Sobre.scss';
 import invitacion from './assets/images/invitacion.jpg';
+
 import Card from './Card';
 import Timeline from '../Horarios/Timeline';
 import Lugar from './Tarjetas/Lugar';
@@ -56,7 +57,19 @@ const Sobre = () => {
 
     setSeccion(seccion);
     gsap.to(".bubbles", { opacity: 1, duration: 1, delay: 1, ease: "ease" });
-    gsap.to(".espiral", { opacity: 0, duration: 1, delay: 0, ease: "ease" });
+    gsap.to(".espiral", { opacity: 0, duration: 1, delay: 0, ease: "ease",
+      onComplete: () => {
+        const espiral = document.querySelector('.espiral');
+        if (espiral) {
+          espiral.remove();
+        }
+        const prompt = document.querySelector('.prompt');
+        if (prompt) {
+          prompt.remove();
+        }
+      }
+     });
+    
     
     if (sobre) {
       // Usar función para rotación aleatoria

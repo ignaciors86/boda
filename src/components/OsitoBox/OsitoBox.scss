@@ -112,7 +112,7 @@
       left: 50%;
       transform: translate(-50%, 0%);
       cursor: pointer;
-      background-color: var(--green);
+      background-color: cadetblue;
       border-radius: calc(var(--size-unit)* 0.5);
       overflow: hidden;
   
@@ -209,7 +209,7 @@
       &.checked {
         .checkbox{
             &__bg {
-                background-color: var(--darkGreen);
+                background-color: var(--purpleTransparent);
             }
             &__indicator {
                 transform: translateX(0%);

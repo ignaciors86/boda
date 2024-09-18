@@ -80,7 +80,7 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
       count < TOQUES && bearTL
       
       .to(indicatorRef.current, { duration: checkboxDuration, x: '0%' }, delay + pawDuration)
-      .to(bgRef.current, { duration: checkboxDuration, backgroundColor: 'var(--darkGreen)' }, delay + pawDuration)
+      .to(bgRef.current, { duration: checkboxDuration, backgroundColor: 'var(--purpleTransparent)' }, delay + pawDuration)
       .to(yesTextRef.current, { duration: checkboxDuration, opacity: 1 }, "<")
       .to(noTextRef.current, { duration: checkboxDuration, opacity: 0 }, "<")
     
@@ -105,7 +105,7 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
     const checkTL = gsap.timeline();
     checkTL
       .to(indicatorRef.current, { duration: checkboxDuration, x: checked ? '269%' : 0, }, 0)
-      .to(bgRef.current, { duration: checkboxDuration, backgroundColor: !checked ? 'var(--darkGreen)' : 'var(--darkGray)' }, "<")
+      .to(bgRef.current, { duration: checkboxDuration, backgroundColor: !checked ? 'var(--purpleTransparent)' : 'var(--darkGray)' }, "<")
       .to(yesTextRef.current, { duration: checkboxDuration, opacity: checked ? 0 : 1 }, "<")
       .to(noTextRef.current, { duration: checkboxDuration, opacity: checked ? 1 : 0 }, "<")
       .add(grabBearTL(), checkboxDuration);

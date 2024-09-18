@@ -2,7 +2,7 @@
   position: absolute;
   width: 100%;
   height: 100%;
-  background-color: var(--green);
+  background-color: cadetblue;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
@@ -38,7 +38,7 @@
     .info {
       z-index: 1;
       background: var(--greenTransparent);
-      background: linear-gradient(var(--greenTransparent) 50%, var(--greenSuperTransparent) 100%);
+      background: linear-gradient(var(--greenTransparent) 50%, cadetblue 100%);
       width: 100%;
       min-height: 20%;
       display: flex;
