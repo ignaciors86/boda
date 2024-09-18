@@ -1,7 +1,7 @@
 .asistencia {
     &.seccion {
         overflow: initial;
-        background: var(--greenTransparent);
+        background: cadetblue;
     }
 
     a {  
@@ -71,9 +71,9 @@
         }
 
         input, select, textarea, &::placeholder {
-            color: var(--darkGreen);
+            color: var(--purpleTransparent);
             width: 100%;
-            border: 1px solid var(--green);
+            border: 1px solid cadetblue;
             box-sizing: border-box;
             padding: calc(var(--size-unit) * 0.1) calc(var(--size-unit) * 0.1);
             border-radius: calc(var(--size-unit) * 0.03);
@@ -82,8 +82,8 @@
             font-family: 'arial';
 
             &:focus {
-                border-color: var(--darkGreen);
-                outline: var(--darkGreen);
+                border-color: var(--purpleTransparent);
+                outline: var(--purpleTransparent);
             }
         }
 
@@ -135,7 +135,7 @@
                 width: calc(var(--size-unit)* 0.3);
                 height: calc(var(--size-unit)* 0.3);
                 cursor: pointer;
-                accent-color: var(--darkGreen);
+                accent-color: var(--purpleTransparent);
                 min-width: auto;
                 float: left;
             }
@@ -173,7 +173,7 @@
             border-radius: calc(var(--size-unit)* 0.3);
             cursor: pointer;
             transition: 0.4s;
-            background-color: var(--darkGreen);
+            background-color: var(--purpleTransparent);
             margin: 0 calc(var(--size-unit)* 0.085);
             bottom: calc(var(--size-unit)* 0.28);
 

@@ -27,7 +27,7 @@ const Bubbles = () => {
 
         const config = {
             circle: {
-                amount: 13,
+                amount: 7,
                 layer: 3,
                 
                 color: [157, 97, 207],
