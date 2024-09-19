@@ -14,39 +14,25 @@ const Card = ({ seccion, children, trasera }) => {
   const { isOtherDraggableActive, setIsOtherDraggableActive, activeCard, setActiveCard } = useDragContext();
   const duracion = getComputedStyle(document.documentElement).getPropertyValue('--duration-card').trim().replace('s', '');
   const duracionSeg = getComputedStyle(document.documentElement).getPropertyValue('--duration-card-seg');
-  useEffect(() => {
-    const cardElement = cardRef.current;
-    
-    if (!isOtherDraggableActive) {
-      const dragInstance = Draggable.create(cardElement, {
-        type: 'x,y,z',
-        edgeResistance: 0.1,
-        inertia: false,
-        onDrag() {
-          const dragDistance = Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
-          if (dragDistance > window.innerHeight * 0.2) {
-            flipCard();
-          }
-        },
-        // onRelease() {
-        //   if (flipped) {
-        //     resetCardPosition();
-        //   } else {
-        //     gsap.to(cardElement, {
-        //       duration: duracionSeg*1000,
-        //       x: 0,
-        //       y: 0,
-        //       // ease: 'power2.out',
-        //     });
-        //   }
-        // }
-      });
+  // useEffect(() => {
+  //   const cardElement = cardRef.current;
+  //     const dragInstance = Draggable.create(cardElement, {
+  //       type: 'x,y,z',
+  //       edgeResistance: 0.1,
+  //       inertia: false,
+  //       onDrag(e) {
+  //         e.preventDefault();
+  //         const dragDistance = Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
+  //         if (dragDistance > window.innerHeight * 0.2) {
+  //           flipCard();
+  //         }
+  //       },
+  //     });
 
-      return () => {
-        dragInstance[0].kill();
-      };
-    }
-  }, [flipped]);
+  //     return () => {
+  //       dragInstance[0].kill();
+  //     };
+  // }, [activeCard]);
 
   useEffect(() => {
 
@@ -129,7 +115,7 @@ useEffect(() => {
           onComplete: () => {
             gsap.set(cardElement, { x: 0, y: 0, });
             setFlipped(false);
-            // activeCard === seccion && setIsOtherDraggableActive(false);
+            setIsOtherDraggableActive(false);
           }
         });
       }
@@ -140,10 +126,8 @@ useEffect(() => {
     <div
       className={`card ${seccion} ${flipped ? 'flipped' : 'unflipped'}`}
       ref={cardRef}
-      onDrag={() => {
-        (seccion !== activeCard) && flipCard();
-      }}
-      onClick={() => (seccion !== activeCard) && flipCard()}
+      onDrag={() => !flipped && flipCard()}
+      onClick={() => !flipped && flipCard()}
       style={{ zIndex: flipped ? 10 : 1, }}
     >
       <div className="card-front" ref={frontRef}>

@@ -46,7 +46,8 @@ function getWebGLContext( canvas ) {
         support_linear_float = gl.getExtension( 'OES_texture_float_linear' );
     }
 
-    gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
+    gl.clearColor( 95.0/255, 158.0/255, 160.0/255, 1 );
+    // gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
 
     var internalFormat   = isWebGL2 ? gl.RGBA16F : gl.RGBA;
     var internalFormatRG = isWebGL2 ? gl.RG16F : gl.RGBA;
@@ -378,8 +379,7 @@ canvas.addEventListener( 'mousemove', function ( e ) {
 
     count++;
 
-    ( count > 25 ) && (colorArr = [ Math.random() + 0.2, Math.random() + 0.2, Math.random() + 0.2 ], count = 0);
-
+    ( count > 25 ) && (colorArr = [ 0.33, 0.42, 0.18 ], count = 0);
     pointers[ 0 ].down  = true;
     pointers[ 0 ].color = colorArr;
     pointers[ 0 ].moved = pointers[ 0 ].down;
@@ -396,7 +396,7 @@ canvas.addEventListener('touchmove', function (e) {
     count++;
 
     if (count > 25) {
-        colorArr = [Math.random() + 0.2, Math.random() + 0.2, Math.random() + 0.2];
+        colorArr = [ 0.33, 0.42, 0.18 ];
         count = 0;
     }
 

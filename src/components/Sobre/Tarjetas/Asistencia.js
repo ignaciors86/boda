@@ -82,27 +82,28 @@ const Asistencia = () => {
                         <div className="eventos-checkboxes">
                             <h2>También estaré en:</h2>
                             <div className="checkbox-group">
-                                <label>
-                                    <input 
-                                        type="checkbox" 
-                                        name="preboda"
-                                        checked={formData.eventos.preboda}
-                                        onChange={handleCheckboxChange}
-                                    />
-                                    <p>Preboda<em>(viernes)</em></p>
-                                </label>
-                            </div>
-                            <div className="checkbox-group">
-                                <label className="raro">    
-                                    <input 
-                                        type="checkbox" 
-                                        name="postboda"
-                                        checked={formData.eventos.postboda}
-                                        onChange={handleCheckboxChange}
-                                    />
-                                    <p>Postboda<em>(domingo)</em></p>
-                                </label>
-                            </div>
+                            <label>
+                                <input 
+                                    type="checkbox" 
+                                    name="preboda"
+                                    checked={formData.eventos.preboda}
+                                    onChange={handleCheckboxChange}
+                                />
+                                <p>Preboda<em>(viernes)</em></p>
+                            </label>
+                        </div>
+                        <div className="checkbox-group">
+                            <label className="raro">    
+                                <input 
+                                    type="checkbox" 
+                                    name="postboda"
+                                    checked={formData.eventos.postboda}
+                                    onChange={handleCheckboxChange}
+                                />
+                                <p>Postboda<em>(domingo)</em></p>
+                            </label>
+                        </div>
+
                         </div>
                     </div>
                     <div className="form-group">

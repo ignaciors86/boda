@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './Prompt.scss';
 import animateOpacity from '../functions';
+import gsap from 'gsap';
+import gsapWithCSS from 'gsap/all';
 
 // Función para detectar si el dispositivo es móvil
 const isMobileDevice = () => {
@@ -8,7 +10,7 @@ const isMobileDevice = () => {
 };
 
 const Prompt = () => {
-    const baseTypingSpeed = 15; // Velocidad de escritura (milisegundos entre letras) para dispositivos de escritorio
+    const baseTypingSpeed = 5; // Velocidad de escritura (milisegundos entre letras) para dispositivos de escritorio
     const typingSpeedMultiplier = isMobileDevice() ? 5 : 1; // Multiplicador de velocidad para móviles
     const typingSpeed = baseTypingSpeed * typingSpeedMultiplier; // Velocidad de escritura ajustada
 
@@ -23,7 +25,7 @@ const Prompt = () => {
         `Ya...\n`,
         `Lo sentimos 😿\n`,
         `...bueno, no tanto...\n`,
-        `🛑 Detén esta chapa arrastrando el dedo por la pantalla\n`,
+        `🛑 Detén esta chapa arrastrando el dedo por la pantalla...\n`,
         `Repito: Arrastra el dedo por la pantalla\n`,
         `Porfa porfa please 😊\n`,
         `¿Porfa please recubierto de nata?\n`,
@@ -38,9 +40,9 @@ const Prompt = () => {
         `Podemos estar así todo el día...\n`,
         `Tooooooodo el día...\n`,
         `Toooooooooooo\n`,
-        `ooooooooooooo\n`,
-        `ooooooooooooo\n`,
-        `ooooooooooooo\ndo el día...\n`,
+        `ooooooooooooo\nooooooooooooo\n`,
+        `ooooooooooooo\nooooooooooooo\n`,
+        `ooooooooooooodo el día...\n`,
         `Esto puede durar un par de frases más, o podría aprovechar para trolearte cuanto quiera. Depende de ti.`,
         `Tu sabrás cuanto más quieres quedarte aquí\n`,
         `...\n`,
@@ -57,7 +59,7 @@ const Prompt = () => {
     useEffect(() => {
         if(isAnimating){
             const interval = setInterval(() => {
-                if (letterIndex < phrases[currentPhraseIndex].length) {
+                if (letterIndex < (phrases[currentPhraseIndex].length - 1)) {
                     setDisplayedText((prev) => prev + phrases[currentPhraseIndex][letterIndex]);
                     setLetterIndex(letterIndex + 1);
                 } else {
@@ -89,6 +91,12 @@ const Prompt = () => {
             animateOpacity();
         }
     }, [isAnimating, currentPhraseIndex]);
+
+    useEffect(() => {
+        gsap.timeline()
+        .to(".prompt", { opacity: 1, duration: 2, delay: 2,})
+    }, []);
+
 
     return (
         <div className="prompt">

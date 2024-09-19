@@ -41,7 +41,7 @@
 
         &.quien {
             justify-content: space-between;
-            .wrap{
+            .wrap {
                 width: 100%;
                 display: flex;
                 flex-wrap: wrap;
@@ -55,8 +55,8 @@
         }
 
         h2 {
-            font-size: calc(var(--size-unit)* 0.22);
-            line-height: calc(var(--size-unit)* 0.35);
+            font-size: calc(var(--size-unit) * 0.22);
+            line-height: calc(var(--size-unit) * 0.35);
             text-align: left;
         }
 
@@ -80,7 +80,7 @@
             font-size: calc(var(--size-unit) * 0.15);
             min-width: 60%;
             font-family: 'arial';
-
+            outline: none;
             &:focus {
                 border-color: var(--purpleTransparent);
                 outline: var(--purpleTransparent);
@@ -89,7 +89,7 @@
 
         textarea {
             resize: vertical;
-            height: calc(var(--size-unit)* 0.75); 
+            height: calc(var(--size-unit) * 0.75); 
         }
     }
 
@@ -99,48 +99,72 @@
         align-items: center;
         width: 100%;
         flex-wrap: wrap;
-        height: calc(var(--size-unit)* .9);
+        height: calc(var(--size-unit) * .9);
         align-content: center;
-        h2{    
+
+        h2 {    
             width: 100%; 
         }
-        p{
+
+        p {
             display: flex;
             flex-wrap: wrap;
         }
-        .checkbox-group{
+
+        .checkbox-group {
             width: 46%;
+            position: relative; // Añadido para el efecto de animación
+
             label {
-                font-size: calc(var(--size-unit)* 0.8);
+                font-size: calc(var(--size-unit) * 0.8);
                 display: flex;
                 align-items: center;
                 cursor: pointer;
                 float: right;
                 width: 100%;
-  
-                p{
+
+                p {
                     width: 60%;
-                    margin-left: calc(var(--size-unit)* 0.1);
-                    height: calc(var(--size-unit)* 0.35);
-                    em{
-                        line-height: calc(var(--size-unit)* 0.1);
+                    margin-left: calc(var(--size-unit) * 0.1);
+                    height: calc(var(--size-unit) * 0.35);
+                    em {
+                        line-height: calc(var(--size-unit) * 0.1);
                     }
                 }
-                h4{
+
+                h4 {
                     width: 54%;
                 }
             }
 
             input[type="checkbox"] {
-                width: calc(var(--size-unit)* 0.3);
-                height: calc(var(--size-unit)* 0.3);
+                width: calc(var(--size-unit) * 0.3);
+                height: calc(var(--size-unit) * 0.3);
                 cursor: pointer;
                 accent-color: var(--purpleTransparent);
                 min-width: auto;
                 float: left;
             }
+
+            input[type="checkbox"]:checked + p {
+                animation: bubble 0.5s ease forwards; // Aplicar la animación
+            }
         }
-        
+
+        @keyframes bubble {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
     }
 
     .switch {
@@ -148,7 +172,8 @@
         align-items: center;
         justify-content: space-between;
         width: 50%;
-        margin-top: calc(var(--size-unit)* 0);
+        margin-top: calc(var(--size-unit) * 0);
+
         label {
             font-weight: normal;
             display: flex;
@@ -168,22 +193,22 @@
 
         .slider {
             position: absolute;
-            width: calc(var(--size-unit)* 1);
-            height: calc(var(--size-unit)* 0.22);
-            border-radius: calc(var(--size-unit)* 0.3);
+            width: calc(var(--size-unit) * 1);
+            height: calc(var(--size-unit) * 0.22);
+            border-radius: calc(var(--size-unit) * 0.3);
             cursor: pointer;
             transition: 0.4s;
             background-color: var(--purpleTransparent);
-            margin: 0 calc(var(--size-unit)* 0.085);
-            bottom: calc(var(--size-unit)* 0.28);
+            margin: 0 calc(var(--size-unit) * 0.085);
+            bottom: calc(var(--size-unit) * 0.28);
 
             &:before {
                 content: "";
                 position: absolute;
-                height: calc(var(--size-unit)* 0.15);
-                width: calc(var(--size-unit)* 0.15);
-                left: calc(var(--size-unit)* 0.03);
-                bottom: calc(var(--size-unit)* .025);
+                height: calc(var(--size-unit) * 0.15);
+                width: calc(var(--size-unit) * 0.15);
+                left: calc(var(--size-unit) * 0.03);
+                bottom: calc(var(--size-unit) * .025);
                 background-color: var(--orange);
                 border: 2px solid var(--orangeTransparent);
                 border-radius: 50%;
@@ -207,16 +232,17 @@
         background-color: var(--orangeTransparent);
         border: 5px solid var(--orange);
         color: var(--darkGray);
-        padding: calc(var(--size-unit)* 0.1) calc(var(--size-unit)* 0.15);
-        border-radius: calc(var(--size-unit)* 0.15);
+        padding: calc(var(--size-unit) * 0.1) calc(var(--size-unit) * 0.15);
+        border-radius: calc(var(--size-unit) * 0.15);
         cursor: pointer;
         width: 40%;
-        transition: calc(var(--duration)* 0.2) ease 0s;
-        margin-top: calc(var(--size-unit)* -0.1);
+        transition: calc(var(--duration) * 0.2) ease 0s;
+        margin-top: calc(var(--size-unit) * -0.1);
         display: flex;
         justify-content: center;
         align-items: center;
-        margin-bottom: calc(var(--size-unit)* -0.1);
+        margin-bottom: calc(var(--size-unit) * -0.1);
+
         &:hover {
             background-color: var(--orange);
         }
