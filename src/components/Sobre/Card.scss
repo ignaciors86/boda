@@ -36,7 +36,7 @@
   &-front {
     opacity: 1;
     backface-visibility: hidden;
-    background: cadetblue;
+    background: #7bbbbd;
 
     border: calc(var(--size-unit)* 0.05) transparent;
     border-radius: calc(var(--size-unit)* 0.1);
@@ -86,7 +86,7 @@
     width: 100%;
     box-sizing: border-box;
     padding: calc(var(--size-unit)* 0.3);
-    background: var(--purpleTransparent);
+    background: cadetblue;
     display: flex;
     align-items: center;
     position: relative;

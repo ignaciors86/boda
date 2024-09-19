@@ -31,6 +31,7 @@
   .slider {
     cursor: pointer;
     left: 0;
+    transform: translateX(30%);
     position: absolute;
     height: calc(var(--size-unit)* 0.5);
     margin-top: calc(var(--size-unit)* -0.15);

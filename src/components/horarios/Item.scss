@@ -38,7 +38,7 @@
     .info {
       z-index: 1;
       background: var(--greenTransparent);
-      background: linear-gradient(var(--greenTransparent) 50%, cadetblue 100%);
+      background: linear-gradient(cadetblue 100%, #7bbbbd 50%);
       width: 100%;
       min-height: 20%;
       display: flex;

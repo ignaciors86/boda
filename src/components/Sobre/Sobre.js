@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import './Sobre.scss';
-import invitacion from './assets/images/invitacion.jpg';
-
+import invitacion from './assets/images/invitacion.png';
+import bubuDudu from './assets/images/bubu-dudu.jpg';
 import Card from './Card';
 import Timeline from '../Horarios/Timeline';
 import Lugar from './Tarjetas/Lugar';
@@ -13,11 +13,11 @@ import { useDragContext } from '../DragContext';
 import animateOpacity from '../functions';
 
 const Sobre = () => {
-  const [envelopeClosed, setEnvelopeClosed] = useState(null);
+  const [envelopeClosed, setEnvelopeClosed] = useState(true);
   const [seccion, setSeccion] = useState("sobre");
   // const { activeCard, setActiveCard } = useDragContext();
-  const tlSobre = gsap.timeline(); 
-  
+  const tlSobre = gsap.timeline();
+
   console.log(seccion);
 
   const toggle = () => {
@@ -36,7 +36,7 @@ const Sobre = () => {
     const envelope = document.querySelector('.envelope');
     envelope.classList.toggle('open');
     envelope.classList.remove('closed');
-    
+
   };
 
   // Función para obtener un ángulo de rotación aleatorio
@@ -57,20 +57,21 @@ const Sobre = () => {
 
     setSeccion(seccion);
     gsap.to(".bubbles", { opacity: 1, duration: 1, delay: 1, ease: "ease" });
-    gsap.to(".espiral", { opacity: 0, duration: 1, delay: 0, ease: "ease",
+    gsap.to(".espiral", {
+      opacity: 0, duration: 1, delay: 0, ease: "ease",
       onComplete: () => {
         const espiral = document.querySelector('.espiral');
         if (espiral) {
-          espiral.remove();
+          // espiral.remove();
         }
         const prompt = document.querySelector('.prompt');
         if (prompt) {
-          prompt.remove();
+          // prompt.remove();
         }
       }
-     });
-    
-    
+    });
+
+
     if (sobre) {
       // Usar función para rotación aleatoria
       tlSobre.to(sobre, {
@@ -94,8 +95,8 @@ const Sobre = () => {
           sobre.classList.toggle('closed');
         },
       }, ">")
-      .to(".wax-seal", {transition: "calc(var(--duration-envelope)*.5) ease calc(var(--duration-envelope)*3.5)",}, 0 )
-      
+        .to(".wax-seal", { transition: "calc(var(--duration-envelope)*.5) ease calc(var(--duration-envelope)*3.5)", }, 0)
+
     } else {
       toggle();
     }
@@ -103,26 +104,26 @@ const Sobre = () => {
 
   useEffect(() => {
     // Función para animar la opacidad de #root
-    
 
-  // Variables para manejar el temporizador
-  let hoverTimer;
-  let touchTimer;
 
-  // Seleccionar elementos
-  const canvas = document.getElementById('myCanvas');
-  const root = document.getElementById('root');
+    // Variables para manejar el temporizador
+    let hoverTimer;
+    let touchTimer;
 
-  // Evento de hover en escritorio
-  canvas.addEventListener('mouseenter', animateOpacity);
+    // Seleccionar elementos
+    const canvas = document.getElementById('myCanvas');
+    const root = document.getElementById('root');
 
-  canvas.addEventListener('mouseleave', animateOpacity);
+    // Evento de hover en escritorio
+    canvas.addEventListener('mouseenter', animateOpacity);
 
-  // Evento de touch en dispositivos móviles
-  canvas.addEventListener('touchstart', (event) => {
-    animateOpacity();
-    event.preventDefault(); // Prevenir el comportamiento por defecto del touch
-  });
+    canvas.addEventListener('mouseleave', animateOpacity);
+
+    // Evento de touch en dispositivos móviles
+    canvas.addEventListener('touchstart', (event) => {
+      animateOpacity();
+      event.preventDefault(); // Prevenir el comportamiento por defecto del touch
+    });
 
     const waxSeal = document.querySelector('.wax-seal');
     const sobre = document.querySelector('.sobre.closed');
@@ -138,8 +139,21 @@ const Sobre = () => {
     }
   }, []);
 
+
+
+  // Listener para asegurar que la animación pueda ejecutarse después de que la página ha cargado completamente
+  window.addEventListener('load', () => {
+    // Se usa un retraso de 1 segundo para habilitar la animación
+    gsap.delayedCall(1, () => {
+      setEnvelopeClosed(true);
+      console.log("La animación está lista.");
+    });
+  });
+
+
   return (
     <div className="sobre closed">
+      <img src={bubuDudu} alt="Bubu y Dudu" className="bubu-dudu" />
       <div className="envelope closed">
         <div className="envelope-flap">
           <div className="wax-seal back" onClick={() => handleClick("sobre")} />

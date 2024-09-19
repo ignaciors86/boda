@@ -63,7 +63,7 @@
         width: calc(var(--size-unit)* 0.55);
         left: 62%;
         position: absolute;
-        top: 78%;
+        top: 80%;
         transform: translate(-15%, -50%) rotate(3deg) translate(0, -75%);
         background: transparent;
       }
@@ -95,11 +95,12 @@
         position: absolute;
         height: calc(var(--size-unit)* 0.22);
         width: calc(var(--size-unit)* 0.25);
-        z-index: 10;
-        top: 45%;
+        z-index: 100;
+        top: 40%;
         transform-origin: right;
-        left: 71%;
+        left: 75%;
         // transform: translate(0, -0%) rotate(0deg);
+        opacity: 0;
       }
     }
   

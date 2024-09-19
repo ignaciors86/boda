@@ -3,7 +3,7 @@
   --darkGray: #4242426e;
   --darkGrayTransparent: #535f4df7;
   --green: #9bc4be;
-  --greenTransparent: #588179;
+  --greenTransparent: #438284;
   --greenSuperTransparent: #a0ffed;
   --purpleTransparent: #73558c;
   --darkPurple: #73558c;
@@ -16,7 +16,7 @@
   --duration-card: calc(var(--duration)*var(--duration-card-seg));
 
   @media (orientation: portrait) {
-    --size-unit: 28vw;
+    --size-unit: 24vw;
   }
 
   @media (orientation: landscape) {
@@ -90,6 +90,11 @@ html, body{
 body{
   // background: cadetblue;
   background: black;
+  width: 100%;
+  position: absolute;
+  height: 100%;
+  top: 0;
+  left: 0;
   &::before {
     content: '';
     font-family: 'PreloadImages';
