@@ -426,7 +426,4 @@ function m( t ) {
     }, 500 * Math.random() + 500 );
 
 }
-
-window.onload = function() {
-    m( "root" );
-};
+m( "root" );
