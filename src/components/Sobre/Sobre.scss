@@ -387,9 +387,9 @@
                         
 
                         @media (orientation: landscape) {
-                            left: calc(var(--size-unit)* 1.9);
-                            top: calc(var(--size-unit)* 1);
-                            rotate: -1deg !important;
+                            left: calc(var(--size-unit)* 2);
+                            top: calc(var(--size-unit)* 1.4);
+                            rotate: 48deg !important;
                         }
                         @media (orientation: portrait) {
                             left: calc(var(--size-unit)* 0.8);
@@ -409,7 +409,7 @@
                             @media (orientation: landscape) {
                                 top: calc(var(--size-unit)* 0.7);
                                 left: calc(var(--size-unit)* 0.3);
-                                rotate: -18deg !important;
+                                rotate: 33deg !important;
                             }
                         }
                     }
