@@ -16,18 +16,27 @@
   top: 0;
   
     &.inicio { background-image: url('./assets/images/paella.jpg'); }
-    &.preboda { background-image: url('./assets/images/ceremonia.jpg'); }
+    &.preboda { 
+      background-image: url('./assets/images/preboda.jpg'); 
+      background-size: 127%;
+      background-position: 13% 91%;
+    }
     &.ceremonia { 
-      background-image: url('./assets/images/ceremonia.jpg'); 
-      background-position: calc(50% + 0dvh) -28dvh;
-      background-size: auto 96dvh;
+      background-image: url('./assets/images/ceremonia.webp'); 
+      background-position: 36% 127%;
+      background-size: 151%;
     }
     &.coctel { background-image: url('./assets/images/coctel.jpg'); }
     &.comida { background-image: url('./assets/images/comida.jpg'); }
-    &.baile { background-image: url('./assets/images/baile.jpg'); }
+    &.baile { 
+      background-image: url('./assets/images/baile.webp'); 
+      background-size: 119%;
+      background-position: 13% 160%;
+    }
     &.tiempo { 
-      background-image: url('./assets/images/tercerTiempo.jpg'); 
-      background-position: 50% 20%;
+      background-image: url('./assets/images/tercerTiempo.webp'); 
+      background-size: 119%;
+      background-position: 50% 146%;
     }
     &.domingo { background-image: url('./assets/images/paella.jpg'); }
 

@@ -1,9 +1,9 @@
 import preboda from "./assets/images/preboda.jpg";
-import ceremonia from "./assets/images/ceremonia.jpg";
+import ceremonia from "./assets/images/ceremonia.webp";
 import coctel from "./assets/images/coctel.jpg";
 import comida from "./assets/images/comida.jpg";
-import baile from "./assets/images/baile.jpg";
-import tercerTiempo from "./assets/images/tercerTiempo.jpg";
+import baile from "./assets/images/baile.webp";
+import tercerTiempo from "./assets/images/tercerTiempo.webp";
 import paella from "./assets/images/paella.jpg";
 import inicial from "./assets/images/ositos-drag.png";
 import Item from './Item.js';
@@ -26,22 +26,29 @@ const items = [
     bgImage: inicial
   },
   {
-    title: "Preboda",
-    description: <p>Los novios se preparan para el gran día, ajustando los últimos detalles y compartiendo momentos especiales con sus seres queridos.</p>,
+    title: "20:00: Preboda",
+    description: <>
+    {/* <p>
+      El viernes podéis pasaros por el sitio donde será la boda para una previa informal. 
+    </p> */}
+    <p>
+      Traete el bañador, y si tocas algún instrumento y te apetece tenerlo a mano para hacer el bobo un rato, adelante. 
+    </p>
+    </>,
     bgImage: preboda
   },
   {
-    title: "Ceremonia",
-    description: <p>La ceremonia nupcial donde los novios intercambian sus votos, rodeados de amigos y familiares en un ambiente lleno de emoción.</p>,
+    title: "13:00: Ceremonia",
+    description: <p>Palabras bonitas serán dichas y lloraremos todos mucho.</p>,
     bgImage: ceremonia
   },
   {
-    title: "Cóctel",
-    description: <p>Después de la ceremonia, los invitados disfrutan de un cóctel refrescante mientras los novios se toman un respiro para las fotos.</p>,
+    title: "14:00: Cóctel",
+    description: <p>Ponte hasta el culo, por favor.</p>,
     bgImage: coctel
   },
   {
-    title: "Comida",
+    title: "15:00: Comida",
     description: <p>Un banquete delicioso es servido para todos los presentes, celebrando la unión de los novios con comida y bebida exquisitas.</p>,
     bgImage: comida
   },
