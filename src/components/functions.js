@@ -1,15 +1,16 @@
 import gsap from "gsap";
 
 let canAnimate = true; // Controla si la animación puede ejecutarse
+let animationRunning = false; // Controla si la animación ya está en curso
 
 const animateOpacity = () => {
-    // Si la animación no está disponible, evita ejecutar la función
-    if (!canAnimate) {
-        // console.log("La animación no está disponible aún.");
+    // Si la animación no está disponible o ya está en ejecución, evita ejecutar la función
+    if (!canAnimate || animationRunning) {
         return;
     }
 
-    // console.log("Ejecutando animación...");
+    // Marcar que la animación está en curso
+    animationRunning = true;
 
     const tlInicial = gsap.timeline();
     // Obtiene la duración de la animación desde CSS (personalizable vía variables CSS)
@@ -18,8 +19,6 @@ const animateOpacity = () => {
         .trim()
         .replace('s', '') * 1; // Elimina la "s" del valor de segundos
 
-    // Definir la animación utilizando la librería GSAP
-    // console.log(canAnimate);
     if (canAnimate) {
         tlInicial
             .to("#myCanvas", {
@@ -46,8 +45,8 @@ const animateOpacity = () => {
                 duration: duracion * 1,
                 ease: "ease-in",
                 onComplete: () => {
-                    canAnimate = false; // Evitar que la animación se ejecute nuevamente hasta que esté lista
-                    // console.log("Animación completada.");
+                    canAnimate = false; // Evitar que la animación se ejecute nuevamente
+                    animationRunning = false; // Marcar la animación como terminada
                 }
             }, "<");
     }
