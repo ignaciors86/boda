@@ -140,17 +140,6 @@ const Sobre = () => {
   }, []);
 
 
-
-  // Listener para asegurar que la animación pueda ejecutarse después de que la página ha cargado completamente
-  window.addEventListener('load', () => {
-    // Se usa un retraso de 1 segundo para habilitar la animación
-    gsap.delayedCall(3, () => {
-      setEnvelopeClosed(true);
-      // console.log("La animación está lista.");
-    });
-  });
-
-
   return (
     <div className="sobre closed">
       <img src={bubuDudu} alt="Bubu y Dudu" className="bubu-dudu" />
