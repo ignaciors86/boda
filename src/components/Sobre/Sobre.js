@@ -18,7 +18,7 @@ const Sobre = () => {
   // const { activeCard, setActiveCard } = useDragContext();
   const tlSobre = gsap.timeline();
 
-  // console.log(seccion);
+  console.log(seccion);
 
   const toggle = () => {
     const cards = document.querySelectorAll('.card');
@@ -53,7 +53,7 @@ const Sobre = () => {
 
     // Animación de palpitación con GSAP
     const duracion = getComputedStyle(document.documentElement).getPropertyValue('--duration').trim().replace('s', '');
-    // console.log(duracion);
+    console.log(duracion);
 
     setSeccion(seccion);
     gsap.to(".bubbles", { opacity: 1, duration: 1, delay: 1, ease: "ease" });
@@ -62,11 +62,11 @@ const Sobre = () => {
       onComplete: () => {
         const espiral = document.querySelector('.espiral');
         if (espiral) {
-          espiral.remove();
+          // espiral.remove();
         }
         const prompt = document.querySelector('.prompt');
         if (prompt) {
-          prompt.remove();
+          // prompt.remove();
         }
       }
     });
@@ -144,9 +144,9 @@ const Sobre = () => {
   // Listener para asegurar que la animación pueda ejecutarse después de que la página ha cargado completamente
   window.addEventListener('load', () => {
     // Se usa un retraso de 1 segundo para habilitar la animación
-    gsap.delayedCall(3, () => {
+    gsap.delayedCall(1, () => {
       setEnvelopeClosed(true);
-      // console.log("La animación está lista.");
+      console.log("La animación está lista.");
     });
   });
 

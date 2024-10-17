@@ -39,7 +39,7 @@ const Card = ({ seccion, children, trasera }) => {
    
     
     if (seccion !== activeCard && flipped) {
-      // console.log("reset")
+      console.log("reset")
       resetCardPosition();
       if(seccion !== "horarios" && seccion !== "asistencia" && seccion !== "ubicaciones"){
         setIsOtherDraggableActive(false);
@@ -55,12 +55,12 @@ const Card = ({ seccion, children, trasera }) => {
 
   }, [flipped, activeCard]);
 
-// useEffect(() => {
-  // console.log("isOtherDraggableActive")
-  //   console.log(isOtherDraggableActive)
-  //   console.log("activeCard")
-  //   console.log(activeCard)
-// }, [isOtherDraggableActive]);
+useEffect(() => {
+  console.log("isOtherDraggableActive")
+    console.log(isOtherDraggableActive)
+    console.log("activeCard")
+    console.log(activeCard)
+}, [isOtherDraggableActive]);
 
   const flipCard = () => {
     const cardElement = cardRef.current;
