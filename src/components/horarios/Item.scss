@@ -9,8 +9,8 @@
   justify-content: center;
   align-items: center;
   opacity: 0;
-  background-size: cover;
-  background-position: center;
+  background-size: auto 50% !important;
+  background-position: 50% 0% !important;
   transition: background-image calc(var(--size-unit)* 1) ease;
   left: 0;
   top: 0;
@@ -22,7 +22,7 @@
       background-position: 13% 91%;
     }
     &.ceremonia { 
-      background-image: url('./assets/images/ceremonia.webp'); 
+      background-image: url('./assets/images/ceremonia/shameless.webp'); 
       background-position: 36% 127%;
       background-size: 151%;
     }
@@ -64,7 +64,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: calc(var(--size-unit)* 0.1);
+        padding: calc(var(--size-unit)* 0.15);
         margin: 0;
       }
       p{

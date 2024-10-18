@@ -319,7 +319,7 @@
                                 rotate: 34deg !important;
                             }
                             @media (orientation: portrait) {
-                                top: calc(var(--size-unit)* -0.7);
+                                top: calc(var(--size-unit)* -0.4);
                                 left: calc(var(--size-unit)* -0.4);
                                 rotate: -2deg !important;    
                             }
