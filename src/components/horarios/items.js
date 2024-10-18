@@ -109,23 +109,23 @@ const items = [
             <em>Sábado (Boda): </em>
             <span>  
               <b>13:00</b> 
-              Ceremonia
+              - Ceremonia
             </span>
             <span>
               <b>14:00</b> 
-              Cóctel
+              - Cóctel
             </span>
             <span>
               <b>15:00</b> 
-              Comida
+              - Comida
               </span>
               <span>
               <b>17:00</b> 
-              Baile
+              - Baile
               </span>
               <span>
               <b>23:00</b> 
-              Tercer tiempo
+              - Tercer tiempo / Bus de vuelta
             </span>
           
             <br />

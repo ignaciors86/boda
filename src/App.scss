@@ -124,7 +124,7 @@ h2, h3, h4{
 h4{
   font-size: calc(var(--size-unit)* 0.175);
 }
-p, a{
+p, a, span{
   font-size: calc(var(--size-unit)* 0.15);
   letter-spacing: -0.02px;
   line-height: calc(var(--size-unit)* 0.2);
