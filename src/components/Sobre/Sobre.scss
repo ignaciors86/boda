@@ -123,7 +123,7 @@
             }
             
             &.horarios{
-                width: calc(var(--size-unit)* 3);
+                width: calc(var(--size-unit)* 3.3);
                 height: calc(var(--size-unit)* 4.5);
                 rotate: -2deg !important;
             }
@@ -302,7 +302,7 @@
                             rotate: 16deg !important;
                         }
                         @media (orientation: portrait) {
-                            left: calc(var(--size-unit)* -1);
+                            left: calc(var(--size-unit)* -1.2);
                             top: calc(var(--size-unit)* 1.2);
                             rotate: -47deg !important;
                         }
@@ -320,7 +320,7 @@
                             }
                             @media (orientation: portrait) {
                                 top: calc(var(--size-unit)* -0.4);
-                                left: calc(var(--size-unit)* -0.4);
+                                left: calc(var(--size-unit)* -0.6);
                                 rotate: -2deg !important;    
                             }
                         }
