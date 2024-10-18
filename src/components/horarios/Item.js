@@ -9,7 +9,7 @@ const Item = ({ data, index }) => {
         // Configurar un intervalo para cambiar la imagen cada 2 segundos
         const interval = setInterval(() => {
             setCurrentImageIndex(prevIndex => (prevIndex + 1) % data.images.length);
-        }, 2000); // Cambiar cada 2 segundos
+        }, index === 0 ? 500 : 2500); // Cambiar cada 2 segundos
 
         return () => clearInterval(interval); // Limpiar el intervalo al desmontar
     }, [data.images.length]);

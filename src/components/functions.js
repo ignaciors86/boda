@@ -21,6 +21,7 @@ const animateOpacity = () => {
 
     if (canAnimate) {
         tlInicial
+        
             .to("#myCanvas", {
                 opacity: 0.2,
                 duration: 1,
@@ -28,13 +29,13 @@ const animateOpacity = () => {
                 ease: "ease",
             }, 0)
             .to("body", { background: "cadetblue", duration: duracion * .5 }, ">")
+            .to(".prompt", { opacity: 0, duration: duracion, ease: "ease" })
             .to(".sobre", { opacity: 0, zIndex: 2, duration: 0, scale: 0.7 }, ">")
-            .to(".prompt", { opacity: 0, duration: 0 }, ">")
             .to(".bubu-dudu", {
                 duration: 0,
                 ease: "ease-in",
             }, ">")
-            .to(".sobre", { opacity: 1, duration: duracion * 2, scale: 1, y: 0, ease: "ease" }, ">")
+            .to(".sobre", { opacity: 1, duration: duracion * 2, scale: 1, y: 0, ease: "ease",  }, ">")
             .to(".bubu-dudu", {
                 rotateY: 90,
                 duration: duracion * 1,

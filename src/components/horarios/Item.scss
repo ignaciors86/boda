@@ -15,30 +15,30 @@
   left: 0;
   top: 0;
   
-    &.inicio { background-image: url('./assets/images/paella.jpg'); }
-    &.preboda { 
-      background-image: url('./assets/images/preboda.jpg'); 
-      background-size: 127%;
-      background-position: 13% 91%;
-    }
-    &.ceremonia { 
-      background-image: url('./assets/images/ceremonia/shameless.webp'); 
-      background-position: 36% 127%;
-      background-size: 151%;
-    }
-    &.coctel { background-image: url('./assets/images/coctel.jpg'); }
-    &.comida { background-image: url('./assets/images/comida.jpg'); }
-    &.baile { 
-      background-image: url('./assets/images/baile.webp'); 
-      background-size: 119%;
-      background-position: 13% 160%;
-    }
-    &.tiempo { 
-      background-image: url('./assets/images/tercerTiempo.webp'); 
-      background-size: 119%;
-      background-position: 50% 146%;
-    }
-    &.domingo { background-image: url('./assets/images/paella.jpg'); }
+    // &.inicio { background-image: url('./assets/images/paella.jpg'); }
+    // &.preboda { 
+    //   background-image: url('./assets/images/preboda.jpg'); 
+    //   background-size: 127%;
+    //   background-position: 13% 91%;
+    // }
+    // &.ceremonia { 
+    //   background-image: url('./assets/images/ceremonia/shameless.webp'); 
+    //   background-position: 36% 127%;
+    //   background-size: 151%;
+    // }
+    // &.coctel { background-image: url('./assets/images/coctel.jpg'); }
+    // &.comida { background-image: url('./assets/images/comida.jpg'); }
+    // &.baile { 
+    //   background-image: url('./assets/images/baile.webp'); 
+    //   background-size: 119%;
+    //   background-position: 13% 160%;
+    // }
+    // &.tiempo { 
+    //   background-image: url('./assets/images/tercerTiempo/tercerTiempo.webp'); 
+    //   background-size: 119%;
+    //   background-position: 50% 146%;
+    // }
+    // &.domingo { background-image: url('./assets/images/paella.jpg'); }
 
     &:first-of-type{
       opacity: 1;
@@ -49,11 +49,11 @@
       background: var(--greenTransparent);
       background: linear-gradient(cadetblue 100%, #7bbbbd 50%);
       width: 100%;
-      min-height: 20%;
+      min-height: 33%;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: space-evenly;
+      justify-content: flex-start;
       border-radius: 0;
       position: absolute;
       padding-bottom: calc(var(--size-unit)* 0.8);
@@ -64,7 +64,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: calc(var(--size-unit)* 0.15);
+        padding: calc(var(--size-unit)* 0.05);
         margin: 0;
       }
       p{
@@ -75,7 +75,29 @@
       }
 
       .texts {
+        display: flex;
+        flex-direction: column;
         padding: calc(var(--size-unit)* 0.1);
+        b, span{
+          text-align: center;
+          display: flex;
+          justify-content: center;
+          flex-direction: row;
+          flex-wrap: wrap;
+        }
+        b{
+          margin-right: 10px;
+        }
+      }
+    }
+
+    &.item1{
+      background-size: auto 100% !important;
+
+      .info{
+        background: linear-gradient(#5f9ea0f0 100%, #7bbbbd 50%);
+        height: 100%;
+        justify-content: flex-end;
       }
     }
   }
