@@ -107,14 +107,13 @@ const items = [
     {
         title: "Agenda del finde",
         description: <div>
-          {/* <h4>Villas de Pomar</h4>  */}
-          <br />
+
           <em>Viernes (Preboda):</em>
           <span>
             <b>20:00</b>(en adelante)
           </span>
           
-            <br />
+            
             <em>Sábado (Boda): </em>
             <span>  
               <b>13:00</b> 
@@ -137,9 +136,8 @@ const items = [
               - Tercer tiempo / Bus de vuelta
             </span>
           
-            <br />
             <em>Domingo (Postboda): </em> 
-            <span><b>a saber</b>(muerte al sol)
+            <span><b>[undefined]</b>
           </span>
         </div>,
         images: [wingapo,paella,friends,barbacoa,bmo,urkel,tio,ojeteCalor,bebidas,masterchef,got,pikachu,karaoke,shameless,gilmoreBaile,ron,antidisturbios,carrie,trump,finyjakeresaca,emily,dean,antidisturbios2,kelso,scooby,bills,kitty,keVin,postBodaFriends,bitches,paquita,rick,bob,red,tina,theoffice,stop,tequila,karen,treatyourself,randy,shamelesstercerTiempo,allyoucaneat,nickcorbata,barneyted,finn,wilson,bojack,sexeducation,monkeyisland2,coctel,randyresaca,gargaras,esqueletos,monkeyisland,yoda,banquetegilmore,trump,ojeteCalor],
@@ -186,15 +184,15 @@ const items = [
     },
     {
         title: "Domingo",
-        description: <p>Churros, paella, siesta y <i>pa casa...</i></p>,
+        description: <p>Por la mañana habrá desayuno (churros included) y para los que aguantemos hasta la comida, paella... <br></br><i>Y WINGAPO, MARICONES</i></p>,
         images: [bojack,tio,finyjakeresaca,tequila,randyresaca,postBodaFriends, wingapo],
         audio: rumbling,
     }
 ];
 
-const renderItems = () => {
+const renderItems = (currentIndex) => {
     return items.map((item, index) => {
-        return item && <Item data={item} index={index} key={"item" + index} />;
+        return item && index === currentIndex && <Item data={item} index={index} key={"item" + index} />;
     });
 };
 

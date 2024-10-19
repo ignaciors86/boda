@@ -29,7 +29,9 @@ const animateOpacity = () => {
                 ease: "ease",
             }, 0)
             .to("body", { background: "cadetblue", duration: duracion * .5 }, ">")
-            .to(".prompt", { opacity: 0, duration: duracion, ease: "ease" })
+            .to(".prompt", { opacity: 0, duration: duracion, ease: "ease",
+                y: "100vh",
+            })
             .to(".sobre", { opacity: 0, zIndex: 2, duration: 0, scale: 0.7 }, ">")
             .to(".bubu-dudu", {
                 duration: 0,

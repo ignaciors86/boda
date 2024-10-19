@@ -96,8 +96,14 @@
 
       .info{
         background: linear-gradient(#5f9ea0f0 100%, #7bbbbd 50%);
-        height: 100%;
-        justify-content: flex-end;
+        height: 76%;
+        justify-content: space-evenly;
+        position: absolute;
+        top: 0;
+        padding-top: 9%;
+        em:not(:first-of-type){
+          margin-top: 5%;
+        }
       }
     }
   }

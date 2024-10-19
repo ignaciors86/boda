@@ -63,10 +63,21 @@ const Timeline = () => {
           card.classList.add('dragging');
         });
 
-        const progress = Math.min(
-          Math.max(this.x / progressBarRef.current.clientWidth, 0), 
-          1
-        );
+        const progressBarWidth = progressBarRef.current.clientWidth; // Ancho de la barra de progreso
+        const currentX = this.x; // Posición actual en x
+        const progress = Math.min(Math.max(currentX / progressBarWidth, 0), 1); // Progreso normalizado
+
+        // Muestra en consola la posición en x y el porcentaje del recorrido
+        const porcentaje = (progress * 100).toFixed(2);
+        console.log(`Posición en X: ${currentX.toFixed(2)}, Porcentaje del recorrido: ${porcentaje}%`);
+        if(porcentaje<10){
+          setCurrentIndex(0);
+          audioRef.current.src = items[0].audio; // Cambia el audio al del item 0
+          audioRef.current.load(); // Carga el nuevo archivo
+          audioRef.current.play().catch(err => console.error("Error al reproducir el audio:", err));
+        }
+        
+ 
         timelineRef.current.progress(progress);
 
         const penultimateItemProgress = (totalItems - 2) / totalItems;
@@ -91,20 +102,45 @@ const Timeline = () => {
 
         gsap.to(sliderRef.current, { scale: 1, duration: 0.3 });
 
-        let ultimo = true;
-        items.forEach((item, index) => {
-          const element = document.querySelector(`.item${index}`);
+        const progressBarWidth = progressBarRef.current.clientWidth; // Ancho de la barra de progreso
+        const currentX = this.x; // Posición actual en x
+        const progress = Math.min(Math.max(currentX / progressBarWidth, 0), 1); // Progreso normalizado
+        const porcentaje = (progress * 100).toFixed(2);
+        if (porcentaje < 10) {
+          // setCurrentIndex(0);
+          // audioRef.current.src = items[0].audio; // Cambia el audio al del item 0
+          // audioRef.current.load(); // Carga el nuevo archivo
+          // audioRef.current.play().catch(err => console.error("Error al reproducir el audio:", err));
+        }else if (progress < 0.1) {
+          // Cambia al segundo ítem si el slider se suelta a menos del 10% del recorrido
+          setCurrentIndex(1);
+          timelineRef.current.progress(0.1); // Resetea la línea de tiempo
+          audioRef.current.src = items[1].audio; // Cambia el audio al del item 1
+          audioRef.current.load(); // Carga el nuevo archivo
+          audioRef.current.play().catch(err => console.error("Error al reproducir el audio:", err));
+        } else if (this.x <= 0) {
+          // Cambia al primer ítem si el slider está en la posición inicial
+          setCurrentIndex(0);
+          timelineRef.current.progress(0); // Resetea la línea de tiempo
+          audioRef.current.src = items[0].audio; // Cambia el audio al del primer ítem
+          audioRef.current.load(); // Carga el nuevo archivo
+          audioRef.current.play().catch(err => console.error("Error al reproducir el audio:", err));
+        } else {
+          let ultimo = true;
+          items.forEach((item, index) => {
+            const element = document.querySelector(`.item${index}`);
 
-          if (element) {
-            const opacity = parseFloat(window.getComputedStyle(element).opacity);
-            if (opacity > 0) {
-              gsap.to(element, { opacity: 1, duration: 0.3 });
-              gsap.to(sliderRef.current, { scale: 1, y: "-0dvh", duration: 0.3 });
-              ultimo = false;
+            if (element) {
+              const opacity = parseFloat(window.getComputedStyle(element).opacity);
+              if (opacity > 0) {
+                gsap.to(element, { opacity: 1, duration: 0.3 });
+                gsap.to(sliderRef.current, { scale: 1, y: "-0dvh", duration: 0.3 });
+                ultimo = false;
+              }
             }
-          }
-        });
-        ultimo && gsap.to(`.item${items.length}`, { opacity: 1, duration: 0.3 });
+          });
+          ultimo && gsap.to(`.item${items.length}`, { opacity: 1, duration: 0.3 });
+        }
       },
     });
 
@@ -176,7 +212,7 @@ const Timeline = () => {
     <>
       <div className={`${MAINCLASS} seccion`}>
         <div className="elements">
-          {renderItems()}
+          {renderItems(currentIndex)}
         </div>
         <div className="progress-bar" ref={progressBarRef}>
           <div className="slider" ref={sliderRef}>
@@ -188,7 +224,7 @@ const Timeline = () => {
         </div>
       </div>
       <button className="back" onClick={() => setActiveCard("home")} />
-      <button className={`back ${!isMuted ? "play" : "stop" }`} onClick={handleMuteToggle} /> {/* Botón para mutear */}
+      <button className={`back ${isMuted ? "play" : "stop"}`} onClick={handleMuteToggle} /> {/* Botón para mutear */}
     </>
   );
 };
