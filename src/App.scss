@@ -16,7 +16,7 @@
   --duration-card: calc(var(--duration)*var(--duration-card-seg));
 
   @media (orientation: portrait) {
-    --size-unit: 24vw;
+    --size-unit: 27vw;
   }
 
   @media (orientation: landscape) {
@@ -177,12 +177,14 @@ em{
 }
 .play{
   &:before{
-    mask-image: url("../assets/images/play.png");
+    mask-image: url("../assets/images/stop.png");
+    background: red;
   }
 }
 .stop{
   &:before{
-    mask-image: url("../assets/images/stop.png");
+    mask-image: url("../assets/images/play.png");
+    
   }
 }
 .close{
@@ -204,3 +206,11 @@ em{
   z-index: 2;
 }
 
+.seccion.timeline ~ .back{ 
+  top: calc(var(--size-unit) * 0.24);
+  right: calc(var(--size-unit) * 0.24);
+  &.play,
+  &.stop{
+    left: calc(var(--size-unit) * 0.24);
+  }
+} 

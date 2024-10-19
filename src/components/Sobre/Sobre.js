@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import './Sobre.scss';
 import invitacion from './assets/images/invitacion.png';
 import bubuDudu from './assets/images/bubu-dudu.jpg';
@@ -9,16 +9,22 @@ import Regalo from './Tarjetas/Regalo';
 import Invitacion from './Tarjetas/Invitacion';
 import gsap from 'gsap';
 import Asistencia from './Tarjetas/Asistencia';
-import { useDragContext } from '../DragContext';
+import introAudio from './assets/audio/intro.mp3'; // Importar el audio
 import animateOpacity from '../functions';
+import { useDragContext } from '../DragContext';
 
 const Sobre = () => {
+  const { activeCard, setActiveCard } = useDragContext();
   const [envelopeClosed, setEnvelopeClosed] = useState(true);
   const [seccion, setSeccion] = useState("sobre");
-  // const { activeCard, setActiveCard } = useDragContext();
-  const tlSobre = gsap.timeline();
-
-  // console.log(seccion);
+  const [isMuted, setIsMuted] = useState(true); // Estado para el mute del audio
+  const [isMutedGeneral, setIsMutedGeneral] = useState(true); // Estado para el mute del audio
+  const [isFirstInteraction, setIsFirstInteraction] = useState(false); // Estado para saber si ya hubo interacción con el botón
+  const audioRef = useRef(new Audio(introAudio)); // Referencia al audio
+  const tlSobre = useRef(gsap.timeline());
+  const buttonRef = useRef(null); // Referencia para el botón del audio
+  const sobreRef = useRef(null);  // Referencia para el sobre
+  const envelopeRef = useRef(null); // Referencia para el sobre interactivo
 
   const toggle = () => {
     const cards = document.querySelectorAll('.card');
@@ -36,24 +42,17 @@ const Sobre = () => {
     const envelope = document.querySelector('.envelope');
     envelope.classList.toggle('open');
     envelope.classList.remove('closed');
-
   };
 
-  // Función para obtener un ángulo de rotación aleatorio
   const getRandomValues = () => {
-    // Generar un número entero aleatorio entre 6 y 16
     const angle = Math.floor(Math.random() * (16 - 6 + 1)) + 6;
-    // Decidir aleatoriamente si el ángulo será positivo o negativo
     const sign = Math.random() < 0.5 ? -1 : 1;
     return angle * sign;
   };
 
   const handleClick = (seccion) => {
     const sobre = document.querySelector('.sobre.closed');
-
-    // Animación de palpitación con GSAP
     const duracion = getComputedStyle(document.documentElement).getPropertyValue('--duration').trim().replace('s', '');
-    // console.log(duracion);
 
     setSeccion(seccion);
     gsap.to(".bubbles", { opacity: 1, duration: 1, delay: 1, ease: "ease" });
@@ -71,22 +70,20 @@ const Sobre = () => {
       }
     });
 
-
     if (sobre) {
-      // Usar función para rotación aleatoria
-      tlSobre.to(sobre, {
+      tlSobre.current.to(sobre, {
         scale: 1.05,
-        rotate: () => getRandomValues(),  // Aplicar rotación aleatoria en cada iteración
+        rotate: () => getRandomValues(),
         x: () => getRandomValues(),
         y: () => getRandomValues(),
         duration: duracion * 0.1,
         yoyo: true,
-        repeat: 7, // Hacer palpitaciones durante 5 segundos
+        repeat: 7,
         ease: "power1.inOut",
-        repeatRefresh: true // Asegurar que la animación se actualice para cada repetición
+        repeatRefresh: true
       }).to(sobre, {
         scale: 1,
-        rotate: 0, // Asegurarse de que la rotación vuelva a 0
+        rotate: 0,
         y: 0,
         x: 0,
         duration: duracion,
@@ -102,9 +99,117 @@ const Sobre = () => {
     }
   };
 
+  const toggleMute = () => {
+    setIsMuted(!isMuted); // Cambia el estado del mute
+    setIsMutedGeneral(!isMutedGeneral); // Cambia el estado del mute
+    setIsFirstInteraction(true); // Marca que hubo interacción con el botón
+  };
+
+  const fadeOutVolume = (desmutear) => {
+    gsap.to(audioRef.current, {
+      volume: desmutear ? 1 : 0,
+      duration: 3,
+    })
+    // gsap.to("button.volumen", { opacity: 0, duration: 1, })
+  }
+
+  useEffect(() => {
+    // fadeOutVolume(activeCard !== "horarios")
+    
+      
+      !isMutedGeneral && setIsMuted(activeCard !== "horarios" ? isMutedGeneral : !isMuted)
+      // if(activeCard === "home")
+      //   setIsMuted(isMutedGeneral)
+    
+    
+  }, [activeCard])
+
+  // Función para manejar el arrastre del sobre
+  const handleDrag = (event) => {
+    // Verifica si el evento proviene del botón de volumen
+    if (event.target === buttonRef.current) {
+      return; // No hacer nada si se está interactuando con el botón de volumen
+    }
+
+    const waxSeal = document.querySelector('.wax-seal');
+    const sobre = document.querySelector('.sobre.closed');
+    const prompt = document.querySelector('.prompt');
+    if (waxSeal && sobre) {
+      gsap.killTweensOf(prompt);
+      gsap.to(waxSeal, {
+        scale: 1.1,
+        repeat: -1,
+        yoyo: true,
+        duration: 0.5,
+        paused: !sobre.classList.contains('closed'),
+      });
+      sobre && gsap.to(prompt, {
+        y: "100vh",
+        duration: 3,
+      });
+      // fadeOutVolume();
+    }
+  };
+
+  useEffect(() => {
+    audioRef.current.muted = isMuted; // Aplica el mute o desmute
+    audioRef.current.loop = true; // Hacer que el audio se reproduzca en bucle
+    audioRef.current.play().catch(error => {
+      console.log('Error al reproducir el audio:', error);
+    });
+
+    const waxSeal = document.querySelector('.wax-seal');
+    const sobre = document.querySelector('.sobre.closed');
+
+    if (waxSeal && sobre) {
+      gsap.to(waxSeal, {
+        scale: 1.1,
+        repeat: -1,
+        yoyo: true,
+        duration: 0.5,
+        paused: !sobre.classList.contains('closed'),
+      });
+    }
+
+    return () => {
+      audioRef.current.pause(); // Pausar el audio al desmontar el componente
+    };
+  }, [isMuted]);
+
+  // Animación de latido en el botón
+  useEffect(() => {
+    const button = buttonRef.current;
+
+    if (!isFirstInteraction) {
+      // Si aún no hay interacción, animar el botón
+      gsap.fromTo(button, {
+        scale: 1,
+      }, {
+        scale: 1.1,
+        duration: 0.5,
+        repeat: 3, // Repite 3 veces
+        yoyo: true,
+        ease: "power1.inOut",
+        onComplete: () => {
+          gsap.set(button, { scale: 1 }); // Restablece la escala al terminar
+        },
+      });
+    }
+  }, [isFirstInteraction]); // Solo corre hasta que hay interacción
+
+  // Agregar eventos de arrastre o movimiento
+  useEffect(() => {
+    window.addEventListener('mousemove', handleDrag);
+    window.addEventListener('touchmove', handleDrag);
+
+    return () => {
+      window.removeEventListener('mousemove', handleDrag);
+      window.removeEventListener('touchmove', handleDrag);
+    };
+  }, []);
+
   useEffect(() => {
     // Función para animar la opacidad de #root
-
 
     // Variables para manejar el temporizador
     let hoverTimer;
@@ -116,7 +221,6 @@ const Sobre = () => {
 
     // Evento de hover en escritorio
     canvas.addEventListener('mouseenter', animateOpacity);
-
     canvas.addEventListener('mouseleave', animateOpacity);
 
     // Evento de touch en dispositivos móviles
@@ -139,39 +243,48 @@ const Sobre = () => {
     }
   }, []);
 
-
   return (
-    <div className="sobre closed">
-      <img src={bubuDudu} alt="Bubu y Dudu" className="bubu-dudu" />
-      <div className="envelope closed">
-        <div className="envelope-flap">
-          <div className="wax-seal back" onClick={() => handleClick("sobre")} />
-        </div>
-        <div className="envelope-flap-bg"></div>
-        <div className="envelope-body">
-          <div className="envelope-content">
-            <Card seccion="invitacion" onClick={() => handleClick("invitacion")} trasera={<Invitacion />}>
-              <img src={invitacion} alt="Invitacion" />
-            </Card>
-            <Card seccion="horarios" onClick={() => handleClick("horarios")} trasera={<Timeline />}>
-              <h2>Agenda</h2>
-            </Card>
-            <Card seccion="regalo" onClick={() => handleClick("regalo")} trasera={<Regalo />}>
-              <h2>Regalo</h2>
-            </Card>
-            <Card seccion="ubicaciones" onClick={() => handleClick("ubicaciones")} trasera={<Lugar />}>
-              <h2>Lugar</h2>
-            </Card>
-            <Card seccion={"asistencia"} onClick={() => handleClick("asistencia")} trasera={<Asistencia />}>
-              <h2>Asistencia</h2>
-            </Card>
+    <>
+      <div className="sobre closed" ref={sobreRef}>
+        <img src={bubuDudu} alt="Bubu y Dudu" className="bubu-dudu" />
+        <div className="envelope closed" ref={envelopeRef}>
+          <div className="envelope-flap">
+            <div className="wax-seal back" onClick={() => handleClick("sobre")} />
           </div>
+          <div className="envelope-flap-bg"></div>
+          <div className="envelope-body">
+            <div className="envelope-content">
+              <Card seccion="invitacion" onClick={() => handleClick("invitacion")} trasera={<Invitacion />}>
+                <img src={invitacion} alt="Invitacion" />
+              </Card>
+              <Card seccion="horarios" onClick={() => handleClick("horarios")} trasera={<Timeline />}>
+                <h2>Agenda</h2>
+              </Card>
+              <Card seccion="regalo" onClick={() => handleClick("regalo")} trasera={<Regalo />}>
+                <h2>Regalo</h2>
+              </Card>
+              <Card seccion="ubicaciones" onClick={() => handleClick("ubicaciones")} trasera={<Lugar />}>
+                <h2>Lugar</h2>
+              </Card>
+              <Card seccion={"asistencia"} onClick={() => handleClick("asistencia")} trasera={<Asistencia />}>
+                <h2>Asistencia</h2>
+              </Card>
+            </div>
+          </div>
+          <p className="nombre-invitado">Invitados 1 y 2</p>
         </div>
-        <p className="nombre-invitado">Invitados 1 y 2</p>
       </div>
-      {/* <button className="back" onClick={() => setActiveCard("sobre")} /> */}
-    </div>
+
+      {/* Botón para mutear/desmutear el audio */}
+      <button
+        className={`back volumen ${isMuted ? 'play' : 'stop'}`}  // Cambia clase según mute/desmute
+        onClick={toggleMute}
+        disabled={activeCard === "horarios"}
+        ref={buttonRef}  // Referencia para aplicar animación
+      >
+      </button>
+    </>
   );
-}
+};
 
 export default Sobre;

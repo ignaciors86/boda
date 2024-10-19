@@ -6,7 +6,16 @@
   width: 100%;
   flex-direction: column;
   background: cadetblue;
-  position: relative;
+
+  em{
+    font-weight: bolder;
+    text-transform: uppercase;
+    width: fit-content;
+    border-bottom: 2px solid white;
+    padding: 0 5% 1%;
+    margin: 0 auto 3%;
+    font-size: calc(var(--size-unit)* 0.15);
+  }
 }
 
 .hidden {
