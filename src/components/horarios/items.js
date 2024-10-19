@@ -65,6 +65,15 @@ import randyresaca from "./assets/images/postboda/randyresaca.webp";
 import finyjakeresaca from "./assets/images/postboda/finyjakeresaca.webp"; 
 
 import Item from './Item.js';
+import ceremonia from './assets/sounds/ceremonia.mp3';
+import festin from './assets/sounds/festin.mp3';
+import sound1 from './assets/sounds/sound1.mp3';
+import samantha from './assets/sounds/samantha.mp3';
+import kanka from './assets/sounds/kanka.mp3';
+import rumbling from './assets/sounds/rumbling.mp3';
+import monkeyislandmp3 from './assets/sounds/monkeyisland.mp3';
+import comidamp3 from './assets/sounds/comida.mp3';
+import malabares from './assets/sounds/malabares.mp3';
 
 const imageUrls = [
     inicial,bmo,rick,scooby,got,trump,barbacoa,randy,emily,dean,bebidas,tequila,randyresaca,
@@ -133,45 +142,53 @@ const items = [
             <span><b>a saber</b>(muerte al sol)
           </span>
         </div>,
-        images: [wingapo,paella,friends,barbacoa,bmo,urkel,tio,ojeteCalor,bebidas,masterchef,got,pikachu,karaoke,shameless,gilmoreBaile,ron,antidisturbios,carrie,trump,finyjakeresaca,emily,dean,antidisturbios2,kelso,scooby,bills,kitty,keVin,postBodaFriends,bitches,paquita,rick,bob,red,tina,theoffice,stop,tequila,karen,treatyourself,randy,shamelesstercerTiempo,allyoucaneat,nickcorbata,barneyted,finn,wilson,bojack,sexeducation,monkeyisland2,coctel,randyresaca,gargaras,esqueletos,monkeyisland,yoda,banquetegilmore,trump,ojeteCalor]
+        images: [wingapo,paella,friends,barbacoa,bmo,urkel,tio,ojeteCalor,bebidas,masterchef,got,pikachu,karaoke,shameless,gilmoreBaile,ron,antidisturbios,carrie,trump,finyjakeresaca,emily,dean,antidisturbios2,kelso,scooby,bills,kitty,keVin,postBodaFriends,bitches,paquita,rick,bob,red,tina,theoffice,stop,tequila,karen,treatyourself,randy,shamelesstercerTiempo,allyoucaneat,nickcorbata,barneyted,finn,wilson,bojack,sexeducation,monkeyisland2,coctel,randyresaca,gargaras,esqueletos,monkeyisland,yoda,banquetegilmore,trump,ojeteCalor],
+        audio: monkeyislandmp3,
     },
     {
         title: "Preboda",
         description: <>
             <p>Traete el bañador, y si tocas algún instrumento y te apetece tenerlo a mano para hacer el bobo un rato, adelante.</p>
         </>,
- images: [pikachu,bebidas,masterchef,lost,karaoke,sexeducation, kelso, kitty,  bob]
+        images: [pikachu,bebidas,masterchef,lost,karaoke,sexeducation, kelso, kitty,  bob],
+        audio: malabares,
     },
     {
         title: "Ceremonia",
         description: <p>Palabras bonitas serán dichas y lloraremos todos mucho.</p>,
         
-        images: [theoffice, gilmoreBaile,friends, monkeyisland, monkeyisland2, shameless]
+        images: [theoffice, gilmoreBaile,friends, monkeyisland, monkeyisland2, shameless],
+        audio: ceremonia,
     },
     {
         title: "Cóctel",
         description: <p>Ponte hasta el culo, por favor.</p>,
-        images: [treatyourself, bills,karen, cartman,tina,maleducado,allyoucaneat, gargaras]
+        images: [treatyourself, bills,karen, cartman,tina,maleducado,allyoucaneat, gargaras],
+        audio: kanka  ,
     },
     {
         title: "Comida",
         description: <p>Un ratico sentados, ¿no?, pero con más comida</p>,
-        images: [got, trump, banquetegilmore, barbacoa, antidisturbios,  ron, emily,wilson, antidisturbios2]
+        images: [got, trump, banquetegilmore, barbacoa, antidisturbios,  ron, emily,wilson, antidisturbios2],
+        audio: comidamp3,
     },
     {
         title: "Baile",
         description: <p>El baile de los recién casados abre la pista, seguido de una noche de música y diversión para todos los invitados.</p>,
-        images: [ keVin,paquita, bitches,bmobaile,barneyted, rick,dean,stop, urkel, carrie, bmo, randy]
+        images: [ keVin,paquita, bitches,bmobaile,barneyted, rick,dean,stop, urkel, carrie, bmo, randy],
+        audio: festin,
     },
     {
-        title: "23:00: Tercer Tiempo",
+        title: "Tercer Tiempo",
         description: <p>Último bus para la gente cansada, y a ser posible, todos los menores.</p>,
-        images: [tercerTiempo,nickcorbata,scooby,shamelesstercerTiempo, red, yoda, ojeteCalor,finn,esqueletos]
+        images: [tercerTiempo,nickcorbata,scooby,shamelesstercerTiempo, red, yoda, ojeteCalor,finn,esqueletos],
+        audio: samantha,
     },
     {
         title: "Domingo",
         description: <p>Churros, paella, siesta y <i>pa casa...</i></p>,
-        images: [bojack,tio,finyjakeresaca,tequila,randyresaca,postBodaFriends, wingapo]
+        images: [bojack,tio,finyjakeresaca,tequila,randyresaca,postBodaFriends, wingapo],
+        audio: rumbling,
     }
 ];
 
