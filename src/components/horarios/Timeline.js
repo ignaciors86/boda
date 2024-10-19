@@ -16,9 +16,11 @@ const Timeline = () => {
   const progressBarRef = useRef(null);
   const timelineRef = useRef(gsap.timeline({ paused: true }));
   const [imagesLoaded, setImagesLoaded] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0); // Estado para seguir el ítem actual
+  const [currentIndex, setCurrentIndex] = useState(0);
   const { isOtherDraggableActive, setIsOtherDraggableActive } = useDragContext();
-  const [hasVibrated, setHasVibrated] = useState(false); // Estado para controlar la vibración
+  const [hasVibrated, setHasVibrated] = useState(false);
+  
+  const audioRef = useRef(new Audio()); // Cambiado aquí para mantener la referencia del audio actual
 
   // Pre-cargar imágenes
   const preloadImages = (urls) => {
@@ -56,7 +58,6 @@ const Timeline = () => {
       type: 'x',
       bounds: progressBarRef.current,
       onDrag() {
-        // setIsOtherDraggableActive(true);
         document.querySelectorAll('.card').forEach(card => {
           card.classList.add('dragging');
         });
@@ -67,7 +68,6 @@ const Timeline = () => {
         );
         timelineRef.current.progress(progress);
 
-        // Cambia el tamaño de la imagen durante el arrastre
         const penultimateItemProgress = (totalItems - 2) / totalItems;
         const lastItemProgress = 1;
 
@@ -77,28 +77,23 @@ const Timeline = () => {
           gsap.to(sliderRef.current, { scale: 1.3, y: "-0dvh", duration: 0.3 });
         }
 
-        // Detectar el cambio de ítem
         const newIndex = Math.floor(progress * totalItems);
         if (newIndex !== currentIndex) {
           setCurrentIndex(newIndex);
-          setHasVibrated(false); // Asegúrate de que la vibración se pueda activar en el siguiente punto de cambio
+          setHasVibrated(false);
         }
       },
       onRelease() {
-        // setIsOtherDraggableActive(false);
         document.querySelectorAll('.card').forEach(card => {
           card.classList.remove('dragging');
         });
 
-        // Restaura el tamaño de la imagen al soltar
         gsap.to(sliderRef.current, { scale: 1, duration: 0.3 });
 
         let ultimo = true;
-        // Verificar qué item tiene opacidad mayor que 0 y ajustarlo a 1
         items.forEach((item, index) => {
           const element = document.querySelector(`.item${index}`);
 
-          // Verifica si el elemento existe en el DOM antes de acceder a su opacidad
           if (element) {
             const opacity = parseFloat(window.getComputedStyle(element).opacity);
             if (opacity > 0) {
@@ -118,9 +113,30 @@ const Timeline = () => {
     if (slider && progressBar) {
       const initialProgress = Math.min(Math.max(slider.x / progressBar.clientWidth, 0), 1);
       timelineRef.current.progress(initialProgress);
-      setCurrentIndex(Math.floor(initialProgress * items.length)); // Establecer el índice inicial
+      setCurrentIndex(Math.floor(initialProgress * items.length));
     }
   };
+
+  // Reproduce el audio del ítem actual cuando se setea activeCard
+  useEffect(() => {
+    console.log(currentIndex);
+    !currentIndex && setCurrentIndex(0);
+    const audio = audioRef.current;
+    if (activeCard && items[currentIndex]?.audio) {
+  
+
+      // Pausa el audio anterior si está reproduciéndose
+      audio.pause();
+      audio.src = items[currentIndex].audio;
+      audio.loop = true; // Habilita la reproducción en bucle
+      audio.load(); // Carga el nuevo archivo
+      audio.play().catch(err => console.error("Error al reproducir el audio:", err));
+    }
+
+    if(activeCard!=="horarios"){
+      audio.pause();
+    }
+  }, [activeCard, currentIndex]);
 
   useEffect(() => {
     preloadImages(imageUrls)
@@ -130,6 +146,7 @@ const Timeline = () => {
     return () => {
       Draggable.get(sliderRef.current)?.kill();
       timelineRef.current.clear();
+      audioRef.current.pause(); // Asegúrate de pausar el audio al desmontar el componente
     };
   }, []);
 
@@ -140,10 +157,9 @@ const Timeline = () => {
   }, [imagesLoaded]);
 
   useEffect(() => {
-    // Vibrar solo si ha cambiado el índice y no ha vibrado aún
     if (currentIndex > -1 && navigator.vibrate) {
-      !hasVibrated && navigator?.vibrate(40); // Vibración de 40 milisegundos
-      setHasVibrated(true); // Marca como vibrado para evitar vibraciones repetidas
+      !hasVibrated && navigator?.vibrate(40); 
+      setHasVibrated(true);
     }
   }, [currentIndex]);
 
@@ -151,22 +167,24 @@ const Timeline = () => {
     return <Loading />;
   }
 
-  return (<>
-    <div className={`${MAINCLASS} seccion`}>
-      <div className="elements">
-        {renderItems()}
-      </div>
-      <div className="progress-bar" ref={progressBarRef}>
-        <div className="slider" ref={sliderRef}>
-          <img
-            src={ositosDrag}
-            alt="Slider"
-          />
+  return (
+    <>
+      <div className={`${MAINCLASS} seccion`}>
+        <div className="elements">
+          {renderItems()}
+        </div>
+        <div className="progress-bar" ref={progressBarRef}>
+          <div className="slider" ref={sliderRef}>
+            <img
+              src={ositosDrag}
+              alt="Slider"
+            />
+          </div>
         </div>
       </div>
-    </div>
-    <button className="back" onClick={() => setActiveCard("home")} />
-    </>);
+      <button className="back" onClick={() => setActiveCard("home")} />
+    </>
+  );
 };
 
 export default Timeline;
