@@ -20,7 +20,8 @@ const Timeline = () => {
   const { isOtherDraggableActive, setIsOtherDraggableActive } = useDragContext();
   const [hasVibrated, setHasVibrated] = useState(false);
   
-  const audioRef = useRef(new Audio()); // Cambiado aquí para mantener la referencia del audio actual
+  const audioRef = useRef(new Audio());
+  const [isMuted, setIsMuted] = useState(false); // Estado para controlar si el audio está muteado
 
   // Pre-cargar imágenes
   const preloadImages = (urls) => {
@@ -123,12 +124,10 @@ const Timeline = () => {
     !currentIndex && setCurrentIndex(0);
     const audio = audioRef.current;
     if (activeCard && items[currentIndex]?.audio) {
-  
-
-      // Pausa el audio anterior si está reproduciéndose
-      audio.pause();
+      audio.pause(); // Pausa el audio anterior si está reproduciéndose
       audio.src = items[currentIndex].audio;
       audio.loop = true; // Habilita la reproducción en bucle
+      audio.muted = isMuted; // Aplica el estado de mute
       audio.load(); // Carga el nuevo archivo
       audio.play().catch(err => console.error("Error al reproducir el audio:", err));
     }
@@ -136,7 +135,13 @@ const Timeline = () => {
     if(activeCard!=="horarios"){
       audio.pause();
     }
-  }, [activeCard, currentIndex]);
+  }, [activeCard, currentIndex, isMuted]);
+
+  // Función para alternar el estado de mute
+  const handleMuteToggle = () => {
+    setIsMuted(!isMuted);
+    audioRef.current.muted = !audioRef.current.muted; // Cambia el estado de mute del audio
+  };
 
   useEffect(() => {
     preloadImages(imageUrls)
@@ -183,6 +188,7 @@ const Timeline = () => {
         </div>
       </div>
       <button className="back" onClick={() => setActiveCard("home")} />
+      <button className={`back ${!isMuted ? "play" : "stop" }`} onClick={handleMuteToggle} /> {/* Botón para mutear */}
     </>
   );
 };
