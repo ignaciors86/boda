@@ -14,7 +14,7 @@ const Prompt = () => {
     const typingSpeedMultiplier = isMobileDevice() ? 5 : 1; // Multiplicador de velocidad para móviles
     const typingSpeed = baseTypingSpeed * typingSpeedMultiplier; // Velocidad de escritura ajustada
 
-    const pauseAfterTyping = 1000; // Pausa tras escribir cada frase (milisegundos)
+    const pauseAfterTyping = 2500; // Pausa tras escribir cada frase (milisegundos)
     const pauseBeforeNextScreen = 1000; // Tiempo antes de la siguiente frase (milisegundos)
 
     const phrases = [
