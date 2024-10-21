@@ -166,7 +166,7 @@ const items = [
     },
     {
         title: "Comida",
-        description: <p>Un ratico sentados, ¿no?, pero con más comida</p>,
+        description: <p>¿Te habrá tocado en la mesa de los majos? Claro que sí. Todo el mundo es majo en nuestra boda.</p>,
         images: [got, trump, banquetegilmore, barbacoa, antidisturbios,  ron, emily,wilson, antidisturbios2],
         audio: comidamp3,
     },

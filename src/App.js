@@ -5,6 +5,8 @@ import './App.scss';
 import { DragProvider } from './components/DragContext';
 import Espiral from './components/Backgrounds/Espiral/Espiral';
 import Bubbles from './components/Backgrounds/Bubles/Bubles';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import FondosBaile from './components/FondosBaile/FondosBaile'; // Importa tu nuevo componente
 
 const App = () => {
   const tlApp = gsap.timeline();
@@ -18,18 +20,26 @@ const App = () => {
   const duration = 1;
 
   return (
-    <DragProvider>
-      {/* <div className="App"> */}
-        {/* {articles?.map(article => (
-          <div key={article.id}>
-            <h2>{article.nombre}</h2>
-          </div>
-        ))} */}
-        <Bubbles/>
-        <Espiral/>
-        <Sobre />
-      {/* </div> */}
-    </DragProvider>
+    <Router>
+      <DragProvider>
+        {/* <div className="App"> */}
+          {/* {articles?.map(article => (
+            <div key={article.id}>
+              <h2>{article.nombre}</h2>
+            </div>
+          ))} */}
+
+          <Routes>
+            <Route path="/" element={<>
+               <Bubbles/>
+              <Espiral/>
+              <Sobre />
+            </>} />
+            <Route path="/fondos-baile" element={<FondosBaile />} /> {/* Nueva ruta */}
+          </Routes>
+        {/* </div> */}
+      </DragProvider>
+    </Router>
   );
 }
 
