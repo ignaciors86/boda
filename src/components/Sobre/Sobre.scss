@@ -1,3 +1,4 @@
+
 .sobre{
     width: auto;
     display: flex;
@@ -115,7 +116,7 @@
             transition: calc(var(--duration-envelope)* 2) ease 0s;
             z-index: 2;
             top: -50%;
-            left: 0;
+            left: -3%;
             &.invitacion{
                 width: calc(var(--size-unit)* 2.5);
                 height: calc(var(--size-unit)* 2.5);
@@ -146,19 +147,23 @@
 
     .wax-seal {
         position: absolute;
-        top: 71%;
+        top: 58%;
         left: 50%;
-        width: calc(var(--size-unit)/2);
-        height: calc(var(--size-unit)/2);
-        background-color: var(--purpleTransparent);
+        width: calc(var(--size-unit)/1.5);
+        height: calc(var(--size-unit)/1.5);
+        background-color: cadetblue;
         border-radius: 50%;
-        border: 5px solid var(--greenTransparent);
+        border: 0px solid var(--greenTransparent);
         box-shadow: 0 0 10px rgba(53, 48, 48, 0.148);
         transform: translate(-50%, -50%);
         // transition: calc(var(--duration-envelope)*.5) ease calc(var(--duration-envelope)*3.5); 
         cursor: pointer;
         z-index: 3;
         opacity: 1 !important;
+        mask-image: url('./assets/images/lacrado.png');
+        mask-size: 100%;
+        mask-position: 50%;
+        mask-repeat: no-repeat;
         &:before{
             transition: calc(var(--duration-envelope)) ease calc(var(--duration-envelope)/2); 
             opacity: 0;
@@ -199,7 +204,7 @@
         }
         .wax-seal {
             transform: translate(-50%, -50%) scale(1) !important;
-            background-color: var(--greenTransparent);
+            background-color: #76799d;
             transition: calc(var(--duration-envelope)*.5) ease calc(var(--duration-envelope)*.5) !important; 
             &:before{
                 opacity: 1;
