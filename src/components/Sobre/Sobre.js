@@ -25,7 +25,7 @@ const Sobre = () => {
   const buttonRef = useRef(null); // Referencia para el botón del audio
   const sobreRef = useRef(null);  // Referencia para el sobre
   const envelopeRef = useRef(null); // Referencia para el sobre interactivo
-
+  const escala = 1.1;
   const toggle = () => {
     const cards = document.querySelectorAll('.card');
     cards.forEach(card => {
@@ -136,13 +136,6 @@ const Sobre = () => {
     const prompt = document.querySelector('.prompt');
     if (waxSeal && sobre) {
       gsap.killTweensOf(prompt);
-      gsap.to(waxSeal, {
-        scale: 1.1,
-        repeat: -1,
-        yoyo: true,
-        duration: 0.5,
-        paused: !sobre.classList.contains('closed'),
-      });
       sobre && gsap.to(prompt, {
         y: "100vh",
         duration: 3,
@@ -158,19 +151,6 @@ const Sobre = () => {
       console.log('Error al reproducir el audio:', error);
     });
 
-    const waxSeal = document.querySelector('.wax-seal');
-    const sobre = document.querySelector('.sobre.closed');
-
-    if (waxSeal && sobre) {
-      gsap.to(waxSeal, {
-        scale: 1.1,
-        repeat: -1,
-        yoyo: true,
-        duration: 0.5,
-        paused: !sobre.classList.contains('closed'),
-      });
-    }
-
     return () => {
       audioRef.current.pause(); // Pausar el audio al desmontar el componente
     };
@@ -178,23 +158,23 @@ const Sobre = () => {
 
   // Animación de latido en el botón
   useEffect(() => {
-    const button = buttonRef.current;
+    // const button = buttonRef.current;
 
-    if (!isFirstInteraction) {
-      // Si aún no hay interacción, animar el botón
-      gsap.fromTo(button, {
-        scale: 1,
-      }, {
-        scale: 1.1,
-        duration: 0.5,
-        repeat: 3, // Repite 3 veces
-        yoyo: true,
-        ease: "power1.inOut",
-        onComplete: () => {
-          gsap.set(button, { scale: 1 }); // Restablece la escala al terminar
-        },
-      });
-    }
+    // if (!isFirstInteraction) {
+    //   // Si aún no hay interacción, animar el botón
+    //   gsap.fromTo(button, {
+    //     scale: 1,
+    //   }, {
+    //     scale: escala,
+    //     duration: 0.5,
+    //     repeat: 3, // Repite 3 veces
+    //     yoyo: true,
+    //     ease: "power1.inOut",
+    //     onComplete: () => {
+    //       gsap.set(button, { scale: 1 }); // Restablece la escala al terminar
+    //     },
+    //   });
+    // }
   }, [isFirstInteraction]); // Solo corre hasta que hay interacción
 
   // Agregar eventos de arrastre o movimiento
@@ -210,10 +190,6 @@ const Sobre = () => {
 
   useEffect(() => {
     // Función para animar la opacidad de #root
-
-    // Variables para manejar el temporizador
-    let hoverTimer;
-    let touchTimer;
 
     // Seleccionar elementos
     const canvas = document.getElementById('myCanvas');
@@ -234,7 +210,7 @@ const Sobre = () => {
     // console.log(seccion);
     if (waxSeal && sobre) {
       gsap.to(waxSeal, {
-        scale: 1.1,
+        scale: escala,
         repeat: -1,
         yoyo: true,
         duration: 0.5,
