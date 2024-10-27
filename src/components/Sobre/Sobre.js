@@ -14,12 +14,10 @@ import animateOpacity from '../functions';
 import { useDragContext } from '../DragContext';
 
 const Sobre = () => {
-  const { activeCard, setActiveCard } = useDragContext();
-  const [envelopeClosed, setEnvelopeClosed] = useState(true);
-  const [seccion, setSeccion] = useState("sobre");
+  const { activeCard } = useDragContext();
+  const [setSeccion] = useState("sobre");
   const [isMuted, setIsMuted] = useState(true); // Estado para el mute del audio
   const [isMutedGeneral, setIsMutedGeneral] = useState(true); // Estado para el mute del audio
-  const [isFirstInteraction, setIsFirstInteraction] = useState(false); // Estado para saber si ya hubo interacción con el botón
   const audioRef = useRef(new Audio(introAudio)); // Referencia al audio
   const tlSobre = useRef(gsap.timeline());
   const buttonRef = useRef(null); // Referencia para el botón del audio
@@ -50,11 +48,10 @@ const Sobre = () => {
     return angle * sign;
   };
 
-  const handleClick = (seccion) => {
+  const handleClick = () => {
     const sobre = document.querySelector('.sobre.closed');
     const duracion = getComputedStyle(document.documentElement).getPropertyValue('--duration').trim().replace('s', '');
 
-    setSeccion(seccion);
     gsap.to(".bubbles", { opacity: 1, duration: 1, delay: 1, ease: "ease" });
     gsap.to(".espiral", {
       opacity: 0, duration: 1, delay: 0, ease: "ease",
@@ -102,7 +99,6 @@ const Sobre = () => {
   const toggleMute = () => {
     setIsMuted(!isMuted); // Cambia el estado del mute
     setIsMutedGeneral(!isMutedGeneral); // Cambia el estado del mute
-    setIsFirstInteraction(true); // Marca que hubo interacción con el botón
   };
 
   const fadeOutVolume = (desmutear) => {
@@ -110,18 +106,10 @@ const Sobre = () => {
       volume: desmutear ? 1 : 0,
       duration: 3,
     })
-    // gsap.to("button.volumen", { opacity: 0, duration: 1, })
   }
 
   useEffect(() => {
-    // fadeOutVolume(activeCard !== "horarios")
-    
-      
       !isMutedGeneral && setIsMuted(activeCard !== "horarios" ? isMutedGeneral : !isMuted)
-      // if(activeCard === "home")
-      //   setIsMuted(isMutedGeneral)
-    
-    
   }, [activeCard])
 
   // Función para manejar el arrastre del sobre
@@ -155,27 +143,6 @@ const Sobre = () => {
       audioRef.current.pause(); // Pausar el audio al desmontar el componente
     };
   }, [isMuted]);
-
-  // Animación de latido en el botón
-  useEffect(() => {
-    // const button = buttonRef.current;
-
-    // if (!isFirstInteraction) {
-    //   // Si aún no hay interacción, animar el botón
-    //   gsap.fromTo(button, {
-    //     scale: 1,
-    //   }, {
-    //     scale: escala,
-    //     duration: 0.5,
-    //     repeat: 3, // Repite 3 veces
-    //     yoyo: true,
-    //     ease: "power1.inOut",
-    //     onComplete: () => {
-    //       gsap.set(button, { scale: 1 }); // Restablece la escala al terminar
-    //     },
-    //   });
-    // }
-  }, [isFirstInteraction]); // Solo corre hasta que hay interacción
 
   // Agregar eventos de arrastre o movimiento
   useEffect(() => {
