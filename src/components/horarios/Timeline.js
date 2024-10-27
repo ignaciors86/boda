@@ -17,7 +17,6 @@ const Timeline = () => {
   const timelineRef = useRef(gsap.timeline({ paused: true }));
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const { isOtherDraggableActive, setIsOtherDraggableActive } = useDragContext();
   const [hasVibrated, setHasVibrated] = useState(false);
   
   const audioRef = useRef(new Audio());
@@ -107,10 +106,6 @@ const Timeline = () => {
         const progress = Math.min(Math.max(currentX / progressBarWidth, 0), 1); // Progreso normalizado
         const porcentaje = (progress * 100).toFixed(2);
         if (porcentaje < 10) {
-          // setCurrentIndex(0);
-          // audioRef.current.src = items[0].audio; // Cambia el audio al del item 0
-          // audioRef.current.load(); // Carga el nuevo archivo
-          // audioRef.current.play().catch(err => console.error("Error al reproducir el audio:", err));
         }else if (progress < 0.1) {
           // Cambia al segundo ítem si el slider se suelta a menos del 10% del recorrido
           setCurrentIndex(1);
