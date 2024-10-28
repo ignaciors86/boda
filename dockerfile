@@ -1,29 +1,32 @@
-# Construcción de la app
+# Construcción de la aplicación
 FROM node:18-alpine AS build
 
 # Establece el directorio de trabajo
 WORKDIR /app
 
-# Copia el package.json y el package-lock.json
+# Copia el package.json y package-lock.json
 COPY package*.json ./
 
 # Instala las dependencias
 RUN npm install
 
-# Copia el resto de los archivos de la aplicación
+# Copia el resto de los archivos del proyecto
 COPY . .
 
-# Compila la aplicación
+# Compila la aplicación en modo de producción
 RUN npm run build
 
-# Servidor Nginx
-FROM nginx:stable-alpine
+# Servidor para producción
+FROM node:18-alpine AS production
 
-# Copia los archivos de construcción al servidor nginx
-COPY --from=build /app/build /usr/share/nginx/html
+# Instala el paquete 'serve' globalmente para servir los archivos estáticos
+RUN npm install -g serve
 
-# Expone el puerto de nginx
-EXPOSE 80
+# Copia los archivos de compilación desde la etapa de construcción
+COPY --from=build /app/build /app/build
 
-# Inicia nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Expone el puerto 3000
+EXPOSE 3000
+
+# Comando para servir la aplicación con 'serve' en la carpeta 'build'
+CMD ["serve", "-s", "build", "-l", "3000"]
