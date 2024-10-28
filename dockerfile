@@ -1,13 +1,24 @@
-# Etapa de construcción
-FROM node:18-alpine AS build
+# Usa la imagen base de node
+FROM node:18-alpine
+
+# Crea y usa el directorio de la app
 WORKDIR /app
+
+# Copia los archivos
 COPY package*.json ./
-RUN npm install
 COPY . .
+
+# Instala las dependencias
+RUN npm install
+
+# Construye la aplicación
 RUN npm run build
 
-# Etapa de producción usando nginx
-FROM nginx:stable-alpine
-COPY --from=build /app/build /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# Instala serve
+RUN npm install -g serve
+
+# Expone el puerto
+EXPOSE 3000
+
+# Usa serve para iniciar la aplicación
+CMD ["serve", "-s", "build", "-l", "3000"]
