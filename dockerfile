@@ -9,7 +9,7 @@ COPY package*.json ./
 COPY . .
 
 # Instala las dependencias
-RUN npm install
+RUN npm install --omit=dev
 
 # Construye la aplicación
 RUN npm run build
