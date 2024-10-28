@@ -17,14 +17,14 @@
     "react-scripts": "5.0.1",
     "react-spring": "^9.7.4",
     "sass": "^1.77.8",
-    "serve": "^14.2.4",
+    "serve": "^14.2.4",  // Asegúrate de que sea la versión que deseas
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "npx serve -s build -l 3000",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "start": "npx serve -s build -l 3000", // Comando para iniciar en producción
+    "build": "react-scripts build", // Comando para construir la app
+    "test": "react-scripts test", // Comando para ejecutar tests
+    "eject": "react-scripts eject" // Comando para ejectar configuración
   },
   "eslintConfig": {
     "extends": [
