@@ -3,7 +3,7 @@ import './Sobre.scss';
 import invitacion from './assets/images/invitacion.png';
 import bubuDudu from './assets/images/bubu-dudu.jpg';
 import Card from './Card';
-// import Timeline from '../Horarios/Timeline';
+import Timeline from '../Horarios/Timeline';
 import Lugar from './Tarjetas/Lugar';
 import Regalo from './Tarjetas/Regalo';
 import Invitacion from './Tarjetas/Invitacion';
@@ -200,9 +200,9 @@ const Sobre = () => {
               <Card seccion="invitacion" onClick={() => handleClick("invitacion")} trasera={<Invitacion />}>
                 <img src={invitacion} alt="Invitacion" />
               </Card>
-              {/* <Card seccion="horarios" onClick={() => handleClick("horarios")} trasera={<Timeline />}> */}
-                {/* <h2>Agenda</h2> */}
-              {/* </Card> */}
+              <Card seccion="horarios" onClick={() => handleClick("horarios")} trasera={<Timeline />}>
+                <h2>Agenda</h2>
+              </Card>
               <Card seccion="regalo" onClick={() => handleClick("regalo")} trasera={<Regalo />}>
                 <h2>Regalo</h2>
               </Card>
