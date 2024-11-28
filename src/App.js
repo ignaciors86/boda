@@ -32,6 +32,7 @@ const App = () => {
           <Routes>
             <Route path="/" element={<>
                <Bubbles/>
+               
               <Espiral/>
               <Sobre />
             </>} />
