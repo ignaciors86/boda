@@ -3,7 +3,7 @@ import './Sobre.scss';
 import invitacion from './assets/images/invitacion.png';
 import bubuDudu from './assets/images/bubu-dudu.jpg';
 import Card from './Card';
-import Timeline from '../Horarios/Timeline';
+import Timeline from '../Timeline/Timeline';
 import Lugar from './Tarjetas/Lugar';
 import Regalo from './Tarjetas/Regalo';
 import Invitacion from './Tarjetas/Invitacion';
