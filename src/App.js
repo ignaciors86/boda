@@ -10,24 +10,24 @@ import FondosBaile from './components/FondosBaile/FondosBaile'; // Importa tu nu
 
 const App = () => {
   const tlApp = gsap.timeline();
-  // const [articles, setArticles] = useState([]);
+  const [articles, setArticles] = useState([]);
 
-  // useEffect(() => {
-  //   fetch('http://localhost:1337/invitados')
-  //     .then(response => response.json())
-  //     .then(data => setArticles(data));
-  // }, []);  
+  useEffect(() => {
+    fetch('https://strapi-boda-production.up.railway.app/invitados')
+      .then(response => response.json())
+      .then(data => setArticles(data));
+  }, []);  
   const duration = 1;
 
   return (
     <Router>
       <DragProvider>
-        {/* <div className="App"> */}
-          {/* {articles?.map(article => (
+       {/* <div className="App"> */}
+        {articles?.map(article => (
             <div key={article.id}>
               <h2>{article.nombre}</h2>
             </div>
-          ))} */}
+          ))} 
 
           <Routes>
             <Route path="/" element={<>
