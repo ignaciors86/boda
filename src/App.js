@@ -18,7 +18,7 @@ const App = () => {
       .then(data => setArticles(data));
   }, []);  
   const duration = 1;
-
+console.log(articles);
   return (
     <Router>
       <DragProvider>
