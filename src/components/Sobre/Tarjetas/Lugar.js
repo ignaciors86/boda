@@ -28,7 +28,7 @@ const Lugar = () => {
                 <em>(Pedrosillo el Ralo, Salamanca)</em>
             </a>
 
-            <em className="claim">El autobús saldrá a las 11:15 desde <a target= "_blank" href="https://maps.app.goo.gl/VcP5TumYHdV7XPSE9">El Corte Inglés</a></em>
+            <em className="claim">El autobús saldrá a las 12:00 desde El Corte Inglés<a target= "_blank" href="https://maps.app.goo.gl/VcP5TumYHdV7XPSE9">(abrir en maps)</a></em>
         </div>
         
         <button className="back" onClick={() => setActiveCard("sobre")} />
