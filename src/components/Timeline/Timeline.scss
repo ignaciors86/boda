@@ -30,18 +30,29 @@
   z-index: 1;
   position: absolute;
   bottom: calc(var(--size-unit)* 0.5);
-  height: calc(var(--size-unit)* 0.2);
+  height: calc(var(--size-unit)* 0.3);
   width: calc(90% - 0px);
   display: flex;
   justify-content: center;
   left: 5%;
+  span{
+    display: flex;
+    justify-content: center;
+    font-size: calc(var(--size-unit) * 0.2);
+    // padding-left: calc(var(--size-unit) * 0.5);
+    color: var(--orange);
+    font-family: "evelins";
+    align-items: center;
+    text-align: center;
+    width: 100%;
+  }
   .slider {
     cursor: pointer;
     left: 0;
     transform: translateX(30%);
     position: absolute;
     height: calc(var(--size-unit)* 0.5);
-    margin-top: calc(var(--size-unit)* -0.15);
+    margin-top: calc(var(--size-unit)* -0.125);
     width: calc(var(--size-unit)* 0.5);
     margin-left: calc(var(--size-unit)* -0.25);
     border: calc(var(--size-unit)* 0.04) solid var(--purpleTransparent);

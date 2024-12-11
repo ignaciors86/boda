@@ -210,6 +210,7 @@ const Timeline = () => {
           {renderItems(currentIndex)}
         </div>
         <div className="progress-bar" ref={progressBarRef}>
+          <span>arrastra lateralmente</span>
           <div className="slider" ref={sliderRef}>
             <img
               src={ositosDrag}
