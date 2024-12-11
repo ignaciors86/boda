@@ -317,8 +317,8 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
         <div ref={bgRef} className="checkbox__bg" />
 
         
-        <div ref={indicatorRef} className="checkbox__indicator">
-
+        <div ref={indicatorRef} className={`checkbox__indicator ${checked ? 'indicator-checked' : ''}`}>
+        
           
         </div>
         <div ref={noTextRef} className="checkbox__text no-text">
