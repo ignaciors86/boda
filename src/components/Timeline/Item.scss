@@ -49,14 +49,14 @@
       background: var(--greenTransparent);
       background: linear-gradient(cadetblue 100%, #7bbbbd 50%);
       width: 100%;
-      min-height: 33%;
+      min-height: 44%;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
       border-radius: 0;
       position: absolute;
-      padding-bottom: calc(var(--size-unit)* 0.8);
+      padding-bottom: calc(var(--size-unit)* 0.3);
       bottom: 0;
       h2 {
         width: 100%;
@@ -96,11 +96,12 @@
 
       .info{
         background: linear-gradient(#5f9ea0f0 100%, #7bbbbd 50%);
-        height: 76%;
+        height: 80%;
         justify-content: space-evenly;
         position: absolute;
         top: 0;
         padding-top: 9%;
+        padding-bottom: 20%;
         em:not(:first-of-type){
           margin-top: 5%;
         }
