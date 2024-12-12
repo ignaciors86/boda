@@ -184,7 +184,7 @@ const items = [
     },
     {
         title: "Domingo",
-        description: <p>Por la mañana habrá desayuno (churros included) y para los que aguantemos hasta la comida, paella... <br></br><i>Y WINGAPO, MARICONES</i></p>,
+        description: <p>Unos churritos para volver a la vida, y los que aguantéis hasta la paella os vais comidos... <i>Y entonces sí: <br></br><h3>WINGAPO, MARICONES</h3></i></p>,
         images: [bojack,tio,finyjakeresaca,tequila,randyresaca,postBodaFriends, wingapo],
         audio: rumbling,
     }
