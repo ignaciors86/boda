@@ -18,7 +18,6 @@ const Prompt = () => {
     const pauseBeforeNextScreen = 1000; // Tiempo antes de la siguiente frase (milisegundos)
 
     const phrases = [
-        ``,
         `¡Hola!\n\nVenimos a hacerte una putada...`,
         `Nos casamos.\n`,
         `"ohh qué bien... 😬 otra boda para el 2025... 😰"\n`,
