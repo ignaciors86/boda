@@ -65,9 +65,12 @@
         position: absolute;
         bottom: 0;
         z-index: 1;
-        width: 100%;
+        width: 80%;
+        left: 10%;
         display: flex;
         justify-content: center;
+        font-size: calc(var(--size-unit) * 0.4) !important;
+        color: var(--darkPurple);
         
         @media (orientation: portrait) {
             height: calc(var(--size-unit)* 1.3);
