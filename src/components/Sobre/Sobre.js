@@ -15,7 +15,7 @@ import { useDragContext } from '../DragContext';
 
 const Sobre = () => {
   const { activeCard } = useDragContext();
-  const [setSeccion] = useState("sobre");
+  const [moving, setMoving] = useState(false);
   const [isMuted, setIsMuted] = useState(true); // Estado para el mute del audio
   const [isMutedGeneral, setIsMutedGeneral] = useState(true); // Estado para el mute del audio
   const audioRef = useRef(new Audio(introAudio)); // Referencia al audio
@@ -40,6 +40,7 @@ const Sobre = () => {
     const envelope = document.querySelector('.envelope');
     envelope.classList.toggle('open');
     envelope.classList.remove('closed');
+    setMoving(false);
   };
 
   const getRandomValues = () => {
@@ -48,7 +49,8 @@ const Sobre = () => {
     return angle * sign;
   };
 
-  const handleClick = () => {
+  const handleClick = () => {    
+    setMoving(true);
     const sobre = document.querySelector('.sobre.closed');
     const duracion = getComputedStyle(document.documentElement).getPropertyValue('--duration').trim().replace('s', '');
 
@@ -192,7 +194,7 @@ const Sobre = () => {
         <img src={bubuDudu} alt="Bubu y Dudu" className="bubu-dudu" />
         <div className="envelope closed" ref={envelopeRef}>
           <div className="envelope-flap">
-            <div className="wax-seal back" onClick={() => handleClick("sobre")} />
+            <div className="wax-seal back" onClick={() => !moving && handleClick("sobre")} />
           </div>
           <div className="envelope-flap-bg"></div>
           <div className="envelope-body">
