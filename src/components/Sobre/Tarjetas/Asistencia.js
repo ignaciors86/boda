@@ -160,7 +160,7 @@ const Asistencia = () => {
                                 onClick={handleShowDisclaimer}
                                 disabled={isButtonDisabled}
                             >
-                                <h2>{isButtonDisabled ? "¡Enviar!" : "¡Enviar!"}</h2>
+                                <h2>{!isButtonDisabled ? "¡Listo!" : "Listo"}</h2>
                             </button>
                             <div 
                                 className="disclaimer" 
@@ -168,7 +168,7 @@ const Asistencia = () => {
                                 <div className="imagen" />
                                 <p>Este formulario solo compondrá un mensaje de whatsapp con la información que necesitamos.</p>
                                 <p>Puedes respondernos de la forma en que prefieras, pero por favor, asegúrate de que nos llega tu respuesta.</p>
-                                <p><strong>{confirmacion ? "gracias por unirte al fiestote" : "sentiremos tu ausencia"}</strong></p>
+                                <p><h2>{confirmacion ? "¡Nos vemos allí!" : "¡Te echaremos de menos!"}</h2></p>
                                 <button
                                     type="button"
                                     className="btn-cancelar"

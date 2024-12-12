@@ -296,8 +296,8 @@
         z-index: -1;
         flex-wrap: wrap;
         .imagen{
-            width: 15dvh;
-            height: 15dvh;
+            width: 10dvh;
+            height: 10dvh;
             // mask-image: url("../../../../assets/images/warning.png");
             // mask-size: 100%;
             // mask-repeat: no-repeat;
@@ -308,6 +308,13 @@
             background-repeat: no-repeat;
             background-position: 50%;
             
+        }
+        p{
+            width: 100%;
+            h2{
+                width: 100%;
+                text-align: center;
+            }
         }
     }
 }

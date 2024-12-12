@@ -214,7 +214,7 @@ const Sobre = () => {
               </Card>
             </div>
           </div>
-          <p className="nombre-invitado">Invitados 1 y 2</p>
+          <h2 className="nombre-invitado">M&N</h2>
         </div>
       </div>
 

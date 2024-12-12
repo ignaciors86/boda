@@ -136,7 +136,7 @@ const items = [
               - Tercer tiempo / Bus de vuelta
             </span>
           
-            <em>Domingo (Postboda): </em> 
+            <em>Domingo: </em> 
             <span><b>[undefined]</b>
           </span>
         </div>,
