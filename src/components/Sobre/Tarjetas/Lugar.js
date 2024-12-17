@@ -20,7 +20,7 @@ const Lugar = ({weeding}) => {
 
     return (<>
         <div className="lugar seccion">
-            <p>La boda tendrá lugar en Villas de Pomar</p>
+            <h4>Donde:<br></br><h2>Villas de Pomar</h2></h4>
             <a className="imagen" href={url} target="_blank" rel="noopener noreferrer">
                 <img src={mapa} alt="Mapa del lugar" ref={mapRef} />
             </a>

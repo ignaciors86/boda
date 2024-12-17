@@ -184,7 +184,7 @@ const items = [
     },
     {
         title: "Domingo",
-        description: <p>Unos churritos para volver a la vida, y los que aguantéis hasta la paella os vais comidos... <i>Y entonces sí: <br></br><h3>WINGAPO, MARICONES</h3></i></p>,
+        description: <p>Unos churritos para volver a la vida, y los que aguantéis hasta la paella os vais comidos... <b>Y entonces sí: <br></br><h3>WINGAPO, MARICONES</h3></b></p>,
         images: [bojack,tio,finyjakeresaca,tequila,randyresaca,postBodaFriends, wingapo],
         audio: rumbling,
     }
