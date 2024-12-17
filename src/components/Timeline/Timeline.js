@@ -97,7 +97,7 @@ const Timeline = () => {
         }
   
         // Actualiza la duración de la animación de sombra
-        const newDuration = progress < 0.85 ? 0.5*(10 - (progress * 10)) : 10; // Esto asegura que la duración se reduzca entre 10 y 1 segundos
+        const newDuration = progress < 0.88 ? 0.5*(10 - (progress * 10)) : 10; // Esto asegura que la duración se reduzca entre 10 y 1 segundos
         gsap.set(sliderRef.current, { animation: `shadowPulse ${newDuration}s ease-in-out infinite`} );
       },
       onRelease() {
