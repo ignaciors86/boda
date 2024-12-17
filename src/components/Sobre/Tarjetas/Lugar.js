@@ -11,7 +11,7 @@ const Lugar = ({weeding}) => {
     const duracion = getComputedStyle(document.documentElement).getPropertyValue('--duration').trim().replace('s', '');
     useEffect(() => {
         const animation = gsap.timeline({ repeat: -1, repeatDelay: 1 });
-        animation.to(mapRef.current, { scale: 1.2, rotate: "4deg", duration: duracion/2, ease: "power1.inOut" })
+        animation.to(mapRef.current, { scale: 1.1, rotate: "4deg", duration: duracion/2, ease: "power1.inOut" })
                  .to(mapRef.current, { scale: 1, rotate: "0deg", duration: duracion/2, ease: "power1.inOut" })
                  .to(mapRef.current, { scale: 1.2, rotate: "-4deg", duration: duracion/2, ease: "power1.inOut" })
                  .to(mapRef.current, { scale: 1, rotate: "0deg", duration: duracion/2, ease: "power1.inOut" });
@@ -29,7 +29,7 @@ const Lugar = ({weeding}) => {
             </a>
 
             <em className="claim"><a target= "_blank" href="https://maps.app.goo.gl/VcP5TumYHdV7XPSE9">El autobús saldrá a las 12:00 desde El Corte Inglés</a></em>
-            { weeding && <em className="claim">Si estás leyendo esto, tú y tu +1 tenéis el alojamiento ya reservado en el mismo sitio de la boda</em> }
+            { weeding && <em className="claim secundario">Si estás leyendo esto, tú y tu +1 tenéis el alojamiento ya reservado en el mismo sitio de la boda</em> }
         </div>
         
         <button className="back" onClick={() => setActiveCard("sobre")} />

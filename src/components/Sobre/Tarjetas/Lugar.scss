@@ -17,8 +17,8 @@
             width: 48%;
             z-index: 10;
             position: absolute;
-            left: 16%;
-            top: 30%;
+            left: 12%;
+            top: 27%;
         }
         img{
             width: 100%; 
@@ -30,27 +30,29 @@
         border-radius: calc(var(--size-unit)* 0.085);
         margin-top: calc(var(--size-unit)* 0.1);
         position: absolute;
-        right: 5%;
+        right: 8%;
         width: 50%;
         border-radius: 50vw;
-        bottom: 22%;
+        bottom: 13%;
         width: calc(var(--size-unit)* 1);
         height: calc(var(--size-unit)* 1);
         align-content: center;
         align-items: center;
+        rotate: 7deg;
         &:before{
+            mask-image: url("../../../../assets/images/bus.png");   
             content: "";
             position: absolute;
             width: 100%;
             height: 100%;
             left: 0;
             top: 0;
-            mask-image: url("../../../../assets/images/bus.png");   
             background: var(--orange);
             mask-repeat: no-repeat;
-            mask-size: 80%;
+            mask-size: 61%;
             mask-position: 50%;
             z-index: 0;
+            opacity: 25%;
         }
         a{
             position: relative;
@@ -61,6 +63,22 @@
     
 
 
+        }
+        &.secundario{
+            left: 51%;
+            right: inherit;
+            rotate: -5deg;
+            bottom: 40%;
+            z-index: 10;
+            background: var(--orange) !important;
+            width: calc(var(--size-unit)* 1.2);
+            height: calc(var(--size-unit)* 1.2);
+            color: white;
+            font-weight: 600;
+            &:before{
+                mask-image: url("../../../../assets/images/casita.png");   
+                background: black;
+            }
         }
         
     }
