@@ -6,6 +6,7 @@ import Loading from './Loading.js';
 import { imageUrls, items, renderItems } from "./items.js";
 import ositosDrag from "./assets/images/ositos-drag.png";
 import { useDragContext } from '../DragContext.js';
+import Marquee from 'react-fast-marquee';
 
 gsap.registerPlugin(Draggable);
 
@@ -210,7 +211,13 @@ const Timeline = () => {
           {renderItems(currentIndex)}
         </div>
         <div className="progress-bar" ref={progressBarRef}>
-          <span><marquee direction="left" scrollamount="5" loop="infinite">Arrastrate a través del fin de semana que estamos planeando. A rastras acabaremos, al fin y al cabo.</marquee></span>
+        <Marquee speed={25} delay={0}>
+        <span>
+        Arrástrate a través del fin de semana que estamos planeando. &nbsp;&nbsp;Llegar a rastras al domingo también será una opción...
+          </span>        
+              
+          </Marquee>
+       
           <div className="slider" ref={sliderRef}>
             <img
               src={ositosDrag}

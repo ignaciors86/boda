@@ -16,6 +16,11 @@
     margin: 0 auto 3%;
     font-size: calc(var(--size-unit)* 0.15);
   }
+
+  .rfm-marquee{
+    z-index: 0;
+    padding: 0 8% 0 32%;
+  }
 }
 
 .hidden {
@@ -38,10 +43,10 @@
   span{
     display: flex;
     justify-content: center;
-    font-size: calc(var(--size-unit) * 0.2);
+    font-size: calc(var(--size-unit) * 0.15);
     // padding-left: calc(var(--size-unit) * 0.5);
-    color: var(--orange);
-    font-family: "evelins";
+    color: var(--green);
+    font-family: "VCR";
     align-items: center;
     text-align: center;
     width: 100%;
@@ -56,7 +61,7 @@
     width: calc(var(--size-unit)* 0.5);
     margin-left: calc(var(--size-unit)* -0.25);
     border: calc(var(--size-unit)* 0.04) solid var(--purpleTransparent);
-    background: cadetblue;
+    background: var(--orange);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -88,4 +93,6 @@
   font-size: 24px;
   color: #333;
 }
+
+
 
