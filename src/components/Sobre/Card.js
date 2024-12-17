@@ -41,7 +41,7 @@ const Card = ({ seccion, children, trasera }) => {
     if (seccion !== activeCard && flipped) {
       // console.log("reset")
       resetCardPosition();
-      if(seccion !== "horarios" && seccion !== "asistencia" && seccion !== "ubicaciones"){
+      if(seccion !== "horarios" && seccion !== "asistencia" && seccion !== "ubicaciones" && seccion !== "regalo"){
         setIsOtherDraggableActive(false);
       }
 
@@ -70,7 +70,7 @@ const Card = ({ seccion, children, trasera }) => {
     if (!flipped) {
       setFlipped(true);
       setActiveCard(seccion);
-      setIsOtherDraggableActive(seccion === "horarios" || seccion === "asistencia" || seccion === "ubicaciones");
+      setIsOtherDraggableActive(seccion === "horarios" || seccion === "asistencia" || seccion === "ubicaciones" || seccion === "regalo");
       gsap.set(cardElement, { x: 0, y: 0, z: 0, });
       gsap.to(cardElement, {
         rotateY: 90,

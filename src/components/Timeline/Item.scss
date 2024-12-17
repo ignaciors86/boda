@@ -42,6 +42,16 @@
 
     &:first-of-type{
       opacity: 1;
+      .info{
+        h2{
+          // position: absolute;
+          top: 0;
+          // background: transparent;
+          // padding-top: calc(var(--size-unit)* 0.18);
+        }
+      }
+      
+      
     }
 
     .info {
@@ -96,14 +106,19 @@
 
       .info{
         background: linear-gradient(#5f9ea0f0 100%, #7bbbbd 50%);
-        height: 80%;
-        justify-content: space-evenly;
-        position: absolute;
+        height: 75%;
+        justify-content: space-between;
+
+        // justify-content: space-evenly;
+        // position: absolute;
         top: 0;
-        padding-top: 9%;
-        padding-bottom: 20%;
+        // padding-top: 9%;
+        padding-bottom: 35%;
         em:not(:first-of-type){
           margin-top: 5%;
+        }
+        h2{
+          opacity: 0;
         }
       }
     }

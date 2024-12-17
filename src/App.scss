@@ -199,18 +199,29 @@ em{
 .seccion ~ .back{
   right: calc(var(--size-unit)* .15);
   top: calc(var(--size-unit)* .15);
-  width: calc(var(--size-unit)* .3);
-  height: calc(var(--size-unit)* .3);
+  width: calc(var(--size-unit)* .4);
+  height: calc(var(--size-unit)* .4);
   background: var(--orangeTransparent);
   border: 2px solid var(--orange);
   z-index: 2;
 }
 
 .seccion.timeline ~ .back{ 
-  top: calc(var(--size-unit) * 0.24);
-  right: calc(var(--size-unit) * 0.24);
+  top: calc(var(--size-unit)* 0.15);
+  // right: calc(var(--size-unit) * 0.24);
   &.play,
   &.stop{
-    left: calc(var(--size-unit) * 0.24);
+    left: calc(var(--size-unit) * 0.15);
   }
 } 
+
+.seccion.lugar{ 
+    & ~ .back:not(button){ 
+    justify-content: space-between;
+    height: 100%;
+      
+    }
+  .claim{
+    border-radius: 50vw !important;
+  }    
+  }

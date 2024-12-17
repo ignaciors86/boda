@@ -154,7 +154,7 @@
         left: 50%;
         width: calc(var(--size-unit)/1.5);
         height: calc(var(--size-unit)/1.5);
-        background-color: cadetblue;
+        
         border-radius: 50%;
         border: 0px solid var(--greenTransparent);
         box-shadow: 0 0 10px rgba(53, 48, 48, 0.148);
@@ -163,13 +163,27 @@
         cursor: pointer;
         z-index: 3;
         opacity: 1 !important;
-        mask-image: url('./assets/images/lacrado.png');
-        mask-size: 100%;
-        mask-position: 50%;
-        mask-repeat: no-repeat;
+ 
         &:before{
             transition: calc(var(--duration-envelope)) ease calc(var(--duration-envelope)/2); 
-            opacity: 0;
+            // opacity: 0;
+            background-color: var(--greenTransparent);
+            mask-image: url('./assets/images/lacrado.png');
+            mask-size: 100%;
+            mask-position: 50%;
+            mask-repeat: no-repeat;
+        }
+        &:after{
+            content: "";
+            position: absolute;
+            top: 20%;
+            left: 20%;
+            border-radius: 50%;
+            width: 60%;
+            height: 60%;
+            background: var(--orange);
+            z-index: -1;
+            transition: calc(var(--duration-envelope) * .5) ease calc(var(--duration-envelope) * 3.5); 
         }
     }
 
@@ -212,6 +226,10 @@
             &:before{
                 opacity: 1;
                 transition: calc(var(--duration-envelope)) ease calc(var(--duration-envelope)); 
+            }
+            &:after{
+                background: var(--greenTransparent);
+                transition: calc(var(--duration-envelope) * .5) ease calc(var(--duration-envelope) * .5); 
             }
         }
         .envelope{
