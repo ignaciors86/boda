@@ -4,7 +4,7 @@ import mapa from "./Lugar/map.webp";
 import "./Lugar.scss";
 import { useDragContext } from "../../DragContext";
 
-const Lugar = () => {
+const Lugar = ({weeding}) => {
     const url = "https://maps.app.goo.gl/whoswYpUbrrjaCkm7";
     const mapRef = useRef(null);
     const { activeCard, setActiveCard, isOtherDraggableActive, setIsOtherDraggableActive } = useDragContext();
@@ -29,6 +29,7 @@ const Lugar = () => {
             </a>
 
             <em className="claim"><a target= "_blank" href="https://maps.app.goo.gl/VcP5TumYHdV7XPSE9">El autobús saldrá a las 12:00 desde El Corte Inglés</a></em>
+            { weeding && <em className="claim">Si estás leyendo esto, tú y tu +1 tenéis el alojamiento ya reservado en el mismo sitio de la boda</em> }
         </div>
         
         <button className="back" onClick={() => setActiveCard("sobre")} />

@@ -210,7 +210,7 @@ const Timeline = () => {
           {renderItems(currentIndex)}
         </div>
         <div className="progress-bar" ref={progressBarRef}>
-          <span>arrastra lateralmente</span>
+          <span><marquee direction="left" scrollamount="5" loop="infinite">Arrastrate a través del fin de semana que estamos planeando. A rastras acabaremos, al fin y al cabo.</marquee></span>
           <div className="slider" ref={sliderRef}>
             <img
               src={ositosDrag}
