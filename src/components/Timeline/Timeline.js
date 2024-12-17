@@ -235,7 +235,7 @@ const Timeline = () => {
         <div className="progress-bar" ref={progressBarRef}>
           <Marquee speed={25} delay={0}>
             <span>
-              Arrástrate a través del fin de semana hemos planeado. &nbsp;&nbsp;Llegar a rastras al domingo también será una opción...
+              Arrastra la bolita hacia los lados para ver bien el finde que hemos planeado. &nbsp;&nbsp;Llegar arrastrándose al domingo también es una opción...
             </span>
           </Marquee>
           <div className="slider" ref={sliderRef}>

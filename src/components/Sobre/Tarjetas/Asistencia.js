@@ -136,7 +136,7 @@ const Asistencia = () => {
                             name="comentarios"
                             value={formData.comentarios}
                             onChange={handleChange}
-                            placeholder="Si eres vegano, inviegno, alérgico o necesitas aclarar cualquier cosa, hazlo aquí."
+                            placeholder="Si eres vegano, inviegno, alérgico, o necesitas aclarar cualquier cosa, hazlo aquí."
                         />
                     </div>
                     <div className="form-group horizontal quien">
