@@ -19,7 +19,7 @@ const Timeline = () => {
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [hasVibrated, setHasVibrated] = useState(false);
-  
+  const [hasInteracted, setHasInteracted] = useState(false); // Estado para controlar la interacción
   const audioRef = useRef(new Audio());
   const [isMuted, setIsMuted] = useState(false); // Estado para controlar si el audio está muteado
 
@@ -37,24 +37,24 @@ const Timeline = () => {
   // Configurar Draggable y la línea de tiempo
   const setupDraggableAndTimeline = () => {
     Draggable.get(sliderRef.current)?.kill();
-
+  
     const totalItems = items.length;
     const durationPerItem = 6;
     const transitionDuration = 0.3;
-
+  
     const commonTimeline = timelineRef.current.clear();
-
+  
     items.forEach((item, index) => {
       const opacityStart = durationPerItem * index + transitionDuration * index;
       const opacityEnd = opacityStart + durationPerItem;
       const nextItemOpacityStart = opacityEnd + transitionDuration;
-
+  
       commonTimeline
         .to(`.item${index + 1}`, { opacity: 1, duration: durationPerItem })
         .to(`.item${index + 1}`, { opacity: 0, duration: transitionDuration }, nextItemOpacityStart)
         .set(`.item${index}`, { opacity: 0 }, ">");
     });
-
+  
     Draggable.create(sliderRef.current, {
       type: 'x',
       bounds: progressBarRef.current,
@@ -62,52 +62,57 @@ const Timeline = () => {
         document.querySelectorAll('.card').forEach(card => {
           card.classList.add('dragging');
         });
-
+  
+        setHasInteracted(true);
+  
         const progressBarWidth = progressBarRef.current.clientWidth; // Ancho de la barra de progreso
         const currentX = this.x; // Posición actual en x
         const progress = Math.min(Math.max(currentX / progressBarWidth, 0), 1); // Progreso normalizado
-
+  
         // Muestra en consola la posición en x y el porcentaje del recorrido
         const porcentaje = (progress * 100).toFixed(2);
         console.log(`Posición en X: ${currentX.toFixed(2)}, Porcentaje del recorrido: ${porcentaje}%`);
-        if(porcentaje<10){
+        if (porcentaje < 10) {
           setCurrentIndex(0);
           audioRef.current.src = items[0].audio; // Cambia el audio al del item 0
           audioRef.current.load(); // Carga el nuevo archivo
           audioRef.current.play().catch(err => console.error("Error al reproducir el audio:", err));
         }
-        
- 
+  
         timelineRef.current.progress(progress);
-
+  
         const penultimateItemProgress = (totalItems - 2) / totalItems;
         const lastItemProgress = 1;
-
+  // console.log(progress);
         if (progress >= penultimateItemProgress && progress < lastItemProgress || progress < 0.15) {
           gsap.to(sliderRef.current, { scale: 1, y: "-0dvh", duration: 0.3 });
         } else {
           gsap.to(sliderRef.current, { scale: 1.3, y: "-0dvh", duration: 0.3 });
         }
-
+  
         const newIndex = Math.floor(progress * totalItems);
         if (newIndex !== currentIndex) {
           setCurrentIndex(newIndex);
           setHasVibrated(false);
         }
+  
+        // Actualiza la duración de la animación de sombra
+        const newDuration = progress < 0.85 ? 0.5*(10 - (progress * 10)) : 10; // Esto asegura que la duración se reduzca entre 10 y 1 segundos
+        gsap.set(sliderRef.current, { animation: `shadowPulse ${newDuration}s ease-in-out infinite`} );
       },
       onRelease() {
         document.querySelectorAll('.card').forEach(card => {
           card.classList.remove('dragging');
         });
-
+  
         gsap.to(sliderRef.current, { scale: 1, duration: 0.3 });
-
+  
         const progressBarWidth = progressBarRef.current.clientWidth; // Ancho de la barra de progreso
         const currentX = this.x; // Posición actual en x
         const progress = Math.min(Math.max(currentX / progressBarWidth, 0), 1); // Progreso normalizado
         const porcentaje = (progress * 100).toFixed(2);
         if (porcentaje < 10) {
-        }else if (progress < 0.1) {
+        } else if (progress < 0.1) {
           // Cambia al segundo ítem si el slider se suelta a menos del 10% del recorrido
           setCurrentIndex(1);
           timelineRef.current.progress(0.1); // Resetea la línea de tiempo
@@ -125,7 +130,7 @@ const Timeline = () => {
           let ultimo = true;
           items.forEach((item, index) => {
             const element = document.querySelector(`.item${index}`);
-
+  
             if (element) {
               const opacity = parseFloat(window.getComputedStyle(element).opacity);
               if (opacity > 0) {
@@ -139,16 +144,17 @@ const Timeline = () => {
         }
       },
     });
-
+  
     const slider = sliderRef.current;
     const progressBar = progressBarRef.current;
-
+  
     if (slider && progressBar) {
       const initialProgress = Math.min(Math.max(slider.x / progressBar.clientWidth, 0), 1);
       timelineRef.current.progress(initialProgress);
       setCurrentIndex(Math.floor(initialProgress * items.length));
     }
   };
+  
 
   // Reproduce el audio del ítem actual cuando se setea activeCard
   useEffect(() => {
@@ -164,7 +170,7 @@ const Timeline = () => {
       audio.play().catch(err => console.error("Error al reproducir el audio:", err));
     }
 
-    if(activeCard!=="horarios"){
+    if (activeCard !== "horarios") {
       audio.pause();
     }
   }, [activeCard, currentIndex, isMuted]);
@@ -195,10 +201,26 @@ const Timeline = () => {
 
   useEffect(() => {
     if (currentIndex > -1 && navigator.vibrate) {
-      !hasVibrated && navigator?.vibrate(40); 
+      !hasVibrated && navigator?.vibrate(40);
       setHasVibrated(true);
     }
   }, [currentIndex]);
+
+  // Animación de latido para el slider
+  useEffect(() => {
+    !hasInteracted && gsap.timeline().to(sliderRef.current, {
+      scale: 1.1,
+      duration: 1,
+      repeat: -1, // Repite infinitamente
+      yoyo: true, // Vuelve al tamaño original
+      ease: "power1.inOut",
+      paused: false,
+    })
+  }, [currentIndex]);
+
+  useEffect(() => {
+    hasInteracted && gsap.killTweensOf(sliderRef.current); // Detiene la animación de latido
+  }, [hasInteracted]);
 
   if (!imagesLoaded) {
     return <Loading />;
@@ -211,13 +233,11 @@ const Timeline = () => {
           {renderItems(currentIndex)}
         </div>
         <div className="progress-bar" ref={progressBarRef}>
-        <Marquee speed={25} delay={0}>
-        <span>
-        Arrástrate a través del fin de semana que estamos planeando. &nbsp;&nbsp;Llegar a rastras al domingo también será una opción...
-          </span>        
-              
+          <Marquee speed={25} delay={0}>
+            <span>
+              Arrástrate a través del fin de semana hemos planeado. &nbsp;&nbsp;Llegar a rastras al domingo también será una opción...
+            </span>
           </Marquee>
-       
           <div className="slider" ref={sliderRef}>
             <img
               src={ositosDrag}

@@ -56,23 +56,61 @@
     left: 0;
     transform: translateX(30%);
     position: absolute;
-    height: calc(var(--size-unit)* 0.5);
-    margin-top: calc(var(--size-unit)* -0.125);
-    width: calc(var(--size-unit)* 0.5);
-    margin-left: calc(var(--size-unit)* -0.25);
-    border: calc(var(--size-unit)* 0.04) solid var(--purpleTransparent);
+    height: calc(var(--size-unit) * 0.5);
+    margin-top: calc(var(--size-unit) * -0.125);
+    width: calc(var(--size-unit) * 0.5);
+    margin-left: calc(var(--size-unit) * -0.25);
+    border: calc(var(--size-unit) * 0.04) solid var(--purpleTransparent);
     background: var(--orange);
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    img{
+    box-shadow: calc(var(--size-unit) * -0) calc(var(--size-unit) * -0.0) calc(var(--size-unit) * .15) var(--purpleTransparent);
+    
+    &:not(:active){
+      animation: shadowPulse 10s ease-in-out infinite; /* Aplicar la animación */
+    }
+    &:active{
+      box-shadow: "none";
+      transition: 1s ease;
+    }
+    
+  
+    img {
       height: 100%;
       width: auto;
       text-align: center;
       position: relative;
     }
   }
+  
+  /* Definir la animación */
+  @keyframes shadowPulse {
+    0% {
+      box-shadow: calc(var(--size-unit) * -0) calc(var(--size-unit) * -0.0) calc(var(--size-unit) * .2) #E4030380; /* Rojo */
+    }
+    18% {
+      box-shadow: calc(var(--size-unit) * -0) calc(var(--size-unit) * -0.0) calc(var(--size-unit) * .15) #FF8C0080; /* Naranja */
+    }
+    35% {
+      box-shadow: calc(var(--size-unit) * -0) calc(var(--size-unit) * -0.0) calc(var(--size-unit) * .2) #FFED0080; /* Amarillo, sombra a la mitad */
+    }
+    50% {
+      box-shadow: calc(var(--size-unit) * -0) calc(var(--size-unit) * -0.0) calc(var(--size-unit) * .15) #00802680; /* Verde */
+    }
+    65% {
+      box-shadow: calc(var(--size-unit) * -0) calc(var(--size-unit) * -0.0) calc(var(--size-unit) * .2) #004DFF80; /* Azul, sombra a la mitad */
+    }
+    80% {
+      box-shadow: calc(var(--size-unit) * -0) calc(var(--size-unit) * -0.0) calc(var(--size-unit) * .15) #75078780; /* Morado */
+    }
+    100% {
+      box-shadow: calc(var(--size-unit) * -0) calc(var(--size-unit) * -0.0) calc(var(--size-unit) * .2) #E4030380; /* Rojo, sombra a la mitad */
+    }
+  }
+  
+  
 }
 
 .elements {
