@@ -36,6 +36,12 @@ console.log(articles);
               <Espiral/>
               <Sobre />
             </>} />
+            <Route path="/weeding" element={<>
+               <Bubbles/>
+               
+              <Espiral/>
+              <Sobre weeding={true} />
+            </>} />
             <Route path="/fondos-baile" element={<FondosBaile />} /> {/* Nueva ruta */}
           </Routes>
         {/* </div> */}
