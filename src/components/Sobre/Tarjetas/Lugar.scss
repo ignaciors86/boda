@@ -17,8 +17,9 @@
             width: 48%;
             z-index: 10;
             position: absolute;
-            left: 12%;
-            top: 27%;
+            left: 9%;
+            top: 32%;
+            z-index: 11;
         }
         img{
             width: 100%; 
@@ -33,7 +34,7 @@
         right: 8%;
         width: 50%;
         border-radius: 50vw;
-        bottom: 13%;
+        bottom: 6%;
         width: calc(var(--size-unit)* 1);
         height: calc(var(--size-unit)* 1);
         align-content: center;
@@ -65,14 +66,14 @@
 
         }
         &.secundario{
-            left: 51%;
+            left: 55%;
             right: inherit;
             rotate: -5deg;
             bottom: 40%;
             z-index: 10;
             background: var(--orange) !important;
-            width: calc(var(--size-unit)* 1.2);
-            height: calc(var(--size-unit)* 1.2);
+            width: calc(var(--size-unit)* 1);
+            height: calc(var(--size-unit)* 1);
             color: white;
             font-weight: 600;
             &:before{

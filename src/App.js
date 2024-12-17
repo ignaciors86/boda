@@ -36,11 +36,11 @@ console.log(articles);
               <Espiral/>
               <Sobre />
             </>} />
-            <Route path="/weeding" element={<>
+            <Route path="/weedding" element={<>
                <Bubbles/>
                
               <Espiral/>
-              <Sobre weeding={true} />
+              <Sobre weedding={true} />
             </>} />
             <Route path="/fondos-baile" element={<FondosBaile />} /> {/* Nueva ruta */}
           </Routes>
