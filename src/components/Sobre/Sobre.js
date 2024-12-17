@@ -13,7 +13,7 @@ import introAudio from './assets/audio/intro.mp3'; // Importar el audio
 import animateOpacity from '../functions';
 import { useDragContext } from '../DragContext';
 
-const Sobre = ({weeding}) => {
+const Sobre = ({weedding}) => {
   const { activeCard } = useDragContext();
   const [moving, setMoving] = useState(false);
   const [isMuted, setIsMuted] = useState(true); // Estado para el mute del audio
@@ -208,7 +208,7 @@ const Sobre = ({weeding}) => {
               <Card seccion="regalo" onClick={() => handleClick("regalo")} trasera={<Regalo />}>
                 <h2>Regalo</h2>
               </Card>
-              <Card seccion="ubicaciones" onClick={() => handleClick("ubicaciones")} trasera={<Lugar weeding={weeding}/>}>
+              <Card seccion="ubicaciones" onClick={() => handleClick("ubicaciones")} trasera={<Lugar weedding={weedding}/>}>
                 <h2>Lugar</h2>
               </Card>
               <Card seccion={"asistencia"} onClick={() => handleClick("asistencia")} trasera={<Asistencia />}>
