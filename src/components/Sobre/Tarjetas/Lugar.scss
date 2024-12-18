@@ -9,6 +9,21 @@
     flex-direction: column;
     position: relative;
 
+    .imagen,
+    .claim{
+        border-radius: 50%;
+        overflow: hidden;
+        em, a{
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            background: var(--darkGray);
+            padding: 5%;
+            box-sizing: border-box;
+            transform: translateY(-50%);
+            // scale: 1.5;
+        }
+    }
     a{  
         margin: 0 auto;
         text-align: center;
@@ -17,29 +32,34 @@
             width: 48%;
             z-index: 10;
             position: absolute;
-            left: 9%;
-            top: 32%;
+            left: 15%;
+            top: 52%;
             z-index: 11;
+
+            overflow: hidden;
+
         }
         img{
             width: 100%; 
         }
     }
     .claim{
+        position: relative;
         background: var(--darkPurple);
-        padding: calc(var(--size-unit)* 0.15);
+        padding: 0;
         border-radius: calc(var(--size-unit)* 0.085);
         margin-top: calc(var(--size-unit)* 0.1);
         position: absolute;
         right: 8%;
+        bottom: 7%;
         width: 50%;
         border-radius: 50vw;
-        bottom: 6%;
         width: calc(var(--size-unit)* 1);
         height: calc(var(--size-unit)* 1);
         align-content: center;
         align-items: center;
         rotate: 7deg;
+        z-index: 12;
         &:before{
             mask-image: url("../../../../assets/images/bus.png");   
             content: "";
@@ -50,7 +70,7 @@
             top: 0;
             background: var(--orange);
             mask-repeat: no-repeat;
-            mask-size: 61%;
+            mask-size: 75%;
             mask-position: 50%;
             z-index: 0;
             opacity: 25%;
@@ -65,15 +85,15 @@
 
 
         }
-        &.secundario{
-            left: 55%;
+        &.alojamiento{
+            left: 52%;
             right: inherit;
             rotate: -5deg;
-            bottom: 40%;
+            bottom: 36%;
             z-index: 10;
             background: var(--orange) !important;
-            width: calc(var(--size-unit)* 1);
-            height: calc(var(--size-unit)* 1);
+            width: calc(var(--size-unit)* 1.4);
+            height: calc(var(--size-unit)* 1.4);
             color: white;
             font-weight: 600;
             &:before{

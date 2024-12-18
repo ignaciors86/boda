@@ -121,6 +121,10 @@ h2, h3, h4{
     letter-spacing: calc(var(--size-unit)* -0.0001);
   }
 }
+h2{
+  font-size: calc(var(--size-unit)* 0.3);
+}
+
 h4{
   font-size: calc(var(--size-unit)* 0.175);
 }
@@ -141,7 +145,7 @@ a{
 em{
   font-size: calc(var(--size-unit)* 0.12);
   letter-spacing: -0.02px;
-  line-height: calc(var(--size-unit)* 0.12);
+  line-height: calc(var(--size-unit)* 0.14);
   display: flex;
   justify-content: center;
   text-align: center;
