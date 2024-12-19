@@ -12,91 +12,199 @@ const Lugar = ({ weedding }) => {
     const duracion = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--duration').trim().replace('s', '')) * 10;
 
     useEffect(() => {
+        // Resetear propiedades transform y opacity de los elementos antes de animarlos
+        claimRefs.current.forEach((ref) => {
+            if (ref) {
+                gsap.set(ref, { clearProps: "all" }); // Limpia cualquier transformación previa en cada .claim
+            }
+        });
+        if (mapRef.current) {
+            gsap.set(mapRef.current, { clearProps: "all" }); // Limpia cualquier transformación previa en el mapa
+        }
+
         // Animación para la imagen del mapa
         const animation = gsap.timeline({ repeat: -1, repeatDelay: 1 });
-
-
-
+        gsap.killTweensOf(mapRef.current);
+        gsap.killTweensOf(".claim");
         animation.to(mapRef.current, {
-            scale: 1.1, rotate: "4deg", duration: duracion / 3, ease: "power1.inOut", yoyo: true, repeat: -1,
-            x: "-=2dvh", y: "+=2dvh" // Mover el mapa 2dvh en ambas direcciones
+            scale: 1.1,
+            rotate: "4deg",
+            duration: duracion / 3,
+            ease: "power1.inOut",
+            yoyo: true,
+            repeat: -1,
+            x: "-=2dvh",
+            y: "+=2dvh",
         })
             .to(mapRef.current, {
-                scale: 1, rotate: "0deg", duration: duracion / 3, ease: "power1.inOut", yoyo: true, repeat: -1,
-                x: "+=2dvh", y: "-=2dvh" // Volver a la posición original
+                scale: 1,
+                rotate: "0deg",
+                duration: duracion / 3,
+                ease: "power1.inOut",
+                yoyo: true,
+                repeat: -1,
+                x: "+=2dvh",
+                y: "-=2dvh",
             })
             .to(mapRef.current, {
-                scale: 1.2, rotate: "-4deg", duration: duracion, ease: "power1.inOut", yoyo: true, repeat: -1,
-                x: "-=2dvh", y: "-=2dvh"
+                scale: 1.2,
+                rotate: "-4deg",
+                duration: duracion,
+                ease: "power1.inOut",
+                yoyo: true,
+                repeat: -1,
+                x: "-=2dvh",
+                y: "-=2dvh",
             })
             .to(mapRef.current, {
-                scale: 1, rotate: "0deg", duration: duracion / 3, ease: "power1.inOut", yoyo: true, repeat: -1,
-                x: "+=2dvh", y: "+=2dvh"
+                scale: 1,
+                rotate: "0deg",
+                duration: duracion / 3,
+                ease: "power1.inOut",
+                yoyo: true,
+                repeat: -1,
+                x: "+=2dvh",
+                y: "+=2dvh",
             });
 
         // Animación para los elementos .claim
         const claimAnimation = gsap.timeline({ repeat: -1, repeatDelay: 1 });
 
-        // Animación para la primera .claim
         claimAnimation.to(claimRefs.current[0], {
-            opacity: 1, scale: 1.05, rotate: "3deg", duration: duracion, ease: "power1.inOut", delay: 0.2, yoyo: true, repeat: -1, immediateRender: false,
-            x: "-=2dvh", y: "-=2dvh" // Mover la primera .claim
+            opacity: 1,
+            scale: 1.05,
+            rotate: "3deg",
+            duration: duracion,
+            ease: "power1.inOut",
+            delay: 0.2,
+            yoyo: true,
+            repeat: -1,
+            immediateRender: false,
+            x: "-=2dvh",
+            y: "-=2dvh",
         }, 0)
             .to(claimRefs.current[0], {
-                scale: 1, rotate: "0deg", duration: duracion, ease: "power1.inOut", yoyo: true, repeat: -1,
-                x: "+=2dvh", y: "+=2dvh" // Volver a la posición original
+                scale: 1,
+                rotate: "0deg",
+                duration: duracion,
+                ease: "power1.inOut",
+                yoyo: true,
+                repeat: -1,
+                x: "+=2dvh",
+                y: "+=2dvh",
             });
 
-        // Animación para la segunda .claim
         claimAnimation.to(claimRefs.current[1], {
-            scale: 1.1, rotate: "-3deg", duration: duracion, ease: "power1.inOut", delay: 0.5, yoyo: true, repeat: -1, immediateRender: false,
-            x: "+=2dvh", y: "+=2dvh" // Mover la segunda .claim
+            scale: 1.1,
+            rotate: "-3deg",
+            duration: duracion,
+            ease: "power1.inOut",
+            delay: 0.5,
+            yoyo: true,
+            repeat: -1,
+            immediateRender: false,
+            x: "+=2dvh",
+            y: "+=2dvh",
         }, 0)
             .to(claimRefs.current[1], {
-                scale: 1, rotate: "0deg", duration: duracion, ease: "power1.inOut", yoyo: true, repeat: -1,
-                x: "-=2dvh", y: "-=2dvh" // Volver a la posición original
+                scale: 1,
+                rotate: "0deg",
+                duration: duracion,
+                ease: "power1.inOut",
+                yoyo: true,
+                repeat: -1,
+                x: "-=2dvh",
+                y: "-=2dvh",
             });
 
-        // Animación para la tercera .claim
         claimAnimation.to(claimRefs.current[2], {
-            scale: 1.15, rotate: "2deg", duration: duracion / 2, ease: "power1.inOut", delay: 0.8, yoyo: true, repeat: -1, immediateRender: false,
-            x: "+=2dvh", y: "+=2dvh" // Mover la tercera .claim
+            scale: 1.15,
+            rotate: "2deg",
+            duration: duracion / 2,
+            ease: "power1.inOut",
+            delay: 0.8,
+            yoyo: true,
+            repeat: -1,
+            immediateRender: false,
+            x: "+=2dvh",
+            y: "+=2dvh",
         }, 0)
             .to(claimRefs.current[2], {
-                scale: 1, rotate: "0deg", duration: duracion / 2, ease: "power1.inOut", yoyo: true, repeat: -1,
-                x: "-=2dvh", y: "-=2dvh" // Volver a la posición original
+                scale: 1,
+                rotate: "0deg",
+                duration: duracion / 2,
+                ease: "power1.inOut",
+                yoyo: true,
+                repeat: -1,
+                x: "-=2dvh",
+                y: "-=2dvh",
             });
+
         claimAnimation.to(claimRefs.current[4], {
-            scale: 1.15, rotate: "2deg", duration: duracion / 2, ease: "power1.inOut", delay: 0.8, yoyo: true, repeat: -1, immediateRender: false,
-            x: "+=2dvh", y: "+=2dvh" // Mover la tercera .claim
+            scale: 1.15,
+            rotate: "2deg",
+            duration: duracion / 2,
+            ease: "power1.inOut",
+            delay: 0.8,
+            yoyo: true,
+            repeat: -1,
+            immediateRender: false,
+            x: "+=2dvh",
+            y: "+=2dvh",
         }, 0)
             .to(claimRefs.current[4], {
-                scale: 1, rotate: "0deg", duration: duracion / 2, ease: "power1.inOut", yoyo: true, repeat: -1,
-                x: "-=2dvh", y: "-=2dvh" // Volver a la posición original
+                scale: 1,
+                rotate: "0deg",
+                duration: duracion / 2,
+                ease: "power1.inOut",
+                yoyo: true,
+                repeat: -1,
+                x: "-=2dvh",
+                y: "-=2dvh",
             });
+
         claimAnimation.to(claimRefs.current[3], {
-            scale: .85, rotate: "3deg", duration: duracion, ease: "power1.inOut", delay: 0.2, yoyo: true, repeat: -1, immediateRender: false,
-            x: "-=2dvh", y: "-=2dvh" // Mover la primera .claim
+            scale: 0.85,
+            rotate: "3deg",
+            duration: duracion,
+            ease: "power1.inOut",
+            delay: 0.2,
+            yoyo: true,
+            repeat: -1,
+            immediateRender: false,
+            x: "-=2dvh",
+            y: "-=2dvh",
         }, 0)
             .to(claimRefs.current[3], {
-                scale: 1, rotate: "0deg", duration: duracion, ease: "power1.inOut", yoyo: true, repeat: -1,
-                x: "+=2dvh", y: "+=2dvh" // Volver a la posición original
+                scale: 1,
+                rotate: "0deg",
+                duration: duracion,
+                ease: "power1.inOut",
+                yoyo: true,
+                repeat: -1,
+                x: "+=2dvh",
+                y: "+=2dvh",
             });
 
-        const animationOpacity = gsap.timeline()
+        // Animación de opacidad para los elementos
+        const animationOpacity = gsap.timeline();
         animationOpacity
-            // .to(".claim, .lugar .imagen", { x: 0, duration: 0, repeat: false, ease: "power1.inOut", }, 0)
-            .to(".lugar .imagen", { opacity: activeCard === "ubicaciones" ? 1 : 0, duration: 1, delay: .5, repeat: false, ease: "power1.inOut", }, 0)
-            .to(".claim.bus", { opacity: activeCard === "ubicaciones" ? 1 : 0, duration: 1, delay: .5, repeat: false, ease: "power1.inOut", }, 0.3)
-            .to(".claim.piscina", { opacity: activeCard === "ubicaciones" ? 1 : 0, duration: 1, delay: .5, repeat: false, ease: "power1.inOut", }, 0.5)
-            .to(".claim.perretes", { opacity: activeCard === "ubicaciones" ? 1 : 0, duration: 1, delay: .5, repeat: false, ease: "power1.inOut", }, 0.2)
+            .to(".lugar .imagen", { opacity: activeCard === "ubicaciones" ? 1 : 0, duration: 1, delay: 0.5, repeat: false, ease: "power1.inOut" }, 0)
+            .to(".claim.bus", { opacity: activeCard === "ubicaciones" ? 1 : 0, duration: 1, delay: 0.5, repeat: false, ease: "power1.inOut" }, 0.3)
+            .to(".claim.piscina", { opacity: activeCard === "ubicaciones" ? 1 : 0, duration: 1, delay: 0.5, repeat: false, ease: "power1.inOut" }, 0.5)
+            .to(".claim.perretes", { opacity: activeCard === "ubicaciones" ? 1 : 0, duration: 1, delay: 0.5, repeat: false, ease: "power1.inOut" }, 0.2)
             .to(".claim.alojamiento", {
-                opacity: activeCard === "ubicaciones" ? 1 : 0, duration: 1, delay: .5, repeat: false, ease: "power1.inOut",
-                onComplete: function () { this.kill() }
-            }, 0.6)
+                opacity: activeCard === "ubicaciones" ? 1 : 0,
+                duration: 1,
+                delay: 0.5,
+                repeat: false,
+                ease: "power1.inOut",
+                onComplete: function () {
+                    this.kill();
+                },
+            }, 0.6);
 
         console.log(activeCard);
-
     }, [activeCard]);
 
 
