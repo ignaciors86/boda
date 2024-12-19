@@ -227,7 +227,8 @@ em{
     height: 100%;
       
     }
-  .claim{
+  .claim, .imagen{
+    border: calc(var(--size-unit)* 0.03) solid var(--orangeTransparent);
     border-radius: 50vw !important;
   }    
   }

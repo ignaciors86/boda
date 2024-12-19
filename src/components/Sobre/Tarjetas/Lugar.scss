@@ -78,7 +78,7 @@
         margin-top: calc(var(--size-unit)* 0.1);
         position: absolute;
         right: 8%;
-        bottom: 9%;
+        bottom: -7%;
         width: 50%;
         border-radius: 50vw;
         width: calc(var(--size-unit)* 1);
@@ -158,7 +158,7 @@
             left: 35%;
             right: inherit;
             rotate: 15deg !important;
-            bottom: 8%;
+            bottom: 3%;
             z-index: 10;
             background: var(--darkGrayTransparent) !important;
             width: calc(var(--size-unit)* .7);
@@ -184,7 +184,7 @@
             left: 5%;
             right: inherit;
             rotate: -15deg !important;
-            bottom: 6%;
+            bottom: -6%;
             z-index: 10;
             background: var(--darkGrayTransparent) !important;
             width: calc(var(--size-unit)* .8);
