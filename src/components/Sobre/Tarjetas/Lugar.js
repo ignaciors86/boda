@@ -38,7 +38,7 @@ const Lugar = ({ weedding }) => {
         claimAnimation.to(claimRefs.current[0], {
             scale: 1.05, rotate: "3deg", duration: duracion, ease: "power1.inOut", delay: 0.2, yoyo: true, repeat: -1, immediateRender: false,
             x: "-=2dvh", y: "-=2dvh" // Mover la primera .claim
-        })
+        }, 0)
             .to(claimRefs.current[0], {
                 scale: 1, rotate: "0deg", duration: duracion, ease: "power1.inOut", yoyo: true, repeat: -1,
                 x: "+=2dvh", y: "+=2dvh" // Volver a la posición original
@@ -48,7 +48,7 @@ const Lugar = ({ weedding }) => {
         claimAnimation.to(claimRefs.current[1], {
             scale: 1.1, rotate: "-3deg", duration: duracion, ease: "power1.inOut", delay: 0.5, yoyo: true, repeat: -1, immediateRender: false,
             x: "+=2dvh", y: "+=2dvh" // Mover la segunda .claim
-        })
+        }, 0)
             .to(claimRefs.current[1], {
                 scale: 1, rotate: "0deg", duration: duracion, ease: "power1.inOut", yoyo: true, repeat: -1,
                 x: "-=2dvh", y: "-=2dvh" // Volver a la posición original
@@ -58,18 +58,26 @@ const Lugar = ({ weedding }) => {
         claimAnimation.to(claimRefs.current[2], {
             scale: 1.15, rotate: "2deg", duration: duracion / 2, ease: "power1.inOut", delay: 0.8, yoyo: true, repeat: -1, immediateRender: false,
             x: "+=2dvh", y: "+=2dvh" // Mover la tercera .claim
-        })
+        }, 0)
             .to(claimRefs.current[2], {
                 scale: 1, rotate: "0deg", duration: duracion / 2, ease: "power1.inOut", yoyo: true, repeat: -1,
                 x: "-=2dvh", y: "-=2dvh" // Volver a la posición original
+            });
+        claimAnimation.to(claimRefs.current[3], {
+            scale: .85, rotate: "3deg", duration: duracion, ease: "power1.inOut", delay: 0.2, yoyo: true, repeat: -1, immediateRender: false,
+            x: "-=2dvh", y: "-=2dvh" // Mover la primera .claim
+        }, 0)
+            .to(claimRefs.current[3], {
+                scale: 1, rotate: "0deg", duration: duracion, ease: "power1.inOut", yoyo: true, repeat: -1,
+                x: "+=2dvh", y: "+=2dvh" // Volver a la posición original
             });
     }, [duracion]);
 
     return (
         <>
             <div className="lugar seccion">
-                <div>
-                    <h4>Donde:<br /><h2>Villas de Pomar</h2></h4>
+                <div className="titulo">
+                    <h4><h2>Villas de Pomar</h2></h4>
                     <em>(Pedrosillo el Ralo, Salamanca)</em>
                 </div>
 
@@ -77,14 +85,21 @@ const Lugar = ({ weedding }) => {
                     <img src={mapa} alt="Mapa del lugar" />
                     <em><h4>Villas de Pomar</h4></em>
                 </a>
-                <a target="_blank" href="https://maps.app.goo.gl/VcP5TumYHdV7XPSE9" className="claim" ref={(el) => claimRefs.current[1] = el}>
-                    <em>El autobús saldrá a las 12:00 desde El Corte Inglés</em>
+                <a target="_blank" href="https://maps.app.goo.gl/VcP5TumYHdV7XPSE9" className="claim bus" ref={(el) => claimRefs.current[1] = el}>
+                    <em><h4>El autobús saldrá a las 12:00 desde<br></br>El Corte Inglés</h4></em>
                 </a>
 
-                {weedding && 
-                    <div className="claim alojamiento" ref={(el) => claimRefs.current[2] = el}>
+
+                <div className="claim alojamiento" ref={(el) => claimRefs.current[2] = el}>
+                    {weedding ?
                         <em>Si estás leyendo esto, tú y tu +1 tenéis el alojamiento ya reservado en el lugar de la boda (las dos noches)</em>
-                    </div>}
+                        : <em>Os recomendamos buscar casa rural cerca de la finca, pero solo está a unos 12km de la ciudad</em>
+                    }
+                </div>
+
+                <div className="claim piscina" ref={(el) => claimRefs.current[3] = el}>
+                    <em>Trae bañador</em>
+                </div>
             </div>
 
             <button className="back" onClick={() => setActiveCard("sobre")} />

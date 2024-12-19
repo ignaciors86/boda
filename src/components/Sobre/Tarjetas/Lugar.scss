@@ -1,4 +1,4 @@
-.lugar{
+.seccion.lugar{
     width: 100%;
     height: 100%;
     display: flex;
@@ -8,7 +8,28 @@
     width: 100%;
     flex-direction: column;
     position: relative;
-
+    padding: 0;
+    &:before{
+        background-image: url("../../../../assets/images/villasdepomar.jpg");   
+        background-size: auto 120%;
+        background-position: 50% 98%;
+        content: "";
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        z-index: 0;
+        opacity: .2;
+    }
+    .titulo{
+        z-index: 1;
+        background: var(--darkPurple);
+        width: 100%;
+        margin-top: 10%;
+        padding: 4%;
+    }
+        
     .imagen,
     .claim{
         border-radius: 50%;
@@ -32,8 +53,8 @@
             width: 48%;
             z-index: 10;
             position: absolute;
-            left: 15%;
-            top: 52%;
+            left: 12%;
+            top: 45%;
             z-index: 11;
 
             overflow: hidden;
@@ -51,7 +72,7 @@
         margin-top: calc(var(--size-unit)* 0.1);
         position: absolute;
         right: 8%;
-        bottom: 7%;
+        bottom: 9%;
         width: 50%;
         border-radius: 50vw;
         width: calc(var(--size-unit)* 1);
@@ -85,6 +106,26 @@
 
 
         }
+        &.bus{
+            &:before{
+                mask-image: unset;
+                background-image: url("../../../../assets/images/bus.webp");   
+                content: "";
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                left: 0;
+                top: 0;
+                background-repeat: no-repeat;
+                background-size: auto 100%;
+                background-position: 30% 0%;
+                z-index: 0;
+                opacity: 25%;
+            }
+            em{
+                margin-top: -0%;
+            }
+        }
         &.alojamiento{
             left: 52%;
             right: inherit;
@@ -99,6 +140,33 @@
             &:before{
                 mask-image: url("../../../../assets/images/casita.png");   
                 background: black;
+            }
+        }
+
+        &.piscina{
+            left: 35%;
+            right: inherit;
+            rotate: -5deg;
+            bottom: 6%;
+            z-index: 10;
+            background: var(--darkGrayTransparent) !important;
+            width: calc(var(--size-unit)* .7);
+            height: calc(var(--size-unit)* .7);
+            color: white;
+            font-weight: 600;
+            z-index: 13;
+
+            &:before{
+                background: url("../../../../assets/images/piscina.png");   
+                background-size: 100%;
+                background-position: 60%;
+                mask-image: unset;
+                background-repeat: no-repeat;
+                mask-size: unset;
+                opacity: 1;
+            }
+            em{
+                // background: var(--greenTransparent);
             }
         }
         

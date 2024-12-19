@@ -55,6 +55,7 @@ import bmo from "./assets/images/baile/bmo.webp";  // Asegúrate de que estas ru
 import bmobaile from "./assets/images/baile/bmobaile.webp";  // Asegúrate de que estas rutas sean correctas
 import paella from "./assets/images/paella.jpg";  // Asegúrate de que estas rutas sean correctas
 import shamelesstercerTiempo from "./assets/images/tercerTiempo/shameless.webp"; 
+import busVuelta from "./assets/images/tercerTiempo/bus.webp"; 
 
 import postBodaFriends from "./assets/images/postboda/friends.webp"; 
 import bojack from "./assets/images/postboda/bojack.webp"; 
@@ -100,7 +101,7 @@ const imageUrls = [
     wingapo,
     postBodaFriends,
     esqueletos,
-    allyoucaneat,
+    allyoucaneat,busVuelta,
 ];
 
 const items = [
@@ -179,7 +180,7 @@ const items = [
     {
         title: "Tercer Tiempo",
         description: <p>Último bus para la gente cansada, y a ser posible, todos los menores.</p>,
-        images: [tercerTiempo,nickcorbata,scooby,shamelesstercerTiempo, red, yoda, ojeteCalor,finn,esqueletos],
+        images: [tercerTiempo,busVuelta,nickcorbata,scooby,shamelesstercerTiempo, red, yoda, ojeteCalor,finn,esqueletos],
         audio: samantha,
     },
     {

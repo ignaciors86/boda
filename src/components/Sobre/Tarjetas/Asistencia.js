@@ -141,7 +141,7 @@ const Asistencia = () => {
                     </div>
                     <div className="form-group horizontal quien">
                         <div className="wrap">
-                            <label><h4>Enviar a:</h4></label>
+                            <label><h2>Enviar a:</h2></label>
                             <div className="switch">
                                 <label>
                                     <em>Mario</em>
