@@ -1,6 +1,6 @@
 :root {
   --gray: #f1f1f1;
-  --darkGray: #4242426e;
+  --darkGray: #0000006e;
   --darkGrayTransparent: #535f4df7;
   --green: #9bc4be;
   --greenTransparent: #438284;
@@ -126,7 +126,7 @@ h2{
 }
 
 h4{
-  font-size: calc(var(--size-unit)* 0.175);
+  font-size: calc(var(--size-unit)* 0.12);
 }
 p, a, span{
   font-size: calc(var(--size-unit)* 0.15);
