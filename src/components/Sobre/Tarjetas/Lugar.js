@@ -75,12 +75,17 @@ const Lugar = ({ weedding }) => {
                     x: "+=2dvh", y: "+=2dvh" // Volver a la posición original
                 });
         
-
-        animation.to(".lugar .imagen", { opacity: activeCard === "ubicaciones" ? 1 : 0, duration: 1, delay: .5, repeat: false, ease: "power1.inOut", }, 0)
-        animation.to(".claim.bus", { opacity: activeCard === "ubicaciones" ? 1 : 0, duration: 1, delay: .5, repeat: false, ease: "power1.inOut", }, 0.3)
-        animation.to(".claim.piscina", { opacity: activeCard === "ubicaciones" ? 1 : 0, duration: 1, delay: .5, repeat: false, ease: "power1.inOut", }, 0.5)
-        animation.to(".claim.perretes", { opacity: activeCard === "ubicaciones" ? 1 : 0, duration: 1, delay: .5, repeat: false, ease: "power1.inOut", }, 0.2)
-        animation.to(".claim.alojamiento", { opacity: activeCard === "ubicaciones" ? 1 : 0, duration: 1, delay: .5, repeat: false, ease: "power1.inOut", }, 0.6)
+                const animationOpacity = gsap.timeline()
+                animationOpacity
+                .to(".lugar .claim", { x: 0, duration: 0, repeat: false, ease: "power1.inOut", }, 0)
+                .to(".lugar .imagen", { opacity: activeCard === "ubicaciones" ? 1 : 0, duration: 1, delay: .5, repeat: false, ease: "power1.inOut", }, 0)
+                .to(".claim.bus", { opacity: activeCard === "ubicaciones" ? 1 : 0, duration: 1, delay: .5, repeat: false, ease: "power1.inOut", }, 0.3)
+                .to(".claim.piscina", { opacity: activeCard === "ubicaciones" ? 1 : 0, duration: 1, delay: .5, repeat: false, ease: "power1.inOut", }, 0.5)
+                .to(".claim.perretes", { opacity: activeCard === "ubicaciones" ? 1 : 0, duration: 1, delay: .5, repeat: false, ease: "power1.inOut", }, 0.2)
+                .to(".claim.alojamiento", { opacity: activeCard === "ubicaciones" ? 1 : 0, duration: 1, delay: .5, repeat: false, ease: "power1.inOut", 
+                    onComplete: function(){ this.kill()}
+                }, 0.6)
+                
         console.log(activeCard);
 
     }, [activeCard]);

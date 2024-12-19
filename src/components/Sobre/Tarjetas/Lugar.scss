@@ -9,6 +9,7 @@
     flex-direction: column;
     position: relative;
     padding: 0;
+    overflow: unset;
     &:before{
         background-image: url("../../../../assets/images/villasdepomar.jpg");   
         background-size: auto 120%;
