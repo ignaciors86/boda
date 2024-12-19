@@ -83,7 +83,7 @@ const Lugar = ({ weedding }) => {
 
                 <a className="imagen" href={url} target="_blank" rel="noopener noreferrer" ref={mapRef}>
                     <img src={mapa} alt="Mapa del lugar" />
-                    <em><h4>Villas de Pomar</h4></em>
+                    <em><h2>Cómo llegar</h2></em>
                 </a>
                 <a target="_blank" href="https://maps.app.goo.gl/VcP5TumYHdV7XPSE9" className="claim bus" ref={(el) => claimRefs.current[1] = el}>
                     <em><h4>El autobús saldrá a las 12:00 desde<br></br>El Corte Inglés</h4></em>
@@ -99,6 +99,10 @@ const Lugar = ({ weedding }) => {
 
                 <div className="claim piscina" ref={(el) => claimRefs.current[3] = el}>
                     <em>Trae bañador</em>
+                </div>
+
+                <div className="claim perretes" ref={(el) => claimRefs.current[2] = el}>
+                    <em>Perretes admitidos</em>
                 </div>
             </div>
 

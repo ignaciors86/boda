@@ -123,10 +123,12 @@ h2, h3, h4{
 }
 h2{
   font-size: calc(var(--size-unit)* 0.3);
+  line-height: calc(var(--size-unit)* 0.3);
 }
 
 h4{
-  font-size: calc(var(--size-unit)* 0.12);
+  font-size: calc(var(--size-unit)* 0.15);
+  line-height: calc(var(--size-unit)* 0.15);
 }
 p, a, span{
   font-size: calc(var(--size-unit)* 0.15);
@@ -143,9 +145,9 @@ a{
   }
 }
 em{
-  font-size: calc(var(--size-unit)* 0.12);
+  font-size: calc(var(--size-unit)* 0.15);
   letter-spacing: -0.02px;
-  line-height: calc(var(--size-unit)* 0.14);
+  line-height: calc(var(--size-unit)* 0.15);
   display: flex;
   justify-content: center;
   text-align: center;
