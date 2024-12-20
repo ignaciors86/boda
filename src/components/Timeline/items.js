@@ -113,13 +113,13 @@ const items = [
         title: "Agenda del finde",
         description: <div>
 
-          <em>Viernes (Preboda):</em>
+          <h3>Viernes (Preboda):</h3>
           <span>
             <b>20:00</b>(en adelante)
           </span>
           
             
-            <em>Sábado (Boda): </em>
+            <h3>Sábado (Boda): </h3>
             <span>  
               <b>13:00</b> 
               - Ceremonia
@@ -141,8 +141,8 @@ const items = [
               - Tercer tiempo / Bus de vuelta
             </span>
           
-            <em>Domingo: </em> 
-            <span><b>[undefined]</b>
+            <h3>Domingo: </h3> 
+            <span><b>[undefined]:</b> desayuno y comida
           </span>
         </div>,
         images: [wingapo,paella,friends,barbacoa,bmo,urkel,tio,ojeteCalor,bebidas,masterchef,got,pikachu,karaoke,shameless,gilmoreBaile,ron,antidisturbios,carrie,trump,finyjakeresaca,emily,dean,antidisturbios2,kelso,scooby,bills,kitty,keVin,postBodaFriends,bitches,paquita,rick,bob,red,tina,theoffice,stop,tequila,karen,treatyourself,randy,shamelesstercerTiempo,allyoucaneat,nickcorbata,barneyted,finn,wilson,bojack,sexeducation,monkeyisland2,coctel,randyresaca,gargaras,esqueletos,monkeyisland,yoda,banquetegilmore,trump,ojeteCalor],
@@ -178,7 +178,7 @@ const items = [
     {
         title: "Baile",
         description: <p>Bailad, malditos, que DJ Henar se encarga de la música mientras amortizamos la barra libre.</p>,
-        images: [ keVin,paquita, ranmadance,akane,bitches,bmobaile,barneyted, rick,dean,stop, urkel, carrie, bmo, randy],
+        images: [ keVin,paquita, ranmadance,akane,bitches,bmobaile, rick,dean,stop,barneyted, urkel, carrie, bmo, randy],
         audio: festin,
     },
     {
