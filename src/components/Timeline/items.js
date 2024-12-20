@@ -38,7 +38,8 @@ import randy from "./assets/images/baile/randy.webp";  // Asegúrate de que esta
 import emily from "./assets/images/baile/emily.webp";  // Asegúrate de que estas rutas sean correctas
 import rick from "./assets/images/baile/rick.webp";  // Asegúrate de que estas rutas sean correctas
 import dean from "./assets/images/baile/dean.webp";  // Asegúrate de que estas rutas sean correctas
-import tina from "./assets/images/baile/tina.webp";  // Asegúrate de que estas rutas sean correctas
+import tina from "./assets/images/baile/tina.webp";
+import akane from "./assets/images/baile/akane.webp";  // Asegúrate de que estas rutas sean correctas
 import keVin from "./assets/images/baile/keVin.webp";  // Asegúrate de que estas rutas sean correctas
 import carrie from "./assets/images/baile/carrie.webp";  // Asegúrate de que estas rutas sean correctas
 import finn from "./assets/images/tercerTiempo/finn.webp";  // Asegúrate de que estas rutas sean correctas
@@ -52,10 +53,13 @@ import paquita from "./assets/images/baile/paquita.webp";  // Asegúrate de que 
 import stop from "./assets/images/baile/stop.webp";  // Asegúrate de que estas rutas sean correctas
 import urkel from "./assets/images/baile/urkel.webp";  // Asegúrate de que estas rutas sean correctas
 import bmo from "./assets/images/baile/bmo.webp";  // Asegúrate de que estas rutas sean correctas
+
+import ranmadance from "./assets/images/baile/ranmadance.webp";
 import bmobaile from "./assets/images/baile/bmobaile.webp";  // Asegúrate de que estas rutas sean correctas
 import paella from "./assets/images/paella.jpg";  // Asegúrate de que estas rutas sean correctas
 import shamelesstercerTiempo from "./assets/images/tercerTiempo/shameless.webp"; 
 import busVuelta from "./assets/images/tercerTiempo/bus.webp"; 
+import bultos from "./assets/images/ceremonia/bultos.webp"; 
 
 import postBodaFriends from "./assets/images/postboda/friends.webp"; 
 import bojack from "./assets/images/postboda/bojack.webp"; 
@@ -81,8 +85,8 @@ const imageUrls = [
     bills,
     karaoke,bitches,sexeducation,lost,cartman,treatyourself,
     ojeteCalor,keVin,nickcorbata,karen,maleducado,
-    kitty,
-    bob,tina,
+    kitty,bultos,
+    bob,tina,akane,
     red,
     paquita,bojack,pikachu,
     friends,stop,
@@ -98,7 +102,7 @@ const imageUrls = [
     gilmoreBaile,wilson,gargaras,
     tercerTiempo,ron,urkel,
     paella,
-    wingapo,
+    wingapo,ranmadance,
     postBodaFriends,
     esqueletos,
     allyoucaneat,busVuelta,
@@ -156,7 +160,7 @@ const items = [
         title: "Ceremonia",
         description: <p>Palabras bonitas serán dichas y lloraremos todos mucho.</p>,
         
-        images: [theoffice, gilmoreBaile,friends, monkeyisland, monkeyisland2, shameless],
+        images: [theoffice, gilmoreBaile,bultos, friends, monkeyisland, monkeyisland2, shameless],
         audio: ceremonia,
     },
     {
@@ -173,19 +177,19 @@ const items = [
     },
     {
         title: "Baile",
-        description: <p>El baile de los recién casados abre la pista, seguido de una noche de música y diversión para todos los invitados.</p>,
-        images: [ keVin,paquita, bitches,bmobaile,barneyted, rick,dean,stop, urkel, carrie, bmo, randy],
+        description: <p>Bailad, malditos, que DJ Henar se encarga de la música mientras amortizamos la barra libre.</p>,
+        images: [ keVin,paquita, ranmadance,akane,bitches,bmobaile,barneyted, akane, rick,dean,stop, urkel, carrie, bmo, randy],
         audio: festin,
     },
     {
         title: "Tercer Tiempo",
-        description: <p>Último bus para la gente cansada, y a ser posible, todos los menores.</p>,
+        description: <p>Bus de vuelta para la gente cansada, y a ser posible, todos los menores. Recena regenerativa con super muncheo, y más fiesta.</p>,
         images: [tercerTiempo,busVuelta,nickcorbata,scooby,shamelesstercerTiempo, red, yoda, ojeteCalor,finn,esqueletos],
         audio: samantha,
     },
     {
         title: "Domingo",
-        description: <p>Unos churritos para volver a la vida, y los que aguantéis hasta la paella os vais comidos... <b>Y entonces sí: <br></br><h3>WINGAPO, MARICONES</h3></b></p>,
+        description: <p>Churritos y paella para volver a la vida y que os vayáis comidos... <b><h3>Y WINGAPO, MARICONES</h3></b></p>,
         images: [bojack,tio,finyjakeresaca,tequila,randyresaca,postBodaFriends, wingapo],
         audio: rumbling,
     }

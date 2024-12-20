@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import mapa from "./Lugar/map.webp";
 import "./Lugar.scss";
@@ -10,7 +10,7 @@ const Lugar = ({ weedding }) => {
     const claimRefs = useRef([]); // Referencias para las etiquetas con clase .claim
     const { activeCard, setActiveCard, isOtherDraggableActive, setIsOtherDraggableActive } = useDragContext();
     const duracion = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--duration').trim().replace('s', '')) * 10;
-
+    const [visible, setVisible] = useState(true);
     useEffect(() => {
         // Resetear propiedades transform y opacity de los elementos antes de animarlos
         claimRefs.current.forEach((ref) => {
@@ -207,6 +207,9 @@ const Lugar = ({ weedding }) => {
         console.log(activeCard);
     }, [activeCard]);
 
+    useEffect(() => {
+        !visible && gsap.to(".claim, .imagen", { opacity: 0, duration: .2, onStart: () => { setVisible(true) }, onComplete: () => { setActiveCard("sobre"); }, })
+    }, [visible]);
 
     return (
         <>
@@ -237,11 +240,11 @@ const Lugar = ({ weedding }) => {
                 </div>
 
                 <div className="claim perretes" ref={(el) => claimRefs.current[4] = el}>
-                    <em>Perretes admitidos</em>
+                    <em>Tu perrete es bienvenido (en caso de necesidad)</em>
                 </div>
             </div>
 
-            <button className="back" onClick={() => setActiveCard("sobre")} />
+            <button className="back" onClick={() => setVisible(false)} />
         </>
     );
 };
