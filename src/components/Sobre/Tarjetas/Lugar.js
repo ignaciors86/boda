@@ -216,7 +216,7 @@ const Lugar = ({ weedding }) => {
             <div className="lugar seccion">
                 <div className="titulo">
                     <h4><h2>Villas de Pomar</h2></h4>
-                    <em>(Pedrosillo el Ralo, &nbsp;<b>Salamanca</b>)</em>
+                    <em>(Pedrosillo el Ralo,&nbsp;<b>Salamanca</b>)</em>
                 </div>
 
                 <a className="imagen" href={url} target="_blank" rel="noopener noreferrer" ref={mapRef}>
