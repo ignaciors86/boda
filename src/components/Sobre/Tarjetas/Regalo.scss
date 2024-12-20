@@ -1,6 +1,25 @@
 .card .seccion{
     &.regalo{
         display: flex;
+        padding: 0;
+        img {
+            width: 80%;
+            margin: 5% auto 0;
+            position: absolute;
+            z-index: 0;
+            opacity: .2;
+        }
+        em{
+            font-style: normal;
+            padding: 5% 10%;
+            display: flex;
+            z-index: 1;
+            width: 100%;
+            // background-color: var(--darkGray);
+            box-sizing: border-box;
+            margin-top: 20%;
+            color: white;
+        }
         .link{
             width: 100%;
             display: flex;
@@ -15,11 +34,7 @@
                 flex-direction: column;
                 background: var(--darkGray);
             }
-            img {
-                width: 40%;
-                margin: auto;
-                margin: calc(var(--size-unit)* 0.15) auto 0;
-            }
+
         }
         
     }

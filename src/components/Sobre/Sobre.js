@@ -14,7 +14,7 @@ import animateOpacity from '../functions';
 import { useDragContext } from '../DragContext';
 
 const Sobre = ({weedding}) => {
-  const { activeCard } = useDragContext();
+  const { activeCard, setActiveCard } = useDragContext();
   const [moving, setMoving] = useState(false);
   const [isMuted, setIsMuted] = useState(true); // Estado para el mute del audio
   const [isMutedGeneral, setIsMutedGeneral] = useState(true); // Estado para el mute del audio
@@ -40,6 +40,7 @@ const Sobre = ({weedding}) => {
     const envelope = document.querySelector('.envelope');
     envelope.classList.toggle('open');
     envelope.classList.remove('closed');
+    setActiveCard("sobre");
     setMoving(false);
   };
 
@@ -79,7 +80,8 @@ const Sobre = ({weedding}) => {
         yoyo: true,
         repeat: 7,
         ease: "power1.inOut",
-        repeatRefresh: true
+        repeatRefresh: true,
+
       }).to(sobre, {
         scale: 1,
         rotate: 0,
