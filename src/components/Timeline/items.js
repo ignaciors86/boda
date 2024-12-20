@@ -178,7 +178,7 @@ const items = [
     {
         title: "Baile",
         description: <p>Bailad, malditos, que DJ Henar se encarga de la música mientras amortizamos la barra libre.</p>,
-        images: [ keVin,paquita, ranmadance,akane,bitches,bmobaile,barneyted, akane, rick,dean,stop, urkel, carrie, bmo, randy],
+        images: [ keVin,paquita, ranmadance,akane,bitches,bmobaile,barneyted, rick,dean,stop, urkel, carrie, bmo, randy],
         audio: festin,
     },
     {

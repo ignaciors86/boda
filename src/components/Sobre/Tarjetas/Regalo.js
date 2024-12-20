@@ -1,19 +1,18 @@
 import "./Regalo.scss";
 import regalo from "../assets/images/Gift_box_present-512.webp";
 import { useDragContext } from "components/DragContext";
+import AccountInput from "./Regalo/AccountInput";
 const Regalo = () => {
     const { activeCard, setActiveCard, isOtherDraggableActive, setIsOtherDraggableActive } = useDragContext();
     return (<>
         <div className="regalo seccion">
+            <img src={regalo} alt="Imagen 1" />
 
-            <div className="link">
-                <img src={regalo} alt="Imagen 1" />
-            </div>
-            
+            <em>Agradeceremos vuestra ayuda y cada penique recibido aliviará la hostia de la boda. Vamos a emplearlo en que la disfrutéis al máximo.
+            <br></br><br></br>Y si alguien muy cercano se plantea no asistir por cuestiones económicas, que nos lo diga en confianza, por favor.</em>
 
-            <em>Si alguien se plantea no asistir a la boda por cuestiones económicas, por favor, que nos lo diga en confianza.</em>
-            <em>Querremos que estés.</em>
-            
+
+             <AccountInput />
         </div>
         <button className="back" onClick={() => setActiveCard("sobre")} />
         </>
