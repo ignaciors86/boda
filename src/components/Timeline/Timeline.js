@@ -23,6 +23,16 @@ const Timeline = () => {
   const audioRef = useRef(new Audio());
   const [isMuted, setIsMuted] = useState(false); // Estado para controlar si el audio está muteado
 
+  // Nuevos: Pre-cargar audios
+  const preloadedAudios = useRef(
+    items.map((item) => {
+      const audio = new Audio(item.audio);
+      audio.preload = "auto";
+      audio.loop = true; // Configurar loop para todos los audios
+      return audio;
+    })
+  );
+
   // Pre-cargar imágenes
   const preloadImages = (urls) => {
     const promises = urls.map(url => new Promise((resolve, reject) => {
@@ -34,13 +44,12 @@ const Timeline = () => {
     return Promise.all(promises);
   };
 
-  // Configurar Draggable y la línea de tiempo
   const setupDraggableAndTimeline = () => {
     Draggable.get(sliderRef.current)?.kill();
   
     const totalItems = items.length;
-    const durationPerItem = 6;
-    const transitionDuration = 0.3;
+    const durationPerItem = 2;
+    const transitionDuration = 0;
   
     const commonTimeline = timelineRef.current.clear();
   
@@ -65,25 +74,21 @@ const Timeline = () => {
   
         setHasInteracted(true);
   
-        const progressBarWidth = progressBarRef.current.clientWidth; // Ancho de la barra de progreso
-        const currentX = this.x; // Posición actual en x
-        const progress = Math.min(Math.max(currentX / progressBarWidth, 0), 1); // Progreso normalizado
+        const progressBarWidth = progressBarRef.current.clientWidth;
+        const currentX = this.x;
+        const progress = Math.min(Math.max(currentX / progressBarWidth, 0), 1);
   
-        // Muestra en consola la posición en x y el porcentaje del recorrido
         const porcentaje = (progress * 100).toFixed(2);
         console.log(`Posición en X: ${currentX.toFixed(2)}, Porcentaje del recorrido: ${porcentaje}%`);
         if (porcentaje < 10) {
           setCurrentIndex(0);
-          audioRef.current.src = items[0].audio; // Cambia el audio al del item 0
-          audioRef.current.load(); // Carga el nuevo archivo
-          audioRef.current.play().catch(err => console.error("Error al reproducir el audio:", err));
+          preloadedAudios.current[0].play().catch(err => console.error("Error al reproducir el audio:", err));
         }
   
         timelineRef.current.progress(progress);
   
         const penultimateItemProgress = (totalItems - 2) / totalItems;
         const lastItemProgress = 1;
-  // console.log(progress);
         if (progress >= penultimateItemProgress && progress < lastItemProgress || progress < 0.15) {
           gsap.to(sliderRef.current, { scale: 1, y: "-0dvh", duration: 0.3 });
         } else {
@@ -134,13 +139,13 @@ const Timeline = () => {
             if (element) {
               const opacity = parseFloat(window.getComputedStyle(element).opacity);
               if (opacity > 0) {
-                gsap.to(element, { opacity: 1, duration: 0.3 });
-                gsap.to(sliderRef.current, { scale: 1, y: "-0dvh", duration: 0.3 });
+                gsap.to(element, { opacity: 1, duration: 0.1 });
+                gsap.to(sliderRef.current, { scale: 1, y: "-0dvh", duration: 0.1 });
                 ultimo = false;
               }
             }
           });
-          ultimo && gsap.to(`.item${items.length}`, { opacity: 1, duration: 0.3 });
+          ultimo && gsap.to(`.item${items.length}`, { opacity: 1, duration: 0.1 });
         }
       },
     });
@@ -154,31 +159,39 @@ const Timeline = () => {
       setCurrentIndex(Math.floor(initialProgress * items.length));
     }
   };
-  
 
   // Reproduce el audio del ítem actual cuando se setea activeCard
   useEffect(() => {
-    console.log(currentIndex);
-    !currentIndex && setCurrentIndex(0);
-    const audio = audioRef.current;
-    if (activeCard && items[currentIndex]?.audio) {
-      audio.pause(); // Pausa el audio anterior si está reproduciéndose
-      audio.src = items[currentIndex].audio;
-      audio.loop = true; // Habilita la reproducción en bucle
-      audio.muted = isMuted; // Aplica el estado de mute
-      audio.load(); // Carga el nuevo archivo
-      audio.play().catch(err => console.error("Error al reproducir el audio:", err));
+    if (activeCard && preloadedAudios.current[currentIndex]) {
+      preloadedAudios.current.forEach((audio, index) => {
+        if (index === currentIndex) {
+          audio.play().catch(err => console.error("Error al reproducir el audio:", err));
+        } else {
+          audio.pause();
+          audio.currentTime = 0; // Reinicia el audio
+        }
+      });
+      
     }
 
     if (activeCard !== "horarios") {
-      audio.pause();
+      preloadedAudios.current[currentIndex]?.pause();
+      preloadedAudios.current[0].pause()
+    }else{
+      if (imagesLoaded && preloadedAudios.current[0] && !hasInteracted) {
+        preloadedAudios.current[0]
+          .play()
+          .catch((err) => console.error("Error al reproducir el audio inicial:", err));
+      }
     }
-  }, [activeCard, currentIndex, isMuted]);
+  }, [activeCard, currentIndex]);
 
   // Función para alternar el estado de mute
   const handleMuteToggle = () => {
     setIsMuted(!isMuted);
-    audioRef.current.muted = !audioRef.current.muted; // Cambia el estado de mute del audio
+    preloadedAudios.current.forEach(audio => {
+      audio.muted = !audio.muted;
+    });
   };
 
   useEffect(() => {
@@ -189,7 +202,7 @@ const Timeline = () => {
     return () => {
       Draggable.get(sliderRef.current)?.kill();
       timelineRef.current.clear();
-      audioRef.current.pause(); // Asegúrate de pausar el audio al desmontar el componente
+      preloadedAudios.current.forEach(audio => audio.pause());
     };
   }, []);
 
@@ -206,20 +219,19 @@ const Timeline = () => {
     }
   }, [currentIndex]);
 
-  // Animación de latido para el slider
   useEffect(() => {
     !hasInteracted && gsap.timeline().to(sliderRef.current, {
       scale: 1.1,
       duration: 1,
-      repeat: -1, // Repite infinitamente
-      yoyo: true, // Vuelve al tamaño original
+      repeat: -1,
+      yoyo: true,
       ease: "power1.inOut",
       paused: false,
-    })
+    });
   }, [currentIndex]);
 
   useEffect(() => {
-    hasInteracted && gsap.killTweensOf(sliderRef.current); // Detiene la animación de latido
+    hasInteracted && gsap.killTweensOf(sliderRef.current);
   }, [hasInteracted]);
 
   if (!imagesLoaded) {
@@ -247,7 +259,7 @@ const Timeline = () => {
         </div>
       </div>
       <button className="back" onClick={() => setActiveCard("home")} />
-      <button className={`back ${isMuted ? "play" : "stop"}`} onClick={handleMuteToggle} /> {/* Botón para mutear */}
+      <button className={`back ${isMuted ? "play" : "stop"}`} onClick={handleMuteToggle} />
     </>
   );
 };
