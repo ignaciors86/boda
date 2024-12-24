@@ -151,7 +151,7 @@ const items = [
     {
         title: "Preboda",
         description: <>
-            <p>Traete el bañador, y si tocas algún instrumento y te apetece tenerlo a mano para hacer el bobo un rato, adelante.</p>
+            <p>Fiesta informal, y si os arrancáis a tocar y cantar algo, mejor. Trae bañador por si tenemos suerte con el tiempo.</p>
         </>,
         images: [pikachu,bebidas,masterchef,lost,karaoke,sexeducation, kelso, kitty,  bob],
         audio: malabares,
