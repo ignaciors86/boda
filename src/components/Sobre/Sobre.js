@@ -52,6 +52,7 @@ const Sobre = ({weedding}) => {
   };
 
   const handleClick = () => {    
+    
     setMoving(true);
     const sobre = document.querySelector('.sobre.closed');
     const duracion = getComputedStyle(document.documentElement).getPropertyValue('--duration').trim().replace('s', '');
@@ -114,6 +115,7 @@ const Sobre = ({weedding}) => {
   }
 
   useEffect(() => {
+      activeCard === "invitacion" && gsap.set(".card.invitacion", { animation: "none" });
       !isMutedGeneral && setIsMuted(activeCard !== "horarios" ? isMutedGeneral : !isMuted)
   }, [activeCard])
 

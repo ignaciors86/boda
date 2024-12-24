@@ -41,7 +41,12 @@ const Asistencia = () => {
     };
 
     const handleShowDisclaimer = (state=true) => {
-        setDisclaimerVisible(state);
+        !disclaimerVisible ? setDisclaimerVisible(state) : 
+        gsap.to(".disclaimer", {opacity: 0, duration: .5, 
+            onComplete: () => {
+                setDisclaimerVisible(state);
+            }
+        });
     };
 
     const handleSendWhatsApp = () => {
@@ -67,7 +72,51 @@ const Asistencia = () => {
     useEffect(() => {
         gsap.timeline()
             .to(".disclaimer", {zIndex: disclaimerVisible ? 3 : -1, duration: 0, }, 0)
-            .to(".disclaimer", {opacity: disclaimerVisible ? 1 : 0, duration: 1, }, ">")
+            .to(".disclaimer", {opacity: disclaimerVisible ? 1 : 0, duration: .5, }, ">");
+
+        if (disclaimerVisible) {
+            // Animación para la imagen
+            gsap.fromTo(".disclaimer .imagen", 
+                { opacity: 0 }, 
+                {
+                    opacity: 1, 
+                    duration: 1, 
+                    onComplete: () => {
+                        // Añadir animación de "temblor" a la imagen
+                        gsap.to(".disclaimer .imagen", {
+                            rotate: "-35deg", 
+                            duration: 0.2, 
+                            repeat: 5, 
+                            yoyo: true,
+                            ease: "ease.inOut",
+                        })
+                        gsap
+                        .to(".disclaimer .imagen", {
+                            rotate: "0deg", 
+                            duration: 0.1, 
+                            repeat: false,
+                            delay: 1.2, 
+                            yoyo: true,
+                            ease: "ease.inOut",
+                            onComplete: () => {
+                                gsap
+                                .to(".disclaimer p, .disclaimer button", {
+                                    opacity: 1,
+                                    duration: 0.5, 
+                                    ease: "ease.inOut",
+                                })
+                            }
+                        })
+                    }
+                });
+        }else{
+            gsap
+            .to(".disclaimer p, .disclaimer button", {
+                opacity: 0,
+                duration: 0.5, 
+                ease: "ease.inOut",
+            })
+        }
     }, [disclaimerVisible]);
 
     return (
@@ -175,7 +224,7 @@ const Asistencia = () => {
                                     onClick={() => handleShowDisclaimer(false)}
                                     disabled={isButtonDisabled}
                                 >
-                                    <h2>Cancelar</h2>
+                                    <h2>Necesito revisarlo</h2>
                                 </button>
                                 <button
                                     type="button"

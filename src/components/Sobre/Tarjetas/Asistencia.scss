@@ -218,7 +218,7 @@
             transition: 0.4s;
             background-color: var(--purpleTransparent);
             margin: 0 calc(var(--size-unit) * 0.085);
-            bottom: calc(var(--size-unit) * 0.28);
+            bottom: calc(var(--size-unit) * 0.26);
 
             &:before {
                 content: "";
@@ -261,7 +261,7 @@
         justify-content: center;
         align-items: center;
         margin-bottom: calc(var(--size-unit)* -0.1);
-
+        padding: 2% 0;
         &:hover {
             background-color: var(--orange);
         }
@@ -276,6 +276,15 @@
     }
     .btn-cancelar{
         background-color: var(--purple);
+        background: var(--orangeTransparent);
+        border-color: var(--darkGray);
+        h2{
+            // color: var(--green);
+        }
+    }
+    .btn-enviar{
+        background-color: var(--purple);
+        background: var(--darkGray);
         border-color: var(--darkGray);
     }
     .disclaimer{
@@ -295,6 +304,15 @@
         padding: 10%;
         z-index: -1;
         flex-wrap: wrap;
+        p, button{
+            opacity: 0;
+            width: 100%;
+            margin: 0;
+            
+        }
+        .btn-enviar{
+            background: cadetblue;
+        }
         .imagen{
             width: 10dvh;
             height: 10dvh;
