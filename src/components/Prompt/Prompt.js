@@ -9,21 +9,21 @@ const isMobileDevice = () => {
     return /Mobi|Android/i.test(navigator.userAgent);
 };
 
-const Prompt = () => {
-    const baseTypingSpeed = 5; // Velocidad de escritura (milisegundos entre letras) para dispositivos de escritorio
-    const typingSpeedMultiplier = isMobileDevice() ? 5 : 1; // Multiplicador de velocidad para móviles
-    const typingSpeed = baseTypingSpeed * typingSpeedMultiplier; // Velocidad de escritura ajustada
+const Prompt = ({weedding}) => {
+    const typingSpeed = 15; // Velocidad de escritura ajustada
 
-    const pauseAfterTyping = 2500; // Pausa tras escribir cada frase (milisegundos)
+    const pauseAfterTyping = 1000; // Pausa tras escribir cada frase (milisegundos)
     const pauseBeforeNextScreen = 1000; // Tiempo antes de la siguiente frase (milisegundos)
 
     const phrases = [
-        `Nos casamos.\n`,
-        `"ohh qué bien... 😬 otra boda para el 2025... 😰"\n`,
-        `Ya...\n`,
-        `Lo sentimos 😿\n`,
-        `...bueno, no tanto...\n`,
-        `🛑 Detén esta chapa arrastrando el dedo por la pantalla...\n`,
+        ``,
+        `¡Hola! Esta web podría ser un PDF...\n`,
+        `Tú lo sabes, yo lo se. Claro que no hacía falta...\n`,
+        `Pero me hacía una ilusión gordísima hacer algo así para mi boda\n`,
+        `Así que aquí está\n`,
+        `...la web con el código más sucio de la historia\n`,
+        `"NO NOS CUENTES TU VIDA DE PROGRAMADOR VAGO", ok\n`,
+        `🛑 Detén esta chapa arrastrando el dedo por la pantalla\n`,
         `Repito: Arrastra el dedo por la pantalla\n`,
         `Porfa porfa please 😊\n`,
         `¿Porfa please recubierto de nata?\n`,
@@ -31,10 +31,11 @@ const Prompt = () => {
         `¿Qué te pasa?\n`,
         `ARRASTRA, COÑO\n`,
         `NO ES TAN DIFÍCIL\n`,
-        `PERO ARRASTRA, ¡¡SUBNORMAL!!\n`,
-        `Sí, acabo de insultarte mientras te invito a nuestra boda\n`,
-        `Aunque dudo mucho que esto último vaya a quedarse en la versión final...\n`,
+        `PERO ARRASTRA, ¡¡${weedding ? "SUBNORMAL" : "JOLÍN"}!!\n`,
+        `${weedding ? "Sí, acabo de insultarte mientras te invito a nuestra boda" : "No es que quiera ponerme impaciente, pero no va a pasar nada interesante hasta que lo hagas"}\n`,
+        `${weedding ? "He dejado esto en la versión final porque existe una versión más formalita que será la que vean mis tios...":"...¿o sí?"}\n`,
         `Va, arrastra el dedo por la pantalla de una vez...\n`,
+        `Y si has llegado hasta aquí, espero que al menos hayas pulsado el botón para activar el audio\n`,
         `Podemos estar así todo el día...\n`,
         `Tooooooodo el día...\n`,
         `Toooooooooooo\n`,
@@ -46,7 +47,7 @@ const Prompt = () => {
         `...\n`,
         `En serio. Esto solo es la intro. Toca la pantalla, ¡haz algo!\n`,
         `¿Sigues aquí?\n`,
-        `Ok, ya te abro yo la web... 😒`,
+        `Ok, ya te abro yo la web...`,
     ];
 
     const [displayedText, setDisplayedText] = useState(''); // Texto que se va mostrando
@@ -57,7 +58,7 @@ const Prompt = () => {
     useEffect(() => {
         if(isAnimating){
             const interval = setInterval(() => {
-                if (letterIndex < (phrases[currentPhraseIndex].length - 1)) {
+                if (letterIndex < phrases[currentPhraseIndex].length) {
                     setDisplayedText((prev) => prev + phrases[currentPhraseIndex][letterIndex]);
                     setLetterIndex(letterIndex + 1);
                 } else {
@@ -91,8 +92,7 @@ const Prompt = () => {
     }, [isAnimating, currentPhraseIndex]);
 
     useEffect(() => {
-        gsap.timeline()
-        .to(".prompt", { opacity: 1, duration: 2, delay: 2,})
+        gsapWithCSS.set(".prompt", { opacity: 1, duration: 1,})
     }, []);
 
 

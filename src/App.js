@@ -39,7 +39,7 @@ console.log(articles);
             <Route path="/weedding" element={<>
                <Bubbles/>
                
-              <Espiral/>
+              <Espiral weedding={true} />
               <Sobre weedding={true} />
             </>} />
             <Route path="/fondos-baile" element={<FondosBaile />} /> {/* Nueva ruta */}

@@ -168,7 +168,7 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
     <div className='ositoBox'>
       <div className="bear__wrap">
         <p ref={swearRef} className="bear__swear">
-          {vueltaHecha && count === 1? "Bien hecho..." : count === 2 ? "NO FUNCIONA, TENDRÁS QUE VENIR" : "$%* VALE! $#@"}
+          {vueltaHecha && count === 1? "Bien hecho..." : count === 2 ? "TE VA A COSTAR MÁS QUE ESO" : "$%* VALE! $#@"}
         </p>
         <svg
           ref={bearRef}
@@ -322,7 +322,7 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
           
         </div>
         <div ref={noTextRef} className="checkbox__text no-text">
-            <h3>No puedo ir</h3>
+            <h3>No podré</h3>
           </div>
           <div ref={yesTextRef} className="checkbox__text yes-text">
             <h3>Asistiré</h3>
