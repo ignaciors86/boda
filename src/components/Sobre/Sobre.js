@@ -12,6 +12,7 @@ import Asistencia from './Tarjetas/Asistencia';
 import introAudio from './assets/audio/intro.mp3'; // Importar el audio
 import animateOpacity from '../functions';
 import { useDragContext } from '../DragContext';
+import { imageUrls, items, renderItems } from "../Timeline/items.js";
 
 const Sobre = ({weedding}) => {
   const { activeCard, setActiveCard } = useDragContext();
@@ -189,6 +190,8 @@ const Sobre = ({weedding}) => {
       });
     }
   }, []);
+
+  renderItems();
 
   return (
     <>
