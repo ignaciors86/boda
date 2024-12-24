@@ -236,7 +236,7 @@ const Lugar = ({ weedding }) => {
                 </div>
 
                 <div className="claim piscina" ref={(el) => claimRefs.current[3] = el}>
-                    <em>Trae bañador</em>
+                    <em>Hay piscina</em>
                 </div>
 
                 <div className="claim perretes" ref={(el) => claimRefs.current[4] = el}>

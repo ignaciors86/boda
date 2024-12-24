@@ -207,7 +207,10 @@ const Timeline = () => {
           delay: .5,
           yoyo: true,
           repeat: false,
-          ease: 'power1.inOut'
+          ease: 'power1.inOut',
+          onComplete: function(){
+            this.kill();
+          }
         }
       );
     }
