@@ -194,6 +194,25 @@ const Timeline = () => {
     });
   };
 
+  // NUEVO: Animación de movimiento de la bolita al inicio
+  useEffect(() => {
+    if ( activeCard === "horarios") {
+      gsap.fromTo(
+        sliderRef.current,
+        { left: '95%', opacity: 0, },
+        {
+          left: '0%',
+          duration: 1,
+          opacity: 1,
+          delay: .5,
+          yoyo: true,
+          repeat: false,
+          ease: 'power1.inOut'
+        }
+      );
+    }
+  }, [activeCard]);
+
   useEffect(() => {
     preloadImages(imageUrls)
       .then(() => setImagesLoaded(true))
