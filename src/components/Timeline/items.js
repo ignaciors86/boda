@@ -197,7 +197,7 @@ const items = [
 
 const renderItems = (currentIndex) => {
     return items.map((item, index) => {
-        return item && index === currentIndex && <Item data={item} index={index} key={"item" + index} />;
+        return item && <Item data={item} index={index} key={"item" + index} style={{display: index === currentIndex ? "flex" : "none"}} />;
     });
 };
 
