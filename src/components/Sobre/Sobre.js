@@ -9,22 +9,25 @@ import Regalo from './Tarjetas/Regalo';
 import Invitacion from './Tarjetas/Invitacion';
 import gsap from 'gsap';
 import Asistencia from './Tarjetas/Asistencia';
-import introAudio from './assets/audio/intro.mp3'; // Importar el audio
+import finisterre from './assets/audio/finisterre.mp3';
+import makeYourOwnKindOfMusic from './assets/audio/makeYourOwnKindOfMusic.mp3';
 import animateOpacity from '../functions';
 import { useDragContext } from '../DragContext';
 import { imageUrls, items, renderItems } from "../Timeline/items.js";
 
-const Sobre = ({weedding}) => {
+const Sobre = ({ weedding }) => {
   const { activeCard, setActiveCard } = useDragContext();
   const [moving, setMoving] = useState(false);
   const [isMuted, setIsMuted] = useState(true); // Estado para el mute del audio
   const [isMutedGeneral, setIsMutedGeneral] = useState(true); // Estado para el mute del audio
-  const audioRef = useRef(new Audio(introAudio)); // Referencia al audio
+  const audioRefs = useRef([new Audio(finisterre), new Audio(makeYourOwnKindOfMusic)]); // Referencias para los audios
+  const [currentAudioIndex, setCurrentAudioIndex] = useState(0); // Índice del audio actual
   const tlSobre = useRef(gsap.timeline());
   const buttonRef = useRef(null); // Referencia para el botón del audio
   const sobreRef = useRef(null);  // Referencia para el sobre
   const envelopeRef = useRef(null); // Referencia para el sobre interactivo
   const escala = 1.1;
+
   const toggle = () => {
     const cards = document.querySelectorAll('.card');
     cards.forEach(card => {
@@ -52,7 +55,6 @@ const Sobre = ({weedding}) => {
   };
 
   const handleClick = () => {    
-    
     setMoving(true);
     const sobre = document.querySelector('.sobre.closed');
     const duracion = getComputedStyle(document.documentElement).getPropertyValue('--duration').trim().replace('s', '');
@@ -107,23 +109,43 @@ const Sobre = ({weedding}) => {
     setIsMutedGeneral(!isMutedGeneral); // Cambia el estado del mute
   };
 
-  const fadeOutVolume = (desmutear) => {
-    gsap.to(audioRef.current, {
-      volume: desmutear ? 1 : 0,
-      duration: 3,
-    })
-  }
+  const playNextAudio = () => {
+    setCurrentAudioIndex((prevIndex) => {
+      const nextIndex = (prevIndex + 1) % audioRefs.current.length; // Ciclo al primer audio después del último
+      audioRefs.current[nextIndex].muted = isMuted;
+      audioRefs.current[nextIndex].play().catch(error => {
+        console.log('Error al reproducir el audio:', error);
+      });
+      return nextIndex;
+    });
+  };
 
   useEffect(() => {
-      activeCard === "invitacion" && gsap.set(".card.invitacion", { animation: "none" });
-      !isMutedGeneral && setIsMuted(activeCard !== "horarios" ? isMutedGeneral : !isMuted)
-  }, [activeCard])
+    const currentAudio = audioRefs.current[currentAudioIndex];
+    currentAudio.muted = isMuted;
+    currentAudio.loop = false; // Ningún audio se reproduce en bucle individualmente
+    currentAudio.preload = 'auto';
 
-  // Función para manejar el arrastre del sobre
+    currentAudio.play().catch(error => {
+      console.log('Error al reproducir el audio:', error);
+    });
+
+    currentAudio.addEventListener('ended', playNextAudio);
+
+    return () => {
+      currentAudio.pause();
+      currentAudio.removeEventListener('ended', playNextAudio);
+    };
+  }, [currentAudioIndex, isMuted]);
+
+  useEffect(() => {
+    activeCard === "invitacion" && gsap.set(".card.invitacion", { animation: "none" });
+    !isMutedGeneral && setIsMuted(activeCard !== "horarios" ? isMutedGeneral : !isMuted);
+  }, [activeCard]);
+
   const handleDrag = (event) => {
-    // Verifica si el evento proviene del botón de volumen
     if (event.target === buttonRef.current) {
-      return; // No hacer nada si se está interactuando con el botón de volumen
+      return;
     }
 
     const waxSeal = document.querySelector('.wax-seal');
@@ -135,23 +157,9 @@ const Sobre = ({weedding}) => {
         y: "100vh",
         duration: 3,
       });
-      // fadeOutVolume();
     }
   };
 
-  useEffect(() => {
-    audioRef.current.muted = isMuted; // Aplica el mute o desmute
-    audioRef.current.loop = true; // Hacer que el audio se reproduzca en bucle
-    audioRef.current.play().catch(error => {
-      console.log('Error al reproducir el audio:', error);
-    });
-
-    return () => {
-      audioRef.current.pause(); // Pausar el audio al desmontar el componente
-    };
-  }, [isMuted]);
-
-  // Agregar eventos de arrastre o movimiento
   useEffect(() => {
     window.addEventListener('mousemove', handleDrag);
     window.addEventListener('touchmove', handleDrag);
@@ -163,25 +171,20 @@ const Sobre = ({weedding}) => {
   }, []);
 
   useEffect(() => {
-    // Función para animar la opacidad de #root
-
-    // Seleccionar elementos
     const canvas = document.getElementById('myCanvas');
     const root = document.getElementById('root');
 
-    // Evento de hover en escritorio
     canvas.addEventListener('mouseenter', animateOpacity);
     canvas.addEventListener('mouseleave', animateOpacity);
 
-    // Evento de touch en dispositivos móviles
     canvas.addEventListener('touchstart', (event) => {
       animateOpacity();
-      event.preventDefault(); // Prevenir el comportamiento por defecto del touch
+      event.preventDefault();
     });
 
     const waxSeal = document.querySelector('.wax-seal');
     const sobre = document.querySelector('.sobre.closed');
-    // console.log(seccion);
+
     if (waxSeal && sobre) {
       gsap.to(waxSeal, {
         scale: escala,
@@ -215,8 +218,7 @@ const Sobre = ({weedding}) => {
               <Card seccion="regalo" onClick={() => handleClick("regalo")} trasera={<Regalo />}>
                 <h2>Regalo</h2>
               </Card>
-              <Card seccion="ubicaciones" onClick={() => handleClick("ubicaciones")} trasera={<Lugar weedding={weedding}/>}>
-                <h2>Lugar</h2>
+              <Card seccion="ubicaciones" onClick={() => handleClick("ubicaciones")} trasera={<Lugar weedding={weedding}/>}>\n                <h2>Lugar</h2>
               </Card>
               <Card seccion={"asistencia"} onClick={() => handleClick("asistencia")} trasera={<Asistencia />}>
                 <h2>Asistencia</h2>
@@ -227,12 +229,11 @@ const Sobre = ({weedding}) => {
         </div>
       </div>
 
-      {/* Botón para mutear/desmutear el audio */}
       <button
-        className={`back volumen ${isMuted ? 'play' : 'stop'}`}  // Cambia clase según mute/desmute
+        className={`back volumen ${isMuted ? 'play' : 'stop'}`}
         onClick={toggleMute}
         disabled={activeCard === "horarios"}
-        ref={buttonRef}  // Referencia para aplicar animación
+        ref={buttonRef}
       >
       </button>
     </>
