@@ -34,13 +34,12 @@
         position: relative;
         width: 100%;
 
-        font-size: calc(var(--size-unit)* 0.35);
-        line-height: calc(var(--size-unit)* 0.45);
-        font-weight: 700;
-        white-space: pre-wrap;
-        color: transparent;
         pointer-events: none;
-
+        span{
+            font-size: calc(var(--size-unit)* 0.35);
+            line-height: calc(var(--size-unit)* 0.45);
+            font-weight: 700;    
+        }
 
         .typing-wrapper {
             position: absolute;
