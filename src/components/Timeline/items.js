@@ -177,13 +177,13 @@ const items = [
     },
     {
         title: "Baile",
-        description: <p>Bailad, malditos, que DJ Henar se encarga de la música mientras amortizamos la barra libre.</p>,
+        description: <p>Enar Weir se encarga de la música, vosotros de bailarla y amortizar la barra libre.</p>,
         images: [ keVin,paquita, ranmadance,akane,bitches,bmobaile, rick,dean,stop,barneyted, urkel, carrie, bmo, randy],
         audio: festin,
     },
     {
         title: "Tercer Tiempo",
-        description: <p>Bus de vuelta para la gente cansada, y a ser posible, todos los menores. Recena regenerativa con super muncheo, y más fiesta.</p>,
+        description: <p>A las 23:00 saldrá el bus de vuelta para la gente cansada, y a ser posible, todos los menores. Recena regenerativa con super muncheo, y más fiesta.</p>,
         images: [tercerTiempo,busVuelta,nickcorbata,scooby,shamelesstercerTiempo, red, yoda, ojeteCalor,finn,esqueletos],
         audio: samantha,
     },
