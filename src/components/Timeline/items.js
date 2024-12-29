@@ -113,9 +113,9 @@ const items = [
         title: "Agenda del finde",
         description: <div>
 
-          <h3>Viernes (Preboda):</h3>
+          <h3>Viernes:</h3>
           <span>
-            <b>20:00</b>(en adelante)
+            <b>20:00</b> - Preboda
           </span>
           
             
