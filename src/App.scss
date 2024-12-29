@@ -153,6 +153,19 @@ em{
   text-align: center;
 }
 
+.volumen{
+  &:after{
+      content: "";
+      position: absolute;
+      width: 100vw;
+      height: 15dvh;
+      left: -2.5dvh;
+      top: -3dvh;
+      pointer-events: none;
+      // background: lightblue;
+  }
+}
+
 .back,
 .play,
 .stop{

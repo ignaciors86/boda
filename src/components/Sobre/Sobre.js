@@ -225,7 +225,7 @@ const Sobre = ({ weedding }) => {
               </Card>
             </div>
           </div>
-          <h2 className="nombre-invitado">M&N</h2>
+          <h2 className="nombre-invitado">M<em>&</em>N</h2>
         </div>
       </div>
 
