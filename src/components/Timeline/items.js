@@ -158,7 +158,7 @@ const items = [
     },
     {
         title: "Ceremonia",
-        description: <p>Palabras bonitas serán dichas y lloraremos todos mucho.</p>,
+        description: <p>Y como ya estaremos todos, ahora sí comienza el crossover más esperado en nuestra casa desde que South Park se juntó con Padre de Familia.</p>,
         
         images: [theoffice, gilmoreBaile,bultos, friends, monkeyisland, monkeyisland2, shameless],
         audio: ceremonia,
@@ -183,7 +183,7 @@ const items = [
     },
     {
         title: "Tercer Tiempo",
-        description: <p>A las 23:00 saldrá el bus de vuelta para la gente cansada, y a ser posible, todos los menores. Recena regenerativa con super muncheo, y más fiesta.</p>,
+        description: <p>A las 23:00 saldrá el bus de vuelta para la gente cansada y todos los menores que sea posible mandar a dormir. Tenemos el sitio para nosotros toda la noche, y no hay prisa.</p>,
         images: [tercerTiempo,busVuelta,nickcorbata,scooby,shamelesstercerTiempo, red, yoda, ojeteCalor,finn,esqueletos],
         audio: samantha,
     },
