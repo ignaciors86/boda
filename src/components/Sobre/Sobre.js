@@ -20,7 +20,7 @@ const Sobre = ({ weedding }) => {
   const [moving, setMoving] = useState(false);
   const [isMuted, setIsMuted] = useState(true); // Estado para el mute del audio
   const [isMutedGeneral, setIsMutedGeneral] = useState(true); // Estado para el mute del audio
-  const audioRefs = useRef([new Audio(finisterre), new Audio(makeYourOwnKindOfMusic)]); // Referencias para los audios
+  const audioRefs = useRef([new Audio(makeYourOwnKindOfMusic), new Audio(finisterre)]); // Referencias para los audios
   const [currentAudioIndex, setCurrentAudioIndex] = useState(0); // Índice del audio actual
   const tlSobre = useRef(gsap.timeline());
   const buttonRef = useRef(null); // Referencia para el botón del audio
