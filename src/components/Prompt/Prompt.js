@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import './Prompt.scss';
 import Typewriter from 'typewriter-effect';
-import gsapWithCSS from 'gsap/all';
+import { gsap } from 'gsap';
+import animateOpacity from 'components/functions';
 
 const Prompt = ({ weedding }) => {
     const phrases = [
@@ -11,7 +12,7 @@ const Prompt = ({ weedding }) => {
         `Así que aquí está`,
         `...la web con el código más sucio de la historia`,
         `"NO NOS CUENTES TU VIDA DE PROGRAMADOR VAGO", ok`,
-        `🛑 Detén esta chapa arrastrando el dedo por la pantalla`,
+        `Detén esta chapa arrastrando el dedo por la pantalla`,
         `Repito: Arrastra el dedo por la pantalla`,
         `Porfa porfa please 😊`,
         `¿Porfa please recubierto de nata?`,
@@ -39,7 +40,7 @@ const Prompt = ({ weedding }) => {
     ];
 
     useEffect(() => {
-        gsapWithCSS.set(".prompt", { opacity: 1, duration: 1, })
+        gsap.set(".prompt", { opacity: 1, duration: 1 });
     }, []);
 
     return (
@@ -47,13 +48,30 @@ const Prompt = ({ weedding }) => {
             <div className="placeholder">
                 {/* Texto animado dentro del contenedor que ocupa todo el espacio */}
                 <Typewriter
+                    onInit={(typewriter) => {
+                        phrases.forEach((phrase, index) => {
+                            typewriter
+                                .typeString(phrase)
+                                .pauseFor(1500)
+                                .callFunction(() => {
+                                    if (index < phrases.length - 1) {
+                                        const container = document.querySelector('.Typewriter__wrapper');
+                                        if (container) {
+                                            container.textContent = ''; // Borra el texto inmediatamente
+                                        }
+                                    }
+                                });
+                        });
+                        typewriter
+                            .callFunction(() => {
+                                animateOpacity(); // Ejecuta el callback aquí
+                            })
+                            .start();
+                    }}
                     options={{
-                        strings: phrases,
                         autoStart: true,
-                        loop: true, // Cambia esto a false si no quieres que reinicie.
+                        loop: false, // No reinicia
                         delay: 25, // Velocidad de escritura
-                        deleteSpeed: 1, // Velocidad de borrado
-                        pauseFor: 1500, // Pausa entre frases
                     }}
                 />
             </div>

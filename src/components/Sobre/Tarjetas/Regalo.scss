@@ -19,6 +19,17 @@
             box-sizing: border-box;
             margin-top: 20%;
             color: white;
+            font-style: normal;
+            padding: 5% 10% 0;
+            display: flex
+        ;
+            z-index: 1;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 20%;
+            color: white;
+            font-size: calc(var(--size-unit)* 0.15);
+            line-height: calc(var(--size-unit)* 0.15);
         }
         .link{
             width: 100%;

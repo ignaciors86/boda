@@ -56,6 +56,7 @@ const Sobre = ({ weedding }) => {
 
   const handleClick = () => {    
     setMoving(true);
+    gsap.set(".wax-seal", { animation: "none" });
     const sobre = document.querySelector('.sobre.closed');
     const duracion = getComputedStyle(document.documentElement).getPropertyValue('--duration').trim().replace('s', '');
 
