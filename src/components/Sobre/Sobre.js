@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import './Sobre.scss';
 import invitacion from './assets/images/invitacion.png';
-import bubuDudu from './assets/images/bubu-dudu.jpg';
+// import bubuDudu from '../assets/images/bubu-dudu.jpg';
+import nosotrosjpg from './assets/images/nosotros.jpg';
+import { ReactComponent as Nosotros } from './assets/images/nosotros.svg';
 import Card from './Card';
 import Timeline from '../Timeline/Timeline';
 import Lugar from './Tarjetas/Lugar';
@@ -198,11 +200,17 @@ const Sobre = ({ weedding }) => {
   }, []);
 
   renderItems();
-
+  const [animationKey, setAnimationKey] = useState(0);
   return (
     <>
       <div className="sobre closed" ref={sobreRef}>
-        <img src={bubuDudu} alt="Bubu y Dudu" className="bubu-dudu" />
+        {/* <img src={bubuDudu} alt="Bubu y Dudu" className="bubu-dudu" /> */}
+        <Nosotros
+        key={animationKey} // Fuerza el reinicio de la animación
+        className="bubu-dudu"
+        viewBox="0 0 843 840"
+      />
+      <img src={nosotrosjpg} alt="Nosotros" className="bubu-dudu nosotros-jpg" />
         <div className="envelope closed" ref={envelopeRef}>
           <div className="envelope-flap">
             <div className="wax-seal back" onClick={() => !moving && handleClick("sobre")} />
