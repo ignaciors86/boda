@@ -92,7 +92,7 @@ const Card = ({ seccion, children, trasera }) => {
       });
     } else {
       resetCardPosition();
-      
+      setActiveCard("");
     }
   };
 
