@@ -32,7 +32,7 @@ const Invitacion = () => {
         // Animación del trazo
         setTimeout(() => {
           path.style.strokeDashoffset = 0; // Inicia la animación del trazo
-          gsap.to(".nosotros-jpg", { opacity: 1, duration: 1, delay: 4, 
+          gsap.to(".nosotros-jpg", { opacity: 1, duration: 1, delay: 0, 
             onComplete: () => {
               gsap.to(".nosotros-jpg", { opacity: 0, duration: 1 });
               gsap.to(".nosotros-jpg-color", { opacity: 1, duration: 5 });
