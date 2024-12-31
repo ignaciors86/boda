@@ -33,12 +33,9 @@ const animateOpacity = () => {
                 y: "100vh",
             })
             .to(".sobre", { opacity: 0, zIndex: 2, duration: 0, scale: 0.7 }, ">")
-            .to(".bubu-dudu", {
-                duration: 0,
-                ease: "ease-in",
-            }, ">")
             .to(".sobre", { opacity: 1, duration: duracion * 2, scale: 1, y: 0, ease: "ease",  }, ">")
-            .to(".bubu-dudu", {
+            .to(".nosotros-svg", { opacity: 0, duration: 5, }, "<")
+            .to(".nosotros-jpg, .nosotros-svg", {
                 rotateY: 90,
                 duration: duracion * 1,
                 ease: "ease-out",

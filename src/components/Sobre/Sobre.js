@@ -207,10 +207,10 @@ const Sobre = ({ weedding }) => {
         {/* <img src={bubuDudu} alt="Bubu y Dudu" className="bubu-dudu" /> */}
         <Nosotros
         key={animationKey} // Fuerza el reinicio de la animación
-        className="bubu-dudu"
+        className="nosotros-svg"
         viewBox="0 0 843 840"
       />
-      <img src={nosotrosjpg} alt="Nosotros" className="bubu-dudu nosotros-jpg" />
+      <img src={nosotrosjpg} alt="Nosotros" className="nosotros-jpg" />
         <div className="envelope closed" ref={envelopeRef}>
           <div className="envelope-flap">
             <div className="wax-seal back" onClick={() => !moving && handleClick("sobre")} />
