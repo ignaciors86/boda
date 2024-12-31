@@ -33,13 +33,15 @@ const animateOpacity = () => {
                 y: "100vh",
             })
             .to(".sobre", { opacity: 0, zIndex: 2, duration: 0, scale: 0.7 }, ">")
-            .to(".sobre", { opacity: 1, duration: duracion * 2, scale: 1, y: 0, ease: "ease",  }, ">")
-            .to(".nosotros-svg", { opacity: 0, duration: 5, }, "<")
-            .to(".nosotros-jpg, .nosotros-svg", {
+            .to(".sobre", { opacity: 1, duration: duracion * 8, scale: 1, y: 0, ease: "ease",  }, ">")
+            .to(".sobre .nosotros-svg", { opacity: 0, duration: 1, }, "<")
+            .to(".sobre .nosotros-jpg", {
                 rotateY: 90,
                 duration: duracion * 1,
                 ease: "ease-out",
-            }, ">")
+                delay: 5,
+            }, ">-=1")
+            .to(".sobre .nosotros-svg", { display: "none", visibility: "hidden", duration: 0, }, "<")
             .to(".envelope", {
                 rotateY: 0,
                 duration: duracion * 1,
