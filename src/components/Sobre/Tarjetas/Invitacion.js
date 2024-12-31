@@ -16,7 +16,7 @@ const Invitacion = () => {
       // Reinicia el SVG forzando un cambio en la clave
       setAnimationKey((prevKey) => prevKey + 1);
 
-      const svgElement = document.querySelector('.nosotros-svg');
+      const svgElement = document.querySelector('.invitacion .nosotros-svg');
       const paths = svgElement?.querySelectorAll('path');
 
       // Aumentar opacidad del SVG
@@ -32,10 +32,10 @@ const Invitacion = () => {
         // Animación del trazo
         setTimeout(() => {
           path.style.strokeDashoffset = 0; // Inicia la animación del trazo
-          gsap.to(".nosotros-jpg", { opacity: 1, duration: .5, delay: 1, 
+          gsap.to(".invitacion .nosotros-jpg", { opacity: 1, duration: .5, delay: 1, 
             onComplete: () => {
-              gsap.to(".nosotros-jpg", { opacity: 0, duration: 1 });
-              gsap.to(".nosotros-jpg-color", { opacity: 1, duration: 1 });
+              gsap.to(".invitacion .nosotros-jpg", { opacity: 0, duration: 1 });
+              gsap.to(".invitacion .nosotros-jpg-color", { opacity: 1, duration: 1 });
             }
           });
         }, 0);

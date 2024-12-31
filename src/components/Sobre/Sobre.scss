@@ -18,7 +18,7 @@
         position: absolute;
         width: 100%;
         height: 100%;
-        z-index: 1;
+        z-index: 0;
         bottom: -0.5%;
         // opacity: 0;
     }
@@ -29,25 +29,26 @@
         width: 100%;
         height: auto;
         object-fit: contain;
-        z-index: 0;
-  
+        z-index: 1;
+        animation: drawPath 5s ease forwards;  /* Reinicia la animación */
         path {
-          stroke: #000;
+            stroke: var(--darkGray);
           stroke-width: 2;
           fill: none;
           stroke-dasharray: 1000; /* Establecemos un valor grande por defecto */
           stroke-dashoffset: 1000;
-          animation: drawPath 2s ease forwards;
+          animation: drawPath 5s ease forwards;
         }
 
-            /* Animación para dibujar los trazos */
+       
+  
+    }
+         /* Animación para dibujar los trazos */
       @keyframes drawPath {
         to {
           stroke-dashoffset: 0;
         }
       }
-  
-    }
 }
 
 .envelope {

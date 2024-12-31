@@ -30,6 +30,8 @@ const Sobre = ({ weedding }) => {
   const envelopeRef = useRef(null); // Referencia para el sobre interactivo
   const escala = 1.1;
 
+  const [animationKey, setAnimationKey] = useState(1);
+
   const toggle = () => {
     const cards = document.querySelectorAll('.card');
     cards.forEach(card => {
@@ -173,15 +175,21 @@ const Sobre = ({ weedding }) => {
     };
   }, []);
 
+  const pasoPrevio = () => {
+    // startDrawing();
+    animateOpacity();
+    
+  }
+
   useEffect(() => {
     const canvas = document.getElementById('myCanvas');
     const root = document.getElementById('root');
 
-    canvas.addEventListener('mouseenter', animateOpacity);
-    canvas.addEventListener('mouseleave', animateOpacity);
+    canvas.addEventListener('mouseenter', pasoPrevio);
+    canvas.addEventListener('mouseleave', pasoPrevio);
 
     canvas.addEventListener('touchstart', (event) => {
-      animateOpacity();
+      pasoPrevio();
       event.preventDefault();
     });
 
@@ -199,18 +207,68 @@ const Sobre = ({ weedding }) => {
     }
   }, []);
 
+  const startDrawing = () => {
+    
+      // Reinicia el SVG forzando un cambio en la clave
+      setAnimationKey((animationKey) => animationKey + 1);
+
+        };
+
   renderItems();
-  const [animationKey, setAnimationKey] = useState(0);
+
+  useEffect(() => {
+    startDrawing()
+  }, []);
+
+  useEffect(() => {
+    const svgElement = document.querySelector('.sobre .nosotros-svg');
+    const paths = svgElement?.querySelectorAll('path');
+
+    // Aumentar opacidad del SVG
+    gsap.to(svgElement, { opacity: 1, duration: 1, delay: 1, });
+
+    paths?.forEach((path) => {
+      const pathLength = path.getTotalLength();
+      
+      // Configuración inicial del trazo
+      path.style.strokeDasharray = pathLength;
+      path.style.strokeDashoffset = pathLength;
+
+      // Animación del trazo
+      setTimeout(() => {
+        
+        gsap.to(".sobre .nosotros-svg", { 
+          opacity: 0, 
+          duration: 3, 
+          delay: 0,
+          repeat: false, 
+          onComplete: () => {
+            path.style.strokeDashoffset = 0; // Inicia la animación del trazo
+            const svgElement = document.querySelector(".sobre .nosotros-svg");
+            if (svgElement) {
+              gsap.set(svgElement, { display: "none", zIndex: -1, });
+              // svgElement?.remove(); // Elimina el elemento del DOM
+            }
+          }
+        });
+      }, 0);
+      
+    });
+  
+
+  }, [animationKey]);
+  
   return (
     <>
       <div className="sobre closed" ref={sobreRef}>
         {/* <img src={bubuDudu} alt="Bubu y Dudu" className="bubu-dudu" /> */}
+        <img src={nosotrosjpg} alt="Nosotros" className="nosotros-jpg" />
         <Nosotros
         key={animationKey} // Fuerza el reinicio de la animación
         className="nosotros-svg"
         viewBox="0 0 843 840"
       />
-      <img src={nosotrosjpg} alt="Nosotros" className="nosotros-jpg" />
+      
         <div className="envelope closed" ref={envelopeRef}>
           <div className="envelope-flap">
             <div className="wax-seal back" onClick={() => !moving && handleClick("sobre")} />

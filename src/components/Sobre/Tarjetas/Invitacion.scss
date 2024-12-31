@@ -28,7 +28,7 @@
         opacity: 0; /* Inicialmente oculto */
   
         path {
-          stroke: #000;
+          stroke: var(--darkGray);
           stroke-width: 2;
           fill: none;
           stroke-dasharray: 1000; /* Establecemos un valor grande por defecto */
