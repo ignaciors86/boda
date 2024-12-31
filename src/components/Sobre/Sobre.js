@@ -216,9 +216,9 @@ const Sobre = ({ weedding }) => {
 
   renderItems();
 
-  useEffect(() => {
-    startDrawing()
-  }, []);
+  // useEffect(() => {
+  //   startDrawing()
+  // }, []);
 
   useEffect(() => {
     const svgElement = document.querySelector('.sobre .nosotros-svg');
