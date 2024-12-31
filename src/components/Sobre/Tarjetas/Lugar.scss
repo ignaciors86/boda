@@ -45,7 +45,12 @@
             padding: 5%;
             box-sizing: border-box;
             transform: translateY(-50%);
+            
             // scale: 1.5;
+        }
+        em,a,h4{
+            font-size: calc(var(--size-unit)*.125);
+            line-height: calc(var(--size-unit)*.175);
         }
     }
     a{  
