@@ -177,7 +177,7 @@ const Timeline = () => {
     if (activeCard !== "horarios") {
       preloadedAudios.current[currentIndex]?.pause();
       preloadedAudios.current[0].pause()
-    }else{
+    } else {
       if (imagesLoaded && preloadedAudios.current[0] && !hasInteracted) {
         preloadedAudios.current[0]
           .play()
@@ -255,6 +255,23 @@ const Timeline = () => {
   useEffect(() => {
     hasInteracted && gsap.killTweensOf(sliderRef.current);
   }, [hasInteracted]);
+
+  // Agregar evento de interacción para iOS
+  const handleUserInteraction = () => {
+    if (!hasInteracted) {
+      setHasInteracted(true);
+      // Reproduce el audio
+      preloadedAudios.current[0].play().catch(err => console.error("Error al reproducir el audio inicial:", err));
+    }
+  };
+
+  // Envolver el slider en el evento de interacción
+  useEffect(() => {
+    sliderRef.current?.addEventListener('touchstart', handleUserInteraction);
+    return () => {
+      sliderRef.current?.removeEventListener('touchstart', handleUserInteraction);
+    };
+  }, []);
 
   if (!imagesLoaded) {
     return <Loading />;
