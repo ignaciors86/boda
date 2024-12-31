@@ -214,7 +214,7 @@ const Sobre = ({ weedding }) => {
 
         };
 
-  renderItems();
+  // renderItems();
 
   useEffect(() => {
     startDrawing()
