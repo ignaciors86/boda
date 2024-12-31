@@ -64,7 +64,7 @@ const Timeline = () => {
         .set(`.item${index}`, { opacity: 0 }, ">");
     });
   
-    activeCard === "horarios" && Draggable.create(sliderRef.current, {
+    Draggable.create(sliderRef.current, {
       type: 'x',
       bounds: progressBarRef.current,
       onDrag() {
@@ -217,8 +217,6 @@ const Timeline = () => {
   }, [activeCard]);
 
   useEffect(() => {
-    if(activeCard !== "horarios")
-        return;
     preloadImages(imageUrls)
       .then(() => setImagesLoaded(true))
       .catch(err => console.error(err));
@@ -228,13 +226,13 @@ const Timeline = () => {
       timelineRef.current.clear();
       preloadedAudios.current.forEach(audio => audio.pause());
     };
-  }, [activeCard]);
+  }, []);
 
   useEffect(() => {
-    if (imagesLoaded && activeCard === "horarios") {
+    if (imagesLoaded) {
       setupDraggableAndTimeline();
     }
-  }, [imagesLoaded, activeCard]);
+  }, [imagesLoaded]);
 
   useEffect(() => {
     if (currentIndex > -1 && navigator.vibrate) {
@@ -263,7 +261,7 @@ const Timeline = () => {
   }
 
   return (
-    activeCard === "horarios" && <>
+    <>
       <div className={`${MAINCLASS} seccion`}>
         <div className="elements">
           {renderItems(currentIndex)}
