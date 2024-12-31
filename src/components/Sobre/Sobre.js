@@ -216,9 +216,9 @@ const Sobre = ({ weedding }) => {
 
   renderItems();
 
-  // useEffect(() => {
-  //   startDrawing()
-  // }, []);
+  useEffect(() => {
+    startDrawing()
+  }, []);
 
   useEffect(() => {
     const svgElement = document.querySelector('.sobre .nosotros-svg');
@@ -263,11 +263,11 @@ const Sobre = ({ weedding }) => {
       <div className="sobre closed" ref={sobreRef}>
         {/* <img src={bubuDudu} alt="Bubu y Dudu" className="bubu-dudu" /> */}
         <img src={nosotrosjpg} alt="Nosotros" className="nosotros-jpg" />
-        {/* <Nosotros
+        <Nosotros
         key={animationKey} // Fuerza el reinicio de la animación
         className="nosotros-svg"
         viewBox="0 0 843 840"
-      /> */}
+      />
       
         <div className="envelope closed" ref={envelopeRef}>
           <div className="envelope-flap">
