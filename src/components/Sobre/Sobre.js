@@ -115,6 +115,7 @@ const Sobre = ({ weedding }) => {
     setCurrentAudioIndex((prevIndex) => {
       const nextIndex = (prevIndex + 1) % audioRefs.current.length; // Ciclo al primer audio después del último
       audioRefs.current[nextIndex].muted = isMuted;
+      audioRefs.current[nextIndex].preload = "auto";
       audioRefs.current[nextIndex].play().catch(error => {
         console.log('Error al reproducir el audio:', error);
       });
@@ -213,7 +214,7 @@ const Sobre = ({ weedding }) => {
 
   useEffect(() => {
     startDrawing()
-    renderItems();
+    // renderItems();
   }, []);
 
   useEffect(() => {
