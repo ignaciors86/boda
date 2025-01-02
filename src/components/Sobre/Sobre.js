@@ -15,7 +15,6 @@ import finisterre from './assets/audio/finisterre.mp3';
 import makeYourOwnKindOfMusic from './assets/audio/makeYourOwnKindOfMusic.mp3';
 import animateOpacity from '../functions';
 import { useDragContext } from '../DragContext';
-import { imageUrls, items, renderItems } from "../Timeline/items.js";
 import Espiral from 'components/Backgrounds/Espiral/Espiral';
 import Bubbles from 'components/Backgrounds/Bubles/Bubles';
 
@@ -217,8 +216,6 @@ const Sobre = ({ weedding }) => {
     setAnimationKey((animationKey) => animationKey + 1);
 
   };
-
-  // renderItems();
 
   useEffect(() => {
     startDrawing()
