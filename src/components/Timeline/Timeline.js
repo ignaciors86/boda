@@ -208,7 +208,7 @@ const Timeline = () => {
         sliderRef.current,
         { left: '95%', opacity: 0, },
         {
-          left: '12%',
+          left: '0%',
           duration: 1,
           opacity: 1,
           delay: .5,
