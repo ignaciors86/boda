@@ -21,7 +21,7 @@ const Timeline = () => {
   const [hasVibrated, setHasVibrated] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false); // Estado para controlar la interacción
   const audioRef = useRef(new Audio());
-  const [isMuted, setIsMuted] = useState(false); // Estado para controlar si el audio está muteado
+  const [isMuted, setIsMuted] = useState(true); // Estado para controlar si el audio está muteado
 
   // Nuevos: Pre-cargar audios
   const preloadedAudios = useRef(
@@ -207,13 +207,14 @@ const Timeline = () => {
   useEffect(() => {
     if (activeCard === "horarios") {
       setCurrentIndex(0);
-      preloadedAudios.current[currentIndex].pause()
-      preloadedAudios.current[0].play().catch(err => console.error("Error al reproducir el audio:", err));
+     
+      preloadedAudios?.current[currentIndex]?.pause()
+      preloadedAudios?.current[0].play().catch(err => console.error("Error al reproducir el audio:", err));
       gsap.fromTo(
         sliderRef.current,
-        { left: '95%', opacity: 0, },
+        { x: '95%', opacity: 0, },
         {
-          left: '0%',
+          x: '12%',
           duration: 1,
           opacity: 1,
           delay: .5,
@@ -243,7 +244,6 @@ const Timeline = () => {
   useEffect(() => {
     if (activeCard === "horarios") {
       setupDraggableAndTimeline();
-      isMuted && handleMuteToggle();
     }
   }, [activeCard]);
 
