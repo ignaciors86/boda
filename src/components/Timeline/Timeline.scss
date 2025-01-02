@@ -115,11 +115,21 @@
 
 .loading {
   display: flex;
-  justify-content: center;
+  justify-content: space-evenly;
   align-items: center;
-  height: 100vh;
+  height: 60%;
   font-size: 24px;
   color: #333;
+  flex-direction: column;
+  img{
+    width: 30%;
+  }
+  em{
+    color: white;
+  }
+  h2{
+    color: var(--greenSuperTransparent);
+  }
 }
 
 /* Definir la animación */
