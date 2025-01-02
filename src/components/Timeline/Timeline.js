@@ -233,9 +233,13 @@ const Timeline = () => {
       .then(() => setImagesLoaded(true))
       .catch(err => console.error(err));
 
-      setupDraggableAndTimeline();
-
   }, [preloadedAudios]);
+
+  useEffect(() => {
+    if (activeCard === "horarios") {
+      setupDraggableAndTimeline();
+    }
+  }, [activeCard]);
 
   useEffect(() => {
     if (currentIndex > -1 && navigator.vibrate) {
