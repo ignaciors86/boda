@@ -186,7 +186,7 @@ const Timeline = () => {
           .catch((err) => console.error("Error al reproducir el audio inicial:", err));
       }
     }
-  }, [currentIndex]);
+  }, [activeCard, currentIndex]);
 
   // Función para alternar el estado de mute
   const handleMuteToggle = () => {
