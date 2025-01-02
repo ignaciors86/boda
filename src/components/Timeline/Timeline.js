@@ -178,7 +178,6 @@ const Timeline = () => {
           audio.currentTime = 0; // Reinicia el audio
         }
       });
-
     }
 
     if (activeCard !== "horarios") {
@@ -207,7 +206,9 @@ const Timeline = () => {
   // NUEVO: Animación de movimiento de la bolita al inicio
   useEffect(() => {
     if (activeCard === "horarios") {
-      // setCurrentIndex(0);
+      setCurrentIndex(0);
+      preloadedAudios.current[currentIndex].pause()
+      preloadedAudios.current[0].play().catch(err => console.error("Error al reproducir el audio:", err));
       gsap.fromTo(
         sliderRef.current,
         { left: '95%', opacity: 0, },
@@ -240,8 +241,10 @@ const Timeline = () => {
   }, [preloadedAudios]);
 
   useEffect(() => {
-    imagesLoaded && setupDraggableAndTimeline();;
-  }, [imagesLoaded]);
+    if (activeCard === "horarios") {
+      setupDraggableAndTimeline();
+    }
+  }, [activeCard]);
 
   useEffect(() => {
     if (currentIndex > -1 && navigator.vibrate) {
@@ -265,7 +268,7 @@ const Timeline = () => {
     hasInteracted && gsap.killTweensOf(sliderRef.current);
   }, [hasInteracted]);
 
-  return <>
+  return activeCard === "horarios" && <>
     <div className={`${MAINCLASS} seccion`}>
       <Loading />
       <div className="elements">
