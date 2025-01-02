@@ -78,13 +78,6 @@ const Timeline = () => {
         const currentX = this.x;
         const progress = Math.min(Math.max(currentX / progressBarWidth, 0), 1);
 
-        const porcentaje = (progress * 100).toFixed(2);
-        console.log(`Posición en X: ${currentX.toFixed(2)}, Porcentaje del recorrido: ${porcentaje}%`);
-        if (porcentaje < 10) {
-          setCurrentIndex(0);
-          preloadedAudios.current[0].play().catch(err => console.error("Error al reproducir el audio:", err));
-        }
-
         timelineRef.current.progress(progress);
 
         const penultimateItemProgress = (totalItems - 2) / totalItems;
@@ -96,9 +89,17 @@ const Timeline = () => {
         }
 
         const newIndex = Math.floor(progress * totalItems);
-        if (newIndex !== currentIndex) {
+        if (newIndex !== currentIndex || porcentaje >= 10) {
           setCurrentIndex(newIndex);
           preloadedAudios.current[newIndex].play().catch(err => console.error("Error al reproducir el audio:", err));
+          setHasVibrated(false);
+        }
+        
+        const porcentaje = (progress * 100).toFixed(2);
+        console.log(`Posición en X: ${currentX.toFixed(2)}, Porcentaje del recorrido: ${porcentaje}%`);
+        if (porcentaje < 10) {
+          setCurrentIndex(0);
+          preloadedAudios.current[0].play().catch(err => console.error("Error al reproducir el audio:", err));
           setHasVibrated(false);
         }
 
