@@ -243,6 +243,7 @@ const Timeline = () => {
   useEffect(() => {
     if (activeCard === "horarios") {
       setupDraggableAndTimeline();
+      isMuted && handleMuteToggle();
     }
   }, [activeCard]);
 
