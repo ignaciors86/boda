@@ -16,10 +16,13 @@ import makeYourOwnKindOfMusic from './assets/audio/makeYourOwnKindOfMusic.mp3';
 import animateOpacity from '../functions';
 import { useDragContext } from '../DragContext';
 import { imageUrls, items, renderItems } from "../Timeline/items.js";
+import Espiral from 'components/Backgrounds/Espiral/Espiral';
+import Bubbles from 'components/Backgrounds/Bubles/Bubles';
 
 const Sobre = ({ weedding }) => {
   const { activeCard, setActiveCard } = useDragContext();
   const [moving, setMoving] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [isMuted, setIsMuted] = useState(true); // Estado para el mute del audio
   const [isMutedGeneral, setIsMutedGeneral] = useState(true); // Estado para el mute del audio
   const audioRefs = useRef([new Audio(makeYourOwnKindOfMusic), new Audio(finisterre)]); // Referencias para los audios
@@ -58,7 +61,7 @@ const Sobre = ({ weedding }) => {
     return angle * sign;
   };
 
-  const handleClick = () => {    
+  const handleClick = () => {
     setMoving(true);
     gsap.set(".wax-seal", { animation: "none" });
     const sobre = document.querySelector('.sobre.closed');
@@ -69,13 +72,14 @@ const Sobre = ({ weedding }) => {
       opacity: 0, duration: 1, delay: 0, ease: "ease",
       onComplete: () => {
         const espiral = document.querySelector('.espiral');
-        if (espiral) {
-          espiral.remove();
-        }
-        const prompt = document.querySelector('.prompt');
-        if (prompt) {
-          prompt.remove();
-        }
+        // if (espiral) {
+        //   espiral.remove();
+        // }
+        // const prompt = document.querySelector('.prompt');
+        // if (prompt) {
+        //   prompt.remove();
+        // }
+        setIsOpen(true);
       }
     });
 
@@ -178,7 +182,7 @@ const Sobre = ({ weedding }) => {
   const pasoPrevio = () => {
     // startDrawing();
     animateOpacity();
-    
+
   }
 
   useEffect(() => {
@@ -208,11 +212,11 @@ const Sobre = ({ weedding }) => {
   }, []);
 
   const startDrawing = () => {
-    
-      // Reinicia el SVG forzando un cambio en la clave
-      setAnimationKey((animationKey) => animationKey + 1);
 
-        };
+    // Reinicia el SVG forzando un cambio en la clave
+    setAnimationKey((animationKey) => animationKey + 1);
+
+  };
 
   // renderItems();
 
@@ -229,19 +233,19 @@ const Sobre = ({ weedding }) => {
 
     paths?.forEach((path) => {
       const pathLength = path.getTotalLength();
-      
+
       // Configuración inicial del trazo
       path.style.strokeDasharray = pathLength;
       path.style.strokeDashoffset = pathLength;
 
       // Animación del trazo
       setTimeout(() => {
-        
-        gsap.to(".sobre .nosotros-svg", { 
-          opacity: 0, 
-          duration: 3, 
+
+        gsap.to(".sobre .nosotros-svg", {
+          opacity: 0,
+          duration: 3,
           delay: 0,
-          repeat: false, 
+          repeat: false,
           onComplete: () => {
             path.style.strokeDashoffset = 0; // Inicia la animación del trazo
             const svgElement = document.querySelector(".sobre .nosotros-svg");
@@ -252,23 +256,25 @@ const Sobre = ({ weedding }) => {
           }
         });
       }, 0);
-      
+
     });
-  
+
 
   }, [animationKey]);
-  
+
   return (
     <>
+      <Bubbles /> 
+      { !isOpen && <Espiral weedding={weedding} /> }
       <div className="sobre closed" ref={sobreRef}>
         {/* <img src={bubuDudu} alt="Bubu y Dudu" className="bubu-dudu" /> */}
         <img src={nosotrosjpg} alt="Nosotros" className="nosotros-jpg" />
         <Nosotros
-        key={animationKey} // Fuerza el reinicio de la animación
-        className="nosotros-svg"
-        viewBox="0 0 843 840"
-      />
-      
+          key={animationKey} // Fuerza el reinicio de la animación
+          className="nosotros-svg"
+          viewBox="0 0 843 840"
+        />
+
         <div className="envelope closed" ref={envelopeRef}>
           <div className="envelope-flap">
             <div className="wax-seal back" onClick={() => !moving && handleClick("sobre")} />
@@ -285,7 +291,7 @@ const Sobre = ({ weedding }) => {
               <Card seccion="regalo" onClick={() => handleClick("regalo")} trasera={<Regalo />}>
                 <h2>Regalo</h2>
               </Card>
-              <Card seccion="ubicaciones" onClick={() => handleClick("ubicaciones")} trasera={<Lugar weedding={weedding}/>}>                <h2>Lugar</h2>
+              <Card seccion="ubicaciones" onClick={() => handleClick("ubicaciones")} trasera={<Lugar weedding={weedding} />}>                <h2>Lugar</h2>
               </Card>
               <Card seccion={"asistencia"} onClick={() => handleClick("asistencia")} trasera={<Asistencia />}>
                 <h2>Asistencia</h2>
