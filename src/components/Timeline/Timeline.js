@@ -88,19 +88,20 @@ const Timeline = () => {
           gsap.to(sliderRef.current, { scale: 1.3, y: "-0dvh", duration: 0.3 });
         }
 
-        const newIndex = Math.floor(progress * totalItems);
+        const newIndex = Math.floor(progress * totalItems > 0 ? progress * totalItems : 0);
         const porcentaje = (progress * 100).toFixed(2);
         
         console.log("newIndex");
         console.log(newIndex);
         console.log(`Posición en X: ${currentX.toFixed(2)}, Porcentaje del recorrido: ${porcentaje}%`);
-        if (porcentaje < 10) {
-          setCurrentIndex(0);
-          preloadedAudios.current[0].play().catch(err => console.error("Error al reproducir el audio:", err));
-          setHasVibrated(false);
-        }else{
+        if (porcentaje >= 10) {
           setCurrentIndex(newIndex);
           preloadedAudios.current[newIndex].play().catch(err => console.error("Error al reproducir el audio:", err));
+          setHasVibrated(false);
+          
+        }else{
+          setCurrentIndex(0);
+          preloadedAudios.current[0].play().catch(err => console.error("Error al reproducir el audio:", err));
           setHasVibrated(false);
         }
 
