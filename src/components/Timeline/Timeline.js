@@ -263,7 +263,7 @@ const Timeline = () => {
     hasInteracted && gsap.killTweensOf(sliderRef.current);
   }, [hasInteracted]);
 
-  return <>
+  return activeCard === "horarios" && <>
     <div className={`${MAINCLASS} seccion`}>
       <Loading />
       <div className="elements">
