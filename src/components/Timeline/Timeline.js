@@ -236,15 +236,17 @@ const Timeline = () => {
   }, [preloadedAudios]);
 
   useEffect(() => {
+    if (activeCard === "horarios") {
+      setupDraggableAndTimeline();
+    }
+  }, [activeCard]);
+
+  useEffect(() => {
     if (currentIndex > -1 && navigator.vibrate) {
       !hasVibrated && navigator?.vibrate(40);
       setHasVibrated(true);
     }
   }, [currentIndex]);
-  useEffect(() => {
-    imagesLoaded && setupDraggableAndTimeline();
-  }, [imagesLoaded]);
-
 
   useEffect(() => {
     !hasInteracted && gsap.timeline().to(sliderRef.current, {
