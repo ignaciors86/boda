@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import './Item.scss';
 import { useDragContext } from 'components/DragContext';
 
-const Item = ({ data, index }) => {
+const Item = ({ data, index, currentIndex }) => {
     // Estado para mantener la imagen actual visible
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const { activeCard } = useDragContext();
@@ -23,7 +23,7 @@ const Item = ({ data, index }) => {
             key={index} 
             // style={{ backgroundImage: `url(${data.images[currentImageIndex]})`,}} // Usar la imagen actual como fondo
             className={`item item${(parseInt(index) + 1)} ${data?.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`}
-         
+            style={{display: index === currentIndex ? "flex" : "none"}}
         >
             <div className="images-container"
                 style={{ backgroundImage: `url(${data.images[currentImageIndex]})` }} // Usar la imagen actual como fondo
