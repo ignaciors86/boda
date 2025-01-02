@@ -160,7 +160,7 @@ const Timeline = () => {
       setCurrentIndex(Math.floor(initialProgress * items.length));
     }
 
-    
+
   };
 
   // Reproduce el audio del ítem actual cuando se setea activeCard
@@ -221,22 +221,22 @@ const Timeline = () => {
   }, [activeCard]);
 
   useEffect(() => {
+
+    Draggable.get(sliderRef.current)?.kill();
+    timelineRef.current.clear();
+    preloadedAudios.current.forEach(audio => audio.pause());
+
     !imagesLoaded && preloadImages(imageUrls)
       .then(() => setImagesLoaded(true))
       .catch(err => console.error(err));
 
-    return () => {
-      Draggable.get(sliderRef.current)?.kill();
-      timelineRef.current.clear();
-      preloadedAudios.current.forEach(audio => audio.pause());
-    };
   }, [preloadedAudios]);
 
   useEffect(() => {
-    if (imagesLoaded) {
+    if (activeCard === "horarios") {
       setupDraggableAndTimeline();
     }
-  }, [imagesLoaded]);
+  }, [activeCard]);
 
   useEffect(() => {
     if (currentIndex > -1 && navigator.vibrate) {
@@ -260,10 +260,11 @@ const Timeline = () => {
     hasInteracted && gsap.killTweensOf(sliderRef.current);
   }, [hasInteracted]);
 
-  return !imagesLoaded ? <Loading /> : <>
+  return activeCard === "horarios" && <>
     <div className={`${MAINCLASS} seccion`}>
+      <Loading />
       <div className="elements">
-        { renderItems(currentIndex) }
+        {renderItems(currentIndex)}
       </div>
       <div className="progress-bar" ref={progressBarRef}>
         <Marquee speed={25} delay={0}>

@@ -49,7 +49,6 @@
         animation: drawPath 5s ease forwards;  /* Reinicia la animación */
       }
     }
-    .nosotros-jpg,
     .nosotros-jpg-color{
         position: absolute;
         left: 0;
@@ -61,6 +60,8 @@
         top: -5%;
         left: -6%;
         width: 111%;
+        opacity: 0;
+        height: auto;
     }
   }
   
