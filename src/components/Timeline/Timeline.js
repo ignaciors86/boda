@@ -89,13 +89,13 @@ const Timeline = () => {
         }
 
         const newIndex = Math.floor(progress * totalItems);
+        const porcentaje = (progress * 100).toFixed(2);
         if (newIndex !== currentIndex || porcentaje >= 10) {
           setCurrentIndex(newIndex);
           preloadedAudios.current[newIndex].play().catch(err => console.error("Error al reproducir el audio:", err));
           setHasVibrated(false);
         }
         
-        const porcentaje = (progress * 100).toFixed(2);
         console.log(`Posición en X: ${currentX.toFixed(2)}, Porcentaje del recorrido: ${porcentaje}%`);
         if (porcentaje < 10) {
           setCurrentIndex(0);
