@@ -8,9 +8,9 @@ import { useDragContext } from "components/DragContext";
 import gsap from "gsap";
 
 const Invitacion = () => {
-  const { activeCard } = useDragContext();
+  const { activeCard, setActiveCard } = useDragContext();
   const [animationKey, setAnimationKey] = useState(0);
-
+  const [visible, setVisible] = useState(true);
   useEffect(() => {
     if (activeCard === "invitacion") {
       // Reinicia el SVG forzando un cambio en la clave
@@ -24,7 +24,7 @@ const Invitacion = () => {
 
       paths?.forEach((path) => {
         const pathLength = path.getTotalLength();
-        
+
         // Configuración inicial del trazo
         path.style.strokeDasharray = pathLength;
         path.style.strokeDashoffset = pathLength;
@@ -32,7 +32,8 @@ const Invitacion = () => {
         // Animación del trazo
         setTimeout(() => {
           path.style.strokeDashoffset = 0; // Inicia la animación del trazo
-          gsap.to(".invitacion .nosotros-jpg", { opacity: 1, duration: .5, delay: 1, 
+          gsap.to(".invitacion .nosotros-jpg", {
+            opacity: 1, duration: .5, delay: 1,
             onComplete: () => {
               gsap.to(".invitacion .nosotros-jpg", { opacity: 0, duration: 1 });
               gsap.to(".invitacion .nosotros-jpg-color", { opacity: 1, duration: 1 });
@@ -43,17 +44,27 @@ const Invitacion = () => {
     }
   }, [activeCard]);
 
+  const ocultar = () => {
+    gsap.to(".seccion.invitacion", { 
+      opacity: 0, 
+      duration: .5, 
+      onComplete: () => { 
+        setVisible(!visible);
+        setActiveCard("sobre")
+      },
+    });
+  }
+
   return (
-    <div
-      className={`invitacion seccion ${
-        activeCard === "invitacion" ? "active" : ""
-      }`}
+    !(activeCard !== "invitacion") && <div
+      className={`invitacion seccion ${activeCard === "invitacion" ? "active" : ""
+        }`}
     >
-      { activeCard === "invitacion" && <Nosotros
+      <Nosotros
         key={animationKey} // Fuerza el reinicio de la animación
         className="nosotros-svg"
         viewBox="0 0 843 840"
-      /> }
+      />
       <img src={nosotrosjpg} alt="Nosotros" className="nosotros-jpg" />
       <img src={nosotrosjpgcolor} alt="Nosotros" className="nosotros-jpg-color" />
 
@@ -63,6 +74,7 @@ const Invitacion = () => {
         importante es que confirmes tu asistencia lo antes posible, pero antes,
         mira con calma las demás.
       </p>
+      <button className="back" onClick={ocultar} />
     </div>
   );
 };
