@@ -1,17 +1,21 @@
 import { useEffect, useState } from 'react';
 import './Item.scss';
+import { useDragContext } from 'components/DragContext';
 
 const Item = ({ data, index }) => {
     // Estado para mantener la imagen actual visible
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const { activeCard } = useDragContext();
 
     useEffect(() => {
         // Configurar un intervalo para cambiar la imagen visible cada cierto tiempo
-        const interval = setInterval(() => {
-            setCurrentImageIndex(prevIndex => (prevIndex + 1) % data.images.length);
-        }, index === 0 ? 500 : 2500);
-
-        return () => clearInterval(interval); // Limpiar el intervalo al desmontar
+        // if(activeCard === "horarios"){
+            const interval = setInterval(() => {
+                setCurrentImageIndex(prevIndex => (prevIndex + 1) % data.images.length);
+            }, index === 0 ? 500 : 2500);
+    
+            return () => clearInterval(interval); // Limpiar el intervalo al desmontar
+        // }
     }, [data.images.length]);
 
     return (
@@ -25,11 +29,11 @@ const Item = ({ data, index }) => {
                 style={{ backgroundImage: `url(${data.images[currentImageIndex]})` }} // Usar la imagen actual como fondo
             >
                 {data.images.map((image, imgIndex) => (
-                    (currentImageIndex === imgIndex || currentImageIndex === (imgIndex - 1)) && <img 
+                    <img 
                         key={imgIndex} 
                         src={image} 
                         alt={`Slide ${imgIndex}`} 
-                        className={`image ${currentImageIndex === imgIndex ? 'visible' : 'hidden'}`}
+                        className={`image ${(currentImageIndex === imgIndex) ? 'visible' : 'hidden'}`}
                     /> 
                 ))}
             </div>

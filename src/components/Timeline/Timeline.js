@@ -220,7 +220,7 @@ const Timeline = () => {
   }, [activeCard]);
 
   useEffect(() => {
-    preloadImages(imageUrls)
+    !imagesLoaded && preloadImages(imageUrls)
       .then(() => setImagesLoaded(true))
       .catch(err => console.error(err));
 
@@ -229,7 +229,7 @@ const Timeline = () => {
       timelineRef.current.clear();
       preloadedAudios.current.forEach(audio => audio.pause());
     };
-  }, []);
+  }, [preloadedAudios]);
 
   useEffect(() => {
     if (imagesLoaded) {
@@ -278,7 +278,7 @@ const Timeline = () => {
         </div>
       </div>
     </div>
-    <button className="back" onClick={() => setActiveCard("home")} />
+    <button className="back" onClick={() => setActiveCard("sobre")} />
     <button className={`back ${isMuted ? "play" : "stop"}`} onClick={handleMuteToggle} />
   </>
 
