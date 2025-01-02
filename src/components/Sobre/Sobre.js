@@ -71,13 +71,6 @@ const Sobre = ({ weedding }) => {
       opacity: 0, duration: 1, delay: 0, ease: "ease",
       onComplete: () => {
         const espiral = document.querySelector('.espiral');
-        // if (espiral) {
-        //   espiral.remove();
-        // }
-        // const prompt = document.querySelector('.prompt');
-        // if (prompt) {
-        //   prompt.remove();
-        // }
         setIsOpen(true);
       }
     });
