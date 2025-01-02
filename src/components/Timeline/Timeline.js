@@ -202,8 +202,8 @@ const Timeline = () => {
 
   // NUEVO: Animación de movimiento de la bolita al inicio
   useEffect(() => {
-    if (activeCard === "horarios" || activeCard === "sobre") {
-      setCurrentIndex(0);
+    if (activeCard === "horarios") {
+      // setCurrentIndex(0);
       gsap.fromTo(
         sliderRef.current,
         { left: '95%', opacity: 0, },
@@ -236,17 +236,15 @@ const Timeline = () => {
   }, [preloadedAudios]);
 
   useEffect(() => {
-    if (activeCard === "horarios") {
-      setupDraggableAndTimeline();
-    }
-  }, [activeCard]);
-
-  useEffect(() => {
     if (currentIndex > -1 && navigator.vibrate) {
       !hasVibrated && navigator?.vibrate(40);
       setHasVibrated(true);
     }
   }, [currentIndex]);
+  useEffect(() => {
+    imagesLoaded && setupDraggableAndTimeline();
+  }, [imagesLoaded]);
+
 
   useEffect(() => {
     !hasInteracted && gsap.timeline().to(sliderRef.current, {
