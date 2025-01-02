@@ -125,16 +125,16 @@ const Timeline = () => {
           // Cambia al segundo ítem si el slider se suelta a menos del 10% del recorrido
           setCurrentIndex(1);
           timelineRef.current.progress(0.1); // Resetea la línea de tiempo
-          audioRef.current.src = items[1].audio; // Cambia el audio al del item 1
-          audioRef.current.load(); // Carga el nuevo archivo
-          audioRef.current.play().catch(err => console.error("Error al reproducir el audio:", err));
+          // audioRef.current.src = items[1].audio; // Cambia el audio al del item 1
+          // audioRef.current.load(); // Carga el nuevo archivo
+          // audioRef.current.play().catch(err => console.error("Error al reproducir el audio:", err));
         } else if (this.x <= 0) {
           // Cambia al primer ítem si el slider está en la posición inicial
           setCurrentIndex(0);
           timelineRef.current.progress(0); // Resetea la línea de tiempo
-          audioRef.current.src = items[0].audio; // Cambia el audio al del primer ítem
-          audioRef.current.load(); // Carga el nuevo archivo
-          audioRef.current.play().catch(err => console.error("Error al reproducir el audio:", err));
+          // audioRef.current.src = items[0].audio; // Cambia el audio al del primer ítem
+          // audioRef.current.load(); // Carga el nuevo archivo
+          // audioRef.current.play().catch(err => console.error("Error al reproducir el audio:", err));
         } else {
           let ultimo = true;
           items.forEach((item, index) => {
@@ -263,7 +263,7 @@ const Timeline = () => {
     hasInteracted && gsap.killTweensOf(sliderRef.current);
   }, [hasInteracted]);
 
-  return <>
+  return activeCard === "horarios" && <>
     <div className={`${MAINCLASS} seccion`}>
       <Loading />
       <div className="elements">
