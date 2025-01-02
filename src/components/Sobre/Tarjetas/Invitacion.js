@@ -32,16 +32,15 @@ const Invitacion = () => {
 
         // Animación del trazo
         setTimeout(() => {
-          path.style.strokeDashoffset = 0; 
+    
           gsap.to(".invitacion .nosotros-jpg", {
-            opacity: 0, duration: .5, delay: 2,
+            opacity: 1, duration: 1, delay: 1.5,
             onComplete: () => {
-
+              path.style.strokeDashoffset = 0; 
               gsap.to(".invitacion .nosotros-svg", { opacity: 1, duration: 1, });
               gsap.to(".invitacion .nosotros-jpg", { opacity: 0, duration: 1 });
               gsap.to(".invitacion .nosotros-jpg-color", { opacity: 1, duration: 1 });
-              gsap.to(".invitacion p, .invitacion em", { opacity: 1, duration: 1, delay: 2, });
-      
+              gsap.to(".invitacion p, .invitacion em", { opacity: 1, duration: .5, delay: 1.5, });
             }
           });
         }, 0);
@@ -52,7 +51,7 @@ const Invitacion = () => {
   const ocultar = () => {
     gsap.to(".seccion.invitacion", {
       opacity: 0,
-      duration: .5,
+      duration: 1.5,
       onComplete: () => {
         setVisible(!visible);
         setActiveCard("sobre")
@@ -61,7 +60,9 @@ const Invitacion = () => {
   }
 
   return (
-    !(activeCard !== "invitacion") && <><Loading text={false}/><div
+    <>
+    <Loading text={false}/>
+    {!(activeCard !== "invitacion") && <><div
       className={`invitacion seccion ${activeCard === "invitacion" ? "active" : ""
         }`}
     >
@@ -87,7 +88,7 @@ const Invitacion = () => {
 
     </div>
       <button className="back" onClick={ocultar} />
-    </>
+    </>}</>
   );
 };
 
