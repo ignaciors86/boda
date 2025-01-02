@@ -1,8 +1,9 @@
 import gsap from "gsap";
 import ositos from "./assets/images/ositos-drag.png";
 import { useEffect } from "react";
+import "./Loading.scss";
 
-const Loading = () => {
+const Loading = ({text=true}) => {
 
     useEffect(() => {
         gsap.to(".loading img", {
@@ -14,9 +15,9 @@ const Loading = () => {
         });
     }, []);
     return <div className="loading">
-        <h2>Cargando... </h2>
+        { text && <h2>Cargando... </h2>}
         <img src={ositos} alt="Ositos cargando" />
-        <em>Si estás usando una red lenta, ten paciencia.</em>
+        { text && <em>Si estás usando una red lenta, ten paciencia.</em>}
     </div>
 }
 

@@ -3,6 +3,7 @@ import "./Asistencia.scss";
 import { useDragContext } from "../../DragContext";
 import OsitoBox from "../../OsitoBox/OsitoBox";
 import gsap from "gsap";
+import Loading from "components/Timeline/Loading";
 
 const Asistencia = () => {
     const { activeCard, setActiveCard, isOtherDraggableActive, setIsOtherDraggableActive } = useDragContext();
@@ -72,10 +73,12 @@ const Asistencia = () => {
     useEffect(() => {
         gsap.timeline()
             .to(".disclaimer", {zIndex: disclaimerVisible ? 3 : -1, duration: 0, }, 0)
-            .to(".disclaimer", {opacity: disclaimerVisible ? 1 : 0, duration: .5, }, ">");
-
+            .to(".disclaimer", {opacity: disclaimerVisible ? 1 : 0, duration: 1, }, ">");
+        
+        gsap.to(".seccion.asistencia .loading", {opacity: disclaimerVisible ? 1 : 0, });
         if (disclaimerVisible) {
             // Animación para la imagen
+            
             gsap.fromTo(".disclaimer .imagen", 
                 { opacity: 0 }, 
                 {
@@ -211,6 +214,7 @@ const Asistencia = () => {
                             >
                                 <h2>{!isButtonDisabled ? "¡Listo!" : "Listo"}</h2>
                             </button>
+                            <Loading text={false}/>
                             <div 
                                 className="disclaimer" 
                             >

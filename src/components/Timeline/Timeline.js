@@ -257,13 +257,12 @@ const Timeline = () => {
     hasInteracted && gsap.killTweensOf(sliderRef.current);
   }, [hasInteracted]);
 
-  if (!imagesLoaded) {
-    return <Loading />;
-  }
-
   return (
     <>
+  
       <div className={`${MAINCLASS} seccion`}>
+      <Loading />
+      { imagesLoaded && <>
         <div className="elements">
           {renderItems(currentIndex)}
         </div>
@@ -280,7 +279,8 @@ const Timeline = () => {
             />
           </div>
         </div>
-      </div>
+        </>}
+      </div> 
       <button className="back" onClick={() => setActiveCard("home")} />
       <button className={`back ${isMuted ? "play" : "stop"}`} onClick={handleMuteToggle} />
     </>

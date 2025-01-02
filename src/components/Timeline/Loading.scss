@@ -1,0 +1,25 @@
+.loading {
+  display: flex;
+  position: absolute;
+  left: 0;
+  height: 80%;
+  justify-content: space-evenly;
+  align-items: center;
+  font-size: 24px;
+  color: #333;
+  flex-direction: column;
+  width: 100%;
+  pointer-events: none;
+  em{
+    border: unset;
+  }
+  img{
+    width: 30%;
+  }
+  em{
+    color: white;
+  }
+  h2{
+    color: var(--greenSuperTransparent);
+  }
+}
