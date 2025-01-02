@@ -26,7 +26,7 @@ const Item = ({ data, index, currentIndex }) => {
             style={{display: (index === currentIndex || index === 0)  ? "flex" : "none"}}
         >
             <div className="images-container"
-                style={{ backgroundImage: `url(${data.images[currentImageIndex]})` }} // Usar la imagen actual como fondo
+                // style={{ backgroundImage: `url(${data.images[currentImageIndex]})` }} // Usar la imagen actual como fondo
             >
                 {data.images.map((image, imgIndex) => (
                     (currentImageIndex === (imgIndex)) && <img 
