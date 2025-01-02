@@ -158,6 +158,8 @@ const Timeline = () => {
       timelineRef.current.progress(initialProgress);
       setCurrentIndex(Math.floor(initialProgress * items.length));
     }
+
+    
   };
 
   // Reproduce el audio del ítem actual cuando se setea activeCard
@@ -184,7 +186,7 @@ const Timeline = () => {
           .catch((err) => console.error("Error al reproducir el audio inicial:", err));
       }
     }
-  }, [activeCard, currentIndex]);
+  }, [currentIndex]);
 
   // Función para alternar el estado de mute
   const handleMuteToggle = () => {
@@ -197,6 +199,7 @@ const Timeline = () => {
   // NUEVO: Animación de movimiento de la bolita al inicio
   useEffect(() => {
     if (activeCard === "horarios") {
+      setCurrentIndex(0);
       gsap.fromTo(
         sliderRef.current,
         { left: '95%', opacity: 0, },
