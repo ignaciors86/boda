@@ -17,6 +17,7 @@ import animateOpacity from '../functions';
 import { useDragContext } from '../DragContext';
 import Espiral from 'components/Backgrounds/Espiral/Espiral';
 import Bubbles from 'components/Backgrounds/Bubles/Bubles';
+import { renderItems } from 'components/Timeline/items';
 
 const Sobre = ({ weedding }) => {
   const { activeCard, setActiveCard } = useDragContext();
@@ -212,6 +213,7 @@ const Sobre = ({ weedding }) => {
 
   useEffect(() => {
     startDrawing()
+    renderItems();
   }, []);
 
   useEffect(() => {
