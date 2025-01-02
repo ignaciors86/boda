@@ -288,12 +288,12 @@
 
         
 
-                    &:not(.flipped):not(.unflipped){ 
-                        &:hover{
-                            scale: 1.2;
-                            // transition: calc(var(--duration-envelope)*.5) linear 0s !important;
-                        }
-                    }
+                    // &:not(.flipped):not(.unflipped){ 
+                    //     &:hover{
+                    //         // scale: 1.2;
+                    //         // transition: calc(var(--duration-envelope)*.5) linear 0s !important;
+                    //     }
+                    // }
 
                     &.flipped{
                         scale: 1 !important;
