@@ -49,11 +49,11 @@ const Invitacion = () => {
         activeCard === "invitacion" ? "active" : ""
       }`}
     >
-      <Nosotros
+      { activeCard === "invitacion" && <Nosotros
         key={animationKey} // Fuerza el reinicio de la animación
         className="nosotros-svg"
         viewBox="0 0 843 840"
-      />
+      /> }
       <img src={nosotrosjpg} alt="Nosotros" className="nosotros-jpg" />
       <img src={nosotrosjpgcolor} alt="Nosotros" className="nosotros-jpg-color" />
 

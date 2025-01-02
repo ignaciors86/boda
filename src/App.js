@@ -31,15 +31,10 @@ console.log(articles);
 
           <Routes>
             <Route path="/" element={<>
-               <Bubbles/>
-               
-              <Espiral/>
+
               <Sobre />
             </>} />
             <Route path="/weedding" element={<>
-               <Bubbles/>
-               
-              <Espiral weedding={true} />
               <Sobre weedding={true} />
             </>} />
             <Route path="/fondos-baile" element={<FondosBaile />} /> {/* Nueva ruta */}
