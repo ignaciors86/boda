@@ -98,6 +98,7 @@ const Timeline = () => {
         const newIndex = Math.floor(progress * totalItems);
         if (newIndex !== currentIndex) {
           setCurrentIndex(newIndex);
+          preloadedAudios.current[newIndex].play().catch(err => console.error("Error al reproducir el audio:", err));
           setHasVibrated(false);
         }
 
