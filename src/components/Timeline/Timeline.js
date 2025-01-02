@@ -63,7 +63,7 @@ const Timeline = () => {
         .to(`.item${index + 1}`, { opacity: 0, duration: transitionDuration }, nextItemOpacityStart)
         .set(`.item${index}`, { opacity: 0 }, ">");
     });
-
+    
     Draggable.create(sliderRef.current, {
       type: 'x',
       bounds: progressBarRef.current,
@@ -199,13 +199,13 @@ const Timeline = () => {
 
   // NUEVO: Animación de movimiento de la bolita al inicio
   useEffect(() => {
-    if (activeCard === "horarios") {
+    if (activeCard === "horarios" || activeCard === "sobre") {
       setCurrentIndex(0);
       gsap.fromTo(
         sliderRef.current,
         { left: '95%', opacity: 0, },
         {
-          left: '0%',
+          left: '12%',
           duration: 1,
           opacity: 1,
           delay: .5,
