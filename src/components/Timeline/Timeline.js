@@ -28,6 +28,7 @@ const Timeline = () => {
     items.map((item) => {
       const audio = new Audio(item.audio);
       audio.preload = "auto";
+      audio.muted = isMuted;
       audio.loop = true; // Configurar loop para todos los audios
       return audio;
     })
@@ -239,10 +240,8 @@ const Timeline = () => {
   }, [preloadedAudios]);
 
   useEffect(() => {
-    if (activeCard === "horarios") {
-      setupDraggableAndTimeline();
-    }
-  }, [activeCard]);
+    imagesLoaded && setupDraggableAndTimeline();;
+  }, [imagesLoaded]);
 
   useEffect(() => {
     if (currentIndex > -1 && navigator.vibrate) {
@@ -266,7 +265,7 @@ const Timeline = () => {
     hasInteracted && gsap.killTweensOf(sliderRef.current);
   }, [hasInteracted]);
 
-  return activeCard === "horarios" && <>
+  return <>
     <div className={`${MAINCLASS} seccion`}>
       <Loading />
       <div className="elements">
