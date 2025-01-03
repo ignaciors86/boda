@@ -34,7 +34,7 @@ const animateOpacity = (callback) => {
                 y: "100vh",
             })
             .to(".sobre", { opacity: 0, zIndex: 2, duration: 0, scale: 0.7 }, ">")
-            .to(".sobre", { opacity: 1, duration: duracion * 8, scale: 1, y: 0, ease: "ease", }, ">")
+            .to(".sobre", { opacity: 1, duration: duracion * 3, scale: 1, y: 0, ease: "ease", }, ">")
             .to(".sobre .nosotros-svg", {
                 opacity: 1, 
                 duration: 5,
@@ -47,7 +47,7 @@ const animateOpacity = (callback) => {
                 rotateY: 90,
                 duration: duracion * 1,
                 ease: "ease-out",
-                delay: 5,
+                delay: 0,
             }, ">-=1")
             // .to(".sobre .nosotros-svg", { display: "none", visibility: "hidden", duration: 0, }, "<")
             .to(".envelope", {
