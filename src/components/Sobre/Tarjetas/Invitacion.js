@@ -34,13 +34,12 @@ const Invitacion = () => {
         setTimeout(() => {
     
           gsap.to(".invitacion .nosotros-jpg", {
-            opacity: 1, duration: 1, delay: 1.5,
+            opacity: 0, duration: .5, delay: 1.5,
             onComplete: () => {
               path.style.strokeDashoffset = 0; 
               gsap.to(".invitacion .nosotros-svg", { opacity: 1, duration: 1, });
-              gsap.to(".invitacion .nosotros-jpg", { opacity: 0, duration: 1 });
-              gsap.to(".invitacion .nosotros-jpg-color", { opacity: 1, duration: 1 });
-              gsap.to(".invitacion p, .invitacion em", { opacity: 1, duration: .5, delay: 1.5, });
+              gsap.to(".invitacion .nosotros-jpg-color", { opacity: 1, duration: 1.5 });
+              gsap.to(".invitacion p, .invitacion em", { opacity: 1, duration: .5, delay: 1, });
             }
           });
         }, 0);
@@ -51,7 +50,7 @@ const Invitacion = () => {
   const ocultar = () => {
     gsap.to(".seccion.invitacion", {
       opacity: 0,
-      duration: 1,
+      duration: 0.25,
       onComplete: () => {
         setVisible(!visible);
         setActiveCard("sobre")
