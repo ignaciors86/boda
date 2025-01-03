@@ -189,6 +189,7 @@ em{
       mask-position: 50%;
       mask-size: 50%;
       mask-repeat: no-repeat;
+      // background: var(--greenTransparent);
       background: white;
       left: 0;
       top: 0;   
@@ -214,14 +215,16 @@ em{
 .play,
 .stop {
   left: calc(var(--size-unit) * 0.15);
+  // background: var(--orangeTransparent) !important;
+  // border: 2px solid var(--orange) !important;
 }
 .seccion ~ .back{
   right: calc(var(--size-unit)* .15);
   top: calc(var(--size-unit)* .15);
   width: calc(var(--size-unit)* .4);
   height: calc(var(--size-unit)* .4);
-  background: var(--orangeTransparent);
-  border: 2px solid var(--orange);
+  // border: 2px solid var(--greenTransparent);
+  background: var(--green);
   z-index: 2;
 }
 

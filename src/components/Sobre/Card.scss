@@ -50,9 +50,8 @@
   &-back {
     transform: rotateY(180deg);
     visibility: hidden;
-    background: var(--greenTransparent);
-    // opacity: 0;
-    /* Voltear la parte trasera inicialmente */
+    // background: var(--greenTransparent);
+    background: cadetblue;
   }
 
   /* Aplicar el giro al activar la clase flipped */
