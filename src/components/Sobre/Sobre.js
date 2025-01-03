@@ -175,7 +175,7 @@ const Sobre = ({ weedding }) => {
 
   const pasoPrevio = () => {
     // startDrawing();
-    animateOpacity();
+    animateOpacity(startDrawing);
 
   }
 
@@ -209,20 +209,11 @@ const Sobre = ({ weedding }) => {
 
     // Reinicia el SVG forzando un cambio en la clave
     setAnimationKey((animationKey) => animationKey + 1);
-
-  };
-
-  useEffect(() => {
-    startDrawing()
-    renderItems();
-  }, []);
-
-  useEffect(() => {
     const svgElement = document.querySelector('.sobre .nosotros-svg');
     const paths = svgElement?.querySelectorAll('path');
 
     // Aumentar opacidad del SVG
-    gsap.to(svgElement, { opacity: 1, duration: 1, delay: 1, });
+    // gsap.to(svgElement, { opacity: 1, duration: 1, delay: 1, });
 
     paths?.forEach((path) => {
       const pathLength = path.getTotalLength();
@@ -231,42 +222,32 @@ const Sobre = ({ weedding }) => {
       path.style.strokeDasharray = pathLength;
       path.style.strokeDashoffset = pathLength;
 
-      // Animación del trazo
-      setTimeout(() => {
-
-        gsap.to(".sobre .nosotros-svg", {
-          opacity: 0,
-          duration: 3,
-          delay: 0,
-          repeat: false,
-          onComplete: () => {
-            path.style.strokeDashoffset = 0; // Inicia la animación del trazo
-            const svgElement = document.querySelector(".sobre .nosotros-svg");
-            if (svgElement) {
-              gsap.set(svgElement, { display: "none", zIndex: -1, });
-              // svgElement?.remove(); // Elimina el elemento del DOM
-            }
-          }
-        });
-      }, 0);
-
+      path.style.strokeDashoffset = 0; // Inicia la animación del trazo
+      
     });
 
+  };
 
-  }, [animationKey]);
+  useEffect(() => {
+    renderItems();
+  }, []);
+
 
   return (
     <>
       <Bubbles /> 
       { !isOpen && <Espiral weedding={weedding} /> }
       <div className="sobre closed" ref={sobreRef}>
-        {/* <img src={bubuDudu} alt="Bubu y Dudu" className="bubu-dudu" /> */}
-        <img src={nosotrosjpg} alt="Nosotros" className="nosotros-jpg" />
-        <Nosotros
-          key={animationKey} // Fuerza el reinicio de la animación
-          className="nosotros-svg"
-          viewBox="0 0 843 840"
-        />
+        
+        <div alt="Nosotros" className="nosotros-jpg" >
+          <Nosotros
+            key={animationKey} // Fuerza el reinicio de la animación
+            className="nosotros-svg"
+            viewBox="0 0 843 840"
+          />
+          <img src={nosotrosjpg} alt="Nosotros" className="nosotros-jpg-imagen" />
+        </div>
+        
 
         <div className="envelope closed" ref={envelopeRef}>
           <div className="envelope-flap">

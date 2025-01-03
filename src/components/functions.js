@@ -3,7 +3,7 @@ import gsap from "gsap";
 let canAnimate = true; // Controla si la animación puede ejecutarse
 let animationRunning = false; // Controla si la animación ya está en curso
 
-const animateOpacity = () => {
+const animateOpacity = (callback) => {
     // Si la animación no está disponible o ya está en ejecución, evita ejecutar la función
     if (!canAnimate || animationRunning) {
         return;
@@ -21,7 +21,7 @@ const animateOpacity = () => {
 
     if (canAnimate) {
         tlInicial
-        
+
             .to("#myCanvas", {
                 opacity: 0.2,
                 duration: 1,
@@ -29,19 +29,27 @@ const animateOpacity = () => {
                 ease: "ease",
             }, 0)
             .to("body", { background: "cadetblue", duration: duracion * .5 }, ">")
-            .to(".prompt", { opacity: 0, duration: duracion, ease: "ease",
+            .to(".prompt", {
+                opacity: 0, duration: duracion, ease: "ease",
                 y: "100vh",
             })
             .to(".sobre", { opacity: 0, zIndex: 2, duration: 0, scale: 0.7 }, ">")
-            .to(".sobre", { opacity: 1, duration: duracion * 8, scale: 1, y: 0, ease: "ease",  }, ">")
-            .to(".sobre .nosotros-svg", { opacity: 0, duration: 1, }, "<")
+            .to(".sobre", { opacity: 1, duration: duracion * 8, scale: 1, y: 0, ease: "ease", }, ">")
+            .to(".sobre .nosotros-svg", {
+                opacity: 1, 
+                duration: 5,
+                onStart: callback
+            }, "<")
+            .to(".sobre .nosotros-svg", { opacity: 0, duration: .5, }, ">")
+            .to(".sobre .nosotros-jpg-imagen", { opacity: 1, duration: 2, }, ">")
+            
             .to(".sobre .nosotros-jpg", {
                 rotateY: 90,
                 duration: duracion * 1,
                 ease: "ease-out",
                 delay: 5,
             }, ">-=1")
-            .to(".sobre .nosotros-svg", { display: "none", visibility: "hidden", duration: 0, }, "<")
+            // .to(".sobre .nosotros-svg", { display: "none", visibility: "hidden", duration: 0, }, "<")
             .to(".envelope", {
                 rotateY: 0,
                 duration: duracion * 1,
