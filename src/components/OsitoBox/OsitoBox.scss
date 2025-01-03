@@ -44,7 +44,7 @@
         transform: rotateY(180deg);
         color: black !important;
         box-shadow: var(--box-shadow);
-  
+        text-shadow: none;
         &:before {
           content: '';
           background: #fff;
@@ -110,7 +110,7 @@
       width: calc(var(--size-unit)* 2.4);
       z-index: 5;
       bottom: 0;
-      left: 50%;
+      left: 47%;
       transform: translate(-50%, 0%);
       cursor: pointer;
       background-color: cadetblue;
