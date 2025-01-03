@@ -131,12 +131,14 @@ h4{
   line-height: calc(var(--size-unit)* 0.15);
 }
 p, a, span{
-  font-size: calc(var(--size-unit)* 0.15);
+  font-family: VCR;
+  font-size: calc(var(--size-unit)* 0.175);
   letter-spacing: -0.02px;
   line-height: calc(var(--size-unit)* 0.2);
   color: white;
   margin: 0;
   text-align: center;
+  text-shadow: 1px 1px 2px #000;
 }
 a{
   text-decoration: none;
@@ -154,6 +156,9 @@ em{
 }
 
 .volumen{
+  &:before{
+    background: white !important;
+  }
   &:after{
       content: "";
       position: absolute;
@@ -189,8 +194,8 @@ em{
       mask-position: 50%;
       mask-size: 50%;
       mask-repeat: no-repeat;
-      // background: var(--greenTransparent);
-      background: white;
+      background: var(--greenTransparent);
+      // background: black;
       left: 0;
       top: 0;   
   }
@@ -198,7 +203,7 @@ em{
 .play{
   &:before{
     mask-image: url("../assets/images/stop.png");
-    background: red;
+    background: red !important;
   }
 }
 .stop{
@@ -219,8 +224,8 @@ em{
   // border: 2px solid var(--orange) !important;
 }
 .seccion ~ .back{
-  right: calc(var(--size-unit)* .15);
-  top: calc(var(--size-unit)* .15);
+  right: calc(var(--size-unit)* .1);
+  top: calc(var(--size-unit)* .1);
   width: calc(var(--size-unit)* .4);
   height: calc(var(--size-unit)* .4);
   // border: 2px solid var(--greenTransparent);
@@ -229,11 +234,11 @@ em{
 }
 
 .seccion.timeline ~ .back{ 
-  top: calc(var(--size-unit)* 0.15);
+  top: calc(var(--size-unit)* 0.1);
   // right: calc(var(--size-unit) * 0.24);
   &.play,
   &.stop{
-    left: calc(var(--size-unit) * 0.15);
+    left: calc(var(--size-unit) * 0.1);
   }
 } 
 

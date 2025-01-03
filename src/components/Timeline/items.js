@@ -138,11 +138,11 @@ const items = [
               </span>
               <span>
               <b>23:00</b> 
-              - Tercer tiempo / Bus de vuelta
+              - Tercer tiempo / Bus
             </span>
           
             <h3>Domingo: </h3> 
-            <span><b>[undefined]:</b> desayuno y comida
+            <span><b>[NULL]:</b> desayuno y comida
           </span>
         </div>,
         images: [wingapo,paella,friends,barbacoa,bmo,urkel,tio,ojeteCalor,bebidas,masterchef,got,pikachu,karaoke,shameless,gilmoreBaile,ron,antidisturbios,carrie,trump,finyjakeresaca,emily,dean,antidisturbios2,kelso,scooby,bills,kitty,keVin,postBodaFriends,bitches,paquita,rick,bob,red,tina,theoffice,stop,tequila,karen,treatyourself,randy,shamelesstercerTiempo,allyoucaneat,nickcorbata,barneyted,finn,wilson,bojack,sexeducation,monkeyisland2,coctel,randyresaca,gargaras,esqueletos,monkeyisland,yoda,banquetegilmore,trump,ojeteCalor],
@@ -183,7 +183,7 @@ const items = [
     },
     {
         title: "Tercer Tiempo",
-        description: <p>A las 23:00 saldrá el bus de vuelta para la gente cansada y todos los menores que sea posible mandar a dormir. Tenemos el sitio para nosotros toda la noche, y no hay prisa.</p>,
+        description: <p>Bus de vuelta para la gente cansada y todos los menores. Tenemos el sitio para nosotros toda la noche, y no hay prisa.</p>,
         images: [tercerTiempo,busVuelta,nickcorbata,scooby,shamelesstercerTiempo, red, yoda, ojeteCalor,finn,esqueletos],
         audio: samantha,
     },

@@ -7,7 +7,7 @@
       padding: 0;
       position: relative;
       
-      p, em {
+      p, em, h2 {
         background: rgba(95, 158, 160, 0.8);
         width: 100%;
         padding: calc(var(--size-unit) * 0.06) calc(var(--size-unit) * 0.2);
@@ -18,6 +18,9 @@
         opacity: 0;
       }
   
+      h2{
+        color: transparent;
+      }
       .nosotros-svg {
         position: absolute;
         top: -5%;

@@ -12,6 +12,7 @@ import Invitacion from './Tarjetas/Invitacion';
 import gsap from 'gsap';
 import Asistencia from './Tarjetas/Asistencia';
 import finisterre from './assets/audio/finisterre.mp3';
+import poetaHalley from "./assets/audio/poetaHalley.mp3";
 import makeYourOwnKindOfMusic from './assets/audio/makeYourOwnKindOfMusic.mp3';
 import animateOpacity from '../functions';
 import { useDragContext } from '../DragContext';
@@ -25,7 +26,7 @@ const Sobre = ({ weedding }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMuted, setIsMuted] = useState(true); // Estado para el mute del audio
   const [isMutedGeneral, setIsMutedGeneral] = useState(true); // Estado para el mute del audio
-  const audioRefs = useRef([new Audio(makeYourOwnKindOfMusic), new Audio(finisterre)]); // Referencias para los audios
+  const audioRefs = useRef([new Audio(makeYourOwnKindOfMusic), new Audio(finisterre), new Audio(poetaHalley)]); // Referencias para los audios
   const [currentAudioIndex, setCurrentAudioIndex] = useState(0); // Índice del audio actual
   const tlSobre = useRef(gsap.timeline());
   const buttonRef = useRef(null); // Referencia para el botón del audio

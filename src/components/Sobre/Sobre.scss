@@ -190,7 +190,7 @@
             }
 
             &.regalo {
-                width: calc(var(--size-unit)* 2.5);
+                width: calc(var(--size-unit)* 2.9);
                 height: calc(var(--size-unit)* 2.9);
                 transform: rotateZ(51deg);
             }
@@ -512,13 +512,13 @@
                         &.flipped {
                             @media (orientation: portrait) {
                                 top: calc(var(--size-unit)* -0.3);
-                                left: calc(var(--size-unit)* -0.1);
+                                left: calc(var(--size-unit)* -0.35);
                                 rotate: -2deg !important;
                             }
 
                             @media (orientation: landscape) {
-                                top: calc(var(--size-unit)* 0.7);
-                                left: calc(var(--size-unit)* 0.3);
+                                top: calc(var(--size-unit)* -0);
+                                left: calc(var(--size-unit)* -.0);
                                 rotate: 33deg !important;
                             }
                         }

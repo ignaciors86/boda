@@ -37,9 +37,13 @@ const Invitacion = () => {
             opacity: 0, duration: .5, delay: 1.5,
             onComplete: () => {
               path.style.strokeDashoffset = 0; 
-              gsap.to(".invitacion .nosotros-svg", { opacity: 1, duration: 1, });
-              gsap.to(".invitacion .nosotros-jpg-color", { opacity: 1, duration: 1.5 });
-              gsap.to(".invitacion p, .invitacion em", { opacity: 1, duration: .5, delay: 1, });
+              const tlCaretos = gsap.timeline();
+              const duration = .2 ;
+              tlCaretos.to(".invitacion .nosotros-svg", { opacity: 1, duration: duration*2, })
+                .to(".invitacion .nosotros-jpg-color", { opacity: 1, duration: duration*3 }, "<")
+                .to(".invitacion h2", { opacity: 1, duration: duration*1, })
+                .to(".invitacion h2", { duration: duration*3, color: "white", }, ">")
+                .to(".invitacion p, .invitacion em", { opacity: 1, duration: duration*1, delay: duration*1, });
             }
           });
         }, 0);
@@ -50,7 +54,7 @@ const Invitacion = () => {
   const ocultar = () => {
     gsap.to(".seccion.invitacion", {
       opacity: 0,
-      duration: 0.25,
+      duration: .5,
       onComplete: () => {
         setVisible(!visible);
         setActiveCard("sobre")
@@ -73,16 +77,12 @@ const Invitacion = () => {
       <img src={nosotrosjpg} alt="Nosotros" className="nosotros-jpg" />
       <img src={nosotrosjpgcolor} alt="Nosotros" className="nosotros-jpg-color" />
 
-      <p>
       <h2>
-        Queremos invitarte a nuestra boda. No sabemos si será la del año o no, pero sí que queremos que estés.
+        Nos casamos. Nos casamos muy fuerte, y te queremos allí.
       </h2>
-      </p>
       
       <em>
-        En cada tarjeta tienes información relevante para ese día. Lo más
-        importante es que confirmes tu asistencia lo antes posible, pero antes,
-        mira con calma las demás.
+        En cada tarjeta tienes información relevante para ese día. Si tienes alguna duda, no dudes en preguntar.
       </em>
 
     </div>
