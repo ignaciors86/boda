@@ -51,7 +51,7 @@ const Invitacion = () => {
   const ocultar = () => {
     gsap.to(".seccion.invitacion", {
       opacity: 0,
-      duration: 1.5,
+      duration: 1,
       onComplete: () => {
         setVisible(!visible);
         setActiveCard("sobre")

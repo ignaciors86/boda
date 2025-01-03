@@ -261,7 +261,7 @@ const Timeline = () => {
     <>
   
       <div className={`${MAINCLASS} seccion`}>
-      <Loading />
+      <Loading text={false} />
       { imagesLoaded && <>
         <div className="elements">
           {renderItems(currentIndex)}
