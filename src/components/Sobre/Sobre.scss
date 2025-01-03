@@ -1,5 +1,4 @@
-
-.sobre{
+.sobre {
     width: auto;
     display: flex;
     align-items: center;
@@ -11,17 +10,28 @@
     margin-top: calc(var(--size-unit)* -1.5);
     opacity: 0;
     z-index: -1;
-    svg{
+
+    svg {
         background: white;
     }
-    .nosotros-jpg{
+
+    .nosotros-jpg {
         position: absolute;
         width: 100%;
         height: 100%;
         z-index: 0;
         bottom: -0.5%;
         // opacity: 0;
+        .nosotros-jpg-imagen{
+            height: 100%;
+            width: auto;
+            text-align: center;
+            z-index: 1;
+            position: relative;
+            opacity: 0;
+        }
     }
+
     .nosotros-svg {
         position: absolute;
         top: 0%;
@@ -29,26 +39,27 @@
         width: 100%;
         height: auto;
         object-fit: contain;
-        z-index: 1;
-        animation: drawPath 5s ease forwards;  /* Reinicia la animación */
+        z-index: 0;
+        animation: drawPath 8s ease forwards;
+
+        /* Reinicia la animación */
         path {
             stroke: var(--darkGray);
-          stroke-width: 2;
-          fill: none;
-          stroke-dasharray: 1000; /* Establecemos un valor grande por defecto */
-          stroke-dashoffset: 1000;
-          animation: drawPath 5s ease forwards;
+            stroke-width: 2;
+            fill: none;
+            stroke-dasharray: 1000;
+            /* Establecemos un valor grande por defecto */
+            stroke-dashoffset: 1000;
+            animation: drawPath 8s ease forwards;
         }
-
-       
-  
     }
-         /* Animación para dibujar los trazos */
-      @keyframes drawPath {
+
+    /* Animación para dibujar los trazos */
+    @keyframes drawPath {
         to {
-          stroke-dashoffset: 0;
+            stroke-dashoffset: 0;
         }
-      }
+    }
 }
 
 .envelope {
@@ -61,6 +72,7 @@
     transition: calc(var(--duration-envelope)) ease calc(var(--duration-envelope) / 2);
     box-shadow: var(--box-shadow);
     transform: rotateY(90deg);
+
     &-flap {
         position: absolute;
         top: 0;
@@ -91,7 +103,8 @@
         transition: calc(var(--duration-envelope)) ease;
         z-index: 2;
     }
-    .nombre-invitado{
+
+    .nombre-invitado {
         position: absolute;
         bottom: 0;
         z-index: 1;
@@ -104,12 +117,14 @@
         height: calc(var(--size-unit)* 1.8);
         font-size: calc(var(--size-unit)* 0.7);
         color: var(--darkPurple);
-        em{
+
+        em {
             font-size: calc(var(--size-unit)* 0.5);
             font-style: normal;
             margin: 0 calc(var(--size-unit)* 0.05);
         }
     }
+
     &-body {
         position: absolute;
         bottom: 0;
@@ -132,43 +147,49 @@
 
     &-content {
         position: absolute;
-        bottom: 0; /* Cambiado para que esté en la parte inferior del sobre */
+        bottom: 0;
+        /* Cambiado para que esté en la parte inferior del sobre */
         left: 50%;
         width: 80%;
         height: 100%;
         display: flex;
         justify-content: center;
         align-items: center;
-        transform: translateY(calc(var(--size-unit) / -2)) translateX(calc(var(--size-unit)*1.2 / -1)) rotateX(-10deg); /* Inicialmente desplazado y girado */
+        transform: translateY(calc(var(--size-unit) / -2)) translateX(calc(var(--size-unit)*1.2 / -1)) rotateX(-10deg);
+        /* Inicialmente desplazado y girado */
         transition: calc(var(--duration-envelope)*2) ease-out calc(var(--duration-envelope)*1);
         z-index: 2;
-        
-        
+
+
         .card {
             transition: calc(var(--duration-envelope)* 2) ease 0s;
             z-index: 2;
             top: -50%;
             left: -3%;
-            &.invitacion{
+
+            &.invitacion {
                 width: calc(var(--size-unit)* 2.5);
                 height: calc(var(--size-unit)* 2.5);
                 top: -12%;
             }
-            
-            &.horarios{
+
+            &.horarios {
                 width: calc(var(--size-unit)* 3.3);
                 height: calc(var(--size-unit)* 4.5);
                 rotate: -2deg !important;
             }
-            &.asistencia{
+
+            &.asistencia {
                 width: calc(var(--size-unit)* 3);
                 height: calc(var(--size-unit)* 4.8);
             }
-            &.ubicaciones{
+
+            &.ubicaciones {
                 width: calc(var(--size-unit)* 3.2);
                 height: calc(var(--size-unit)* 4);
             }
-            &.regalo{
+
+            &.regalo {
                 width: calc(var(--size-unit)* 2.5);
                 height: calc(var(--size-unit)* 2.9);
                 transform: rotateZ(51deg);
@@ -192,9 +213,9 @@
         cursor: pointer;
         z-index: 3;
         opacity: 1 !important;
- 
-        &:before{
-            transition: calc(var(--duration-envelope)) ease calc(var(--duration-envelope)/2); 
+
+        &:before {
+            transition: calc(var(--duration-envelope)) ease calc(var(--duration-envelope)/2);
             // opacity: 0;
             background-color: var(--greenTransparent);
             mask-image: url('./assets/images/lacrado.png');
@@ -202,7 +223,8 @@
             mask-position: 50%;
             mask-repeat: no-repeat;
         }
-        &:after{
+
+        &:after {
             content: "";
             position: absolute;
             top: 20%;
@@ -212,29 +234,31 @@
             height: 60%;
             background: var(--orange);
             z-index: -1;
-            transition: calc(var(--duration-envelope) * .5) ease calc(var(--duration-envelope) * 3.5); 
+            transition: calc(var(--duration-envelope) * .5) ease calc(var(--duration-envelope) * 3.5);
         }
     }
 
-    &.closed{
-        .envelope{
-            &-content{
-                .card{
+    &.closed {
+        .envelope {
+            &-content {
+                .card {
+
                     // transition: calc(var(--duration-envelope)* 0) ease 0s;
-                    &:not(.invitacion){
+                    &:not(.invitacion) {
                         scale: .4;
-                    }  
+                    }
                 }
             }
         }
     }
-    &:not(.closed){
-        .envelope{
-            &-content{
-                .card{
-                    &:not(.invitacion){
+
+    &:not(.closed) {
+        .envelope {
+            &-content {
+                .card {
+                    &:not(.invitacion) {
                         scale: .4 !important;
-                    }  
+                    }
                 }
             }
         }
@@ -242,51 +266,60 @@
 
     &.open {
         transition: calc(var(--duration-envelope)) ease calc(var(--duration-envelope)*2);
+
         @media (orientation: portrait) {
             transform: translateY(calc(var(--size-unit) * 4)) rotateZ(-14deg) translateX(calc(var(--size-unit)*0.7)) !important;
         }
+
         @media (orientation: landscape) {
             transform: translateY(calc(var(--size-unit)* 6)) rotateZ(-54deg) translateX(calc(var(--size-unit)* 4.5)) !important;
         }
+
         .wax-seal {
             transform: translate(-50%, -50%) scale(1) !important;
             background-color: #76799d;
-            transition: calc(var(--duration-envelope)*.5) ease calc(var(--duration-envelope)*.5) !important; 
-            &:before{
+            transition: calc(var(--duration-envelope)*.5) ease calc(var(--duration-envelope)*.5) !important;
+
+            &:before {
                 opacity: 1;
-                transition: calc(var(--duration-envelope)) ease calc(var(--duration-envelope)); 
+                transition: calc(var(--duration-envelope)) ease calc(var(--duration-envelope));
             }
-            &:after{
+
+            &:after {
                 background: var(--greenTransparent);
-                transition: calc(var(--duration-envelope) * .5) ease calc(var(--duration-envelope) * .5); 
+                transition: calc(var(--duration-envelope) * .5) ease calc(var(--duration-envelope) * .5);
             }
         }
-        .envelope{
+
+        .envelope {
             &-flap {
                 transform: translateX(-50%) rotateX(180deg);
                 z-index: 1;
                 // transition: calc(var(--duration-envelope)*1) ease;
                 transition: calc(var(--duration-envelope)*3) ease calc(var(--duration-envelope)* 0);
             }
+
             &-content {
-                transform: translateY(calc(var(--size-unit)* -5)) rotateZ(3deg) translateX(calc(var(--size-unit)* -.6 )) rotateX(0deg) rotateZ(15deg);
+                transform: translateY(calc(var(--size-unit)* -5)) rotateZ(3deg) translateX(calc(var(--size-unit)* -.6)) rotateX(0deg) rotateZ(15deg);
                 transition: opacity 0s, transform calc(var(--duration-envelope)*3) ease calc(var(--duration-envelope)*1.2);
                 z-index: 3;
-                .card{   
+
+                .card {
                     opacity: 1;
                     transition: calc(var(--duration-card)*.5) ease 0s;
-                                // margin calc(var(--duration-card)*1) ease-out calc(var(--duration-card)*.5);
- 
-                    &:not(.invitacion){
+                    // margin calc(var(--duration-card)*1) ease-out calc(var(--duration-card)*.5);
+
+                    &:not(.invitacion) {
                         scale: .4 !important;
                     }
+
                     @media (orientation: landscape) {
                         margin-bottom: calc(var(--size-unit)* -1);
-                        margin-right: calc(var(--size-unit)* 4);                
+                        margin-right: calc(var(--size-unit)* 4);
                     }
 
 
-        
+
 
                     // &:not(.flipped):not(.unflipped){ 
                     //     &:hover{
@@ -295,92 +328,103 @@
                     //     }
                     // }
 
-                    &.flipped{
+                    &.flipped {
                         scale: 1 !important;
                     }
-                    
-                    &.flipped{
+
+                    &.flipped {
                         transition: calc(var(--duration-card)*1) linear 0s;
+
                         &-front,
                         &-back {
                             transition: 0s linear calc(var(--duration-card)*0.5), // Tiene que ser la mitad de la duración de la carta
                         }
                     }
 
-                    &.unflipped{
+                    &.unflipped {
                         transition: calc(var(--duration-card)*1) linear 0s;
+
                         &-front,
                         &-back {
                             transition: 0s linear calc(var(--duration-card)*0.5), // Tiene que ser la mitad de la duración de la carta
                         }
                     }
 
-                    &.invitacion{
+                    &.invitacion {
                         animation: shadowPulse 1s ease-in-out 0s infinite;
+
                         @media (orientation: landscape) {
                             left: calc(var(--size-unit)* 0.2);
                             top: calc(var(--size-unit)* -0.2);
                             rotate: 38deg !important;
                         }
+
                         @media (orientation: portrait) {
                             left: calc(var(--size-unit)* -0.2);
                             top: calc(var(--size-unit)* -.8);
                             rotate: 0deg !important;
                         }
-                        &:not(.flipped):not(.unflipped){
+
+                        &:not(.flipped):not(.unflipped) {
                             transition: calc(var(--duration-envelope)*1) ease-in calc(var(--duration-envelope)*2.6),
-                            // rotate calc(var(--duration-envelope)*.75) ease-out calc(var(--duration-envelope)*2.3);
+                                // rotate calc(var(--duration-envelope)*.75) ease-out calc(var(--duration-envelope)*2.3);
                         }
-                        &.flipped{
+
+                        &.flipped {
                             width: calc(var(--size-unit)* 3.43);
                             height: calc(var(--size-unit)* 3.43);
-     
+
                             @media (orientation: landscape) {
                                 left: calc(var(--size-unit)* -0.1);
                                 top: calc(var(--size-unit)* 0);
                                 rotate: 35deg !important;
                             }
+
                             @media (orientation: portrait) {
                                 left: calc(var(--size-unit)* -0.65);
                                 top: calc(var(--size-unit)* -.5);
                                 rotate: -4deg !important;
-                            }              
+                            }
                         }
                     }
 
 
-                    &.horarios{
-                        
+                    &.horarios {
+
                         @media (orientation: landscape) {
                             left: calc(var(--size-unit)* -1.7);
                             top: calc(var(--size-unit)* 1);
                             rotate: 16deg !important;
                         }
+
                         @media (orientation: portrait) {
                             left: calc(var(--size-unit)* -1.2);
                             top: calc(var(--size-unit)* 1.3);
                             rotate: -47deg !important;
                         }
-                        &:not(.flipped):not(.unflipped){
+
+                        &:not(.flipped):not(.unflipped) {
                             transition: calc(var(--duration-envelope)*1) ease-in calc(var(--duration-envelope)*2.6),
-                            rotate calc(var(--duration-envelope)*1) ease-out calc(var(--duration-envelope)*3),
-                            scale 0s ease 0s;
+                                rotate calc(var(--duration-envelope)*1) ease-out calc(var(--duration-envelope)*3),
+                                scale 0s ease 0s;
                         }
-                        
-                        &.flipped{
+
+                        &.flipped {
                             @media (orientation: landscape) {
                                 top: calc(var(--size-unit)* -0.4);
                                 left: calc(var(--size-unit)* -0.2);
                                 rotate: 34deg !important;
                             }
+
                             @media (orientation: portrait) {
                                 top: calc(var(--size-unit)* -0.4);
                                 left: calc(var(--size-unit)* -0.6);
-                                rotate: -2deg !important;    
+                                rotate: -2deg !important;
                             }
                         }
                     }
-                    &.asistencia{
+
+                    &.asistencia {
                         @media (orientation: portrait) {
                             top: calc(var(--size-unit)* 0);
                             left: calc(var(--size-unit)* -1.5);
@@ -397,16 +441,18 @@
                         // left: calc(var(--size-unit)* -1.5);
                         // rotate: -20deg !important;
 
-                        &:not(.flipped):not(.unflipped){
+                        &:not(.flipped):not(.unflipped) {
                             transition: calc(var(--duration-envelope)*1) linear calc(var(--duration-envelope)*2.3),
-                            rotate calc(var(--duration-envelope)*1) ease-out calc(var(--duration-envelope)*3);
+                                rotate calc(var(--duration-envelope)*1) ease-out calc(var(--duration-envelope)*3);
                         }
-                        &.flipped{
+
+                        &.flipped {
                             @media (orientation: portrait) {
                                 top: calc(var(--size-unit)* -0.7);
                                 left: calc(var(--size-unit)* -0.4);
                                 rotate: -5deg !important;
                             }
+
                             @media (orientation: landscape) {
                                 top: calc(var(--size-unit)* -0.4);
                                 left: calc(var(--size-unit)* -0.4);
@@ -415,21 +461,25 @@
 
                         }
                     }
-                    &.ubicaciones{
+
+                    &.ubicaciones {
                         top: calc(var(--size-unit)* 1.7);
                         left: calc(var(--size-unit)* 0.5);
                         rotate: 20deg !important;
-                        &:not(.flipped):not(.unflipped){
+
+                        &:not(.flipped):not(.unflipped) {
                             transition: calc(var(--duration-envelope)*1) linear calc(var(--duration-envelope)*3),
-                            rotate calc(var(--duration-envelope)*1) ease-out calc(var(--duration-envelope)*3.3);
+                                rotate calc(var(--duration-envelope)*1) ease-out calc(var(--duration-envelope)*3.3);
                         }
-                        &.flipped{
-                            
+
+                        &.flipped {
+
                             @media (orientation: portrait) {
                                 top: calc(var(--size-unit)* -.5);
                                 left: calc(var(--size-unit)* -0.55);
                                 rotate: -5deg !important;
                             }
+
                             @media (orientation: landscape) {
                                 top: calc(var(--size-unit)* 0);
                                 left: calc(var(--size-unit)* -0);
@@ -438,29 +488,34 @@
                             }
                         }
                     }
-                    &.regalo{
-                        
+
+                    &.regalo {
+
 
                         @media (orientation: landscape) {
                             left: calc(var(--size-unit)* 2);
                             top: calc(var(--size-unit)* 1.4);
                             rotate: 48deg !important;
                         }
+
                         @media (orientation: portrait) {
                             left: calc(var(--size-unit)* 0.8);
                             top: calc(var(--size-unit)* 0.6);
                             rotate: -40deg !important;
                         }
-                        &:not(.flipped):not(.unflipped){
+
+                        &:not(.flipped):not(.unflipped) {
                             transition: calc(var(--duration-envelope)*1) linear calc(var(--duration-envelope)*2.25),
-                            rotate calc(var(--duration-envelope)*1) ease-out calc(var(--duration-envelope)*2.7);
+                                rotate calc(var(--duration-envelope)*1) ease-out calc(var(--duration-envelope)*2.7);
                         }
-                        &.flipped{
+
+                        &.flipped {
                             @media (orientation: portrait) {
                                 top: calc(var(--size-unit)* -0.3);
                                 left: calc(var(--size-unit)* -0.1);
                                 rotate: -2deg !important;
                             }
+
                             @media (orientation: landscape) {
                                 top: calc(var(--size-unit)* 0.7);
                                 left: calc(var(--size-unit)* 0.3);
