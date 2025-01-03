@@ -40,7 +40,7 @@
         height: auto;
         object-fit: contain;
         z-index: 0;
-        animation: drawPath 8s ease forwards;
+        animation: drawPath 10s ease forwards;
 
         /* Reinicia la animación */
         path {
@@ -50,7 +50,7 @@
             stroke-dasharray: 1000;
             /* Establecemos un valor grande por defecto */
             stroke-dashoffset: 1000;
-            animation: drawPath 8s ease forwards;
+            animation: drawPath 10s ease forwards;
         }
     }
 
