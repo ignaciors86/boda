@@ -37,17 +37,18 @@ const animateOpacity = (callback) => {
             .to(".sobre", { opacity: 1, duration: duracion * 3, scale: 1, y: 0, ease: "ease", }, ">")
             .to(".sobre .nosotros-svg", {
                 opacity: 1, 
-                duration: 5,
+                duration: 3,
                 onStart: callback
             }, "<")
-            .to(".sobre .nosotros-svg", { opacity: 0, duration: .5, }, ">")
             .to(".sobre .nosotros-jpg-imagen", { opacity: 1, duration: 2, }, ">")
+            .to(".sobre .nosotros-svg", { opacity: 0, duration: .5, }, ">")
+            
             
             .to(".sobre .nosotros-jpg", {
                 rotateY: 90,
                 duration: duracion * 1,
                 ease: "ease-out",
-                delay: 0,
+                delay: 2,
             }, ">-=1")
             // .to(".sobre .nosotros-svg", { display: "none", visibility: "hidden", duration: 0, }, "<")
             .to(".envelope", {
