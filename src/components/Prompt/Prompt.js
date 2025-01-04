@@ -27,9 +27,11 @@ const Prompt = ({ weedding }) => {
         `Y si has llegado hasta aquí, espero que al menos hayas pulsado el botón para activar el audio`,
         `Podemos estar así todo el día...`,
         `Tooooooodo el día...`,
-        `Toooooooooooo`,
-        `ooooooooooooo\nooooooooooooo`,
-        `ooooooooooooo\nooooooooooooo`,
+        `Toooooooooo`,
+        `ooooooooooo
+        ooooooooooo`,
+        `ooooooooooo
+        ooooooooooo`,
         `ooooooooooooodo el día...`,
         `Esto puede durar un par de frases más, o podría aprovechar para trolearte cuanto quiera. Depende de ti.`,
         `Tú sabrás cuánto más quieres quedarte aquí`,

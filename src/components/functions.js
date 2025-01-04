@@ -23,23 +23,24 @@ const animateOpacity = (callback) => {
         tlInicial
 
             .to("#myCanvas", {
-                opacity: 0.2,
+                opacity: 0.7,
                 duration: 1,
                 delay: 0,
                 ease: "ease",
             }, 0)
             .to("body", { background: "cadetblue", duration: duracion * .5 }, ">")
+            .to(".sobre .nosotros-svg", {
+                opacity: 1, 
+                duration: 3,
+                onStart: callback
+            }, "<")
             .to(".prompt", {
                 opacity: 0, duration: duracion, ease: "ease",
                 y: "100vh",
             })
             .to(".sobre", { opacity: 0, zIndex: 2, duration: 0, scale: 0.7 }, ">")
             .to(".sobre", { opacity: 1, duration: duracion * 3, scale: 1, y: 0, ease: "ease", }, ">")
-            .to(".sobre .nosotros-svg", {
-                opacity: 1, 
-                duration: 3,
-                onStart: callback
-            }, "<")
+
             .to(".sobre .nosotros-jpg-imagen", { opacity: 1, duration: 2, }, ">")
             .to(".sobre .nosotros-svg", { opacity: 0, duration: .5, }, ">")
             

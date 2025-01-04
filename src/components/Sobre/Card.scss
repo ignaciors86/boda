@@ -9,7 +9,7 @@
   transition: transform calc(var(--duration-envelope) * 1) ease;
   /* Suavizar el giro */
   cursor: pointer;
-
+  border-radius: calc(var(--size-unit)* 0.1);
 
   &-front,
   &-back {
