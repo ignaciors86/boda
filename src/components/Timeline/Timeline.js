@@ -190,10 +190,14 @@ const Timeline = ({isMutedGeneral}) => {
   // Función para alternar el estado de mute
   const handleMuteToggle = () => {
     setIsMuted(!isMuted);
-    preloadedAudios.current.forEach(audio => {
-      audio.muted = !audio.muted;
-    });
+    
   };
+  
+  useEffect(() => {
+    preloadedAudios.current.forEach(audio => {
+      audio.muted = isMuted;
+    });
+  }, [isMuted]);
 
   // NUEVO: Animación de movimiento de la bolita al inicio
   useEffect(() => {
