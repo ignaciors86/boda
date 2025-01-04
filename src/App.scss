@@ -132,7 +132,7 @@ h4{
 }
 p, a, span{
   font-family: VCR;
-  font-size: calc(var(--size-unit)* 0.175);
+  font-size: calc(var(--size-unit)* 0.16);
   letter-spacing: -0.02px;
   line-height: calc(var(--size-unit)* 0.2);
   color: white;
@@ -147,7 +147,6 @@ a{
   }
 }
 em{
-  font-size: calc(var(--size-unit)* 0.175);
   letter-spacing: -0.02px;
   line-height: calc(var(--size-unit)* 0.2);
   display: flex;
