@@ -74,7 +74,7 @@ const Timeline = () => {
   };
 
   useEffect(() => {
-    activeCard === "horarios" && handleMuteToggle();
+    isMuted && activeCard === "horarios" && handleMuteToggle();
   }, [activeCard]);
 
   const handleSliderChange = (e) => {

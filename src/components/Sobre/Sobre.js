@@ -23,7 +23,7 @@ import { renderItems } from 'components/Timeline/items';
 const Sobre = ({ weedding }) => {
   const { activeCard, setActiveCard } = useDragContext();
   const [moving, setMoving] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(null);
   const [isMuted, setIsMuted] = useState(true); // Estado para el mute del audio
   const [isMutedGeneral, setIsMutedGeneral] = useState(true); // Estado para el mute del audio
   const audioRefs = useRef([new Audio(makeYourOwnKindOfMusic), new Audio(finisterre), new Audio(poetaHalley)]); // Referencias para los audios
@@ -54,6 +54,7 @@ const Sobre = ({ weedding }) => {
     envelope.classList.remove('closed');
     setActiveCard("sobre");
     setMoving(false);
+
   };
 
   const getRandomValues = () => {
@@ -64,20 +65,26 @@ const Sobre = ({ weedding }) => {
 
   const handleClick = () => {
     setMoving(true);
+
+    setIsOpen(!isOpen);
+
     gsap.set(".wax-seal", { animation: "none" });
     const sobre = document.querySelector('.sobre.closed');
     const duracion = getComputedStyle(document.documentElement).getPropertyValue('--duration').trim().replace('s', '');
+
 
     gsap.to(".bubbles", { opacity: 1, duration: 1, delay: 1, ease: "ease" });
     gsap.to(".espiral", {
       opacity: 0, duration: 1, delay: 0, ease: "ease",
       onComplete: () => {
         const espiral = document.querySelector('.espiral');
-        setIsOpen(true);
+
       }
     });
 
     if (sobre) {
+
+
       tlSobre.current.to(sobre, {
         scale: 1.05,
         rotate: () => getRandomValues(),
@@ -104,12 +111,15 @@ const Sobre = ({ weedding }) => {
 
     } else {
       toggle();
+
     }
   };
 
   const toggleMute = () => {
     setIsMuted(!isMuted); // Cambia el estado del mute
     setIsMutedGeneral(!isMutedGeneral); // Cambia el estado del mute
+
+    inicializar();
   };
 
   const playNextAudio = () => {
@@ -152,27 +162,43 @@ const Sobre = ({ weedding }) => {
       return;
     }
 
-    const waxSeal = document.querySelector('.wax-seal');
-    const sobre = document.querySelector('.sobre.closed');
-    const prompt = document.querySelector('.prompt');
-    if (waxSeal && sobre) {
-      gsap.killTweensOf(prompt);
-      sobre && gsap.to(prompt, {
+    // Obtenemos el elemento .sobre y sus límites
+    const sobre = document.querySelector('.sobre');
+    const rect = sobre.getBoundingClientRect();  // Obtiene las coordenadas del contenedor
+
+    // Verificamos si el evento ocurrió dentro del área de .sobre
+    const isInside =
+      event.clientX >= rect.left &&
+      event.clientX <= rect.right &&
+      event.clientY >= rect.top &&
+      event.clientY <= rect.bottom;
+
+    // Si el evento está dentro de .sobre, ejecutamos la lógica
+    if (isInside && isOpen === null) {
+      const prompt = document.querySelector('.prompt');
+
+      isOpen === null && gsap.to(prompt, {
         y: "100vh",
+        opacity: 0,
         duration: 3,
       });
+
     }
   };
 
   useEffect(() => {
-    window.addEventListener('mousemove', handleDrag);
-    window.addEventListener('touchmove', handleDrag);
+    const sobre = document.querySelector('.sobre');
+    // Añadimos los eventos para ratón y toque
+    sobre.addEventListener('mousemove', handleDrag);
+    sobre.addEventListener('touchmove', handleDrag);
 
     return () => {
-      window.removeEventListener('mousemove', handleDrag);
-      window.removeEventListener('touchmove', handleDrag);
+      // Limpiamos los eventos cuando el componente se desmonte
+      sobre.removeEventListener('mousemove', handleDrag);
+      sobre.removeEventListener('touchmove', handleDrag);
     };
   }, []);
+
 
   const pasoPrevio = () => {
     // startDrawing();
@@ -180,17 +206,24 @@ const Sobre = ({ weedding }) => {
 
   }
 
-  useEffect(() => {
+  const inicializar = () => {
     const canvas = document.getElementById('myCanvas');
-    const root = document.getElementById('root');
+    if (canvas) {
+      canvas.addEventListener('mouseenter', pasoPrevio);
+      canvas.addEventListener('mouseleave', pasoPrevio);
 
-    canvas.addEventListener('mouseenter', pasoPrevio);
-    canvas.addEventListener('mouseleave', pasoPrevio);
+      canvas.addEventListener('touchstart', (event) => {
+        pasoPrevio();
+        event.preventDefault();
+      });
+    }
+  }
 
-    canvas.addEventListener('touchstart', (event) => {
-      pasoPrevio();
-      event.preventDefault();
-    });
+  useEffect(() => {
+
+    setTimeout(() => {
+      inicializar();
+    }, 20000);
 
     const waxSeal = document.querySelector('.wax-seal');
     const sobre = document.querySelector('.sobre.closed');
@@ -224,7 +257,7 @@ const Sobre = ({ weedding }) => {
       path.style.strokeDashoffset = pathLength;
 
       path.style.strokeDashoffset = 0; // Inicia la animación del trazo
-      
+
     });
 
   };
@@ -242,14 +275,28 @@ const Sobre = ({ weedding }) => {
         });
       }
     };
-  
+
     document.addEventListener("visibilitychange", handleVisibilityChange);
-  
+
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [currentAudioIndex, isMuted]);
-  
+
+
+  useEffect(() => {
+    isOpen !== null && gsap.killTweensOf(".prompt");
+    const tlCierre = gsap.timeline();
+    isOpen !== null && tlCierre
+    .to(".prompt", { zIndex: 3,duration: 0,opacity: 0,}, 0)
+      .to("#myCanvas", {
+        opacity: isOpen ? 0.2 : 0.7,
+        duration: 5,
+        delay: 0,
+        ease: "ease",
+      }, ">")
+      .to(".prompt", { y: "0vh", duration: 1, opacity: 1,}, ">")
+  }, [isOpen]);
 
   useEffect(() => {
     renderItems();
@@ -257,16 +304,16 @@ const Sobre = ({ weedding }) => {
 
   return (
     <>
-      <Bubbles /> 
-      { !isOpen && <Espiral weedding={weedding} /> }
+      <Bubbles />
+      {!isOpen && <Espiral weedding={weedding} />}
       <div className="sobre closed" ref={sobreRef}>
-        
+
         <div alt="Nosotros" className="nosotros-jpg" >
-          { !isOpen && <Nosotros
+          {!isOpen && <Nosotros
             key={animationKey} // Fuerza el reinicio de la animación
             className="nosotros-svg"
             viewBox="0 0 843 840"
-          /> }
+          />}
           <img src={nosotrosjpg} alt="Nosotros" className="nosotros-jpg-imagen" />
         </div>
 
