@@ -230,6 +230,28 @@ const Sobre = ({ weedding }) => {
   };
 
   useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Pausar todos los audios cuando la ventana está oculta
+        audioRefs.current.forEach(audio => audio.pause());
+      } else {
+        // Reanudar el audio actual cuando la ventana es visible
+        audioRefs.current[currentAudioIndex].muted = isMuted;
+        audioRefs.current[currentAudioIndex].play().catch(error => {
+          console.log('Error al reanudar el audio:', error);
+        });
+      }
+    };
+  
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+  
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [currentAudioIndex, isMuted]);
+  
+
+  useEffect(() => {
     renderItems();
   }, []);
 

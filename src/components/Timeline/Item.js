@@ -23,22 +23,22 @@ const Item = ({ data, index, currentIndex }) => {
             key={index} 
             // style={{ backgroundImage: `url(${data.images[currentImageIndex]})`,}} // Usar la imagen actual como fondo
             className={`item item${(parseInt(index) + 1)} ${data?.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`}
-            style={{display: (index === currentIndex || index === 0)  ? "flex" : "none"}}
+            style={{display: (index === currentIndex)  ? "flex" : "none"}}
         >
-            { <div className="images-container"
+            { currentIndex === (index) && <div className="images-container"
                 // style={{ backgroundImage: `url(${data.images[currentImageIndex]})` }} // Usar la imagen actual como fondo
             >
                 {data.images.map((image, imgIndex) => (
-                    <>
+                    (imgIndex === currentImageIndex || imgIndex === (currentImageIndex+1) || imgIndex === 0) && <>
                         <img 
-                            key={imgIndex} 
+                            key={"item-image-"+imgIndex} 
                             src={image} 
                             alt={`Slide ${imgIndex}`} 
                             className={`image ${currentImageIndex === imgIndex ? "visible" : "hidden" } replica`}
                             loading="lazy" 
                         /> 
                         <img 
-                            key={imgIndex} 
+                            key={"item-image-"+imgIndex+"-replica"} 
                             src={image} 
                             alt={`Slide ${imgIndex}`} 
                             className={`image ${currentImageIndex === imgIndex ? "visible" : "hidden" }`}
