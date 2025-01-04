@@ -28,7 +28,7 @@
   }
 
   h3 {
-    margin-top: 2%;
+    margin-top: 5%;
     margin-bottom: 2%;
     color: var(--greenSuperTransparent);
     // background: linear-gradient(to bottom, transparent, var(--darkPurple));
@@ -99,8 +99,8 @@
       background-size: contain;
       cursor: pointer;
       border: none;
-      height: calc(var(--size-unit) * 0.5);
-      width: calc(var(--size-unit) * 0.5);
+      height: calc(var(--size-unit) * 0.6);
+      width: calc(var(--size-unit) * 0.6);
       // margin-top: calc(var(--size-unit) * -0.02);
       // margin-left: calc(var(--size-unit) * -0.25);
       border: calc(var(--size-unit) * 0.04) solid var(--purpleTransparent);

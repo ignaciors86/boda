@@ -73,6 +73,10 @@ const Timeline = () => {
     preloadedAudios.current.forEach((audio) => (audio.muted = !audio.muted));
   };
 
+  useEffect(() => {
+    activeCard === "horarios" && handleMuteToggle();
+  }, [activeCard]);
+
   const handleSliderChange = (e) => {
     setSliderValue(Number(e.target.value)); // Actualiza solo el valor del slider
   };
