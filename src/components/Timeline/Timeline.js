@@ -10,7 +10,7 @@ import Marquee from 'react-fast-marquee';
 
 gsap.registerPlugin(Draggable);
 
-const Timeline = () => {
+const Timeline = ({isMutedGeneral}) => {
   const MAINCLASS = "timeline";
   const { activeCard, setActiveCard } = useDragContext();
   const sliderRef = useRef(null);
@@ -28,7 +28,7 @@ const Timeline = () => {
     items.map((item) => {
       const audio = new Audio(item.audio);
       audio.preload = "auto";
-      audio.muted = isMuted;
+      // audio.muted = isMuted;
       audio.loop = true; // Configurar loop para todos los audios
       return audio;
     })
