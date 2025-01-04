@@ -6,7 +6,7 @@ import gsap from "gsap";
 import Loading from "components/Timeline/Loading";
 
 const Asistencia = () => {
-    const { activeCard, setActiveCard, isOtherDraggableActive, setIsOtherDraggableActive } = useDragContext();
+    const { setActiveCard } = useDragContext();
     const [confirmacion, setConfirmacion] = useState(true);
     const [formData, setFormData] = useState({
         nombre: "",

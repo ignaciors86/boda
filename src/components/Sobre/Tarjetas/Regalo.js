@@ -3,7 +3,7 @@ import regalo from "../assets/images/Gift_box_present-512.webp";
 import { useDragContext } from "components/DragContext";
 import AccountInput from "./Regalo/AccountInput";
 const Regalo = () => {
-    const { activeCard, setActiveCard, isOtherDraggableActive, setIsOtherDraggableActive } = useDragContext();
+    const { setActiveCard } = useDragContext();
     return (<>
         <div className="regalo seccion">
             <img src={regalo} alt="Imagen 1" />

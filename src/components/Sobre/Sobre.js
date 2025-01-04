@@ -233,7 +233,6 @@ const Sobre = ({ weedding }) => {
     renderItems();
   }, []);
 
-
   return (
     <>
       <Bubbles /> 
@@ -241,14 +240,13 @@ const Sobre = ({ weedding }) => {
       <div className="sobre closed" ref={sobreRef}>
         
         <div alt="Nosotros" className="nosotros-jpg" >
-          <Nosotros
+          { !isOpen && <Nosotros
             key={animationKey} // Fuerza el reinicio de la animación
             className="nosotros-svg"
             viewBox="0 0 843 840"
-          />
+          /> }
           <img src={nosotrosjpg} alt="Nosotros" className="nosotros-jpg-imagen" />
         </div>
-        
 
         <div className="envelope closed" ref={envelopeRef}>
           <div className="envelope-flap">

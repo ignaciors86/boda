@@ -175,6 +175,14 @@
     opacity: 0;
     margin: 0% auto;
     border-radius: 0;
+    &.replica{
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      opacity: 0.5;
+      filter: blur(10px);
+    }
   }
 
   .image.visible {

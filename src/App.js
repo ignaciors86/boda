@@ -3,8 +3,6 @@ import gsap from 'gsap';
 import Sobre from './components/Sobre/Sobre';
 import './App.scss';
 import { DragProvider } from './components/DragContext';
-import Espiral from './components/Backgrounds/Espiral/Espiral';
-import Bubbles from './components/Backgrounds/Bubles/Bubles';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import FondosBaile from './components/FondosBaile/FondosBaile'; // Importa tu nuevo componente
 
