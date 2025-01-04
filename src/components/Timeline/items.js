@@ -197,7 +197,7 @@ const items = [
 
 const renderItems = (currentIndex) => {
     return items.map((item, index) => {
-        return <Item data={item} index={index} key={"item" + index} currentIndex={currentIndex} />;
+        return currentIndex === index && <Item data={item} index={index} key={"item" + index} currentIndex={currentIndex} />;
     });
 };
 

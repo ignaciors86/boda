@@ -29,7 +29,7 @@ const Item = ({ data, index, currentIndex }) => {
                 style={{ backgroundImage: `url(${data.images[currentImageIndex]})` }} // Usar la imagen actual como fondo
             >
                 {data.images.map((image, imgIndex) => (
-                    (currentImageIndex === (imgIndex)) && <img 
+                    <img 
                         key={imgIndex} 
                         src={image} 
                         alt={`Slide ${imgIndex}`} 
