@@ -256,7 +256,7 @@ useEffect(() => {
 return (
   <>
     <div className={`${MAINCLASS} seccion`}
-      style={{ display: activeCard === "horarios" ? "flex" : "none"}}
+      // style={{ visibility: activeCard === "horarios" ? "visible" : "hidden"}}
     >
       <Loading text={false} />
       {imagesLoaded && <>
