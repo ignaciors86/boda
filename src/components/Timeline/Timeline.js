@@ -47,7 +47,7 @@ const Timeline = ({isMutedGeneral}) => {
 
   const setupDraggableAndTimeline = () => {
     Draggable.get(sliderRef.current)?.kill();
-  
+    
     const totalItems = items.length;
     const durationPerItem = 2;
     const transitionDuration = 0;
@@ -166,6 +166,7 @@ const Timeline = ({isMutedGeneral}) => {
     if (activeCard && preloadedAudios.current[currentIndex]) {
       preloadedAudios.current.forEach((audio, index) => {
         if (index === currentIndex) {
+          audio.muted = isMuted;
           audio.play().catch(err => console.error("Error al reproducir el audio:", err));
         } else {
           audio.pause();
@@ -192,7 +193,7 @@ const Timeline = ({isMutedGeneral}) => {
     setIsMuted(!isMuted);
     
   };
-  
+
   useEffect(() => {
     preloadedAudios.current.forEach(audio => {
       audio.muted = isMuted;
