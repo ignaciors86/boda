@@ -26,15 +26,25 @@ const Item = ({ data, index, currentIndex }) => {
             style={{display: (index === currentIndex || index === 0)  ? "flex" : "none"}}
         >
             { currentIndex === (index) && <div className="images-container"
-                style={{ backgroundImage: `url(${data.images[currentImageIndex]})` }} // Usar la imagen actual como fondo
+                // style={{ backgroundImage: `url(${data.images[currentImageIndex]})` }} // Usar la imagen actual como fondo
             >
                 {data.images.map((image, imgIndex) => (
-                    (currentImageIndex === (imgIndex)) && <img 
-                        key={imgIndex} 
-                        src={image} 
-                        alt={`Slide ${imgIndex}`} 
-                        className={`image visible`}
-                    /> 
+                    imgIndex === currentImageIndex && <>
+                        <img 
+                            key={imgIndex} 
+                            src={image} 
+                            alt={`Slide ${imgIndex}`} 
+                            className={`image visible replica`}
+                            loading="lazy" 
+                        /> 
+                        <img 
+                            key={imgIndex} 
+                            src={image} 
+                            alt={`Slide ${imgIndex}`} 
+                            className={`image visible`}
+                            loading="lazy" 
+                        /> 
+                    </>
                 ))}
             </div> }
             <div className="info">

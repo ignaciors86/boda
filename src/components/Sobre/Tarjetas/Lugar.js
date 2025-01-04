@@ -8,7 +8,7 @@ const Lugar = ({ weedding }) => {
     const url = "https://maps.app.goo.gl/whoswYpUbrrjaCkm7";
     const mapRef = useRef(null);
     const claimRefs = useRef([]); // Referencias para las etiquetas con clase .claim
-    const { activeCard, setActiveCard, isOtherDraggableActive, setIsOtherDraggableActive } = useDragContext();
+    const { activeCard, setActiveCard } = useDragContext();
     const duracion = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--duration').trim().replace('s', '')) * 10;
     const [visible, setVisible] = useState(true);
     useEffect(() => {
