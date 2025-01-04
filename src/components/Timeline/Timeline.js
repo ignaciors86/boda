@@ -21,7 +21,7 @@ const Timeline = () => {
   const [hasVibrated, setHasVibrated] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false); // Estado para controlar la interacción
   const audioRef = useRef(new Audio());
-  const [isMuted, setIsMuted] = useState(true); // Estado para controlar si el audio está muteado
+  const [isMuted, setIsMuted] = useState(false); // Estado para controlar si el audio está muteado
 
   // Nuevos: Pre-cargar audios
   const preloadedAudios = useRef(
