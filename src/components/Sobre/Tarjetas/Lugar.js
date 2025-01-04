@@ -212,7 +212,7 @@ const Lugar = ({ weedding }) => {
     }, [visible]);
 
     return (
-        <>
+        activeCard === "ubicaciones" && <>
             <div className="lugar seccion">
                 <div className="titulo">
                     <h4><h2>Villas de Pomar</h2></h4>

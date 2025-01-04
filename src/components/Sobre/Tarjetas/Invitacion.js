@@ -65,7 +65,7 @@ const Invitacion = () => {
   return (
     <>
     <Loading text={false}/>
-    {!(activeCard !== "invitacion") && <><div
+    {activeCard === "invitacion" && <><div
       className={`invitacion seccion ${activeCard === "invitacion" ? "active" : ""
         }`}
     >

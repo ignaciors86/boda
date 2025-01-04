@@ -255,7 +255,9 @@ useEffect(() => {
 
 return (
   <>
-    <div className={`${MAINCLASS} seccion`}>
+    <div className={`${MAINCLASS} seccion`}
+      style={{ display: activeCard === "horarios" ? "flex" : "none"}}
+    >
       <Loading text={false} />
       {imagesLoaded && <>
         <div className="elements">
