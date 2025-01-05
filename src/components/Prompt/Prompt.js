@@ -14,7 +14,7 @@ const Prompt = ({ weedding, option2=false, isOpen }) => {
         `"NO NOS CUENTES TU VIDA DE PROGRAMADOR VAGO", ok`,
         `Detén esta chapa arrastrando el dedo por la pantalla`,
         `Repito: Arrastra el dedo por la pantalla`,
-        `Porfa porfa please 😊`,
+        `Porfa porfa please`,
         `¿Porfa please recubierto de nata?`,
         `Que arrastres, te digo...`,
         `¿Qué te pasa?`,

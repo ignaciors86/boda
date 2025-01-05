@@ -4,7 +4,7 @@ import mapa from "./Lugar/map.webp";
 import "./Lugar.scss";
 import { useDragContext } from "../../DragContext";
 
-const Lugar = ({ weedding }) => {
+const Lugar = ({ weedding, hosteado }) => {
     const url = "https://maps.app.goo.gl/whoswYpUbrrjaCkm7";
     const mapRef = useRef(null);
     const claimRefs = useRef([]); // Referencias para las etiquetas con clase .claim
@@ -229,7 +229,7 @@ const Lugar = ({ weedding }) => {
 
 
                 <div className="claim alojamiento" ref={(el) => claimRefs.current[2] = el}>
-                    {weedding ?
+                    {hosteado ?
                         <p>Si estás leyendo esto, tú y tu +1 tenéis el alojamiento ya reservado en el lugar de la boda (las dos noches)</p>
                         : <p>Os recomendamos buscar casa rural cerca de la finca, pero solo está a unos 12km de la ciudad</p>
                     }
