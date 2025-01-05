@@ -104,7 +104,7 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
 
     const checkTL = gsap.timeline();
     checkTL
-      .to(indicatorRef.current, { duration: checkboxDuration, x: checked ? '269%' : 0, }, 0)
+      .to(indicatorRef.current, { duration: checkboxDuration, x: checked ? '329%' : 0, }, 0)
       .to(bgRef.current, { duration: checkboxDuration, backgroundColor: !checked ? 'var(--purpleTransparent)' : 'var(--darkGray)' }, "<")
       .to(yesTextRef.current, { duration: checkboxDuration, opacity: checked ? 0 : 1 }, "<")
       .to(noTextRef.current, { duration: checkboxDuration, opacity: checked ? 1 : 0 }, "<")

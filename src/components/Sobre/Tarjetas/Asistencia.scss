@@ -76,11 +76,12 @@
             width: 100%;
             border: 1px solid cadetblue;
             box-sizing: border-box;
-            padding: calc(var(--size-unit) * 0.1) calc(var(--size-unit) * 0.1);
-            border-radius: calc(var(--size-unit) * 0.03);
-            font-size: calc(var(--size-unit) * 0.15);
+            padding: calc(var(--size-unit)* 0.05) calc(var(--size-unit)* 0.06);
+            border-radius: calc(var(--size-unit)* 0.03);
+            font-size: calc(var(--size-unit)* 0.15);
+            line-height: calc(var(--size-unit)* 0.159);
             min-width: 60%;
-            font-family: 'arial';
+            font-family: "arial";
             outline: none;
             margin: 0;
             &:focus {
@@ -93,6 +94,7 @@
             resize: vertical;
             height: calc(var(--size-unit) * 0.75); 
             margin-top: calc(var(--size-unit) * 0.1);
+            font-family: VCR;
         }
     }
 
@@ -163,7 +165,7 @@
                         p{
                             width: 100%;
                             font-size: calc(var(--size-unit)* 0.13);
-                            line-height: calc(var(--size-unit)* 0.1);
+                            line-height: calc(var(--size-unit)* 0.13);
                             display: flex;
                             justify-content: flex-start;
                             text-align: left;
@@ -192,6 +194,7 @@
     }
     input[type="text"] {
         margin-bottom: calc(var(--size-unit) * 0.1);
+        font-family: VCR;
     }
     .switch {
         display: flex;
@@ -209,6 +212,7 @@
                 font-size: calc(var(--size-unit) * 0.14);
             }
         }
+
 
         input[type="checkbox"] {
             position: absolute;

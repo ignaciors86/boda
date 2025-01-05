@@ -216,31 +216,31 @@ const Lugar = ({ weedding }) => {
             <div className="lugar seccion">
                 <div className="titulo">
                     <h4><h2>Villas de Pomar</h2></h4>
-                    <em>(Pedrosillo el Ralo,&nbsp;<b>Salamanca</b>)</em>
+                    <p>(Pedrosillo el Ralo,&nbsp;<b>Salamanca</b>)</p>
                 </div>
 
                 <a className="imagen" href={url} target="_blank" rel="noopener noreferrer" ref={mapRef}>
                     <img src={mapa} alt="Mapa del lugar" />
-                    <em><h2>Cómo llegar</h2></em>
+                    <p><h2>Cómo llegar</h2></p>
                 </a>
                 <a target="_blank" href="https://maps.app.goo.gl/VcP5TumYHdV7XPSE9" className="claim bus" ref={(el) => claimRefs.current[1] = el}>
-                    <em><h4>El autobús saldrá a las 12:00 desde<br></br>El Corte Inglés</h4></em>
+                    <p><h4>El autobús saldrá a las 12:00 desde<br></br>El Corte Inglés</h4></p>
                 </a>
 
 
                 <div className="claim alojamiento" ref={(el) => claimRefs.current[2] = el}>
                     {weedding ?
-                        <em>Si estás leyendo esto, tú y tu +1 tenéis el alojamiento ya reservado en el lugar de la boda (las dos noches)</em>
-                        : <em>Os recomendamos buscar casa rural cerca de la finca, pero solo está a unos 12km de la ciudad</em>
+                        <p>Si estás leyendo esto, tú y tu +1 tenéis el alojamiento ya reservado en el lugar de la boda (las dos noches)</p>
+                        : <p>Os recomendamos buscar casa rural cerca de la finca, pero solo está a unos 12km de la ciudad</p>
                     }
                 </div>
 
                 <div className="claim piscina" ref={(el) => claimRefs.current[3] = el}>
-                    <em>Hay piscina</em>
+                    <p>Hay piscina</p>
                 </div>
 
                 <div className="claim perretes" ref={(el) => claimRefs.current[4] = el}>
-                    <em>Tu perrete es bienvenido (en caso de necesidad)</em>
+                    <p>Tu perrete es bienvenido (en caso de necesidad)</p>
                 </div>
             </div>
 
