@@ -78,7 +78,7 @@ const Invitacion = () => {
       <img src={nosotrosjpgcolor} alt="Nosotros" className="nosotros-jpg-color" />
 
       <h2>
-        Puede que hayas oído que nos casamos. Si no es así, ya lo sabes.
+        Nos casamos. Molaría que vengas
       </h2>
       
       <p>

@@ -100,8 +100,8 @@
       background-size: contain;
       cursor: pointer;
       border: none;
-      height: calc(var(--size-unit) * 0.6);
-      width: calc(var(--size-unit) * 0.6);
+      height: calc(var(--size-unit) * 0.55);
+      width: calc(var(--size-unit) * 0.55);
       // margin-top: calc(var(--size-unit) * -0.02);
       // margin-left: calc(var(--size-unit) * -0.25);
       border: calc(var(--size-unit) * 0.04) solid var(--purpleTransparent);
@@ -166,60 +166,59 @@
 
 
 
-/* Definir la animación */
+/* Definir la animación con distancias reducidas */
 @keyframes shadowPulse {
   0% {
-    box-shadow: 0 0 1.5dvh rgba(224, 3, 3, 0.8),
-      0 0 2dvh rgba(255, 140, 0, 0.8),
-      0 0 2.5dvh rgba(255, 237, 0, 0.8),
-      0 0 3dvh rgba(0, 128, 38, 0.8),
-      0 0 3.5dvh rgba(0, 77, 255, 0.8),
-      0 0 4dvh rgba(117, 7, 135, 0.8);
+    box-shadow: 0 0 0.75dvh rgba(224, 3, 3, 0.8),
+      0 0 1dvh rgba(255, 140, 0, 0.8),
+      0 0 1.25dvh rgba(255, 237, 0, 0.8),
+      0 0 1.5dvh rgba(0, 128, 38, 0.8),
+      0 0 1.75dvh rgba(0, 77, 255, 0.8),
+      0 0 2dvh rgba(117, 7, 135, 0.8);
   }
 
   20% {
-    box-shadow: 0 0 1.5dvh rgba(255, 140, 0, 0.8),
-      0 0 2dvh rgba(255, 237, 0, 0.8),
-      0 0 2.5dvh rgba(0, 128, 38, 0.8),
-      0 0 3dvh rgba(0, 77, 255, 0.8),
-      0 0 3.5dvh rgba(117, 7, 135, 0.8),
-      0 0 4dvh rgba(224, 3, 3, 0.8);
+    box-shadow: 0 0 0.75dvh rgba(255, 140, 0, 0.8),
+      0 0 1dvh rgba(255, 237, 0, 0.8),
+      0 0 1.25dvh rgba(0, 128, 38, 0.8),
+      0 0 1.5dvh rgba(0, 77, 255, 0.8),
+      0 0 1.75dvh rgba(117, 7, 135, 0.8),
+      0 0 2dvh rgba(224, 3, 3, 0.8);
   }
 
   40% {
-    box-shadow: 0 0 1.5dvh rgba(255, 237, 0, 0.8),
-      0 0 2dvh rgba(0, 128, 38, 0.8),
-      0 0 2.5dvh rgba(0, 77, 255, 0.8),
-      0 0 3dvh rgba(117, 7, 135, 0.8),
-      0 0 3.5dvh rgba(224, 3, 3, 0.8),
-      0 0 4dvh rgba(255, 140, 0, 0.8);
+    box-shadow: 0 0 0.75dvh rgba(255, 237, 0, 0.8),
+      0 0 1dvh rgba(0, 128, 38, 0.8),
+      0 0 1.25dvh rgba(0, 77, 255, 0.8),
+      0 0 1.5dvh rgba(117, 7, 135, 0.8),
+      0 0 1.75dvh rgba(224, 3, 3, 0.8),
+      0 0 2dvh rgba(255, 140, 0, 0.8);
   }
 
   60% {
-    box-shadow: 0 0 1.5dvh rgba(0, 128, 38, 0.8),
-      0 0 2dvh rgba(0, 77, 255, 0.8),
-      0 0 2.5dvh rgba(117, 7, 135, 0.8),
-      0 0 3dvh rgba(224, 3, 3, 0.8),
-      0 0 3.5dvh rgba(255, 140, 0, 0.8),
-      0 0 4dvh rgba(255, 237, 0, 0.8);
+    box-shadow: 0 0 0.75dvh rgba(0, 128, 38, 0.8),
+      0 0 1dvh rgba(0, 77, 255, 0.8),
+      0 0 1.25dvh rgba(117, 7, 135, 0.8),
+      0 0 1.5dvh rgba(224, 3, 3, 0.8),
+      0 0 1.75dvh rgba(255, 140, 0, 0.8),
+      0 0 2dvh rgba(255, 237, 0, 0.8);
   }
 
   80% {
-    box-shadow: 0 0 1.5dvh rgba(0, 77, 255, 0.8),
-      0 0 2dvh rgba(117, 7, 135, 0.8),
-      0 0 2.5dvh rgba(224, 3, 3, 0.8),
-      0 0 3dvh rgba(255, 140, 0, 0.8),
-      0 0 3.5dvh rgba(255, 237, 0, 0.8),
-      0 0 4dvh rgba(0, 128, 38, 0.8);
+    box-shadow: 0 0 0.75dvh rgba(0, 77, 255, 0.8),
+      0 0 1dvh rgba(117, 7, 135, 0.8),
+      0 0 1.25dvh rgba(224, 3, 3, 0.8),
+      0 0 1.5dvh rgba(255, 140, 0, 0.8),
+      0 0 1.75dvh rgba(255, 237, 0, 0.8),
+      0 0 2dvh rgba(0, 128, 38, 0.8);
   }
 
   100% {
-    box-shadow: 0 0 1.5dvh rgba(224, 3, 3, 0.8),
-      0 0 2dvh rgba(255, 140, 0, 0.8),
-      0 0 2.5dvh rgba(255, 237, 0, 0.8),
-      0 0 3dvh rgba(0, 128, 38, 0.8),
-      0 0 3.5dvh rgba(0, 77, 255, 0.8),
-      0 0 4dvh rgba(117, 7, 135, 0.8);
+    box-shadow: 0 0 0.75dvh rgba(224, 3, 3, 0.8),
+      0 0 1dvh rgba(255, 140, 0, 0.8),
+      0 0 1.25dvh rgba(255, 237, 0, 0.8),
+      0 0 1.5dvh rgba(0, 128, 38, 0.8),
+      0 0 1.75dvh rgba(0, 77, 255, 0.8),
+      0 0 2dvh rgba(117, 7, 135, 0.8);
   }
-
 }

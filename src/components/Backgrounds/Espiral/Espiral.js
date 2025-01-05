@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import "./Espiral.scss";
 import Prompt from "../../Prompt/Prompt";
 
-const Espiral = ({weedding}) => {
+const Espiral = ({weedding, option2, isOpen}) => {
   const [paused, setPaused] = useState(false);
 
   const toggleAnimation = () => {
@@ -38,7 +38,7 @@ const Espiral = ({weedding}) => {
         ))}
       </div>
 
-      <Prompt weedding={weedding} />
+      <Prompt weedding={weedding} option2={option2} isOpen={isOpen}/>
 
       {/* <div className="button-container">
         <button onClick={toggleAnimation}>
