@@ -3,7 +3,8 @@
     align-items: center;
     width: 100%;
     margin: auto;
-    position: relative;
+    position: absolute;
+    bottom: 3%;
 
 }
 
@@ -17,7 +18,7 @@
     outline: none;
     background-color: var(--green);
     height: calc(var(--size-unit)* 0.35);
-    font-size: calc(var(--size-unit)* 0.13);
+    font-size: calc(var(--size-unit)* 0.15);
     letter-spacing: 0;
     font-family: 'VCR';
     letter-spacing: 0;

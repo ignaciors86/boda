@@ -103,5 +103,9 @@
         margin-top: calc(var(--size-unit)* .1);
       }
     }
+    .Typewriter__cursor{
+      color: var(--orange);
+    }
+
   }
 }

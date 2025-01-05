@@ -7,6 +7,7 @@ import { ReactComponent as Nosotros } from '../assets/images/nosotros.svg'; // I
 import { useDragContext } from "components/DragContext";
 import gsap from "gsap";
 import Loading from "components/Timeline/Loading";
+import Typewriter from "typewriter-effect";
 
 const Invitacion = () => {
   const { activeCard, setActiveCard } = useDragContext();
@@ -43,7 +44,7 @@ const Invitacion = () => {
                 .to(".invitacion .nosotros-jpg-color", { opacity: 1, duration: duration*3 }, "<")
                 .to(".invitacion h2", { opacity: 1, duration: duration*1, })
                 .to(".invitacion h2", { duration: duration*3, color: "white", }, ">")
-                .to(".invitacion p, .invitacion em", { opacity: 1, duration: duration*1, delay: duration*1, });
+                .to(".invitacion p, .invitacion em", { opacity: 1, duration: duration*2, delay: duration*1, });
             }
           });
         }, 0);
@@ -56,11 +57,35 @@ const Invitacion = () => {
       opacity: 0,
       duration: .25,
       onComplete: () => {
-        setVisible(!visible);
+        setVisible(true);
         setActiveCard("sobre")
       },
     });
   }
+
+
+  useEffect(() => {
+    console.log(visible);
+  }, [visible]);
+  
+  const TypewriterContent = () => (
+    <Typewriter
+      onInit={(typewriter) => {
+        setTimeout(() => {
+          typewriter
+            .typeString(
+              "En cada tarjeta tienes información relevante para ese día. Si tienes alguna duda, no dudes en preguntar..."
+            )
+            .start();
+        }, 3000); // Retraso de 2 segundos antes de empezar a escribir
+      }}
+      options={{
+        autoStart: false, // Desactivar autoStart, ya que vamos a controlar manualmente el inicio
+        loop: false, // No repetir la animación
+        delay: 40, // Velocidad de escritura
+      }}
+    />
+  );
 
   return (
     <>
@@ -81,8 +106,9 @@ const Invitacion = () => {
         Nos casamos. Molaría que vengas
       </h2>
       
-      <p>
-        En cada tarjeta tienes información relevante para ese día. Si tienes alguna duda, no dudes en preguntar.
+      <p className="fijo">
+      {visible ? TypewriterContent() : null}
+       
       </p>
 
     </div>

@@ -17,7 +17,11 @@
         z-index: 1;
         opacity: 0;
       }
-  
+      p.fijo{
+        min-height: calc(var(--size-unit) * .9);
+        display: flex;
+      }
+
       h2{
         color: transparent;
       }

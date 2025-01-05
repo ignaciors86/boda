@@ -20,7 +20,7 @@ import Espiral from 'components/Backgrounds/Espiral/Espiral';
 import Bubbles from 'components/Backgrounds/Bubles/Bubles';
 import { renderItems } from 'components/Timeline/items';
 
-const Sobre = ({ weedding }) => {
+const Sobre = ({ weedding, hosteado }) => {
   const { activeCard, setActiveCard } = useDragContext();
   const [moving, setMoving] = useState(false);
   const [isOpen, setIsOpen] = useState(null);
@@ -335,7 +335,7 @@ const Sobre = ({ weedding }) => {
               <Card seccion="regalo" onClick={() => handleClick("regalo")} trasera={<Regalo />}>
                 <h2>Regalo</h2>
               </Card>
-              <Card seccion="ubicaciones" onClick={() => handleClick("ubicaciones")} trasera={<Lugar weedding={weedding} />}>                <h2>Lugar</h2>
+              <Card seccion="ubicaciones" onClick={() => handleClick("ubicaciones")} trasera={<Lugar weedding={weedding} hosteado={hosteado}/>}>                <h2>Lugar</h2>
               </Card>
               <Card seccion={"asistencia"} onClick={() => handleClick("asistencia")} trasera={<Asistencia />}>
                 <h2>Asistencia</h2>

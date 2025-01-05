@@ -9,24 +9,19 @@
             z-index: 0;
             opacity: .2;
         }
+        span{
+            font-size: calc(var(--size-unit)* 0.15);
+            line-height: calc(var(--size-unit)* 0.13);
+        }
         em{
-            font-style: normal;
-            padding: 5% 10% 0;
-            display: flex;
             z-index: 1;
             width: 100%;
-            // background-color: var(--darkGray);
             box-sizing: border-box;
-            margin-top: 20%;
-            color: white;
+            margin-top: 5%;
             font-style: normal;
             padding: 2% 5%;
             display: flex;
-            font-family: VCR;;
-            z-index: 1;
-            width: 100%;
-            box-sizing: border-box;
-            margin-top: 20%;
+            font-family: VCR;
             color: white;
             font-size: calc(var(--size-unit)* 0.15);
             line-height: calc(var(--size-unit)* 0.15);
