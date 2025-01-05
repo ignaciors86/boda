@@ -29,17 +29,19 @@ const animateOpacity = (callback) => {
                 ease: "ease",
             }, 0)
             .to("body", { background: "cadetblue", duration: duracion * .5 }, ">")
-            .to(".sobre .nosotros-svg", {
-                opacity: 1, 
-                duration: 3,
-                onStart: callback
-            }, "<")
             .to(".prompt", {
                 opacity: 0, duration: duracion, ease: "ease",
                 y: "100vh",
             })
-            .to(".sobre", { opacity: 0, zIndex: 2, duration: 0, scale: 0.7 }, ">")
-            .to(".sobre", { opacity: 1, duration: duracion * 3, scale: 1, y: 0, ease: "ease", }, ">")
+            
+            .to(".sobre", { opacity: 0, zIndex: 2, duration: 0, scale: .8 }, ">")
+            .to(".sobre", { opacity: 1, duration: duracion*5, scale: 1, y: 0, ease: "ease",  onStart: callback}, ">")
+            .to(".sobre .nosotros-svg", {
+                opacity: 1, 
+                duration: 3,
+               
+            }, "<")
+
 
             .to(".sobre .nosotros-jpg-imagen", { opacity: 1, duration: 2, }, ">")
             .to(".sobre .nosotros-svg", { opacity: 0, duration: .5, }, ">")

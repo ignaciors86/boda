@@ -12,7 +12,7 @@
     z-index: -1;
 
     svg {
-        background: white;
+        background: transparent;
     }
 
     .nosotros-jpg {
@@ -44,13 +44,13 @@
 
         /* Reinicia la animación */
         path {
-            stroke: var(--darkGray);
+            stroke: var(--darkGrayTransparent);
             stroke-width: 2;
             fill: none;
-            stroke-dasharray: 1000;
+            stroke-dasharray: 5000;
             /* Establecemos un valor grande por defecto */
-            stroke-dashoffset: 1000;
-            animation: drawPath 10s ease forwards;
+            stroke-dashoffset: 5000;
+            animation: drawPath 5s ease forwards;
         }
     }
 
@@ -67,15 +67,15 @@
     width: calc(var(--size-unit)* 3 - 1px);
     height: calc(var(--size-unit)* 3);
     perspective: calc(var(--size-unit)* 4);
-    border: 0px solid black;
-    background: darkgray;
+    border: 1px solid var(--darkGray);
+    background: var(--color-sobre-dentro);
     transition: calc(var(--duration-envelope)) ease calc(var(--duration-envelope) / 2);
     box-shadow: var(--box-shadow);
     transform: rotateY(90deg);
 
     &-flap {
         position: absolute;
-        top: 0;
+        top: -1px;
         left: 50%;
         width: 33.3333333333%;
         height: 0;
@@ -95,8 +95,8 @@
         width: calc(100% / 3);
         height: 0;
         overflow: hidden;
-        border-left: var(--size-unit) solid lightgray;
-        border-right: var(--size-unit) solid lightgray;
+        border-left: var(--size-unit) solid var(--color-sobre);
+        border-right: var(--size-unit) solid var(--color-sobre);
         border-top: var(--size-unit) solid transparent;
         transform-origin: top center;
         transform: translateX(-50%) rotateX(0deg);
@@ -139,7 +139,7 @@
             width: 100%;
             z-index: 5;
             height: 100%;
-            background: lightgray;
+            background: var(--color-sobre);
             position: absolute;
             bottom: 0;
         }
@@ -209,15 +209,14 @@
         border: 0px solid var(--greenTransparent);
         box-shadow: 0 0 10px rgba(53, 48, 48, 0.148);
         transform: translate(-50%, -50%);
-        // transition: calc(var(--duration-envelope)*.5) ease calc(var(--duration-envelope)*3.5); 
+        transition: calc(var(--duration-envelope)*.25) ease calc(var(--duration-envelope)*3.5);
         cursor: pointer;
         z-index: 3;
         opacity: 1 !important;
 
         &:before {
-            transition: calc(var(--duration-envelope)) ease calc(var(--duration-envelope)/2);
-            // opacity: 0;
-            background-color: var(--greenTransparent);
+            background-color: var(--orange);
+            transition: calc(var(--duration-envelope)*.25) ease calc(var(--duration-envelope)*3.5);
             mask-image: url('./assets/images/lacrado.png');
             mask-size: 100%;
             mask-position: 50%;
@@ -232,9 +231,12 @@
             border-radius: 50%;
             width: 60%;
             height: 60%;
-            background: var(--orange);
+            mask-image: url("../../../assets/images/close.png");
+            mask-position: center;
+            mask-size: 80%;
+            background: transparent;
             z-index: -1;
-            transition: calc(var(--duration-envelope) * .5) ease calc(var(--duration-envelope) * 3.5);
+            transition: calc(var(--duration-envelope)*.25) ease calc(var(--duration-envelope)*3.5);
         }
     }
 
@@ -277,17 +279,16 @@
 
         .wax-seal {
             transform: translate(-50%, -50%) scale(1) !important;
-            background-color: #76799d;
-            transition: calc(var(--duration-envelope)*.5) ease calc(var(--duration-envelope)*.5) !important;
-
+            transition: calc(var(--duration-envelope)*.25) ease calc(var(--duration-envelope)*.5);
+            background: cadetblue;
             &:before {
-                opacity: 1;
-                transition: calc(var(--duration-envelope)) ease calc(var(--duration-envelope));
+                transition: calc(var(--duration-envelope)*.25) ease calc(var(--duration-envelope)*.5);
+                background: transparent;
             }
 
             &:after {
-                background: var(--greenTransparent);
-                transition: calc(var(--duration-envelope) * .5) ease calc(var(--duration-envelope) * .5);
+                transition: calc(var(--duration-envelope)*.25) ease calc(var(--duration-envelope)*.5);
+                background: var(--orange);
             }
         }
 

@@ -9,7 +9,8 @@
   --darkPurple: #73558c;
   --orange: #ffa600;
   --orangeTransparent: #ffa600d2;
-
+  --color-sobre: white;
+  --color-sobre-dentro: var(--purpleTransparent);
   --duration: 1s;
   --duration-envelope: calc(var(--duration)*.75);
   --duration-card-seg: .6;
