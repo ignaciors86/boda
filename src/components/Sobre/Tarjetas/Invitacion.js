@@ -34,7 +34,7 @@ const Invitacion = () => {
         setTimeout(() => {
     
           gsap.to(".invitacion .nosotros-jpg", {
-            opacity: 0, duration: .5, delay: 1.5,
+            opacity: 0, duration: .5, delay: .5,
             onComplete: () => {
               path.style.strokeDashoffset = 0; 
               const tlCaretos = gsap.timeline();
@@ -54,7 +54,7 @@ const Invitacion = () => {
   const ocultar = () => {
     gsap.to(".seccion.invitacion", {
       opacity: 0,
-      duration: .5,
+      duration: .25,
       onComplete: () => {
         setVisible(!visible);
         setActiveCard("sobre")
@@ -78,12 +78,12 @@ const Invitacion = () => {
       <img src={nosotrosjpgcolor} alt="Nosotros" className="nosotros-jpg-color" />
 
       <h2>
-        Nos casamos. Nos casamos muy fuerte, y te queremos allí.
+        Puede que hayas oído que nos casamos. Si no es así, ya lo sabes.
       </h2>
       
-      <em>
+      <p>
         En cada tarjeta tienes información relevante para ese día. Si tienes alguna duda, no dudes en preguntar.
-      </em>
+      </p>
 
     </div>
       <button className="back" onClick={ocultar} />

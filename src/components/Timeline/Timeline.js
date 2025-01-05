@@ -136,7 +136,7 @@ const Timeline = () => {
         {imagesLoaded && (
           <>
             <div className="elements">{renderItems(currentIndex)}</div>
-            <Loading text={false} />
+            <Loading text={true} />
             <div className="progress-bar">
               <Marquee speed={25}>
                 <span>
