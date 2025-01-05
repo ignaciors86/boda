@@ -99,7 +99,8 @@ const Timeline = () => {
         preloadedAudios.current[currentIndex]?.play().catch(console.error);
       }
     };
-
+    const newDuration = currentIndex < 3 || currentIndex > 6 ? 3 : (8-currentIndex) * .1;
+    gsap.set(".progress-bar ", { animation: `shadowPulse ${newDuration}s ease-in-out infinite` });
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
