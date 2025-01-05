@@ -10,10 +10,6 @@ const Loading = ({ text = true }) => {
     // Referencia para almacenar la animación
     const animationRef = useRef(null);
     useEffect(() => {
-        // Matar la animación previa si existe
-        if (animationRef.current) {
-            animationRef.current.kill();
-        }
 
         // Crear una nueva animación y almacenarla
         animationRef.current = gsap.to(".loading img", {
@@ -23,7 +19,7 @@ const Loading = ({ text = true }) => {
             duration: 0.5,
             ease: "linear",
         });
-    }, [activeCard]);
+    }, []);
     return <div className="loading">
         {text && <h2>Cargando... </h2>}
         <img src={ositos} alt="Ositos cargando" />
