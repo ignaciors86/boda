@@ -10,7 +10,7 @@
   --orange: #ffa600;
   --orangeTransparent: #ffa600d2;
   --color-sobre: white;
-  --color-sobre-dentro: var(--purpleTransparent);
+  --color-sobre-dentro: var(--gray);
   --duration: 1s;
   --duration-envelope: calc(var(--duration)*.75);
   --duration-card-seg: .6;
@@ -111,7 +111,7 @@ h2, h3, h4{
   // color: var(--orange);
   color: white;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  font-family: "evelins";
+  font-family: "VCR";
   text-align: center;
   margin: 0;
   @media (orientation: portrait) {

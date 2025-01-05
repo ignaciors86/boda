@@ -37,7 +37,7 @@
         opacity: 0;
         border-radius: 50%;
         overflow: hidden;
-        em, a{
+        p, a{
             position: absolute;
             top: 50%;
             width: 100%;
@@ -48,7 +48,7 @@
             
             // scale: 1.5;
         }
-        em,a,h4{
+        p,a,h4{
             font-size: calc(var(--size-unit)*.125);
             line-height: calc(var(--size-unit)*.175);
         }
@@ -135,7 +135,7 @@
                 z-index: 0;
                 opacity: 25%;
             }
-            em{
+            p{
                 margin-top: -0%;
             }
         }
@@ -158,7 +158,7 @@
                 background-size: auto 130%;
                 background-position: 70% 50%;
             }
-            em{
+            p{
                 padding: 5% 10%;
             }
         }
@@ -185,7 +185,7 @@
                 mask-size: unset;
                 opacity: 1;
             }
-            em{
+            p{
                 // background: var(--greenTransparent);
             }
         }

@@ -228,7 +228,7 @@ const Asistencia = () => {
                                     onClick={() => handleShowDisclaimer(false)}
                                     disabled={isButtonDisabled}
                                 >
-                                    <h2>Necesito revisarlo</h2>
+                                    <h3>Necesito revisarlo</h3>
                                 </button>
                                 <button
                                     type="button"
