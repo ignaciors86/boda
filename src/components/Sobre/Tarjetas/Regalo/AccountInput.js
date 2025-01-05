@@ -18,7 +18,7 @@ const AccountInput = ({ }) => {
     }, [copied]);
 
     return (
-        <div className="account-input-container">
+        <div className="account-input-container" onClick={handleCopy}>
             <input
                 type="text"
                 value={accountNumber}
@@ -26,7 +26,7 @@ const AccountInput = ({ }) => {
                 className="account-input"
             />
             <button
-                onClick={handleCopy}
+                
                 className={`copy-button ${copied ? "copied" : ""}`}
                 aria-label="Copy to clipboard"
             >

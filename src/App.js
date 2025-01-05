@@ -35,6 +35,9 @@ console.log(articles);
             <Route path="/weedding" element={<>
               <Sobre weedding={true} />
             </>} />
+            <Route path="/weedding-y-camita" element={<>
+              <Sobre weedding={true} hosteado={true} />
+            </>} />
             <Route path="/fondos-baile" element={<FondosBaile />} /> {/* Nueva ruta */}
           </Routes>
         {/* </div> */}
