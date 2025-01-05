@@ -175,7 +175,7 @@ const Sobre = ({ weedding }) => {
 
     // Si el evento está dentro de .sobre, ejecutamos la lógica
     if (isInside && isOpen === null) {
-      const prompt = document.querySelector('.prompt');
+      const prompt = document.querySelector('.prompt.inicial');
 
       isOpen === null && gsap.to(prompt, {
         y: "100vh",
@@ -285,17 +285,18 @@ const Sobre = ({ weedding }) => {
 
 
   useEffect(() => {
-    isOpen !== null && gsap.killTweensOf(".prompt");
+    isOpen !== null && gsap.killTweensOf(".prompt.inicial");
     const tlCierre = gsap.timeline();
     isOpen !== null && tlCierre
-    .to(".prompt", { zIndex: 3,duration: 0,opacity: 0,}, 0)
+    .to(".prompt.final", { zIndex: 3,duration: 0,opacity: 0,}, 0)
       .to("#myCanvas", {
         opacity: isOpen ? 0.2 : 0.7,
         duration: 5,
         delay: 0,
         ease: "ease",
       }, ">")
-      .to(".prompt", { y: "0vh", duration: 1, opacity: 1,}, ">")
+      .to(".prompt.final", { y: "0vh", duration: 1, opacity: 1,}, "<")
+      console.log(isOpen)
   }, [isOpen]);
 
   useEffect(() => {
@@ -305,7 +306,8 @@ const Sobre = ({ weedding }) => {
   return (
     <>
       <Bubbles />
-      {!isOpen && <Espiral weedding={weedding} />}
+      {isOpen === null && <Espiral weedding={weedding} isOpen={isOpen} />}
+      {isOpen === false && <Espiral weedding={weedding} isOpen={isOpen} option2={true} />}
       <div className="sobre closed" ref={sobreRef}>
 
         <div alt="Nosotros" className="nosotros-jpg" >
