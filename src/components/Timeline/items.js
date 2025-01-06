@@ -142,7 +142,7 @@ const items = [
             </span>
           
             <h3>Domingo: </h3> 
-            <span><b>[NULL]:</b> desayuno y comida
+            <span><b>¿? :</b> desayuno y comida
           </span>
         </div>,
         images: [wingapo,paella,friends,barbacoa,bmo,urkel,tio,ojeteCalor,bebidas,masterchef,got,pikachu,karaoke,shameless,gilmoreBaile,ron,antidisturbios,carrie,trump,finyjakeresaca,emily,dean,antidisturbios2,kelso,scooby,bills,kitty,keVin,postBodaFriends,bitches,paquita,rick,bob,red,tina,theoffice,stop,tequila,karen,treatyourself,randy,shamelesstercerTiempo,allyoucaneat,nickcorbata,barneyted,finn,wilson,bojack,sexeducation,monkeyisland2,coctel,randyresaca,gargaras,esqueletos,monkeyisland,yoda,banquetegilmore,trump,ojeteCalor],

@@ -10,14 +10,13 @@
             opacity: .2;
         }
         span{
-            font-size: calc(var(--size-unit)* 0.15);
-            line-height: calc(var(--size-unit)* 0.13);
+            font-size: calc(var(--size-unit)* 0.20);
+            line-height: calc(var(--size-unit)* 0.16);
         }
         em{
             z-index: 1;
             width: 100%;
             box-sizing: border-box;
-            margin-top: 5%;
             font-style: normal;
             padding: 2% 5%;
             display: flex;
