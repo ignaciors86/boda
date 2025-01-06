@@ -41,6 +41,9 @@ console.log(articles);
             <Route path="/atajo" element={<>
               <Sobre atajo={true} />
             </>} />
+            <Route path="/prueba-tipo" element={<>
+              <Sobre atajo={true} tipo={true} />
+            </>} />
             <Route path="/fondos-baile" element={<FondosBaile />} /> {/* Nueva ruta */}
           </Routes>
         {/* </div> */}

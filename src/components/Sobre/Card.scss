@@ -101,6 +101,7 @@
         margin-top: 20%;
         position: relative;
         color: white;
+        font-weight: 700;
         &::before{
           content: "";
           position: absolute;
@@ -112,6 +113,11 @@
           z-index: -1;
           opacity: .75;
         }
+        strong{
+          margin-top: 1%;
+          font-size: calc(var(--size-unit)*.4);
+          line-height: calc(var(--size-unit)*.4);
+        }
       }
   
       .lugar {
@@ -120,6 +126,7 @@
         bottom: 5%;
         font-size: calc(var(--size-unit)*.2);
         color: var(--darkPurple);
+        font-weight: 700;
       }
     }
 
