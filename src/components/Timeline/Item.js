@@ -30,6 +30,7 @@ const Item = ({ data, index, currentIndex }) => {
             >
                 {data.images.map((image, imgIndex) => (
                     (imgIndex === currentImageIndex || imgIndex === (currentImageIndex+1) || imgIndex === 0) && <>
+                    
                         <img 
                             key={"item-image-"+imgIndex} 
                             src={image} 

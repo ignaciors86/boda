@@ -165,7 +165,7 @@ const items = [
     },
     {
         title: "Cóctel",
-        description: <p>Ponte hasta el culo, por favor.</p>,
+        description: <p>Ponte hasta el culo, por favor. Sobre todo si eres madrileño, que este finde comerás embutido bueno...</p>,
         images: [treatyourself, bills,karen, cartman,tina,maleducado,allyoucaneat, gargaras],
         audio: kanka  ,
     },

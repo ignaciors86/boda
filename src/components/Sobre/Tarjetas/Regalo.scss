@@ -21,7 +21,7 @@
             font-style: normal;
             padding: 2% 5%;
             display: flex;
-            font-family: VCR;
+            font-family: var(--tipo), monospace;
             color: white;
             font-size: calc(var(--size-unit)* 0.15);
             line-height: calc(var(--size-unit)* 0.15);
@@ -32,6 +32,7 @@
             flex-direction: row;
             justify-content: space-around;
             margin: 0 auto calc(var(--size-unit)* .2);
+            font-family: var(--tipo), monospace;
             a{
                 display: flex;
                 border-radius: 50%;

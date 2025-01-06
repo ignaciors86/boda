@@ -7,6 +7,12 @@
       padding: 0;
       position: relative;
       text-align: center;
+
+      .card-front{
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+    }
       p, em, h2 {
         background: rgba(95, 158, 160, 0.8);
         width: 100%;
@@ -78,5 +84,6 @@
         opacity: 0;
         height: auto;
     }
+
   }
   
