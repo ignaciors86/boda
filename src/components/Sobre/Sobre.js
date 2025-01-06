@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import './Sobre.scss';
-import invitacion from './assets/images/invitacion.png';
+import invitacion from './assets/images/invitacion-vacio.png';
 // import bubuDudu from '../assets/images/bubu-dudu.jpg';
 import nosotrosjpg from './assets/images/nosotros.jpg';
 import { ReactComponent as Nosotros } from './assets/images/nosotros.svg';
@@ -325,6 +325,9 @@ const Sobre = ({ weedding, hosteado, atajo }) => {
             <div className="envelope-content">
               <Card seccion="invitacion" onClick={() => handleClick("invitacion")} trasera={<Invitacion />}>
                 <img src={invitacion} alt="Invitacion" />
+                <span className='nombres'>Mario y Nacho</span>
+                <span className="fecha">25 de Mayo<strong>2025</strong></span>
+                <span className="lugar">Salamanca</span>
               </Card>
               <Card seccion="horarios" onClick={() => handleClick("horarios")} trasera={<Timeline />}>
                 <h2>Agenda</h2>

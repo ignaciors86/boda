@@ -1,4 +1,6 @@
 :root {
+
+  --tipo: "evelins";
   --gray: #f1f1f1;
   --darkGray: #0000006e;
   --darkGrayTransparent: #535f4df7;
@@ -110,8 +112,8 @@ h2, h3, h4{
   font-size: calc(var(--size-unit)* 0.23);
   // color: var(--orange);
   color: white;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  font-family: "VCR";
+  // text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  font-family: "evelins";
   text-align: center;
   margin: 0;
   @media (orientation: portrait) {
@@ -132,14 +134,14 @@ h4{
   line-height: calc(var(--size-unit)* 0.15);
 }
 p, a, span{
-  font-family: VCR;
+  font-family: var(--tipo), monospace;
   font-size: calc(var(--size-unit)* 0.16);
   letter-spacing: -0.02px;
   line-height: calc(var(--size-unit)* 0.2);
   color: white;
   margin: 0;
   text-align: center;
-  text-shadow: 1px 1px 2px #000;
+  // text-shadow: 1px 1px 2px #000;
 }
 a{
   text-decoration: none;

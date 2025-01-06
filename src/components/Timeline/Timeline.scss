@@ -62,7 +62,7 @@
     font-size: calc(var(--size-unit) * 0.15);
     // padding-left: calc(var(--size-unit) * 0.5);
     color: var(--green);
-    font-family: "VCR";
+    font-family: var(--tipo), monospace;
     align-items: center;
     text-align: center;
     width: 100%;
