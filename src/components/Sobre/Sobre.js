@@ -129,7 +129,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo }) => {
       audioRefs.current[nextIndex].muted = isMuted;
       audioRefs.current[nextIndex].preload = "auto";
       audioRefs.current[nextIndex].play().catch(error => {
-        console.log('Error al reproducir el audio:', error);
+        // console.log('Error al reproducir el audio:', error);
       });
       return nextIndex;
     });
@@ -142,7 +142,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo }) => {
     currentAudio.preload = 'auto';
 
     currentAudio.play().catch(error => {
-      console.log('Error al reproducir el audio:', error);
+      // console.log('Error al reproducir el audio:', error);
     });
 
     currentAudio.addEventListener('ended', playNextAudio);
@@ -272,10 +272,25 @@ const Sobre = ({ weedding, hosteado, atajo, tipo }) => {
   }
 
   useEffect(() => {
-    atajo && inicializar();
-    setTimeout(() => {
+
+    // Verificar si ya existe la clave 'skipea' en localStorage
+    const skipeaStorage = localStorage.getItem("skipea");
+console.log(skipeaStorage)
+    // Si no existe, la configuramos y la primera vez que se abra la página se debe ejecutar inicializar
+    if (skipeaStorage || atajo) {
+      
       inicializar();
-    }, 20000);
+      
+    }else{
+      
+      setTimeout(() => {
+        inicializar();
+        localStorage.setItem("skipea", "true"); // Guardamos la clave 'skipea' con valor 'true'
+      }, 20000);
+    }
+
+
+  
 
     const waxSeal = document.querySelector('.wax-seal');
     const sobre = document.querySelector('.sobre.closed');
@@ -323,7 +338,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo }) => {
         // Reanudar el audio actual cuando la ventana es visible
         audioRefs.current[currentAudioIndex].muted = isMuted;
         audioRefs.current[currentAudioIndex].play().catch(error => {
-          console.log('Error al reanudar el audio:', error);
+          // console.log('Error al reanudar el audio:', error);
         });
       }
     };
@@ -348,7 +363,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo }) => {
         ease: "ease",
       }, ">")
       .to(".prompt.final", { y: "0vh", duration: 1, opacity: 1, }, "<")
-    console.log(isOpen)
+    // console.log(isOpen)
   }, [isOpen]);
 
   useEffect(() => {
