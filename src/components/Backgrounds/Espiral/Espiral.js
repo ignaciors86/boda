@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./Espiral.scss";
 import Prompt from "../../Prompt/Prompt";
+import gsap from "gsap";
 
-const Espiral = ({weedding, option2, isOpen}) => {
+const Espiral = ({ weedding, option2, isOpen }) => {
   const [paused, setPaused] = useState(false);
 
   const toggleAnimation = () => {
@@ -25,20 +26,18 @@ const Espiral = ({weedding, option2, isOpen}) => {
 
   return (
     <>
-      <div className={`espiral ${paused ? 'paused' : ''}`}>
+      <div className={`espiral ${paused ? "paused" : ""}`}>
         {Array.from({ length: 7 }, (_, i) => (
-          <div
-            key={i}
-            className="bola"
-          >
-            <div className="star-container"
+          <div key={i} className={`bola bola-${i}`}>
+            <div
+              className="star-container"
               dangerouslySetInnerHTML={{ __html: generateStars(i + 1) }} // Añadimos estrellas como contenido HTML
             />
           </div>
         ))}
       </div>
 
-      <Prompt weedding={weedding} option2={option2} isOpen={isOpen}/>
+      <Prompt weedding={weedding} option2={option2} isOpen={isOpen} />
 
       {/* <div className="button-container">
         <button onClick={toggleAnimation}>

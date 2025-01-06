@@ -203,7 +203,59 @@ const Sobre = ({ weedding, hosteado, atajo, tipo }) => {
 
 
   const pasoPrevio = () => {
-    animateOpacity(startDrawing);
+    const bola4 = document.querySelector(".bola-3");
+
+    if (bola4) {
+      // Eliminar animaciones CSS aplicadas
+      const tlBolita = gsap.timeline({ repeat: false, });
+      // Mover con GSAP al centro de la pantalla
+
+      
+      tlBolita
+        .to(".prompt.inicial", {
+          opacity: 0, duration: .5, ease: "ease",
+          y: "100vh",
+        }, 0)
+
+        tlBolita
+        // .to(".bola", { clearProps: "all", animation: "none", opacity: 1, duration: 0,}, 0)
+        .to(".bola", {
+
+          scale: 5,
+          opacity: 0,
+          top: "50%",
+          // position: "absolute",
+          left: "calc(50% - " + (window.innerWidth / 2 - bola4.offsetWidth / 2) + ")", // Posición horizontal central
+          marginTop: "-" + (bola4.offsetHeight / 2), // Posición vertical central
+          duration: 3, // Duración de la animación
+          ease: "power2.out",
+          boxShadow: "0px 0px 2dvh rgba(255, 165, 0, 0.8)", // Añadimos brillo naranja
+          rotation: "+=360", // Suma 360 grados al ángulo actual
+          // repeat: -1,
+          transformOrigin: "center center", // Asegura que el giro sea alrededor del centro del elemento
+          transform: "none",
+          animation: "none",
+         
+        }, 0)
+
+        .to(".bola", {
+          opacity: 0,
+          duration: 1,
+          onStart: function(){
+            animateOpacity(startDrawing);
+          },
+          onComplete: function(){
+            const bolas = document.querySelectorAll(".bola");
+
+            bolas.forEach((bola) => {
+              if (bola.parentNode) {
+                bola.parentNode.removeChild(bola); // Elimina el elemento asegurando que tiene un padre
+              }
+            });
+          },
+   
+        }, ">");
+    }
   }
 
   const inicializar = () => {
@@ -288,15 +340,15 @@ const Sobre = ({ weedding, hosteado, atajo, tipo }) => {
     isOpen !== null && gsap.killTweensOf(".prompt.inicial");
     const tlCierre = gsap.timeline();
     isOpen !== null && tlCierre
-    .to(".prompt.final", { zIndex: 3,duration: 0,opacity: 0,}, 0)
+      .to(".prompt.final", { zIndex: 3, duration: 0, opacity: 0, }, 0)
       .to("#myCanvas", {
         opacity: isOpen ? 0.2 : 0.7,
         duration: 5,
         delay: 0,
         ease: "ease",
       }, ">")
-      .to(".prompt.final", { y: "0vh", duration: 1, opacity: 1,}, "<")
-      console.log(isOpen)
+      .to(".prompt.final", { y: "0vh", duration: 1, opacity: 1, }, "<")
+    console.log(isOpen)
   }, [isOpen]);
 
   useEffect(() => {
@@ -338,7 +390,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo }) => {
               <Card seccion="regalo" onClick={() => handleClick("regalo")} trasera={<Regalo />}>
                 <h2>Regalo</h2>
               </Card>
-              <Card seccion="ubicaciones" onClick={() => handleClick("ubicaciones")} trasera={<Lugar weedding={weedding} hosteado={hosteado}/>}>                <h2>Lugar</h2>
+              <Card seccion="ubicaciones" onClick={() => handleClick("ubicaciones")} trasera={<Lugar weedding={weedding} hosteado={hosteado} />}>                <h2>Lugar</h2>
               </Card>
               <Card seccion={"asistencia"} onClick={() => handleClick("asistencia")} trasera={<Asistencia />}>
                 <h2>Asistencia</h2>
