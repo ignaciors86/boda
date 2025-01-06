@@ -1,6 +1,6 @@
 :root {
 
-  --tipo: "evelins";
+  --tipo: "VCR";
   --gray: #f1f1f1;
   --darkGray: #0000006e;
   --darkGrayTransparent: #535f4df7;
@@ -113,7 +113,7 @@ h2, h3, h4{
   // color: var(--orange);
   color: white;
   // text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  font-family: "evelins";
+  font-family: var(--tipo), monospace;
   text-align: center;
   margin: 0;
   @media (orientation: portrait) {

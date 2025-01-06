@@ -20,7 +20,10 @@ import Espiral from 'components/Backgrounds/Espiral/Espiral';
 import Bubbles from 'components/Backgrounds/Bubles/Bubles';
 import { renderItems } from 'components/Timeline/items';
 
-const Sobre = ({ weedding, hosteado, atajo }) => {
+const Sobre = ({ weedding, hosteado, atajo, tipo }) => {
+
+  tipo && document.documentElement.style.setProperty('--tipo', 'evelins');
+
   const { activeCard, setActiveCard } = useDragContext();
   const [moving, setMoving] = useState(false);
   const [isOpen, setIsOpen] = useState(null);
