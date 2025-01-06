@@ -2,7 +2,7 @@
   align-items: center;
   display: flex;
   justify-content: center;
-  font-family: "Arial", sans-serif;
+
   padding: 0;
   margin: 0 auto;
   overflow: hidden;
@@ -34,7 +34,7 @@
         position: absolute;
         right: 105%;
         top: 10%;
-        margin-top: calc(var(--size-unit)* -.3);
+        margin-top: calc(var(--size-unit)* -.1);
         background: #fff;
         font-weight: bolder;
         padding: calc(var(--size-unit)* .08);
@@ -45,6 +45,9 @@
         color: black !important;
         box-shadow: var(--box-shadow);
         text-shadow: none;
+        font-family: "VCR";
+        font-size: calc(var(--size-unit)* 0.15);
+        line-height: calc(var(--size-unit)* 0.15);
         &:before {
           content: '';
           background: #fff;

@@ -1,6 +1,6 @@
 :root {
 
-  --tipo: "VCR";
+  --tipo: "evelins";
 
 
   
@@ -137,7 +137,7 @@ h4{
 }
 p, a, span{
   font-family: var(--tipo), monospace;
-  font-size: calc(var(--size-unit)* 0.16);
+  font-size: calc(var(--size-unit)* 0.2);
   letter-spacing: -0.02px;
   line-height: calc(var(--size-unit)* 0.2);
   color: white;
@@ -257,3 +257,22 @@ em{
     border-radius: 50vw !important;
   }    
   }
+
+  ::-webkit-scrollbar {
+    width: 1dvh;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+    background: var(--darkGray);
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: var(--orange);
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: var(--orange);
+}
