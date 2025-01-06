@@ -20,7 +20,7 @@ import Espiral from 'components/Backgrounds/Espiral/Espiral';
 import Bubbles from 'components/Backgrounds/Bubles/Bubles';
 import { renderItems } from 'components/Timeline/items';
 
-const Sobre = ({ weedding, hosteado }) => {
+const Sobre = ({ weedding, hosteado, atajo }) => {
   const { activeCard, setActiveCard } = useDragContext();
   const [moving, setMoving] = useState(false);
   const [isOpen, setIsOpen] = useState(null);
@@ -118,8 +118,6 @@ const Sobre = ({ weedding, hosteado }) => {
   const toggleMute = () => {
     setIsMuted(!isMuted); // Cambia el estado del mute
     setIsMutedGeneral(!isMutedGeneral); // Cambia el estado del mute
-
-    inicializar();
   };
 
   const playNextAudio = () => {
@@ -187,6 +185,7 @@ const Sobre = ({ weedding, hosteado }) => {
   };
 
   useEffect(() => {
+    
     const sobre = document.querySelector('.sobre');
     // Añadimos los eventos para ratón y toque
     sobre.addEventListener('mousemove', handleDrag);
@@ -201,9 +200,7 @@ const Sobre = ({ weedding, hosteado }) => {
 
 
   const pasoPrevio = () => {
-    // startDrawing();
     animateOpacity(startDrawing);
-
   }
 
   const inicializar = () => {
@@ -220,7 +217,7 @@ const Sobre = ({ weedding, hosteado }) => {
   }
 
   useEffect(() => {
-
+    atajo && inicializar();
     setTimeout(() => {
       inicializar();
     }, 20000);

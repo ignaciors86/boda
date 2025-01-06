@@ -280,7 +280,7 @@
         .wax-seal {
             transform: translate(-50%, -50%) scale(1) !important;
             transition: calc(var(--duration-envelope)*.25) ease calc(var(--duration-envelope)*.5);
-            background: cadetblue;
+            background: var(--darkGrayTransparent);
             &:before {
                 transition: calc(var(--duration-envelope)*.25) ease calc(var(--duration-envelope)*.5);
                 background: transparent;
