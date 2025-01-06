@@ -1,6 +1,10 @@
 :root {
 
   --tipo: "VCR";
+
+
+  
+
   --gray: #f1f1f1;
   --darkGray: #0000006e;
   --darkGrayTransparent: #535f4df7;
@@ -27,8 +31,6 @@
   }
   --box-shadow: calc(var(--size-unit)*0.04) calc(var(--size-unit)* 0.04) calc(var(--size-unit)*0.08) var(--darkGray);
   --box-shadow-inverted: -calc(var(--size-unit)*0.06) -calc(var(--size-unit)*0.06) -calc(var(--size-unit)*0.12) var(--darkGray);
-
-
 
 }
 
