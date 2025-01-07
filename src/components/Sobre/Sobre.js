@@ -10,7 +10,6 @@ import Regalo from './Tarjetas/Regalo';
 import Invitacion from './Tarjetas/Invitacion';
 import gsap from 'gsap';
 import Asistencia from './Tarjetas/Asistencia';
-import morreo from './assets/audio/morreo.mp3';
 import finisterre from './assets/audio/finisterre.mp3';
 import poetaHalley from "./assets/audio/poetaHalley.mp3";
 import makeYourOwnKindOfMusic from './assets/audio/makeYourOwnKindOfMusic.mp3';
@@ -30,7 +29,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
   const [isMuted, setIsMuted] = useState(true); // Estado para el mute del audio
   const [isMutedGeneral, setIsMutedGeneral] = useState(true); // Estado para el mute del audio
   const audioRefs = useRef(
-    [new Audio(makeYourOwnKindOfMusic), new Audio(finisterre), new Audio(morreo), new Audio(bailarMorghulis), new Audio(poetaHalley)]
+    [new Audio(makeYourOwnKindOfMusic), new Audio(finisterre), new Audio(bailarMorghulis), new Audio(poetaHalley)]
     // [new Audio(makeYourOwnKindOfMusic), new Audio(finisterre)]
   );
   const [currentAudioIndex, setCurrentAudioIndex] = useState(0); // Índice del audio actual
