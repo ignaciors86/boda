@@ -119,8 +119,8 @@
 
         }
         &.bus{
-            width: calc(var(--size-unit)* 1.3);
-            height: calc(var(--size-unit)* 1.3);
+            width: calc(var(--size-unit)* 1.5);
+            height: calc(var(--size-unit)* 1.5);
             &:before{
                 mask-image: unset;
                 background-image: url("../../../../assets/images/bus.webp");   
@@ -165,10 +165,10 @@
         }
 
         &.piscina{
-            left: 35%;
+            left: -2%;
             right: inherit;
             rotate: 15deg !important;
-            bottom: 10%;
+            top: 23%;
             z-index: 10;
             background: var(--darkGrayTransparent) !important;
             width: calc(var(--size-unit)* .7);

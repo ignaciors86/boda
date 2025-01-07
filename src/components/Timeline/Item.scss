@@ -71,6 +71,7 @@
       display: flex;
       flex-direction: column;
       padding: calc(var(--size-unit)* 0);
+      width: 100%;
 
       b,
       span {
@@ -79,10 +80,11 @@
         justify-content: center;
         flex-direction: row;
         flex-wrap: wrap;
+        width: 100%;
       }
 
       b {
-        margin-right: 3px;
+        width: auto;
       }
     }
   }
@@ -119,7 +121,9 @@
     .images-container {
       height: 100%;
     }
-
+    b {
+      margin-right: 3px;
+    }
     .info {
       background: linear-gradient(#5f9ea0f0 100%, #7bbbbd 50%);
       height: 75%;
@@ -139,7 +143,8 @@
         opacity: 0;
       }
       span{
-        line-height: calc(var(--size-unit) * 0.25);
+        line-height: calc(var(--size-unit) * 0.2);
+        margin-bottom: 2%;
       }
     }
   }

@@ -226,7 +226,7 @@ const Lugar = ({ weedding, hosteado }) => {
                 <a target="_blank" href="https://maps.app.goo.gl/VcP5TumYHdV7XPSE9" className="claim bus" ref={(el) => claimRefs.current[1] = el}>
                     <p>
                         { hosteado ?
-                        <h4>No necesitas bus para el sábado, pero que sepas que sale de El Corte Inglés a las 12:00</h4>
+                        <h4>El autobús saldrá a las 12:00 desde<br></br>El Corte Inglés <em>(aunque no lo necesitas)</em></h4>
                         :
                         <h4>El autobús saldrá a las 12:00 desde<br></br>El Corte Inglés</h4> }
                     </p>

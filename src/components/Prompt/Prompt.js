@@ -4,7 +4,7 @@ import Typewriter from 'typewriter-effect';
 import { gsap } from 'gsap';
 import animateOpacity from 'components/functions';
 
-const Prompt = ({ weedding, option2=false, isOpen }) => {
+const Prompt = ({ weedding, option2=false, isOpen, uri }) => {
     const phrases1 = [
         `¡Hola! Esta web podría ser un PDF...`,
         `Tú lo sabes, yo lo sé. Claro que no hacía falta...`,
@@ -23,15 +23,15 @@ const Prompt = ({ weedding, option2=false, isOpen }) => {
         `PERO ARRASTRA, ¡¡${weedding ? "SUBNORMAL" : "JOLÍN"}!!`,
         `${weedding ? "Sí, acabo de insultarte mientras te invito a nuestra boda" : "No es que quiera ponerme impaciente, pero no va a pasar nada interesante hasta que lo hagas"}`,
         `${weedding ? "He dejado esto en la versión final porque existe una versión más formalita que será la que vean mis tíos..." : "...¿o sí?"}`,
+        `${weedding ? ("Si quieres verla, solo tienes que volver a entrar, pero quita el /"+uri+" en la URL que has recibido") : "Nah... la verdad es que no mucho"}`,
         `Va, arrastra el dedo por la pantalla de una vez...`,
         `Y si has llegado hasta aquí, espero que al menos hayas pulsado el botón para activar el audio`,
         `Podemos estar así todo el día...`,
         `Tooooooodo el día...`,
         `Toooooooooo`,
-        `ooooooooooo
-        ooooooooooo`,
-        `ooooooooooo
-        ooooooooooo`,
+        `ooooooooooo`,
+        `ooooooooooo`,
+        `ooooooooooo`,
         `ooooooooodo el día...`,
         `Esto puede durar un par de frases más, o podría aprovechar para trolearte cuanto quiera. Depende de ti.`,
         `Tú sabrás cuánto más quieres quedarte aquí`,
@@ -44,7 +44,8 @@ const Prompt = ({ weedding, option2=false, isOpen }) => {
         ``,
         `Esto es todo (por ahora)`,
         `Gracias a los que habéis participado en el testing de la invitación`,
-        `y por los consejitos de diseño (Andrea) y la ilustración (Tesi)`,
+        `especialmente a Sandra, Lu, la Wilka y Gabi`,
+        `y por los consejitos de UX (Andrea) y la ilustración (Tesi)`,
         `Al final he tardado un cojón más de lo que esperaba`,
         `Pero llevaba más de 20 años sin hacer una web solico y con libertad absoluta, han sido meses muy locos para sacar tiempo, 
         y quería que quedase guapa de verdad`,
