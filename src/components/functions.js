@@ -22,12 +22,17 @@ const animateOpacity = (callback) => {
     if (canAnimate) {
         tlInicial
             .set(".sobre .nosotros-jpg-imagen", { borderRadius: "50%",})
+            .to(".prompt.inicial", {
+                opacity: 0, duration: 15, ease: "ease-out",
+                y: "100vh",
+              }, 0)
             .to("#myCanvas", {
                 opacity: 0.7,
                 duration: 1,
                 delay: 0,
                 ease: "ease",
             }, 0)
+            
             .to("body", { background: "cadetblue", duration: duracion * .5 }, ">")
         
             .to(".sobre", { opacity: 0, zIndex: 2, duration: 0, scale: 3 }, ">")
