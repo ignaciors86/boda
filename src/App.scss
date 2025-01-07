@@ -159,7 +159,8 @@ em{
   text-align: center;
 }
 
-.volumen{
+.volumen,
+.next{
   &:before{
     background: white !important;
   }
@@ -210,10 +211,16 @@ em{
     background: red !important;
   }
 }
+.next{
+  opacity: 0;
+  &:before{
+    mask-image: url("../assets/images/next.png");
+    mask-position: 55% 50%;
+  }
+}
 .stop{
   &:before{
     mask-image: url("../assets/images/play.png");
-    
   }
 }
 .close{

@@ -31,8 +31,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
   const [isMuted, setIsMuted] = useState(true); // Estado para el mute del audio
   const [isMutedGeneral, setIsMutedGeneral] = useState(true); // Estado para el mute del audio
   const audioRefs = useRef(
-    weedding ? [new Audio(morreo), new Audio(finisterre), new Audio(poetaHalley)]
-    : [new Audio(makeYourOwnKindOfMusic), new Audio(finisterre), new Audio(poetaHalley)]
+    [new Audio(makeYourOwnKindOfMusic), new Audio(finisterre), new Audio(morreo),new Audio(poetaHalley)]
   );
   const [currentAudioIndex, setCurrentAudioIndex] = useState(0); // Índice del audio actual
   const tlSobre = useRef(gsap.timeline());
@@ -140,6 +139,9 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
   };
 
   useEffect(() => {
+
+    gsap.to(".next", { opacity: (isMuted || isOpen === null)? 0 : 1, duration: .25, ease: "linear", });
+    
     const currentAudio = audioRefs.current[currentAudioIndex];
     currentAudio.muted = isMuted;
     currentAudio.loop = false; // Ningún audio se reproduce en bucle individualmente
@@ -155,7 +157,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
       currentAudio.pause();
       currentAudio.removeEventListener('ended', playNextAudio);
     };
-  }, [currentAudioIndex, isMuted]);
+  }, [currentAudioIndex, isMuted, isOpen]);
 
   useEffect(() => {
     activeCard === "invitacion" && gsap.set(".card.invitacion", { animation: "none" });
@@ -426,6 +428,11 @@ console.log(skipeaStorage)
         disabled={activeCard === "horarios"}
         ref={buttonRef}
       >
+      </button>
+      <button
+        className={`back next`}
+        onClick={playNextAudio}
+      > 
       </button>
     </>
   );
