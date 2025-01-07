@@ -18,6 +18,7 @@ import animateOpacity from '../functions';
 import { useDragContext } from '../DragContext';
 import Espiral from 'components/Backgrounds/Espiral/Espiral';
 import Bubbles from 'components/Backgrounds/Bubles/Bubles';
+import { CustomEase } from 'gsap/all';
 
 const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
 
@@ -361,7 +362,9 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
   useEffect(() => {
     isOpen !== null && gsap.killTweensOf(".prompt.inicial");
     const tlCierre = gsap.timeline();
-    isOpen === false && tlCierre.to(".link-fino", { left: "50%", transform: "translateX(-50%)", top: "10dvh", duration: 2, zIndex: 5, }, 0);
+    isOpen !== null && tlCierre.to(".link-fino", { opacity: 1, left: isOpen ? 0 : "45%", bottom: isOpen ? "0" : "80dvh",
+      ease: CustomEase.create("custom", "M0,0,C0.126,0.382,0.282,0.674,0.44,0.822,0.632,1.002,0.818,1.001,1,1"),
+      transform: "translateX(-50%)", duration: 4, zIndex: 5, delay: 2, }, 0);
     isOpen !== null && tlCierre
 
       .to(".prompt.final", { zIndex: 3, duration: 0, opacity: 0, }, 0)
