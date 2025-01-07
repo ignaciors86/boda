@@ -94,20 +94,12 @@ const Timeline = ({weedding}) => {
 
   // Pausar todos los audios al minimizar o cambiar de pestaña
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        preloadedAudios.current.forEach((audio) => audio.pause());
-      } else if (!isMuted) {
-        // Reanuda el audio actual solo si no está silenciado
-        preloadedAudios.current[currentIndex]?.play().catch(console.error);
-      }
-    };
     const newDuration = currentIndex < 3 || currentIndex > 6 ? 3 : (8-currentIndex) * .1;
     gsap.set(".progress-bar ", { animation: `shadowPulse ${newDuration}s ease-in-out infinite` });
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("visibilitychange", handleMuteToggle);
 
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener("visibilitychange", handleMuteToggle);
     };
   }, [currentIndex, isMuted]);
 
