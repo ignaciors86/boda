@@ -25,7 +25,7 @@ const Item = ({ data, index, currentIndex }) => {
             className={`item item${(parseInt(index) + 1)} ${data?.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`}
             style={{display: (index === currentIndex)  ? "flex" : "none"}}
         >
-            { <div className="images-container"
+            { <div className="images-container elementsToHide"
                 // style={{ backgroundImage: `url(${data.images[currentImageIndex]})` }} // Usar la imagen actual como fondo
             >
                 {data.images.map((image, imgIndex) => (
@@ -50,7 +50,7 @@ const Item = ({ data, index, currentIndex }) => {
             </div> }
             <div className="info">
                 <h2>{data?.title}</h2>
-                <div className="texts">
+                <div className="texts elementsToHide">
                     {data?.description}
                 </div>  
             </div>

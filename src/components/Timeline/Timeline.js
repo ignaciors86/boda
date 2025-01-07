@@ -79,14 +79,17 @@ const Timeline = () => {
 
   const handleSliderChange = (e) => {
     setSliderValue(Number(e.target.value)); // Actualiza solo el valor del slider
+    // gsap.to(".loading", { opacity: 0, duration: 0.3, delay: .3, }); // Reduce la opacidad al soltar
   };
 
   const handleMouseDown = () => {
     gsap.to(".loading", { opacity: 1, duration: 0.15 }); // Aumenta la opacidad al hacer clic
+    gsap.to(".elementsToHide", { opacity: 0, duration: 0.3, delay: .3, }); // Reduce la opacidad al soltar
   };
 
   const handleMouseUp = () => {
     gsap.to(".loading", { opacity: 0, duration: 0.3, delay: .3, }); // Reduce la opacidad al soltar
+    gsap.to(".elementsToHide", { opacity: 1, duration: 0.3, delay: .3, }); // Reduce la opacidad al soltar
   };
 
   // Pausar todos los audios al minimizar o cambiar de pestaña
