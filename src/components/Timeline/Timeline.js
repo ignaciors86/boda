@@ -94,12 +94,15 @@ const Timeline = ({weedding}) => {
 
   // Pausar todos los audios al minimizar o cambiar de pestaña
   useEffect(() => {
+    const handleVisibilityChange = () => {
+      preloadedAudios.current[currentIndex].volume= document.hidden && !isMuted ? 0 : 1;
+    };
     const newDuration = currentIndex < 3 || currentIndex > 6 ? 3 : (8-currentIndex) * .1;
     gsap.set(".progress-bar ", { animation: `shadowPulse ${newDuration}s ease-in-out infinite` });
-    document.addEventListener("visibilitychange", handleMuteToggle);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      document.removeEventListener("visibilitychange", handleMuteToggle);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [currentIndex, isMuted]);
 
