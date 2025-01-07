@@ -389,10 +389,10 @@ em {
     transform: rotate(0deg) translate(0);
   }
   25% {
-    transform: rotate(20deg) translate(-5dvh, -5dvh);
+    transform: rotate(20deg) translate(-2dvh, -2dvh);
   }
   50% {
-    transform: rotate(20deg) translate(5dvh, -5dvh);
+    transform: rotate(20deg) translate(2dvh, -2dvh);
   }
   100% {
     transform: rotate(0deg) translate(0dvh);
@@ -411,7 +411,7 @@ border-radius: 50%;
 
   align-items: center;
   z-index: 0;
-  animation: spinLink 10s linear infinite;
+  animation: spinLink 10s ease-in-out infinite;
   opacity: 0;
   a{
     z-index: 2;
