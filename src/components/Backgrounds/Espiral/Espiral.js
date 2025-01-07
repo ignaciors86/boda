@@ -3,7 +3,7 @@ import "./Espiral.scss";
 import Prompt from "../../Prompt/Prompt";
 import gsap from "gsap";
 
-const Espiral = ({ weedding, option2, isOpen }) => {
+const Espiral = ({ weedding, option2, isOpen, uri }) => {
   const [paused, setPaused] = useState(false);
 
   const toggleAnimation = () => {
@@ -37,7 +37,7 @@ const Espiral = ({ weedding, option2, isOpen }) => {
         ))}
       </div>
 
-      <Prompt weedding={weedding} option2={option2} isOpen={isOpen} />
+      <Prompt weedding={weedding} option2={option2} isOpen={isOpen} uri={uri}/>
 
       {/* <div className="button-container">
         <button onClick={toggleAnimation}>

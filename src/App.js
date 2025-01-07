@@ -33,10 +33,10 @@ console.log(articles);
               <Sobre />
             </>} />
             <Route path="/weedding" element={<>
-              <Sobre weedding={true} />
+              <Sobre weedding={true} tipo={true} uri="weedding" />
             </>} />
             <Route path="/weedding-y-camita" element={<>
-              <Sobre weedding={true} hosteado={true} />
+              <Sobre weedding={true} tipo={true} hosteado={true} uri="weedding-y-camita" />
             </>} />
             <Route path="/atajo" element={<>
               <Sobre atajo={true} />

@@ -22,6 +22,7 @@
     padding: 0 5% 1%;
     margin: 0 auto 3%;
     font-size: calc(var(--size-unit)* 0.15);
+
   }
 
   .rfm-marquee {
@@ -31,10 +32,14 @@
   }
 
   h3 {
-    margin-top: 5%;
     margin-bottom: 2%;
     color: var(--greenSuperTransparent);
     // background: linear-gradient(to bottom, transparent, var(--darkPurple));
+  }
+  .domingo{
+    h3{
+      margin-top: 4%;
+    }
   }
 }
 
@@ -63,6 +68,7 @@
     justify-content: center;
     color: var(--green);
     font-family: var(--tipo), monospace;
+    line-height: calc(var(--size-unit)* 0.1);
     align-items: center;
     text-align: center;
     width: 100%;

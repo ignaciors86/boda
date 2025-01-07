@@ -20,7 +20,7 @@ const Timeline = ({weedding}) => {
 
   const preloadedAudios = useRef(
     items.map((item) => {
-      const audio = new Audio(item.audio);
+      const audio = new Audio(weedding && item.audioWedding ? item.audioWedding : item.audio);
       audio.preload = "auto";
       audio.muted = isMuted;
       audio.loop = true;

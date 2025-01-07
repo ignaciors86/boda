@@ -276,3 +276,59 @@ em{
 ::-webkit-scrollbar-thumb:hover {
     background: var(--orange);
 }
+
+
+.weedding{
+  h2{
+    // font-size: calc(var(--size-unit)* 0.25) !important;
+  }
+  .loading{
+    h2{
+      font-size: calc(var(--size-unit)* 0.15) !important;
+      line-height: calc(var(--size-unit)* 0.15) !important;
+      margin-bottom: 3%;
+    }
+  }
+  p, a, span{
+    font-size: calc(var(--size-unit)* 0.15) !important;
+  }
+  .card.invitacion .card-front .fecha{
+    font-size: calc(var(--size-unit) * 0.4) !important;
+    strong{
+      font-size: calc(var(--size-unit) * 0.3) !important;
+    }
+  }
+  .seccion.lugar .claim p{
+    font-size: calc(var(--size-unit) * 0.12) !important;
+    line-height: calc(var(--size-unit) * 0.13) !important;
+    
+  }
+  .item{
+    .info{
+      .texts{
+        span{
+          width: 100%;
+          display: flex;
+          b{
+            margin-right: 2%;
+          }
+          flex-wrap: nowrap;
+          text-align: left;
+        }
+      }
+    }
+  }
+  .asistencia .form-group{
+    textarea, input{
+      font-size: calc(var(--size-unit)* 0.15) !important;
+      line-height: calc(var(--size-unit)* 0.15) !important;
+    
+    }
+    .eventos-checkboxes{
+      h2{
+        font-size: calc(var(--size-unit)* 0.2) !important;
+        line-height: calc(var(--size-unit)* 0.2) !important;
+      }
+    } 
+  } 
+}

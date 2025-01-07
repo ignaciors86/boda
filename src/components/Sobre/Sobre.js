@@ -11,6 +11,7 @@ import Regalo from './Tarjetas/Regalo';
 import Invitacion from './Tarjetas/Invitacion';
 import gsap from 'gsap';
 import Asistencia from './Tarjetas/Asistencia';
+import morreo from './assets/audio/morreo.mp3';
 import finisterre from './assets/audio/finisterre.mp3';
 import poetaHalley from "./assets/audio/poetaHalley.mp3";
 import makeYourOwnKindOfMusic from './assets/audio/makeYourOwnKindOfMusic.mp3';
@@ -20,16 +21,19 @@ import Espiral from 'components/Backgrounds/Espiral/Espiral';
 import Bubbles from 'components/Backgrounds/Bubles/Bubles';
 import { renderItems } from 'components/Timeline/items';
 
-const Sobre = ({ weedding, hosteado, atajo, tipo }) => {
+const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
 
-  tipo && document.documentElement.style.setProperty('--tipo', 'evelins');
+  tipo && document.documentElement.style.setProperty('--tipo', 'VCR');
 
   const { activeCard, setActiveCard } = useDragContext();
   const [moving, setMoving] = useState(false);
   const [isOpen, setIsOpen] = useState(null);
   const [isMuted, setIsMuted] = useState(true); // Estado para el mute del audio
   const [isMutedGeneral, setIsMutedGeneral] = useState(true); // Estado para el mute del audio
-  const audioRefs = useRef([new Audio(makeYourOwnKindOfMusic), new Audio(finisterre), new Audio(poetaHalley)]); // Referencias para los audios
+  const audioRefs = useRef(
+    weedding ? [new Audio(morreo), new Audio(finisterre), new Audio(poetaHalley)]
+    : [new Audio(makeYourOwnKindOfMusic), new Audio(finisterre), new Audio(poetaHalley)]
+  );
   const [currentAudioIndex, setCurrentAudioIndex] = useState(0); // Índice del audio actual
   const tlSobre = useRef(gsap.timeline());
   const buttonRef = useRef(null); // Referencia para el botón del audio
@@ -373,9 +377,9 @@ console.log(skipeaStorage)
   return (
     <>
       <Bubbles />
-      {isOpen === null && <Espiral weedding={weedding} isOpen={isOpen} />}
+      {isOpen === null && <Espiral weedding={weedding} isOpen={isOpen} uri={uri}/>}
       {isOpen === false && <Espiral weedding={weedding} isOpen={isOpen} option2={true} />}
-      <div className="sobre closed" ref={sobreRef}>
+      <div className={`sobre closed ${tipo ? "weedding" : ""}`} ref={sobreRef}>
 
         <div alt="Nosotros" className="nosotros-jpg" >
           {!isOpen && <Nosotros
@@ -407,7 +411,7 @@ console.log(skipeaStorage)
               </Card>
               <Card seccion="ubicaciones" onClick={() => handleClick("ubicaciones")} trasera={<Lugar weedding={weedding} hosteado={hosteado} />}>                <h2>Lugar</h2>
               </Card>
-              <Card seccion={"asistencia"} onClick={() => handleClick("asistencia")} trasera={<Asistencia />}>
+              <Card seccion={"asistencia"} onClick={() => handleClick("asistencia")} trasera={<Asistencia weedding={weedding}/>}>
                 <h2>Asistencia</h2>
               </Card>
             </div>

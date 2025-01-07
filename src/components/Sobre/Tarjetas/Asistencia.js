@@ -5,7 +5,7 @@ import OsitoBox from "../../OsitoBox/OsitoBox";
 import gsap from "gsap";
 import Loading from "components/Timeline/Loading";
 
-const Asistencia = () => {
+const Asistencia = ({weedding}) => {
     const { setActiveCard } = useDragContext();
     const [confirmacion, setConfirmacion] = useState(true);
     const [formData, setFormData] = useState({
@@ -188,7 +188,7 @@ const Asistencia = () => {
                             name="comentarios"
                             value={formData.comentarios}
                             onChange={handleChange}
-                            placeholder="Si eres vegano, inviegno, alérgico, o necesitas aclarar cualquier cosa, hazlo aquí."
+                            placeholder={"Si eres vegano, inviegno, alérgico, o necesitas aclarar cualquier cosa, hazlo aquí." + (weedding ? "En caso de querer probar los edibles del sábado o la coctelería del viernes, dínoslo también." : "")}
                         />
                     </div>
                     <div className="form-group horizontal quien">
