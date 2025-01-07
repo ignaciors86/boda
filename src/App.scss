@@ -328,7 +328,9 @@ em {
       margin-bottom: 3%;
     }
   }
-
+  .item.item1 .info span{
+    line-height: calc(var(--size-unit)* 0.175);
+  }
   p,
   a,
   span {
