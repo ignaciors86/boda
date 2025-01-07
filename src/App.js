@@ -25,11 +25,30 @@ const App = () => {
   useEffect(() => {
     const audioCache = [];
     items.forEach((item) => {
+      if (item.audioWedding) {
+        const audioWedding = new Audio(item.audioWedding);
+        audioCache.push(audioWedding); // Guardar para evitar recolección de basura
+      }
+    });
+    items.forEach((item) => {
       if (item.audio) {
         const audio = new Audio(item.audio);
         audioCache.push(audio); // Guardar para evitar recolección de basura
       }
     });
+    items.forEach((item) => {
+      if (item.imagesWeedding) {
+        const imagen = new Image(item.imagesWeedding);
+        audioCache.push(imagen); // Guardar para evitar recolección de basura
+      }
+    });
+    items.forEach((item) => {
+      if (item.images) {
+        const imagen = new Image(item.images);
+        audioCache.push(imagen); // Guardar para evitar recolección de basura
+      }
+    });
+    
   }, []);
 
   return (

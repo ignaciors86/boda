@@ -206,7 +206,7 @@
         left: 50%;
         width: calc(var(--size-unit)/1.5);
         height: calc(var(--size-unit)/1.5);
-        animation: shadowPulse 1s ease-in-out 0s infinite;
+        // animation: shadowPulse 1s ease-in-out 0s infinite;
         border-radius: 50%;
         border: 0px solid var(--greenTransparent);
         box-shadow: 0 0 10px rgba(53, 48, 48, 0.148);
@@ -215,7 +215,9 @@
         cursor: pointer;
         z-index: 3;
         opacity: 1 !important;
-
+        &.cierrame{
+            animation: shadowPulse 1s ease-in-out 0s infinite;
+        }
         &:before {
             background-color: var(--orange);
             transition: calc(var(--duration-envelope)*.25) ease calc(var(--duration-envelope)*3.5);

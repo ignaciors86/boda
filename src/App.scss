@@ -193,6 +193,12 @@ em {
     // background: lightblue;
   }
 }
+.volumen{
+  &.stop{
+    animation: shadowPulse 1s ease-in-out infinite;
+  }
+  
+}
 
 .back,
 .play,
