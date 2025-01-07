@@ -21,7 +21,7 @@ const animateOpacity = (callback) => {
 
     if (canAnimate) {
         tlInicial
-
+            .set(".sobre .nosotros-jpg-imagen", { borderRadius: "50%",})
             .to("#myCanvas", {
                 opacity: 0.7,
                 duration: 1,
@@ -32,14 +32,16 @@ const animateOpacity = (callback) => {
         
             .to(".sobre", { opacity: 0, zIndex: 2, duration: 0, scale: 3 }, ">")
             .to(".sobre", { opacity: 1, duration: duracion*5, scale: 1, y: 0, ease: "ease",  onStart: callback}, ">")
+            
             .to(".sobre .nosotros-svg", {
                 opacity: 1, 
                 duration: 3,
                
             }, "<")
+            .to(".sobre .nosotros-jpg-imagen", { opacity: 1, duration: 4, delay: 2, }, "<")
+            .to(".sobre .nosotros-jpg-imagen", { borderRadius: 0, duration: 2, delay: 1.5, }, "<")
 
-
-            .to(".sobre .nosotros-jpg-imagen", { opacity: 1, duration: 2, }, ">")
+            
             .to(".sobre .nosotros-svg", { opacity: 0, duration: .5, }, ">")
             
             
