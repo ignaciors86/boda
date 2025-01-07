@@ -399,7 +399,7 @@ console.log(skipeaStorage)
                 <span className="fecha">25 de Mayo<strong>2025</strong></span>
                 <span className="lugar">Salamanca</span>
               </Card>
-              <Card seccion="horarios" onClick={() => handleClick("horarios")} trasera={<Timeline />}>
+              <Card seccion="horarios" onClick={() => handleClick("horarios")} trasera={<Timeline weedding={weedding} />}>
                 <h2>Agenda</h2>
               </Card>
               <Card seccion="regalo" onClick={() => handleClick("regalo")} trasera={<Regalo />}>

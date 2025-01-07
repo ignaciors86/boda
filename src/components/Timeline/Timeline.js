@@ -10,7 +10,7 @@ import { useDragContext } from '../DragContext.js';
 import Marquee from 'react-fast-marquee';
 gsap.registerPlugin(Draggable);
 
-const Timeline = () => {
+const Timeline = ({weedding}) => {
   const MAINCLASS = "timeline";
   const { activeCard, setActiveCard } = useDragContext();
   const [imagesLoaded, setImagesLoaded] = useState(false);
@@ -83,12 +83,12 @@ const Timeline = () => {
   };
 
   const handleMouseDown = () => {
-    gsap.to(".loading", { opacity: 1, duration: 0.15 }); // Aumenta la opacidad al hacer clic
-    gsap.to(".elementsToHide", { opacity: 0, duration: 0.3, delay: .3, }); // Reduce la opacidad al soltar
+    gsap.to(".loading", { opacity: 1, duration: 0.15, delay: .15 }); // Aumenta la opacidad al hacer clic
+    gsap.to(".elementsToHide", { opacity: 0, duration: 0.15, delay: 0, }); // Reduce la opacidad al soltar
   };
 
   const handleMouseUp = () => {
-    gsap.to(".loading", { opacity: 0, duration: 0.3, delay: .3, }); // Reduce la opacidad al soltar
+    gsap.to(".loading", { opacity: 0, duration: 0.3, delay: 0, }); // Reduce la opacidad al soltar
     gsap.to(".elementsToHide", { opacity: 1, duration: 0.3, delay: .3, }); // Reduce la opacidad al soltar
   };
 
@@ -139,7 +139,7 @@ const Timeline = () => {
 
         {imagesLoaded && (
           <>
-            <div className="elements">{renderItems(currentIndex)}</div>
+            <div className="elements">{renderItems(currentIndex,  weedding || null)}</div>
             <Loading text={true} />
             <div className="progress-bar">
               <Marquee speed={25}>

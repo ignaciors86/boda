@@ -18,7 +18,8 @@ import monkeyisland2 from "./assets/images/ceremonia/monkeyisland2.jpg";  // Ase
 import gargaras from "./assets/images/cocktail/gargaras.webp";  // Asegúrate de que estas rutas sean correctas
 import treatyourself from "./assets/images/cocktail/treatyourself.webp";  // Asegúrate de que estas rutas sean correctas
 import bills from "./assets/images/cocktail/bills.webp";  // Asegúrate de que estas rutas sean correctas
-import maleducado from "./assets/images/baile/maleducado.webp";  // Asegúrate de que estas rutas sean correctas
+import maleducado from "./assets/images/baile/maleducado.webp";  
+import enar from "./assets/images/baile/enar.webp";  
 import cartman from "./assets/images/cocktail/cartman.webp";  // Asegúrate de que estas rutas sean correctas
 import karen from "./assets/images/cocktail/karen.webp";  // Asegúrate de que estas rutas sean correctas
 import allyoucaneat from "./assets/images/cocktail/allyoucaneat.webp";  // Asegúrate de que estas rutas sean correctas
@@ -72,7 +73,7 @@ import finyjakeresaca from "./assets/images/postboda/finyjakeresaca.webp";
 import Item from './Item.js';
 import ceremonia from './assets/sounds/ceremonia.mp3';
 import festin from './assets/sounds/festin.mp3';
-import sound1 from './assets/sounds/sound1.mp3';
+import pompom from './assets/sounds/pompom.mp3';
 import samantha from './assets/sounds/samantha.mp3';
 import kanka from './assets/sounds/kanka.mp3';
 import rumbling from './assets/sounds/rumbling.mp3';
@@ -177,15 +178,15 @@ const items = [
     },
     {
         title: "Baile",
-        description: <p>Enar Weir se encarga de la música, vosotros de bailarla y amortizar la barra libre.</p>,
-        images: [ keVin,paquita, ranmadance,akane,bitches,bmobaile, rick,dean,stop,barneyted, urkel, carrie, bmo, randy],
+        description: <p>Enar se encarga de la música. Vosotros de bailarla y amortizar la barra libre.</p>,
+        images: [ keVin,rick,enar,ranmadance,akane,bmobaile,bitches, dean,stop,barneyted, urkel, carrie, bmo, randy],
         audio: festin,
     },
     {
         title: "Tercer Tiempo",
         description: <p>Bus de vuelta para la gente cansada y todos los menores. Tenemos el sitio para nosotros toda la noche, y no hay prisa.</p>,
         images: [tercerTiempo,busVuelta,nickcorbata,scooby,shamelesstercerTiempo, red, yoda, ojeteCalor,finn,esqueletos],
-        audio: samantha,
+        audio: pompom,
     },
     {
         title: "Domingo",
@@ -195,7 +196,12 @@ const items = [
     }
 ];
 
-const renderItems = (currentIndex) => {
+const renderItems = (currentIndex, weedding) => {
+    
+    if(weedding){
+        items[6].audio = samantha;
+    }
+    console.log(items);
     return items.map((item, index) => {
         return <Item data={item} index={index} key={"item" + index} currentIndex={currentIndex} />;
     });
