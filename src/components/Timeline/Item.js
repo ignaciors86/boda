@@ -14,7 +14,7 @@ const Item = ({ data, index, currentIndex, weedding }) => {
         // if(activeCard === "horarios"){
             const interval = setInterval(() => {
                 setCurrentImageIndex(prevIndex => (prevIndex + 1) % imagenes.length);
-            }, index === 0 ? 500 : 2500);
+            }, index === 0 ? 500 : 1500);
     
             return () => clearInterval(interval); // Limpiar el intervalo al desmontar
         // }
