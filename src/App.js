@@ -5,6 +5,7 @@ import './App.scss';
 import { DragProvider } from './components/DragContext';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import FondosBaile from './components/FondosBaile/FondosBaile'; // Importa tu nuevo componente
+import { renderItems } from 'components/Timeline/items';
 
 const App = () => {
   const tlApp = gsap.timeline();
@@ -17,6 +18,11 @@ const App = () => {
   // }, []);  
   const duration = 1;
 console.log(articles);
+
+useEffect(() => {
+  renderItems();
+}, []);
+
   return (
     <Router>
       <DragProvider>

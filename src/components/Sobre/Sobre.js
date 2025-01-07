@@ -375,10 +375,6 @@ console.log(skipeaStorage)
     // console.log(isOpen)
   }, [isOpen]);
 
-  useEffect(() => {
-    renderItems();
-  }, []);
-
   return (
     <>
       <Bubbles />
