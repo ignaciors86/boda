@@ -14,6 +14,7 @@ import morreo from './assets/audio/morreo.mp3';
 import finisterre from './assets/audio/finisterre.mp3';
 import poetaHalley from "./assets/audio/poetaHalley.mp3";
 import makeYourOwnKindOfMusic from './assets/audio/makeYourOwnKindOfMusic.mp3';
+import bailarMorghulis from './assets/audio/bailarMorghulis.mp3';
 import animateOpacity from '../functions';
 import { useDragContext } from '../DragContext';
 import Espiral from 'components/Backgrounds/Espiral/Espiral';
@@ -29,7 +30,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
   const [isMuted, setIsMuted] = useState(true); // Estado para el mute del audio
   const [isMutedGeneral, setIsMutedGeneral] = useState(true); // Estado para el mute del audio
   const audioRefs = useRef(
-    [new Audio(makeYourOwnKindOfMusic), new Audio(finisterre), new Audio(morreo), new Audio(poetaHalley)]
+    [new Audio(makeYourOwnKindOfMusic), new Audio(finisterre), new Audio(morreo), new Audio(bailarMorghulis), new Audio(poetaHalley)]
     // [new Audio(makeYourOwnKindOfMusic), new Audio(finisterre)]
   );
   const [currentAudioIndex, setCurrentAudioIndex] = useState(0); // Índice del audio actual
@@ -73,7 +74,8 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
 
     setIsOpen(!isOpen);
 
-    gsap.set(".wax-seal", { animation: "none" });
+    const sello = document.querySelector('.wax-seal');
+    sello.classList.remove('cierrame');
     const sobre = document.querySelector('.sobre.closed');
     const duracion = getComputedStyle(document.documentElement).getPropertyValue('--duration').trim().replace('s', '');
 
@@ -371,7 +373,11 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
         ease: "ease",
       }, ">")
       .to(".prompt.final", { y: "0vh", duration: 1, opacity: 1, }, "<")
-    // console.log(isOpen)
+
+      isOpen && setTimeout(() => {
+        const sello = document.querySelector('.wax-seal');
+        sello.classList.add('cierrame');
+      }, 60000);
   }, [isOpen]);
 
   return (
@@ -392,7 +398,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
 
         <div className="envelope closed" ref={envelopeRef}>
           <div className="envelope-flap">
-            <div className="wax-seal back" onClick={() => !moving && handleClick("sobre")} />
+            <div className="wax-seal back cierrame" onClick={() => !moving && handleClick("sobre")} />
           </div>
           <div className="envelope-flap-bg"></div>
           <div className="envelope-body">
