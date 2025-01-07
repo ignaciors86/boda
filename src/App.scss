@@ -318,7 +318,9 @@ em {
   h2 {
     // font-size: calc(var(--size-unit)* 0.25) !important;
   }
-
+  .prompt .placeholder span{
+    line-height: calc(var(--size-unit) * 0.35);
+  }
   .loading {
     h2 {
       font-size: calc(var(--size-unit)* 0.15) !important;
