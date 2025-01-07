@@ -31,7 +31,8 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
   const [isMuted, setIsMuted] = useState(true); // Estado para el mute del audio
   const [isMutedGeneral, setIsMutedGeneral] = useState(true); // Estado para el mute del audio
   const audioRefs = useRef(
-    [new Audio(makeYourOwnKindOfMusic), new Audio(finisterre), new Audio(morreo),new Audio(poetaHalley)]
+    // [new Audio(makeYourOwnKindOfMusic), new Audio(finisterre), new Audio(morreo),new Audio(poetaHalley)]
+    [new Audio(makeYourOwnKindOfMusic), new Audio(finisterre)]
   );
   const [currentAudioIndex, setCurrentAudioIndex] = useState(0); // Índice del audio actual
   const tlSobre = useRef(gsap.timeline());
