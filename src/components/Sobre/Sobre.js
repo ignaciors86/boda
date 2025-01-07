@@ -141,6 +141,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
   useEffect(() => {
 
     gsap.to(".next", { opacity: (isMuted || isOpen === null)? 0 : 1, duration: .25, ease: "linear", });
+    gsap.to(".link-fino", { opacity: isOpen === null ? 0 : 1, duration: .25, ease: "linear", });
     
     const currentAudio = audioRefs.current[currentAudioIndex];
     currentAudio.muted = isMuted;
@@ -431,9 +432,23 @@ console.log(skipeaStorage)
       </button>
       <button
         className={`back next`}
-        onClick={playNextAudio}
+        onClick={() => {
+          gsap.to(".next", {
+            scale: .85,
+            duration: 0.1,
+            ease: "linear",
+            yoyo: true,
+            repeat: 1, // Repite una vez, lo que causa el efecto de ida y vuelta
+            onComplete: function(){this.kill()} 
+          });
+          playNextAudio();
+        }}
       > 
       </button>
+
+      { weedding && <p className="link-fino"><a href='/'>
+           ir a la versión fina de la web
+      </a></p> }
     </>
   );
 };
