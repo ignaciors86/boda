@@ -6,6 +6,7 @@ import { DragProvider } from './components/DragContext';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import FondosBaile from './components/FondosBaile/FondosBaile'; // Importa tu nuevo componente
 import { renderItems } from 'components/Timeline/items';
+import { items } from './components/Timeline/items'; // Asegúrate de importar correctamente
 
 const App = () => {
   const tlApp = gsap.timeline();
@@ -16,42 +17,49 @@ const App = () => {
   //     .then(response => response.json())
   //     .then(data => setArticles(data));
   // }, []);  
-  const duration = 1;
-console.log(articles);
 
-useEffect(() => {
-  renderItems();
-}, []);
+  const duration = 1;
+  console.log(articles);
+
+  // Precarga de audios
+  useEffect(() => {
+    const audioCache = [];
+    items.forEach((item) => {
+      if (item.audio) {
+        const audio = new Audio(item.audio);
+        audioCache.push(audio); // Guardar para evitar recolección de basura
+      }
+    });
+  }, []);
 
   return (
     <Router>
       <DragProvider>
-       {/* <div className="App"> */}
+        {/* <div className="App"> */}
         {/* {articles?.map(article => (
             <div key={article.id}>
               <h2>{article.nombre}</h2>
             </div>
           ))}  */}
 
-          <Routes>
-            <Route path="/" element={<>
-
-              <Sobre />
-            </>} />
-            <Route path="/weedding" element={<>
-              <Sobre weedding={true} tipo={true} uri="weedding" />
-            </>} />
-            <Route path="/weedding-house" element={<>
-              <Sobre weedding={true} tipo={true} hosteado={true} uri="weedding-house" />
-            </>} />
-            <Route path="/atajo" element={<>
-              <Sobre atajo={true} />
-            </>} />
-            <Route path="/prueba-tipo" element={<>
-              <Sobre atajo={true} tipo={true} />
-            </>} />
-            <Route path="/fondos-baile" element={<FondosBaile />} /> {/* Nueva ruta */}
-          </Routes>
+        <Routes>
+          <Route path="/" element={<>
+            <Sobre />
+          </>} />
+          <Route path="/weedding" element={<>
+            <Sobre weedding={true} tipo={true} uri="weedding" />
+          </>} />
+          <Route path="/weedding-house" element={<>
+            <Sobre weedding={true} tipo={true} hosteado={true} uri="weedding-house" />
+          </>} />
+          <Route path="/atajo" element={<>
+            <Sobre atajo={true} />
+          </>} />
+          <Route path="/prueba-tipo" element={<>
+            <Sobre atajo={true} tipo={true} />
+          </>} />
+          <Route path="/fondos-baile" element={<FondosBaile />} /> {/* Nueva ruta */}
+        </Routes>
         {/* </div> */}
       </DragProvider>
     </Router>
