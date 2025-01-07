@@ -21,9 +21,9 @@ const Loading = ({ text = true }) => {
         });
     }, []);
     return <div className="loading">
-        {/* {text && <h2>Cargando... </h2>} */}
+        
         <img src={ositos} alt="Ositos cargando" />
-        {text && <p>Si estás usando una red lenta, ten paciencia.</p>}
+        {text && <p><h2>Cargando idea preconcebida de nuestra boda... </h2>Si estás usando una red lenta, ten paciencia.</p>}
     </div>
 }
 
