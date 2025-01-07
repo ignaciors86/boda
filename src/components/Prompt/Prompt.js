@@ -66,7 +66,7 @@ const Prompt = ({ weedding, option2=false, isOpen, uri }) => {
         `...`,
         `Os quiero mucho`,
         `Mogollón`,
-        `A ti, osillo, más que a nadie`,
+        `A ti, osillo, más que a nada, y tengo unas ganas locas de que llegue el día`,
         `Qué fuerte tronco, nos vamos a casar...`,
         `¡Nos vemos el 24 de mayo!`,
         `...`,
