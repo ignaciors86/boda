@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import './Sobre.scss';
 import invitacion from './assets/images/invitacion-vacio.png';
-// import bubuDudu from '../assets/images/bubu-dudu.jpg';
 import nosotrosjpg from './assets/images/nosotros.jpg';
 import { ReactComponent as Nosotros } from './assets/images/nosotros.svg';
 import Card from './Card';
@@ -19,7 +18,6 @@ import animateOpacity from '../functions';
 import { useDragContext } from '../DragContext';
 import Espiral from 'components/Backgrounds/Espiral/Espiral';
 import Bubbles from 'components/Backgrounds/Bubles/Bubles';
-import { renderItems } from 'components/Timeline/items';
 
 const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
 
@@ -31,8 +29,8 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
   const [isMuted, setIsMuted] = useState(true); // Estado para el mute del audio
   const [isMutedGeneral, setIsMutedGeneral] = useState(true); // Estado para el mute del audio
   const audioRefs = useRef(
-    // [new Audio(makeYourOwnKindOfMusic), new Audio(finisterre), new Audio(morreo),new Audio(poetaHalley)]
-    [new Audio(makeYourOwnKindOfMusic), new Audio(finisterre)]
+    [new Audio(makeYourOwnKindOfMusic), new Audio(finisterre), new Audio(morreo), new Audio(poetaHalley)]
+    // [new Audio(makeYourOwnKindOfMusic), new Audio(finisterre)]
   );
   const [currentAudioIndex, setCurrentAudioIndex] = useState(0); // Índice del audio actual
   const tlSobre = useRef(gsap.timeline());
@@ -141,9 +139,9 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
 
   useEffect(() => {
 
-    gsap.to(".next", { opacity: (isMuted || isOpen === null)? 0 : 1, duration: .25, ease: "linear", });
+    gsap.to(".next", { opacity: (isMuted || isOpen === null) ? 0 : 1, duration: .25, ease: "linear", });
     gsap.to(".link-fino", { opacity: isOpen === null ? 0 : 1, duration: .25, ease: "linear", });
-    
+
     const currentAudio = audioRefs.current[currentAudioIndex];
     currentAudio.muted = isMuted;
     currentAudio.loop = false; // Ningún audio se reproduce en bucle individualmente
@@ -196,7 +194,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
   };
 
   useEffect(() => {
-    
+
     const sobre = document.querySelector('.sobre');
     // Añadimos los eventos para ratón y toque
     sobre.addEventListener('mousemove', handleDrag);
@@ -218,14 +216,14 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
       const tlBolita = gsap.timeline({ repeat: false, });
       // Mover con GSAP al centro de la pantalla
 
-      
+
       tlBolita
         .to(".prompt.inicial", {
           opacity: 0, duration: .5, ease: "ease",
           y: "100vh",
         }, 0)
 
-        tlBolita
+      tlBolita
         // .to(".bola", { clearProps: "all", animation: "none", opacity: 1, duration: 0,}, 0)
         .to(".bola", {
 
@@ -243,16 +241,16 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
           transformOrigin: "center center", // Asegura que el giro sea alrededor del centro del elemento
           transform: "none",
           animation: "none",
-         
+
         }, 0)
 
         .to(".bola", {
           opacity: 0,
           duration: 1,
-          onStart: function(){
+          onStart: function () {
             animateOpacity(startDrawing);
           },
-          onComplete: function(){
+          onComplete: function () {
             const bolas = document.querySelectorAll(".bola");
 
             bolas.forEach((bola) => {
@@ -261,7 +259,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
               }
             });
           },
-   
+
         }, ">");
     }
   }
@@ -283,14 +281,14 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
 
     // Verificar si ya existe la clave 'skipea' en localStorage
     const skipeaStorage = localStorage.getItem("skipea");
-console.log(skipeaStorage)
+    console.log(skipeaStorage)
     // Si no existe, la configuramos y la primera vez que se abra la página se debe ejecutar inicializar
     if (skipeaStorage || atajo) {
-      
+
       inicializar();
-      
-    }else{
-      
+
+    } else {
+
       setTimeout(() => {
         inicializar();
         localStorage.setItem("skipea", "true"); // Guardamos la clave 'skipea' con valor 'true'
@@ -298,7 +296,7 @@ console.log(skipeaStorage)
     }
 
 
-  
+
 
     const waxSeal = document.querySelector('.wax-seal');
     const sobre = document.querySelector('.sobre.closed');
@@ -364,7 +362,7 @@ console.log(skipeaStorage)
     const tlCierre = gsap.timeline();
     isOpen === false && tlCierre.to(".link-fino", { left: "50%", transform: "translateX(-50%)", top: "10dvh", duration: 2, zIndex: 5, }, 0);
     isOpen !== null && tlCierre
-      
+
       .to(".prompt.final", { zIndex: 3, duration: 0, opacity: 0, }, 0)
       .to("#myCanvas", {
         opacity: isOpen ? 0.2 : 0.7,
@@ -379,7 +377,7 @@ console.log(skipeaStorage)
   return (
     <>
       <Bubbles />
-      {isOpen === null && <Espiral weedding={weedding} isOpen={isOpen} uri={uri}/>}
+      {isOpen === null && <Espiral weedding={weedding} isOpen={isOpen} uri={uri} />}
       {isOpen === false && <Espiral weedding={weedding} isOpen={isOpen} option2={true} />}
       <div className={`sobre closed ${tipo ? "weedding" : ""}`} ref={sobreRef}>
 
@@ -413,7 +411,7 @@ console.log(skipeaStorage)
               </Card>
               <Card seccion="ubicaciones" onClick={() => handleClick("ubicaciones")} trasera={<Lugar weedding={weedding} hosteado={hosteado} />}>                <h2>Lugar</h2>
               </Card>
-              <Card seccion={"asistencia"} onClick={() => handleClick("asistencia")} trasera={<Asistencia weedding={weedding}/>}>
+              <Card seccion={"asistencia"} onClick={() => handleClick("asistencia")} trasera={<Asistencia weedding={weedding} />}>
                 <h2>Asistencia</h2>
               </Card>
             </div>
@@ -438,16 +436,16 @@ console.log(skipeaStorage)
             ease: "linear",
             yoyo: true,
             repeat: 1, // Repite una vez, lo que causa el efecto de ida y vuelta
-            onComplete: function(){this.kill()} 
+            onComplete: function () { this.kill() }
           });
           playNextAudio();
         }}
-      > 
+      >
       </button>
 
-      { weedding && <p className="link-fino"><a href='/'>
-           ir a la versión fina de la web
-      </a></p> }
+      {weedding && <p className="link-fino"><a href='/'>
+        ir a la versión fina de la web
+      </a></p>}
     </>
   );
 };
