@@ -375,12 +375,9 @@ em {
       line-height: calc(var(--size-unit)* 0.15) !important;
 
     }
-
-    .eventos-checkboxes {
-      h2 {
-        font-size: calc(var(--size-unit)* 0.2) !important;
-        line-height: calc(var(--size-unit)* 0.2) !important;
-      }
+    h2 {
+      font-size: calc(var(--size-unit)* 0.2) !important;
+      line-height: calc(var(--size-unit)* 0.2) !important;
     }
   }
 }
