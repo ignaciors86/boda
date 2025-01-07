@@ -118,14 +118,19 @@ const items = [
 
             <h3>Viernes:</h3>
             <span>
-                <b>20:00</b> - Preboda
+                <b>20:00</b> - Preboda <i>(Villas de Pomar)</i>
             </span>
 
 
             <h3>Sábado (Boda): </h3>
             <span>
+                <b>12:00</b>
+                - Bus <i>(Corte Inglés)</i>
+            </span>
+            <span>
                 <b>13:00</b>
                 - Ceremonia
+                <i>(Villas de Pomar)</i>
             </span>
             <span>
                 <b>14:00</b>
@@ -145,7 +150,7 @@ const items = [
             </span>
 
             <h3>Domingo: </h3>
-            <span><b>¿? - </b> desayuno y comida
+            <span><b>¿? - </b> desayuno y comida<i>(Villas de Pomar)</i>
             </span>
         </div>,
         descriptionWeedding: <div>
@@ -157,6 +162,10 @@ const items = [
 
 
             <h3>Sábado (Boda): </h3>
+            <span>
+                <b>12:00</b>
+                - Bus <i>(Corte Inglés)</i>
+            </span>
             <span>
                 <b>13:00</b>
                 - Ceremonia

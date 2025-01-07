@@ -117,7 +117,14 @@
 
   &.item1 {
     background-size: auto 100% !important;
-
+    i{
+      font-size: calc(var(--size-unit) * 0.1);
+      line-height: calc(var(--size-unit) * 0.1);
+      margin-left: 2%;
+      rotate: 4deg;
+      margin-top: 2%;
+      color: var(--orange);
+    }
     .images-container {
       height: 100%;
     }
