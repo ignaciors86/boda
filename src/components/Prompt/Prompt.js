@@ -54,7 +54,8 @@ const Prompt = ({ weedding, option2=false, isOpen, uri }) => {
         `ese día se habrá planeado pensando en todos vosotros`,
         `Y ahora, ¿será posible que alargue esta vaina más?`,
         `Ya está todo dicho, ¿no?`,
-        `Podría aprovechar a contarte cosas super irrelevantes...`,
+        `Podría aprovechar a contarte cosas super irrelevantes`,
+        `...`,
         `Por ejemplo: ¿te has dado cuenta de que el sobre cerrado se parece a Freezer?`,
         `Lo que me recuerda que esta ni siquiera es la forma final de la web...`,
         `Also, los colores que he usado son los de Namek`,
@@ -144,7 +145,7 @@ const Prompt = ({ weedding, option2=false, isOpen, uri }) => {
                     options={{
                         autoStart: true,
                         loop: false, // No reinicia
-                        delay: 35, // Velocidad de escritura
+                        delay: 25, // Velocidad de escritura
                     }}
                 /> : 
                 <Typewriter
@@ -170,7 +171,7 @@ const Prompt = ({ weedding, option2=false, isOpen, uri }) => {
                     options={{
                         autoStart: true,
                         loop: false, // No reinicia
-                        delay: 35, // Velocidad de escritura
+                        delay: 25, // Velocidad de escritura
                     }}
                 /> }
             </div>
