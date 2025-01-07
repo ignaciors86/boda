@@ -243,7 +243,7 @@ const items = [
     {
         title: "Domingo",
         description: <p>Churritos y paella para volver a la vida y que os vayáis comidos... <b><h3>¡Y AGUR, YOGUR!</h3></b></p>,
-        descriptionWeedding: <p>Churritos y paella para volver a la vida, panda de cadáveres... <b><h3>¡Y WINGAPO, MARICONES!</h3></b></p>,
+        descriptionWeedding: <p>Churritos y paella para volver a la vida, panda de cadáveres exquisitos... y ahora sí:<b><h3>¡WINGAPO, MARICONES!</h3></b></p>,
         images: [bojack, tio, finyjakeresaca, tequila, randyresaca, postBodaFriends, wingapo],
         audio: rumbling,
     }
