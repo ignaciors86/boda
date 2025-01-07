@@ -387,6 +387,9 @@ em {
   0% {
     transform: rotate(0deg) translate(0);
   }
+  25% {
+    transform: rotate(20deg) translate(-5dvh, -5dvh);
+  }
   50% {
     transform: rotate(20deg) translate(5dvh, -5dvh);
   }
@@ -397,12 +400,12 @@ em {
 
 .link-fino {
 
-
+border-radius: 50%;
   width: calc(var(--size-unit)* .8);
   height: calc(var(--size-unit)* .8);
   position: absolute;
-  bottom: 5dvh;
-  left: 5dvh;
+  bottom: 0dvh;
+  left: 0dvh;
   display: flex;
 
   align-items: center;
