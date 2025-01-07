@@ -361,7 +361,9 @@ console.log(skipeaStorage)
   useEffect(() => {
     isOpen !== null && gsap.killTweensOf(".prompt.inicial");
     const tlCierre = gsap.timeline();
+    isOpen === false && tlCierre.to(".link-fino", { left: "50%", transform: "translateX(-50%)", top: "10dvh", duration: 2, zIndex: 5, }, 0);
     isOpen !== null && tlCierre
+      
       .to(".prompt.final", { zIndex: 3, duration: 0, opacity: 0, }, 0)
       .to("#myCanvas", {
         opacity: isOpen ? 0.2 : 0.7,
