@@ -143,7 +143,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
   useEffect(() => {
 
     gsap.to(".next", { opacity: (isMuted || isOpen === null) ? 0 : 1, duration: .25, ease: "linear", });
-    gsap.to(".fullscreen", { opacity: (isOpen === null) ? 0 : 1, duration: .25, ease: "linear", });
+    gsap.to(".fullscreen", { opacity: (isOpen === null) ? 1 : 1, duration: .25, ease: "linear", });
     gsap.to(".link-fino", { opacity: isOpen === null ? 0 : 1, duration: .25, ease: "linear", });
 
     const currentAudio = audioRefs.current[currentAudioIndex];
