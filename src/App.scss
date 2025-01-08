@@ -345,7 +345,7 @@ em {
 
   .card.invitacion .card-front .fecha {
     font-size: calc(var(--size-unit) * 0.4) !important;
-
+    word-spacing: calc(var(--size-unit)* -.12);
     strong {
       font-size: calc(var(--size-unit) * 0.3) !important;
     }
