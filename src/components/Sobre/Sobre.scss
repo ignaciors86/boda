@@ -8,10 +8,10 @@
     margin-left: calc(var(--size-unit)* -1.5);
     top: 50%;
     margin-top: calc(var(--size-unit)* -1.5);
-    opacity: 0;
+    // opacity: 0;
     z-index: -1;
 
-    
+    scale: 3;
 
     svg {
         background: transparent;
@@ -43,16 +43,23 @@
         object-fit: contain;
         z-index: 0;
         animation: drawPath 10s ease forwards;
-
+        // opacity: .5;
         /* Reinicia la animación */
         path {
-            stroke: var(--darkGrayTransparent);
-            stroke-width: 2;
+            // stroke: #001100;
+            stroke: var(--greenTransparent);
+            stroke-width: 1;
             fill: none;
             stroke-dasharray: 5000;
             /* Establecemos un valor grande por defecto */
             stroke-dashoffset: 5000;
-            animation: drawPath 5s ease forwards;
+            animation: drawPath 400s ease forwards;
+            transition: .5s ease;
+        }
+        &.nosotros-svg-inicial{
+            path {
+                opacity: 0;
+            }
         }
     }
 
@@ -403,8 +410,8 @@
                         }
 
                         @media (orientation: portrait) {
-                            left: calc(var(--size-unit)* -1.4);
-                            top: calc(var(--size-unit)* 1.4);
+          left: calc(var(--size-unit)* -1.4);
+        top: calc(var(--size-unit)* 1.4);
                             rotate: -47deg !important;
                         }
 

@@ -245,15 +245,16 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
           transformOrigin: "center center", // Asegura que el giro sea alrededor del centro del elemento
           transform: "none",
           animation: "none",
-
+          onStart: function () {
+            animateOpacity();
+            // animateOpacity(startDrawing);
+          },
         }, 0)
 
         .to(".bola", {
           opacity: 0,
           duration: 1,
-          onStart: function () {
-            animateOpacity(startDrawing);
-          },
+
           onComplete: function () {
             const bolas = document.querySelectorAll(".bola");
 
@@ -314,30 +315,14 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
         paused: !sobre.classList.contains('closed'),
       });
     }
-  }, []);
 
-  const startDrawing = () => {
-
-    // Reinicia el SVG forzando un cambio en la clave
-    setAnimationKey((animationKey) => animationKey + 1);
-    const svgElement = document.querySelector('.sobre .nosotros-svg');
-    const paths = svgElement?.querySelectorAll('path');
-
-    // Aumentar opacidad del SVG
-    // gsap.to(svgElement, { opacity: 1, duration: 1, delay: 1, });
-
-    paths?.forEach((path) => {
-      const pathLength = path.getTotalLength();
-
-      // Configuración inicial del trazo
-      path.style.strokeDasharray = pathLength;
-      path.style.strokeDashoffset = pathLength;
-
-      path.style.strokeDashoffset = 0; // Inicia la animación del trazo
-
+    gsap.to(".nosotros-svg-inicial path", {
+      opacity: 1,
+      duration: 2,
+      delay: 1,
     });
 
-  };
+  }, []);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -442,7 +427,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
         <div alt="Nosotros" className="nosotros-jpg" >
           {!isOpen && <Nosotros
             key={animationKey} // Fuerza el reinicio de la animación
-            className="nosotros-svg"
+            className="nosotros-svg nosotros-svg-inicial"
             viewBox="0 0 843 840"
           />}
           <img src={nosotrosjpg} alt="Nosotros" className="nosotros-jpg-imagen" />
