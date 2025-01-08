@@ -143,7 +143,7 @@ const play = () => {
             <div className="progress-bar">
               <Marquee speed={50}>
                 <span>
-                  Arrastra la bolita hacia los lados para ver bien el finde que hemos planeado. Al principio hay mucho gif y música en proceso de descarga y estoy usando un servidor gratuíto. Esto, al principio, provoca dolor de tripita en los iPhone{ weedding ? " (como las setas)" : ""}, y sí, probablemente podría estar más optimizado, pero { !weedding ? "yo que se, algo tenía que malir sal..." : "me esta dando una pereza ya que flipas revisarlo más"} 
+                  Arrastra la bolita hacia los lados para ver bien el finde que hemos planeado. Hay mucho gif y música en proceso de descarga y estoy usando un servidor gratuíto. Esto, al principio, provoca dolor de tripita en los iPhone{ weedding ? " (como las setas)" : ""}, y sí, probablemente podría estar más optimizado, pero { !weedding ? "yo que se, algo tenía que malir sal..." : "me esta dando una pereza ya que flipas revisarlo más"} 
                 </span>
               </Marquee>
               <input
