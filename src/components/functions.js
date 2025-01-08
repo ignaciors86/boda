@@ -1,4 +1,5 @@
 import gsap from "gsap";
+import { CustomEase } from "gsap/all";
 
 let canAnimate = true; // Controla si la animación puede ejecutarse
 let animationRunning = false; // Controla si la animación ya está en curso
@@ -20,6 +21,9 @@ const animateOpacity = (callback) => {
         .replace('s', '') * 1; // Elimina la "s" del valor de segundos
 
     if (canAnimate) {
+        gsap.registerPlugin(CustomEase);
+
+        const ease = CustomEase.create("custom", "M0,0 C0.3,0.1 0.5,1 1,1");
         tlInicial
             .set(".sobre .nosotros-jpg-imagen", { borderRadius: "50%",})
             .to(".prompt.inicial", {
@@ -32,22 +36,28 @@ const animateOpacity = (callback) => {
                 delay: 0,
                 ease: "ease",
             }, 0)
+            .to(".sobre .nosotros-svg-inicial path", {
+                animation: "drawPath 30s ease forwards",
+                duration: 2,
+                stroke: "var(--orange)",
+            }, 0) 
+            .to(".sobre .nosotros-svg-inicial path", {
+                duration: 1,
+                stroke: "var(--darkPurple)",
+            }, ">")            
+            .to("body", { background: "cadetblue", duration: duracion * .5 }, 0)
             
-            .to("body", { background: "cadetblue", duration: duracion * .5 }, ">")
-        
-            .to(".sobre", { opacity: 0, zIndex: 2, duration: 0, scale: 3 }, ">")
-            .to(".sobre", { opacity: 1, duration: duracion*5, scale: 1, y: 0, ease: "ease",  onStart: callback}, ">")
+            .to(".sobre", { zIndex: 2, duration: 0,}, "<")
+
+
+
+            .to(".sobre", { opacity: 1, duration: duracion*4, scale: 1, y: 0, ease: ease,  onStart: callback}, ">")
+            .to(".sobre .nosotros-jpg-imagen", { borderRadius: 0, duration: 1, delay: 1, }, "<")
+            .to(".sobre .nosotros-jpg-imagen", { opacity: 1, duration: 2, delay: 1.5, }, ">")
             
-            .to(".sobre .nosotros-svg", {
-                opacity: 1, 
-                duration: 3,
-               
-            }, "<")
-            .to(".sobre .nosotros-jpg-imagen", { opacity: 1, duration: 4, delay: 2, }, "<")
-            .to(".sobre .nosotros-jpg-imagen", { borderRadius: 0, duration: 2, delay: 1.5, }, "<")
 
             
-            .to(".sobre .nosotros-svg", { opacity: 0, duration: .5, }, ">")
+            .to(".sobre .nosotros-svg-inicial", { opacity: 0, duration: .5, }, ">")
             
             
             .to(".sobre .nosotros-jpg", {
@@ -56,7 +66,7 @@ const animateOpacity = (callback) => {
                 ease: "ease-out",
                 delay: 2,
             }, ">-=1")
-            // .to(".sobre .nosotros-svg", { display: "none", visibility: "hidden", duration: 0, }, "<")
+            // .to(".sobre .nosotros-svg-inicial", { display: "none", visibility: "hidden", duration: 0, }, "<")
             .to(".envelope", {
                 rotateY: 0,
                 duration: duracion * 1,
