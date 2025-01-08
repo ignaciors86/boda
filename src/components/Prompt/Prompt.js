@@ -29,6 +29,7 @@ const Prompt = ({ weedding, option2=false, isOpen, uri }) => {
         `${weedding ? ("Si quieres verla, solo tienes que volver a entrar, pero quita el /"+uri+" en la URL que has recibido") : "Nah... la verdad es que no mucho"}`,
         `Va, arrastra el dedo por la pantalla de una vez...`,
         `Y si has llegado hasta aquí, espero que al menos hayas pulsado el botón para activar el audio`,
+        `y, en el caso de PC, al botoncico de ver a pantalla completa`,
         `Podemos estar así todo el día...`,
         `Tooooooodo el día...`,
         `Toooooooooo`,
