@@ -408,7 +408,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
               <Card seccion="invitacion" onClick={() => handleClick("invitacion")} trasera={<Invitacion />}>
                 <img src={invitacion} alt="Invitacion" />
                 <span className='nombres'>Mario y Nacho</span>
-                <span className="fecha">25 de Mayo<strong>2025</strong></span>
+                <span className="fecha">24 de Mayo<strong>2025</strong></span>
                 <span className="lugar">Salamanca</span>
               </Card>
               <Card seccion="horarios" onClick={() => handleClick("horarios")} trasera={<Timeline weedding={weedding} />}>
