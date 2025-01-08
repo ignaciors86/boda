@@ -19,6 +19,7 @@ import { useDragContext } from '../DragContext';
 import Espiral from 'components/Backgrounds/Espiral/Espiral';
 import Bubbles from 'components/Backgrounds/Bubles/Bubles';
 import { CustomEase } from 'gsap/all';
+import MobileDetect from "mobile-detect";
 
 const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
 
@@ -39,7 +40,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
   const sobreRef = useRef(null);  // Referencia para el sobre
   const envelopeRef = useRef(null); // Referencia para el sobre interactivo
   const escala = 1.1;
-
+  const md = new MobileDetect(window.navigator.userAgent);
   const [animationKey, setAnimationKey] = useState(1);
 
   const toggle = () => {
@@ -142,6 +143,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
   useEffect(() => {
 
     gsap.to(".next", { opacity: (isMuted || isOpen === null) ? 0 : 1, duration: .25, ease: "linear", });
+    gsap.to(".fullscreen", { opacity: (isOpen === null) ? 0 : 1, duration: .25, ease: "linear", });
     gsap.to(".link-fino", { opacity: isOpen === null ? 0 : 1, duration: .25, ease: "linear", });
 
     const currentAudio = audioRefs.current[currentAudioIndex];
@@ -362,9 +364,11 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
   useEffect(() => {
     isOpen !== null && gsap.killTweensOf(".prompt.inicial");
     const tlCierre = gsap.timeline();
-    isOpen !== null && tlCierre.to(".link-fino", { opacity: 1, left: isOpen ? 0 : "45%", bottom: isOpen ? "0" : "80dvh",
+    isOpen !== null && tlCierre.to(".link-fino", {
+      opacity: 1, left: isOpen ? 0 : "45%", bottom: isOpen ? "0" : "80dvh",
       ease: CustomEase.create("custom", "M0,0,C0.126,0.382,0.282,0.674,0.44,0.822,0.632,1.002,0.818,1.001,1,1"),
-      transform: "translateX(-50%)", duration: 4, zIndex: 5, delay: 2, }, 0);
+      transform: "translateX(-50%)", duration: 4, zIndex: 5, delay: 2,
+    }, 0);
     isOpen !== null && tlCierre
 
       .to(".prompt.final", { zIndex: 3, duration: 0, opacity: 0, }, 0)
@@ -376,11 +380,57 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
       }, ">")
       .to(".prompt.final", { y: "0vh", duration: 1, opacity: 1, }, "<")
 
-      isOpen && setTimeout(() => {
-        const sello = document.querySelector('.wax-seal');
-        sello.classList.add('cierrame');
-      }, 60000);
+    isOpen && setTimeout(() => {
+      const sello = document.querySelector('.wax-seal');
+      sello.classList.add('cierrame');
+    }, 60000);
   }, [isOpen]);
+
+
+  const [fullScreen, setFullScreen] = useState(false);
+  useEffect(() => {
+
+
+
+    const toggleFullScreen = async () => {
+
+
+
+      if(!md.mobile()){
+        const boton = document.querySelector(".fullscreen");
+        boton.classList.toggle("active");
+        gsap.set(boton, { animation: "none", });
+        const elem = document.documentElement;
+        try {
+          if (fullScreen) {
+            if (elem.requestFullscreen) {
+              await elem.requestFullscreen();
+            } else if (elem.mozRequestFullScreen) {
+              await elem.mozRequestFullScreen();
+            } else if (elem.webkitRequestFullscreen) {
+              await elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) {
+              await elem.msRequestFullscreen();
+            }
+          } else {
+            if (document.exitFullscreen) {
+              await document.exitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+              await document.mozCancelFullScreen();
+            } else if (document.webkitExitFullscreen) {
+              await document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+              await document.msExitFullscreen();
+            }
+          }
+        } catch (error) {
+          console.error("Error toggling fullscreen mode:", error);
+        }
+      } 
+    };
+
+    toggleFullScreen();
+  }, [fullScreen]);
 
   return (
     <>
@@ -450,6 +500,22 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
         }}
       >
       </button>
+
+      { !md.mobile() && <button
+        className={`back fullscreen`}
+        onClick={() => {
+          gsap.to(".fullscreen", {
+            scale: .85,
+            duration: 0.1,
+            ease: "linear",
+            yoyo: true,
+            repeat: 1, // Repite una vez, lo que causa el efecto de ida y vuelta
+            onComplete: function () { this.kill() }
+          });
+          setFullScreen(!fullScreen);
+        }} 
+      >
+      </button> }
 
       {weedding && <p className="link-fino"><a href='/'>
         ir a la versión fina de la web
