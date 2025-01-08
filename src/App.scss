@@ -193,11 +193,12 @@ em {
     // background: lightblue;
   }
 }
-.volumen{
-  &.stop{
+
+.volumen {
+  &.stop {
     animation: shadowPulse 1s ease-in-out infinite;
   }
-  
+
 }
 
 .back,
@@ -324,9 +325,11 @@ em {
   h2 {
     // font-size: calc(var(--size-unit)* 0.25) !important;
   }
-  .prompt .placeholder span{
+
+  .prompt .placeholder span {
     line-height: calc(var(--size-unit) * 0.35);
   }
+
   .loading {
     h2 {
       font-size: calc(var(--size-unit)* 0.15) !important;
@@ -334,9 +337,11 @@ em {
       margin-bottom: 3%;
     }
   }
-  .item.item1 .info span{
+
+  .item.item1 .info span {
     line-height: calc(var(--size-unit)* 0.175);
   }
+
   p,
   a,
   span {
@@ -346,6 +351,7 @@ em {
   .card.invitacion .card-front .fecha {
     font-size: calc(var(--size-unit) * 0.4) !important;
     word-spacing: calc(var(--size-unit)* -.12);
+
     strong {
       font-size: calc(var(--size-unit) * 0.3) !important;
     }
@@ -383,6 +389,7 @@ em {
       line-height: calc(var(--size-unit)* 0.15) !important;
 
     }
+
     h2 {
       font-size: calc(var(--size-unit)* 0.2) !important;
       line-height: calc(var(--size-unit)* 0.2) !important;
@@ -394,12 +401,15 @@ em {
   0% {
     transform: rotate(0deg) translate(0);
   }
+
   25% {
     transform: rotate(20deg) translate(-2dvh, -2dvh);
   }
+
   50% {
     transform: rotate(20deg) translate(2dvh, -2dvh);
   }
+
   100% {
     transform: rotate(0deg) translate(0dvh);
   }
@@ -407,7 +417,7 @@ em {
 
 .link-fino {
 
-border-radius: 50%;
+  border-radius: 50%;
   width: calc(var(--size-unit)* .8);
   height: calc(var(--size-unit)* .8);
   position: absolute;
@@ -419,7 +429,8 @@ border-radius: 50%;
   z-index: 0;
   animation: spinLink 10s ease-in-out infinite;
   opacity: 0;
-  a{
+
+  a {
     z-index: 2;
     padding: 5%;
     font-size: calc(var(--size-unit)* 0.175) !important;
@@ -428,6 +439,7 @@ border-radius: 50%;
     color: white;
     text-decoration: none;
   }
+
   // &:before {
   //   content: "";
   //   position: absolute;
@@ -454,6 +466,6 @@ border-radius: 50%;
     z-index: 0;
 
   }
-  
+
 
 }
