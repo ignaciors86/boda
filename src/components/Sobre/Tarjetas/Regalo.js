@@ -34,7 +34,7 @@ const Regalo = () => {
             options={{
                 autoStart: true,
                 loop: false, // No repetir la animación
-                delay: 50, // Velocidad de escritura
+                delay: 25, // Velocidad de escritura
                 // cursor: "", // Elimina el cursor al finalizar
             }}
         />
