@@ -177,6 +177,7 @@ em {
 }
 
 .volumen,
+.fullscreen,
 .next {
   &:before {
     background: white !important;
@@ -198,8 +199,8 @@ em {
   &.stop {
     animation: shadowPulse 1s ease-in-out infinite;
   }
-
 }
+
 
 .back,
 .play,
@@ -245,6 +246,23 @@ em {
   &:before {
     mask-image: url("../assets/images/next.png");
     mask-position: 55% 50%;
+  }
+}
+
+.fullscreen {
+  opacity: 0;
+  right: 2dvh;
+  top: unset;
+  bottom: 2dvh;
+  animation: shadowPulse 1s ease-in-out infinite;
+  &:before {
+    mask-image: url("../assets/images/fullScreen2.png");
+    mask-position: 50% 50%;
+  }
+  &.active{
+    &:before {
+      mask-image: url("../assets/images/fullScreen.png");
+    } 
   }
 }
 
