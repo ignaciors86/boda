@@ -56,17 +56,19 @@ const Timeline = ({weedding}) => {
     }
   }, [sliderValue, currentIndex]);
 
-
+const play = () => {
+  preloadedAudios.current.forEach((audio, index) => {
+    if (index === currentIndex && activeCard === "horarios" ) {
+      audio.play().catch(console.error);
+    } else {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+  });
+}
   useEffect(() => {
-    preloadedAudios.current.forEach((audio, index) => {
-      if (index === currentIndex && activeCard === "horarios" ) {
-        audio.play().catch(console.error);
-      } else {
-        audio.pause();
-        audio.currentTime = 0;
-      }
-    });
-  }, [activeCard, currentIndex]);
+    play();
+  }, [activeCard]);
 
   const handleMuteToggle = () => {
     setIsMuted(!isMuted);
@@ -83,11 +85,13 @@ const Timeline = ({weedding}) => {
   };
 
   const handleMouseDown = () => {
+    preloadedAudios.current[currentIndex].pause();
     gsap.to(".loading", { opacity: 1, duration: 0.15, delay: .15 }); // Aumenta la opacidad al hacer clic
     gsap.to(".elementsToHide", { opacity: 0, duration: 0.15, delay: 0, }); // Reduce la opacidad al soltar
   };
 
   const handleMouseUp = () => {
+    play();
     gsap.to(".loading", { opacity: 0, duration: 0.3, delay: 0, }); // Reduce la opacidad al soltar
     gsap.to(".elementsToHide", { opacity: 1, duration: 0.3, delay: .3, }); // Reduce la opacidad al soltar
   };
