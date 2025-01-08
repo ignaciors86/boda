@@ -52,12 +52,10 @@
   animation: shadowPulse 10s ease-in-out infinite;
   margin: auto;
   background: var(--purpleTransparent);
-  // border: calc(var(--size-unit)* 0.02) solid var(--greenTransparent);
-  // overflow: hidden;
   z-index: 1;
   position: absolute;
-  bottom: calc(var(--size-unit)* 0.25);
-  height: calc(var(--size-unit)* 0.25);
+  bottom: calc(var(--size-unit)* 0.22);
+  height: calc(var(--size-unit)* 0.3);
   width: 88%;
   display: flex;
   justify-content: center;
