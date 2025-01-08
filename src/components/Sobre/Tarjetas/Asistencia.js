@@ -188,7 +188,7 @@ const Asistencia = ({weedding}) => {
                             name="comentarios"
                             value={formData.comentarios}
                             onChange={handleChange}
-                            placeholder={"Si eres vegano, inviegno, alérgico, o necesitas aclarar cualquier cosa, hazlo aquí." + (weedding ? "En caso de querer probar los edibles del sábado o la coctelería del viernes, dínoslo también." : "")}
+                            placeholder={"Si eres vegano, inviegno, alérgico, o necesitas aclarar cualquier cosa, hazlo aquí." + (weedding ? "En caso de querer probar los edibles del sábado o la coctelería del viernes, dínoslo también. *Disclaimer: se harán flojitos, y asumimos que somos mayorcitos todos si a alguien no le sienta bien el consumo." : "")}
                         />
                     </div>
                     <div className="form-group horizontal quien">
