@@ -97,7 +97,7 @@ const Timeline = ({ weedding }) => {
     });
   }
   useEffect(() => {
-    if (activeCard === "horarios") {
+    if (activeCard === "horarios" ) {
       audioRefs.current[currentIndex].play().catch(console.error);
     } else {
       audioRefs.current[currentIndex].pause();
@@ -137,25 +137,28 @@ const Timeline = ({ weedding }) => {
 
   // Pausar todos los audios al minimizar o cambiar de pestaña
   useEffect(() => {
+  
     const handleVisibilityChange = () => {
       
+
+
+
       if (document.hidden) {
-        audioRefs.current[currentIndex].muted = true;
-        audioRefs.current[currentIndex].pause()
+        // Pausar todos los audios cuando la ventana está oculta
+        audioRefs.current.forEach(audio => audio.pause());
       } else {
-        audioRefs.current[currentIndex].muted = false;
+        // Reanudar el audio actual cuando la ventana es visible
+        audioRefs.current[currentIndex].muted = isMuted;
         audioRefs.current[currentIndex].play().catch(error => {
           // console.log('Error al reanudar el audio:', error);
         });
       }
-
-    };
-
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [isMuted]);
+  };
+  }, [isMuted, currentIndex]);
 
   // Pausar todos los audios al minimizar o cambiar de pestaña
   useEffect(() => {
