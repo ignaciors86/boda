@@ -165,8 +165,8 @@
                     label{
                         p{
                             width: 100%;
-                            // font-size: calc(var(--size-unit)* 0.13);
-                            // line-height: calc(var(--size-unit)* 0.13);
+                            line-height: calc(var(--size-unit)* 0.15);
+                            font-size: calc(var(--size-unit)* 0.15) !important;
                             display: flex;
                             justify-content: flex-start;
                             text-align: left;
