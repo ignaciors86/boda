@@ -7,9 +7,9 @@
   flex-direction: column;
   background: cadetblue;
 .loading{
+  box-sizing: border-box;
   z-index: 1;
-  height: 120%;
-  margin-top: -10%;
+  height: 100%;
   opacity: 0;
   padding: 0% 0;
   background: transparent;
