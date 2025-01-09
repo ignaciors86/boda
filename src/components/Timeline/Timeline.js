@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { Draggable } from 'gsap/Draggable';
 import { throttle } from 'lodash';
@@ -42,7 +42,7 @@ const Timeline = ({ weedding }) => {
     );
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const preloadImages = (urls) =>
       Promise.all(
         urls.map((url) => {
@@ -71,25 +71,29 @@ const Timeline = ({ weedding }) => {
   }, []);
 
   const handleSliderChange = (e) => {
-    setSliderValue(Number(e.target.value)); // Actualiza solo el valor del slider
+    const newValue = Number(e.target.value);
+    requestAnimationFrame(() => setSliderValue(newValue));
   };
 
-  const play = () => {
+  const play = throttle(() => {
     if (activeCard === "horarios") {
       audioRefs.current.forEach((audio, index) => {
         if (index === currentIndex) {
-          audio.play().catch(console.error);
+          if (audio.paused) {
+            audio.play().catch(console.error);
+          }
           audio.muted = isMuted;
         } else {
+          if (!audio.paused) {
+            audio.pause();
+          }
           audio.muted = true;
-          // audio.currentTime = 0;
-          !audio.paused && audio.pause();
         }
       });
     } else {
       audioRefs.current[currentIndex].pause();
     }
-  }
+  }, 300); // Ajusta el límite de tiempo según sea necesario
 
   useEffect(() => {
     // Actualiza el índice entero solo si cambia

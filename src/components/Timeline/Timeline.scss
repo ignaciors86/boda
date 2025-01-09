@@ -75,7 +75,8 @@
 
   .slider {
 
-    
+    will-change: transform;
+    touch-action: none;
     background: transparent;
     outline: none;
     cursor: pointer;
