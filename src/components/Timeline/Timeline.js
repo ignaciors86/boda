@@ -41,24 +41,6 @@ const Timeline = ({ weedding }) => {
   };
 
   useEffect(() => {
-    const currentAudio = audioRefs.current[currentIndex];
-    currentAudio.muted = isMuted;
-    currentAudio.loop = false; // Ningún audio se reproduce en bucle individualmente
-    currentAudio.preload = 'auto';
-
-    currentAudio.play().catch(error => {
-      // console.log('Error al reproducir el audio:', error);
-    });
-
-    currentAudio.addEventListener('ended', playNextAudio);
-
-    return () => {
-      currentAudio.pause();
-      currentAudio.removeEventListener('ended', playNextAudio);
-    };
-  }, [currentIndex]);
-
-  useEffect(() => {
     const preloadImages = (urls) =>
       Promise.all(
         urls.map((url) => {
@@ -90,19 +72,15 @@ const Timeline = ({ weedding }) => {
     audioRefs.current.forEach((audio, index) => {
       if (index === currentIndex && activeCard === "horarios") {
         audio.play().catch(console.error);
+        audio.muted = isMuted;
       } else {
-        audio.pause();
-        audio.currentTime = 0;
+        audio.muted = true;
+        // audio.currentTime = 0;
       }
     });
   }
   useEffect(() => {
-    if (activeCard === "horarios" ) {
-      audioRefs.current[currentIndex].play().catch(console.error);
-    } else {
-      audioRefs.current[currentIndex].pause();
-    }
-
+    play();
   }, [activeCard]);
 
   useEffect(() => {
@@ -111,7 +89,7 @@ const Timeline = ({ weedding }) => {
 
   const handleMuteToggle = () => {
     setIsMuted(!isMuted);
-    audioRefs.current.forEach((audio) => (audio.muted = !audio.muted));
+    audioRefs.current[currentIndex].muted = !isMuted;
   };
 
   useEffect(() => {
@@ -124,7 +102,7 @@ const Timeline = ({ weedding }) => {
   };
 
   const handleMouseDown = () => {
-    audioRefs.current[currentIndex].pause();
+    audioRefs.current[currentIndex].muted = true;
     gsap.to(".loading", { opacity: 1, duration: 0.15, delay: .15 }); // Aumenta la opacidad al hacer clic
     gsap.to(".elementsToHide", { opacity: 0, duration: 0.15, delay: 0, }); // Reduce la opacidad al soltar
   };
@@ -135,30 +113,15 @@ const Timeline = ({ weedding }) => {
     gsap.to(".elementsToHide", { opacity: 1, duration: 0.3, delay: .3, }); // Reduce la opacidad al soltar
   };
 
-  // Pausar todos los audios al minimizar o cambiar de pestaña
   useEffect(() => {
-  
     const handleVisibilityChange = () => {
-      
-
-
-
-      if (document.hidden) {
-        // Pausar todos los audios cuando la ventana está oculta
-        audioRefs.current.forEach(audio => audio.pause());
-      } else {
-        // Reanudar el audio actual cuando la ventana es visible
-        audioRefs.current[currentIndex].muted = isMuted;
-        audioRefs.current[currentIndex].play().catch(error => {
-          // console.log('Error al reanudar el audio:', error);
-        });
-      }
+      audioRefs.current[currentIndex].volume= document.hidden && !isMuted ? 0 : 1;
+    };
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  };
-  }, [isMuted, currentIndex]);
+  }, [currentIndex]);
 
   // Pausar todos los audios al minimizar o cambiar de pestaña
   useEffect(() => {
