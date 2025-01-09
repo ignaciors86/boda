@@ -63,14 +63,9 @@ const Timeline = ({ weedding }) => {
   }, [currentIndex]);
 
   const handleMuteToggle = () => {
+    audioRefs.current[currentIndex].muted = !isMuted;
     setIsMuted(!isMuted);
   };
-
-  useEffect(() => {
-    audioRefs.current.forEach((audio, index) => {
-      audio.muted = isMuted;
-    });
-  }, [isMuted]);
 
   useEffect(() => {
     play();
@@ -95,6 +90,8 @@ const Timeline = ({ weedding }) => {
 
     return () => audioRefs.current.forEach((audio) => audio.pause());
   }, []);
+
+
 
   // Pausar todos los audios al minimizar o cambiar de pestaña
   useEffect(() => {
