@@ -37,9 +37,9 @@ const Timeline = ({ weedding }) => {
       audioRefs.current.forEach((audio, index) => {
         if (index === currentIndex) {
           audio.play().catch(console.error);
-          // audio.muted = isMuted;
+          audio.muted = isMuted;
         } else {
-          // audio.muted = true;
+          audio.muted = true;
           // audio.currentTime = 0;
           !audio.paused && audio.pause();
         }
