@@ -141,6 +141,7 @@ const Timeline = ({ weedding }) => {
       
       if (document.hidden) {
         audioRefs.current[currentIndex].muted = true;
+        audioRefs.current[currentIndex].pause()
       } else {
         audioRefs.current[currentIndex].muted = false;
         audioRefs.current[currentIndex].play().catch(error => {
