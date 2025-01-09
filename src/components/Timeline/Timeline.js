@@ -17,6 +17,8 @@ const Timeline = ({ weedding }) => {
   const [sliderValue, setSliderValue] = useState(0); // Control del slider con pasos pequeños
   const [currentIndex, setCurrentIndex] = useState(0); // Índice actual del elemento activo
   const [isMuted, setIsMuted] = useState(false);
+  const [isDomStable, setIsDomStable] = useState(false);
+  const [audiosLoaded, setAudiosLoaded] = useState(false);
 
   const audioRefs = useRef(
     items.map((item) => {
@@ -28,12 +30,52 @@ const Timeline = ({ weedding }) => {
     })
   );
 
+  const preloadAudios = (audioRefs) => {
+    return Promise.all(
+      audioRefs.current.map((audio) => {
+        return new Promise((resolve, reject) => {
+          audio.oncanplaythrough = () => resolve();
+          audio.onerror = (e) => reject(e);
+          audio.load(); // Forzamos la carga del audio
+        });
+      })
+    );
+  };
+
+  useEffect(() => {
+    const preloadImages = (urls) =>
+      Promise.all(
+        urls.map((url) => {
+          return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = url;
+            img.onload = resolve;
+            img.onerror = reject;
+          });
+        })
+      );
+
+    Promise.all([preloadImages(imageUrls), preloadAudios(audioRefs)])
+      .then(() => {
+        console.log("Imágenes y audios cargados.");
+        setImagesLoaded(true);
+        setAudiosLoaded(true);
+
+        const elements = document.querySelectorAll(".elements");
+        if (elements.length > 0) {
+          console.log("Elementos DOM estables.");
+          setIsDomStable(true);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
   const handleSliderChange = (e) => {
     setSliderValue(Number(e.target.value)); // Actualiza solo el valor del slider
   };
 
   const play = () => {
-    if(activeCard === "horarios"){
+    if (activeCard === "horarios") {
       audioRefs.current.forEach((audio, index) => {
         if (index === currentIndex) {
           audio.play().catch(console.error);
@@ -44,9 +86,9 @@ const Timeline = ({ weedding }) => {
           !audio.paused && audio.pause();
         }
       });
-    }else{
+    } else {
       audioRefs.current[currentIndex].pause();
-    }   
+    }
   }
 
   useEffect(() => {
@@ -71,32 +113,11 @@ const Timeline = ({ weedding }) => {
     play();
   }, [activeCard]);
 
-  useEffect(() => {
-    const preloadImages = (urls) =>
-      Promise.all(
-        urls.map((url) => {
-          return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.src = url;
-            img.onload = resolve;
-            img.onerror = reject;
-          });
-        })
-      );
-
-    preloadImages(imageUrls)
-      .then(() => setImagesLoaded(true))
-      .catch(console.error);
-
-    return () => audioRefs.current.forEach((audio) => audio.pause());
-  }, []);
-
-
 
   // Pausar todos los audios al minimizar o cambiar de pestaña
   useEffect(() => {
     const handleVisibilityChange = () => {
-      audioRefs.current[currentIndex].volume= document.hidden && !isMuted ? 0 : 1;
+      audioRefs.current[currentIndex].volume = document.hidden && !isMuted ? 0 : 1;
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
@@ -144,7 +165,7 @@ const Timeline = ({ weedding }) => {
     <>
       <div className={`${MAINCLASS} seccion`}>
 
-        {imagesLoaded && (
+        {imagesLoaded && audiosLoaded && (
           <>
             <div className="elements">{renderItems(currentIndex, weedding || null)}</div>
             <Loading text={true} />
