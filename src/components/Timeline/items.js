@@ -251,7 +251,7 @@ const items = [
 
 const renderItems = (currentIndex, weedding) => {
 
-    console.log(items);
+    // console.log(items);
     return items.map((item, index) => {
         return <Item data={item} index={index} key={"item" + index} currentIndex={currentIndex} weedding={weedding} />;
     });
