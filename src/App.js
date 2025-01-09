@@ -19,7 +19,7 @@ const App = () => {
   // }, []);  
 
   const duration = 1;
-  console.log(articles);
+  // console.log(articles);
 
   // Precarga de audios
   useEffect(() => {
