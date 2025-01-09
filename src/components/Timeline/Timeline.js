@@ -10,7 +10,7 @@ import { useDragContext } from '../DragContext.js';
 import Marquee from 'react-fast-marquee';
 gsap.registerPlugin(Draggable);
 
-const Timeline = ({weedding}) => {
+const Timeline = ({ weedding }) => {
   const MAINCLASS = "timeline";
   const { activeCard, setActiveCard } = useDragContext();
   const [imagesLoaded, setImagesLoaded] = useState(false);
@@ -18,7 +18,7 @@ const Timeline = ({weedding}) => {
   const [currentIndex, setCurrentIndex] = useState(0); // Índice actual del elemento activo
   const [isMuted, setIsMuted] = useState(true);
 
-  const preloadedAudios = useRef(
+  const audioRefs = useRef(
     items.map((item) => {
       const audio = new Audio(weedding && item.audioWedding ? item.audioWedding : item.audio);
       audio.preload = "auto";
@@ -27,6 +27,36 @@ const Timeline = ({weedding}) => {
       return audio;
     })
   );
+
+  const playNextAudio = () => {
+    setCurrentIndex((prevIndex) => {
+      const nextIndex = (prevIndex + 1) % audioRefs.current.length; // Ciclo al primer audio después del último
+      audioRefs.current[currentIndex].muted = isMuted;
+      audioRefs.current[currentIndex].preload = "auto";
+      audioRefs.current[currentIndex].play().catch(error => {
+        // console.log('Error al reproducir el audio:', error);
+      });
+      return currentIndex;
+    });
+  };
+
+  useEffect(() => {
+    const currentAudio = audioRefs.current[currentIndex];
+    currentAudio.muted = isMuted;
+    currentAudio.loop = false; // Ningún audio se reproduce en bucle individualmente
+    currentAudio.preload = 'auto';
+
+    currentAudio.play().catch(error => {
+      // console.log('Error al reproducir el audio:', error);
+    });
+
+    currentAudio.addEventListener('ended', playNextAudio);
+
+    return () => {
+      currentAudio.pause();
+      currentAudio.removeEventListener('ended', playNextAudio);
+    };
+  }, [currentIndex]);
 
   useEffect(() => {
     const preloadImages = (urls) =>
@@ -45,7 +75,7 @@ const Timeline = ({weedding}) => {
       .then(() => setImagesLoaded(true))
       .catch(console.error);
 
-    return () => preloadedAudios.current.forEach((audio) => audio.pause());
+    return () => audioRefs.current.forEach((audio) => audio.pause());
   }, []);
 
   useEffect(() => {
@@ -54,41 +84,34 @@ const Timeline = ({weedding}) => {
     if (newIndex !== currentIndex) {
       setCurrentIndex(newIndex);
     }
-  }, [sliderValue, currentIndex]);
+  }, [sliderValue]);
 
-const play = () => {
-  preloadedAudios.current.forEach((audio, index) => {
-    if (index === currentIndex && activeCard === "horarios" ) {
-      audio.play().catch(console.error);
-    } else {
-      audio.pause();
-      audio.currentTime = 0;
-    }
-  });
-}
+  const play = () => {
+    audioRefs.current.forEach((audio, index) => {
+      if (index === currentIndex && activeCard === "horarios") {
+        audio.play().catch(console.error);
+      } else {
+        audio.pause();
+        audio.currentTime = 0;
+      }
+    });
+  }
   useEffect(() => {
-    if(activeCard === "horarios"){
-      preloadedAudios.current[currentIndex].play().catch(console.error);
-    }else{
-      preloadedAudios.current[currentIndex].pause();
+    if (activeCard === "horarios") {
+      audioRefs.current[currentIndex].play().catch(console.error);
+    } else {
+      audioRefs.current[currentIndex].pause();
     }
-    
+
   }, [activeCard]);
 
   useEffect(() => {
-    preloadedAudios.current.forEach((audio, index) => {
-      if (index === currentIndex) {
-        audio.play().catch(console.error);
-      
-      }else{
-        audio.pause();
-      }
-    });
+
   }, [currentIndex]);
 
   const handleMuteToggle = () => {
     setIsMuted(!isMuted);
-    preloadedAudios.current.forEach((audio) => (audio.muted = !audio.muted));
+    audioRefs.current.forEach((audio) => (audio.muted = !audio.muted));
   };
 
   useEffect(() => {
@@ -101,7 +124,7 @@ const play = () => {
   };
 
   const handleMouseDown = () => {
-    preloadedAudios.current[currentIndex].pause();
+    audioRefs.current[currentIndex].pause();
     gsap.to(".loading", { opacity: 1, duration: 0.15, delay: .15 }); // Aumenta la opacidad al hacer clic
     gsap.to(".elementsToHide", { opacity: 0, duration: 0.15, delay: 0, }); // Reduce la opacidad al soltar
   };
@@ -115,34 +138,44 @@ const play = () => {
   // Pausar todos los audios al minimizar o cambiar de pestaña
   useEffect(() => {
     const handleVisibilityChange = () => {
-      preloadedAudios.current[currentIndex].volume= document.hidden && !isMuted ? 0 : 1;
+      
+      if (document.hidden) {
+        audioRefs.current[currentIndex].muted = true;
+      } else {
+        audioRefs.current[currentIndex].muted = false;
+        audioRefs.current[currentIndex].play().catch(error => {
+          // console.log('Error al reanudar el audio:', error);
+        });
+      }
+
     };
+
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [isMuted]);
 
-   // Pausar todos los audios al minimizar o cambiar de pestaña
-   useEffect(() => {
+  // Pausar todos los audios al minimizar o cambiar de pestaña
+  useEffect(() => {
 
-    const newDuration = currentIndex < 3 || currentIndex > 6 ? 3 : (8-currentIndex) * .1;
+    const newDuration = currentIndex < 3 || currentIndex > 6 ? 3 : (8 - currentIndex) * .1;
     gsap.set(".progress-bar ", { animation: `shadowPulse ${newDuration}s ease-in-out infinite` });
 
   }, [currentIndex]);
 
-  
+
   useEffect(() => {
     const sliderElement = document.querySelector(".slider");
-  
+
     // Añadir eventos de mouse
     sliderElement.addEventListener("mousedown", handleMouseDown);
     sliderElement.addEventListener("mouseup", handleMouseUp);
-  
+
     // Añadir eventos táctiles
     sliderElement.addEventListener("touchstart", handleMouseDown);
     sliderElement.addEventListener("touchend", handleMouseUp);
-  
+
     // Limpiar eventos cuando el componente se desmonte
     return () => {
       sliderElement.removeEventListener("mousedown", handleMouseDown);
@@ -158,12 +191,12 @@ const play = () => {
 
         {imagesLoaded && (
           <>
-            <div className="elements">{renderItems(currentIndex,  weedding || null)}</div>
+            <div className="elements">{renderItems(currentIndex, weedding || null)}</div>
             <Loading text={true} />
             <div className="progress-bar">
               <Marquee speed={50}>
                 <span>
-                  Arrastra la bolita hacia los lados para ver bien el finde que hemos planeado. Hay mucho gif y música en proceso de descarga y estoy usando un servidor gratuíto. Esto, al principio, provoca dolor de tripita en los iPhone{ weedding ? " (como las setas)" : ""}, y sí, probablemente podría estar más optimizado, pero { !weedding ? "yo que se, algo tenía que malir sal..." : "me esta dando una pereza ya que flipas revisarlo más"} 
+                  Arrastra la bolita hacia los lados para ver bien el finde que hemos planeado. Hay mucho gif y música en proceso de descarga y estoy usando un servidor gratuíto. Esto, al principio, provoca dolor de tripita en los iPhone{weedding ? " (como las setas)" : ""}, y sí, probablemente podría estar más optimizado, pero {!weedding ? "yo que se, algo tenía que malir sal..." : "me esta dando una pereza ya que flipas revisarlo más"}
                 </span>
               </Marquee>
               <input
