@@ -16,7 +16,7 @@ const Timeline = ({ weedding }) => {
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [sliderValue, setSliderValue] = useState(0); // Control del slider con pasos pequeños
   const [currentIndex, setCurrentIndex] = useState(0); // Índice actual del elemento activo
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
 
   const audioRefs = useRef(
     items.map((item) => {
@@ -28,17 +28,53 @@ const Timeline = ({ weedding }) => {
     })
   );
 
-  const playNextAudio = () => {
-    setCurrentIndex((prevIndex) => {
-      const nextIndex = (prevIndex + 1) % audioRefs.current.length; // Ciclo al primer audio después del último
-      audioRefs.current[currentIndex].muted = isMuted;
-      audioRefs.current[currentIndex].preload = "auto";
-      audioRefs.current[currentIndex].play().catch(error => {
-        // console.log('Error al reproducir el audio:', error);
-      });
-      return currentIndex;
-    });
+  const handleSliderChange = (e) => {
+    setSliderValue(Number(e.target.value)); // Actualiza solo el valor del slider
   };
+
+  const play = () => {
+    if(activeCard === "horarios"){
+      audioRefs.current.forEach((audio, index) => {
+        if (index === currentIndex) {
+          audio.play().catch(console.error);
+          // audio.muted = isMuted;
+        } else {
+          // audio.muted = true;
+          // audio.currentTime = 0;
+          !audio.paused && audio.pause();
+        }
+      });
+    }else{
+      audioRefs.current[currentIndex].pause();
+    }   
+  }
+
+  useEffect(() => {
+    // Actualiza el índice entero solo si cambia
+    const newIndex = Math.round(sliderValue);
+    console.log(newIndex);
+    if (newIndex !== currentIndex) {
+      setCurrentIndex(newIndex);
+    }
+  }, [sliderValue]);
+
+  useEffect(() => {
+    play();
+  }, [currentIndex]);
+
+  const handleMuteToggle = () => {
+    setIsMuted(!isMuted);
+  };
+
+  useEffect(() => {
+    audioRefs.current.forEach((audio, index) => {
+      audio.muted = isMuted;
+    });
+  }, [isMuted]);
+
+  useEffect(() => {
+    play();
+  }, [activeCard]);
 
   useEffect(() => {
     const preloadImages = (urls) =>
@@ -60,59 +96,7 @@ const Timeline = ({ weedding }) => {
     return () => audioRefs.current.forEach((audio) => audio.pause());
   }, []);
 
-  useEffect(() => {
-    // Actualiza el índice entero solo si cambia
-    const newIndex = Math.round(sliderValue);
-    if (newIndex !== currentIndex) {
-      setCurrentIndex(newIndex);
-    }
-  }, [sliderValue]);
-
-  const play = () => {
-    audioRefs.current.forEach((audio, index) => {
-      if (index === currentIndex && activeCard === "horarios") {
-        audio.play().catch(console.error);
-        audio.muted = isMuted;
-      } else {
-        audio.muted = true;
-        // audio.currentTime = 0;
-      }
-    });
-  }
-  useEffect(() => {
-    play();
-  }, [activeCard]);
-
-  useEffect(() => {
-
-  }, [currentIndex]);
-
-  const handleMuteToggle = () => {
-    setIsMuted(!isMuted);
-    audioRefs.current[currentIndex].muted = !isMuted;
-  };
-
-  useEffect(() => {
-    isMuted && activeCard === "horarios" && handleMuteToggle();
-  }, [activeCard]);
-
-  const handleSliderChange = (e) => {
-    setSliderValue(Number(e.target.value)); // Actualiza solo el valor del slider
-    // gsap.to(".loading", { opacity: 0, duration: 0.3, delay: .3, }); // Reduce la opacidad al soltar
-  };
-
-  const handleMouseDown = () => {
-    audioRefs.current[currentIndex].muted = true;
-    gsap.to(".loading", { opacity: 1, duration: 0.15, delay: .15 }); // Aumenta la opacidad al hacer clic
-    gsap.to(".elementsToHide", { opacity: 0, duration: 0.15, delay: 0, }); // Reduce la opacidad al soltar
-  };
-
-  const handleMouseUp = () => {
-    play();
-    gsap.to(".loading", { opacity: 0, duration: 0.3, delay: 0, }); // Reduce la opacidad al soltar
-    gsap.to(".elementsToHide", { opacity: 1, duration: 0.3, delay: .3, }); // Reduce la opacidad al soltar
-  };
-
+  // Pausar todos los audios al minimizar o cambiar de pestaña
   useEffect(() => {
     const handleVisibilityChange = () => {
       audioRefs.current[currentIndex].volume= document.hidden && !isMuted ? 0 : 1;
@@ -123,14 +107,21 @@ const Timeline = ({ weedding }) => {
     };
   }, [currentIndex]);
 
-  // Pausar todos los audios al minimizar o cambiar de pestaña
   useEffect(() => {
-
     const newDuration = currentIndex < 3 || currentIndex > 6 ? 3 : (8 - currentIndex) * .1;
     gsap.set(".progress-bar ", { animation: `shadowPulse ${newDuration}s ease-in-out infinite` });
 
   }, [currentIndex]);
 
+  const handleMouseDown = () => {
+    gsap.to(".loading", { opacity: 1, duration: 0.15, delay: .15 }); // Aumenta la opacidad al hacer clic
+    gsap.to(".elementsToHide", { opacity: 0, duration: 0.15, delay: 0, }); // Reduce la opacidad al soltar
+  };
+
+  const handleMouseUp = () => {
+    gsap.to(".loading", { opacity: 0, duration: 0.3, delay: 0, }); // Reduce la opacidad al soltar
+    gsap.to(".elementsToHide", { opacity: 1, duration: 0.3, delay: .3, }); // Reduce la opacidad al soltar
+  };
 
   useEffect(() => {
     const sliderElement = document.querySelector(".slider");
@@ -170,7 +161,7 @@ const Timeline = ({ weedding }) => {
                 type="range"
                 min="0"
                 max={items.length - 1}
-                step={0.1}
+                step={1}
                 value={sliderValue}
                 onChange={handleSliderChange}
                 onMouseDown={handleMouseDown}
