@@ -197,7 +197,7 @@ const items = [
     {
         title: "Preboda",
         description: <>
-            <p>Fiesta informal, con mojitos con su hierbabuena, gintonics con o sin atrezzo... y si os arrancáis a tocar y cantar algo, mejor 🪘🎸. Trae bañador, por si suena la flauta.</p>
+            <p>Fiesta informal, con mojitos con su hierbabuena, gintonics con o sin atrezzo... y si os arrancáis a tocar y cantar algo, mejor 🪘🎸. Trae bañador, por si también suena la flauta y hace bueno...<em>( José Mota patrocina este chiste )</em></p>
         </>,
         descriptionWeedding: <>
             <p>Fiesta previa a la boda, informal de cojones y, si todo va bien, con coctelería cannábica incluída. Los mojitos, mejor con buenahierba... 🌱 <em>(Ortega y Pacheco patrocinan este chiste)</em></p>
