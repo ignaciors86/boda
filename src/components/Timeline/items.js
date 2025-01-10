@@ -222,6 +222,7 @@ const items = [
     {
         title: "Comida",
         description: <p>¿Te habrá tocado en la mesa de los majos? Claro que sí. Todo el mundo es majo en nuestra boda.</p>,
+        descriptionWeedding: <><p>¿Te habrá tocado en la mesa de los majos? Si sigues en nuestra vida a estas alturas, es fácil que sí, y que además tú seas el invitado majo para otro 😘</p></>,
         images: [got, trump, banquetegilmore, barbacoa, antidisturbios, ron, emily, wilson, antidisturbios2],
         audio: comidamp3,
     },
