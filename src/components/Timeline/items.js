@@ -221,14 +221,14 @@ const items = [
     },
     {
         title: "Comida",
-        description: <p>¿Te habrá tocado en la mesa de los majos? Claro que sí. Todo el mundo es majo en nuestra boda.</p>,
-        descriptionWeedding: <><p>¿Te habrá tocado en la mesa de los majos? Si sigues en nuestra vida a estas alturas, es fácil que sí, y que además tú seas el invitado majo para otro 😘</p></>,
+        description: <p>¿Te habrá tocado en la mesa de los majos? Claro que sí. Todo el mundo es majo en nuestra boda. 🥰</p>,
+        descriptionWeedding: <><p>¿Te habrá tocado en la mesa de los majos? Si sigues en nuestra vida a estas alturas, es MUY probable que así sea, y que tú serás el invitado majo para otro 😘</p></>,
         images: [got, trump, banquetegilmore, barbacoa, antidisturbios, ron, emily, wilson, antidisturbios2],
         audio: comidamp3,
     },
     {
         title: "Baile",
-        description: <p>Enar se encarga de la música. Vosotros de bailarla y amortizar la barra libre.</p>,
+        description: <p>Enar se encarga de la música🎵🎶🎵. Vosotros bailad y bebed, O NO (para cuñadear con los abstemios ya tenemos las bodas hetero) 🍷🍸🥂</p>,
         images: [keVin, rick, enar, ranmadance, akane, bmobaile, bitches, dean, stop, barneyted, urkel, carrie, bmo, randy],
         audio: festin,
     },
