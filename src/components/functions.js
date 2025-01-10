@@ -52,8 +52,9 @@ const animateOpacity = (callback) => {
 
 
             .to(".sobre", { opacity: 1, duration: duracion*4, scale: 1, y: 0, ease: ease,  onStart: callback}, ">")
+            .to(".sobre .nosotros-jpg-imagen", { opacity: 1, duration: 2, delay: .5, }, ">")
             .to(".sobre .nosotros-jpg-imagen", { borderRadius: 0, duration: 1, delay: 1, }, "<")
-            .to(".sobre .nosotros-jpg-imagen", { opacity: 1, duration: 2, delay: 1.5, }, ">")
+            
             
 
             
