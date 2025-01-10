@@ -74,7 +74,7 @@ const Invitacion = () => {
         setTimeout(() => {
           typewriter
             .typeString(
-              "En cada tarjeta tienes información relevante para ese día. Si tienes alguna duda, no dudes en preguntar...\nCierra el sobre antes de salir"
+              "En cada tarjeta tienes información relevante para ese día. Si tienes alguna duda, no dudes en preguntar. Porfa, decidnos algo lo antes posible para poder gestionar movidas...\nNo olvides cerrar el sobre antes de salir, jeje"
             )
             .start();
         }, 3000); // Retraso de 2 segundos antes de empezar a escribir
