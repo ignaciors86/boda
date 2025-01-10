@@ -64,7 +64,7 @@
       text-align: center;
       width: 88%;
       margin: 0 auto;
-      padding: calc(var(--size-unit) * 0.2) calc(var(--size-unit) * 0.2) calc(var(--size-unit) * 0.2);
+      padding: calc(var(--size-unit) * 0.1) calc(var(--size-unit) * 0.2) calc(var(--size-unit) * 0.4);
     }
 
     .texts {
@@ -144,7 +144,9 @@
 
       em:not(:first-of-type) {
         margin-top: 5%;
+        
       }
+      
 
       h2 {
         opacity: 0;
