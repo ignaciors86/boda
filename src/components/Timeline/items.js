@@ -215,7 +215,7 @@ const items = [
     {
         title: "Cóctel",
         description: <p>Disfruta de las exquisitas viandas salmantinas, la música y, sobre todo, de peña bonica.</p>,
-        descriptionWeedding: <p>Ponte hasta el culo, por favor. Sobre todo si eres madrileño, este finde toca embutido bueno...</p>,
+        descriptionWeedding: <p>Ponte hasta el culo, por favor. Sobre todo si eres madrileño, este finde toca embutido bueno...<em>( A LOS VEGANOS OS PROMETEMOS COMIDA BUENA, NO CHISTES TAN TAN WOKE... )</em></p>,
         images: [treatyourself, bills, karen, cartman, tina, maleducado, allyoucaneat, gargaras],
         audio: kanka,
     },
