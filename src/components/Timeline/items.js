@@ -197,10 +197,10 @@ const items = [
     {
         title: "Preboda",
         description: <>
-            <p>Fiesta informal, y si os arrancáis a tocar y cantar algo, mejor. Trae bañador por si tenemos suerte con el tiempo.</p>
+            <p>Fiesta informal, con mojitos con su hierbabuena, gintonics con o sin atrezzo... y si os arrancáis a tocar y cantar algo, mejor 🪘🎸. Trae bañador, por si suena la flauta.</p>
         </>,
         descriptionWeedding: <>
-            <p>Fiesta previa a la boda, informal de cojones y, si todo va bien, con coctelería cannábica incluída.</p>
+            <p>Fiesta previa a la boda, informal de cojones y, si todo va bien, con coctelería cannábica incluída. Los mojitos, mejor con buenahierba... 🌱 </p>
         </>,
         images: [pikachu, bebidas, masterchef, lost, karaoke, sexeducation, kelso, kitty, bob],
         audio: malabares,
