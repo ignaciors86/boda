@@ -21,8 +21,8 @@
     border-bottom: 2px solid white;
     padding: 0 5% 1%;
     margin: 0 auto 3%;
-    font-size: calc(var(--size-unit)* 0.15);
-
+    font-size: calc(var(--size-unit)* 0.1);
+    border: 0;
   }
 
   .rfm-marquee {
@@ -54,7 +54,7 @@
   background: var(--purpleTransparent);
   z-index: 1;
   position: absolute;
-  bottom: calc(var(--size-unit)* 0.22);
+  bottom: calc(var(--size-unit)* 0.19);
   height: calc(var(--size-unit)* 0.3);
   width: 88%;
   display: flex;

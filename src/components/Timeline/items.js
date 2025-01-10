@@ -200,7 +200,7 @@ const items = [
             <p>Fiesta informal, con mojitos con su hierbabuena, gintonics con o sin atrezzo... y si os arrancáis a tocar y cantar algo, mejor 🪘🎸. Trae bañador, por si suena la flauta.</p>
         </>,
         descriptionWeedding: <>
-            <p>Fiesta previa a la boda, informal de cojones y, si todo va bien, con coctelería cannábica incluída. Los mojitos, mejor con buenahierba... 🌱 </p>
+            <p>Fiesta previa a la boda, informal de cojones y, si todo va bien, con coctelería cannábica incluída. Los mojitos, mejor con buenahierba... 🌱 <em>(Ortega y Pacheco patrocinan este chiste)</em></p>
         </>,
         images: [pikachu, bebidas, masterchef, lost, karaoke, sexeducation, kelso, kitty, bob],
         audio: malabares,
@@ -235,7 +235,7 @@ const items = [
     {
         title: "Tercer Tiempo",
         description: <p>Bus de vuelta para la gente cansada y todos los menores que sea posible. Tenemos el sitio para nosotros toda la noche, y no hay prisa.</p>,
-        descriptionWeedding: <p>Los críos a tomar por saco en el bus de vuelta, por favor. Tenemos el sitio para nosotros toda la noche, y no hay prisa.</p>,
+        descriptionWeedding: <p>Los menores a tomar por saco en el bus de vuelta, por favor (queremos mucho a vuestros críos, pero nuestra prioridad hoy sois vosotros). Tenemos el sitio para nosotros toda la noche, y no hay prisa.</p>,
         images: [tercerTiempo, busVuelta, nickcorbata, red, ojeteCalor, finn, esqueletos],
         imagesWeedding: [tercerTiempo, busVuelta, nickcorbata, scooby, shamelesstercerTiempo,yoda,  red, ojeteCalor, finn, esqueletos],
         audio: pompom,
@@ -243,8 +243,8 @@ const items = [
     },
     {
         title: "Domingo",
-        description: <p>Churritos y paella para volver a la vida y que os vayáis comidos... <b><h3>¡Y AGUR, YOGUR!</h3></b></p>,
-        descriptionWeedding: <p>Churritos y paella para volver a la vida, panda de cadáveres exquisitos... y ahora sí:<b><h3>¡WINGAPO, MARICONES!</h3></b></p>,
+        description: <p>Churritos y paella🥘 para volver a la vida y que os vayáis comidos... <b><h3>¡Y AGUR, YOGUR!</h3></b></p>,
+        descriptionWeedding: <p>Churritos y paella🥘 para volver a la vida, panda de cadáveres exquisitos... y ahora sí:<b><h3>¡WINGAPO, MARICONES!</h3></b></p>,
         images: [bojack, tio, finyjakeresaca, tequila, randyresaca, postBodaFriends, wingapo],
         audio: rumbling,
     }
