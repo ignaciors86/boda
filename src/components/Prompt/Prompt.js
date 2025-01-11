@@ -8,7 +8,7 @@ const Prompt = ({ weedding, option2=false, isOpen, uri }) => {
     const phrases1 = [
         `¡Hola! Esta web podría ser un PDF...`,
         `Tú lo sabes, yo lo sé. Claro que no hacía falta...`,
-        `Pero me hacía una ilusión gordísima hacer algo así para mi boda`,
+        `Pero me hacía una ilusión gordísima hacer algo así en nuestra boda`,
         `Así que aquí está`,
         `...la web con el código más sucio de la historia`,
         `"NO NOS CUENTES TU VIDA DE PROGRAMADOR VAGO", ok`,
