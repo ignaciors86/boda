@@ -45,7 +45,11 @@
     h2 {
       width: 100%;
       background: var(--darkPurple);
-      padding: calc(var(--size-unit)* 0.15);
+      padding: calc(var(--size-unit)* 0.15) 0;
+      font-size: calc(var(--size-unit)* 0.4);
+      line-height: calc(var(--size-unit)* 0.5);
+      box-sizing: border-box;
+      text-align: center;
     }
   }
 
@@ -79,10 +83,12 @@
       display: flex;
       flex-direction: column;
       justify-content: space-evenly;
-      img{
+
+      img {
         position: absolute;
         z-index: -1;
       }
+
       .nombres {
         width: 100%;
         position: absolute;
@@ -92,7 +98,7 @@
       }
 
       .fecha {
-        
+
         width: 100%;
         font-size: calc(var(--size-unit)*.4);
         line-height: calc(var(--size-unit)*.4);
@@ -102,26 +108,28 @@
         margin-top: 20%;
         position: relative;
         color: white;
+        font-weight: bold;
+
         // word-spacing: calc(var(--size-unit)* -0.1);
-        &::before{
+        &::before {
           content: "";
           position: absolute;
           left: 0;
           top: 0;
-          background: var(--darkPurple);
+          background: var(--purpleTransparent);
           width: 100%;
           height: 100%;
           z-index: -1;
-          opacity: .75;
           font-weight: 700;
         }
-        strong{
+
+        strong {
           margin-top: 1%;
           font-size: calc(var(--size-unit)*.3);
           line-height: calc(var(--size-unit)*.3);
         }
       }
-  
+
       .lugar {
         width: 100%;
         position: absolute;

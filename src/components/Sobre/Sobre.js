@@ -455,7 +455,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
               <Card seccion="ubicaciones" onClick={() => handleClick("ubicaciones")} trasera={<Lugar weedding={weedding} hosteado={hosteado} />}>                <h2>Lugar</h2>
               </Card>
               <Card seccion={"asistencia"} onClick={() => handleClick("asistencia")} trasera={<Asistencia weedding={weedding} />}>
-                <h2>Asistencia</h2>
+                <h2>Confirmar Asistencia</h2>
               </Card>
             </div>
           </div>

@@ -11,7 +11,7 @@
   --green: #9bc4be;
   --greenTransparent: #438284;
   --greenSuperTransparent: #a0ffed;
-  --purpleTransparent: #73558c;
+  --purpleTransparent: #73558ced;
   --darkPurple: #73558c;
   --orange: #ffa600;
   --orangeTransparent: #ffa600d2;
@@ -255,14 +255,16 @@ em {
   top: unset;
   bottom: 2dvh;
   animation: shadowPulse 1s ease-in-out infinite;
+
   &:before {
     mask-image: url("../assets/images/fullScreen2.png");
     mask-position: 50% 50%;
   }
-  &.active{
+
+  &.active {
     &:before {
       mask-image: url("../assets/images/fullScreen.png");
-    } 
+    }
   }
 }
 
@@ -340,12 +342,12 @@ em {
 
 
 .weedding {
-  h2 {
-    // font-size: calc(var(--size-unit)* 0.25) !important;
-  }
 
-  .prompt .placeholder span {
-    line-height: calc(var(--size-unit) * 0.35);
+  &.prompt {
+
+    .placeholder span {
+      line-height: calc(var(--size-unit) * 0.35);
+    }
   }
 
   .loading {
@@ -366,12 +368,17 @@ em {
     font-size: calc(var(--size-unit)* 0.15) !important;
   }
 
-  .card.invitacion .card-front .fecha {
-    font-size: calc(var(--size-unit) * 0.4) !important;
-    word-spacing: calc(var(--size-unit)* -.12);
 
-    strong {
-      font-size: calc(var(--size-unit) * 0.3) !important;
+
+  .card.invitacion .card-front {
+
+    .fecha {
+      font-size: calc(var(--size-unit) * 0.4) !important;
+      word-spacing: calc(var(--size-unit)* -.12);
+
+      strong {
+        font-size: calc(var(--size-unit) * 0.3) !important;
+      }
     }
   }
 
