@@ -52,7 +52,6 @@ const Prompt = ({ weedding, option2=false, isOpen, uri }) => {
         `Por los consejitos de UX (Andrea), y la ilustración de Tesi`,
         `(que obviamente colgaremos en casa de recuerdo)`,
         `Y a Matu, por ayudarme con el hosting, y porque tiene mucha culpa, junto a Gonzalo, de que a estas alturas disfrute tanto de mi trabajo como para meterle estas horas por capricho`,
-        `También a Guybrush Threepwood. Porque me da la gana. `,
         `Al final he tardado un cojón más de lo que esperaba`,
         `Pero llevaba más de 20 años sin hacer una web solico y con libertad absoluta, han sido meses muy locos para sacar tiempo, 
         y quería que quedase guapa de verdad`,
