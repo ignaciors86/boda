@@ -126,7 +126,7 @@ const Prompt = ({ weedding, option2=false, isOpen, uri }) => {
     }, []);
 
     return !isOpen && (
-        <div className={`prompt ${option2 ? "final" : "inicial"}`}>
+        <div className={`prompt ${option2 ? "final" : "inicial"} ${weedding ? "weedding-prompt" : ""}`} >
             <div className="placeholder">
                 {/* Texto animado dentro del contenedor que ocupa todo el espacio */}
                 { !option2 ? <Typewriter
