@@ -372,7 +372,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
   }, [isOpen]);
 
 
-  const [fullScreen, setFullScreen] = useState(false);
+  const [fullScreen, setFullScreen] = useState(null);
   useEffect(() => {
 
 
@@ -381,7 +381,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
 
 
 
-      if(!md.mobile()){
+      if(!md.mobile() && fullScreen !== null){
         const boton = document.querySelector(".fullscreen");
         boton.classList.toggle("active");
         gsap.set(boton, { animation: "none", });
@@ -398,14 +398,14 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
               await elem.msRequestFullscreen();
             }
           } else {
-            if (document.exitFullscreen) {
-              await document.exitFullscreen();
-            } else if (document.mozCancelFullScreen) {
-              await document.mozCancelFullScreen();
-            } else if (document.webkitExitFullscreen) {
-              await document.webkitExitFullscreen();
-            } else if (document.msExitFullscreen) {
-              await document.msExitFullscreen();
+            if (document?.exitFullscreen) {
+              await document?.exitFullscreen();
+            } else if (document?.mozCancelFullScreen) {
+              await document?.mozCancelFullScreen();
+            } else if (document?.webkitExitFullscreen) {
+              await document?.webkitExitFullscreen();
+            } else if (document?.msExitFullscreen) {
+              await document?.msExitFullscreen();
             }
           }
         } catch (error) {

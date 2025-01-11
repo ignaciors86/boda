@@ -22,7 +22,7 @@ const Item = ({ data, index, currentIndex, weedding }) => {
 
     return (
         <div 
-            key={index} 
+            key={"itemcito-"+index} 
             // style={{ backgroundImage: `url(${imagenes[currentImageIndex]})`,}} // Usar la imagen actual como fondo
             className={`item item${(parseInt(index) + 1)} ${data?.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`}
             style={{display: (index === currentIndex)  ? "flex" : "none"}}
