@@ -102,11 +102,17 @@ const Asistencia = ({weedding}) => {
                             yoyo: true,
                             ease: "ease.inOut",
                             onComplete: () => {
-                                gsap
+                                gsap.timeline()
                                 .to(".disclaimer p, .disclaimer button", {
                                     opacity: 1,
                                     duration: 0.5, 
                                     ease: "ease.inOut",
+                                })
+                                .to(".disclaimer h2", {
+                                    opacity: 1,
+                                    duration: 0.5, 
+                                    ease: "ease.inOut",
+                                    delay: 1,
                                 })
                             }
                         })
@@ -114,7 +120,7 @@ const Asistencia = ({weedding}) => {
                 });
         }else{
             gsap
-            .to(".disclaimer p, .disclaimer button", {
+            .to(".disclaimer p, .disclaimer button, .disclaimer h2", {
                 opacity: 0,
                 duration: 0.5, 
                 ease: "ease.inOut",
@@ -188,7 +194,7 @@ const Asistencia = ({weedding}) => {
                             name="comentarios"
                             value={formData.comentarios}
                             onChange={handleChange}
-                            placeholder={"Si eres vegano, inviegno, alérgico, o necesitas aclarar cualquier cosa, hazlo aquí." + (weedding ? "En caso de querer probar los edibles del sábado o la coctelería del viernes, dínoslo también. *Disclaimer: se harán flojitos, y asumimos que somos mayorcitos todos si a alguien no le sienta bien el consumo." : "")}
+                            placeholder={"Si eres vegano, inviegno, alérgico, o necesitas aclarar cualquier cosa, hazlo aquí." + (weedding ? "En caso de querer probar los edibles del sábado o la coctelería del viernes, dínoslo también. *Disclaimer: se harán flojitos, y un \"mal empacho\" no es peligroso, pero asumimos que somos mayorcitos todos si a alguien no le sienta bien el consumo. Por supuesto, estaréis cuidaditos." : "")}
                         />
                     </div>
                     <div className="form-group horizontal quien">
@@ -221,7 +227,7 @@ const Asistencia = ({weedding}) => {
                                 <div className="imagen" />
                                 <p>Este formulario solo compondrá un mensaje de whatsapp con la información que necesitamos.</p>
                                 <p>Puedes respondernos de la forma en que prefieras, pero por favor, asegúrate de que nos llega tu respuesta.</p>
-                                <p><h2>{confirmacion ? "¡Nos vemos allí!" : "¡Te echaremos de menos!"}</h2></p>
+                                <h2>{confirmacion ? "¡Nos vemos allí!" : "¡Te echaremos de menos!"}</h2>
                                 <button
                                     type="button"
                                     className="btn-cancelar"
