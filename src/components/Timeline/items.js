@@ -243,8 +243,8 @@ const items = [
     },
     {
         title: "Domingo",
-        description: <p>Churritos y paella🥘 para volver a la vida y que os vayáis comidos... <b><h3>¡Y AGUR, YOGUR!</h3></b></p>,
-        descriptionWeedding: <p>Churritos y paella🥘 para volver a la vida, panda de cadáveres exquisitos... y ahora sí:<b><h3>¡WINGAPO, MARICONES!</h3></b></p>,
+        description: <><p>Churritos y paella🥘 para volver a la vida y que os vayáis comidos... </p><b><h3>¡Y AGUR, YOGUR!</h3></b></>,
+        descriptionWeedding: <><p>Churritos y paella🥘 para volver a la vida, panda de cadáveres exquisitos... y ahora sí:</p><b><h3>¡WINGAPO, MARICONES!</h3></b></>,
         images: [bojack, tio, finyjakeresaca, tequila, randyresaca, postBodaFriends, wingapo],
         audio: rumbling,
     }
@@ -254,7 +254,7 @@ const renderItems = (currentIndex, weedding) => {
 
     // console.log(items);
     return items.map((item, index) => {
-        return <Item data={item} index={index} key={"item" + index} currentIndex={currentIndex} weedding={weedding} />;
+        return <Item data={item} index={index} key={"itemsillo" + index} currentIndex={currentIndex} weedding={weedding} />;
     });
 };
 

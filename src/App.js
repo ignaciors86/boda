@@ -12,14 +12,14 @@ const App = () => {
   const tlApp = gsap.timeline();
   const [articles, setArticles] = useState([]);
 
-  // useEffect(() => {
-  //   fetch('https://strapi-boda-production.up.railway.app/invitados')
-  //     .then(response => response.json())
-  //     .then(data => setArticles(data));
-  // }, []);  
+  useEffect(() => {
+    fetch('boda-strapi-production.up.railway.app/invitados')
+      .then(response => response.json())
+      .then(data => setArticles(data));
+  }, []);  
 
   const duration = 1;
-  // console.log(articles);
+  console.log(articles);
 
   // Precarga de audios
   useEffect(() => {

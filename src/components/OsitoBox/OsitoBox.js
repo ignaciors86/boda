@@ -129,7 +129,7 @@ const OsitoBox = ({ onChange, confirmacion, setConfirmacion }) => {
   };
 
   useEffect(() => {
-    console.log(confirmacion);
+    // console.log(confirmacion);
 
   }, [confirmacion])
 

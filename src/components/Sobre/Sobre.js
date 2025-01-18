@@ -144,7 +144,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
 
     gsap.to(".next", { opacity: (isMuted || isOpen === null) ? 0 : 1, duration: .25, ease: "linear", });
     gsap.to(".fullscreen", { opacity: (isOpen === null) ? 1 : 1, duration: .25, ease: "linear", });
-    gsap.to(".link-fino", { opacity: isOpen === null ? 0 : 1, duration: .25, ease: "linear", });
+    weedding && gsap.to(".link-fino", { opacity: isOpen === null ? 0 : 1, duration: .25, ease: "linear", });
 
     const currentAudio = audioRefs.current[currentAudioIndex];
     currentAudio.muted = isMuted;
@@ -286,7 +286,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
 
     // Verificar si ya existe la clave 'skipea' en localStorage
     const skipeaStorage = localStorage.getItem("skipea");
-    console.log(skipeaStorage)
+    // console.log(skipeaStorage)
     // Si no existe, la configuramos y la primera vez que se abra la página se debe ejecutar inicializar
     if (skipeaStorage || atajo) {
 

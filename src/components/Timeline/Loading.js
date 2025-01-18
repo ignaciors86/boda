@@ -23,7 +23,7 @@ const Loading = ({ text = true }) => {
     return <div className="loading">
         
         <img src={ositos} alt="Ositos cargando" />
-        {text && <p><h2>Cargando idea preconcebida de nuestra boda... </h2>Si estás usando una red lenta, ten paciencia.</p>}
+        {text && <><h2>Cargando idea preconcebida de nuestra boda... </h2><p>Si estás usando una red lenta, ten paciencia.</p></>}
     </div>
 }
 

@@ -64,9 +64,9 @@ const Invitacion = () => {
   }
 
 
-  useEffect(() => {
-    console.log(visible);
-  }, [visible]);
+  // useEffect(() => {
+  //   console.log(visible);
+  // }, [visible]);
   
   const TypewriterContent = () => (
     <Typewriter

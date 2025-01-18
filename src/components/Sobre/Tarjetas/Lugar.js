@@ -12,6 +12,7 @@ const Lugar = ({ weedding, hosteado }) => {
     const duracion = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--duration').trim().replace('s', '')) * 10;
     const [visible, setVisible] = useState(true);
     useEffect(() => {
+        if(activeCard !== "ubicaciones") return;
         // Resetear propiedades transform y opacity de los elementos antes de animarlos
         claimRefs.current.forEach((ref) => {
             if (ref) {
@@ -204,7 +205,7 @@ const Lugar = ({ weedding, hosteado }) => {
                 },
             }, 0.6);
 
-        console.log(activeCard);
+        // console.log(activeCard);
     }, [activeCard]);
 
     useEffect(() => {
@@ -221,7 +222,7 @@ const Lugar = ({ weedding, hosteado }) => {
 
                 <a className="imagen" href={url} target="_blank" rel="noopener noreferrer" ref={mapRef}>
                     <img src={mapa} alt="Mapa del lugar" />
-                    <p><h2>Cómo llegar</h2></p>
+                    <h2>Cómo llegar</h2>
                 </a>
                 <a target="_blank" href="https://maps.app.goo.gl/VcP5TumYHdV7XPSE9" className="claim bus" ref={(el) => claimRefs.current[1] = el}>
                     <p>

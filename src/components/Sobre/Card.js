@@ -26,7 +26,7 @@ const Card = ({ seccion, children, trasera }) => {
     const cardElement = cardRef.current;
     const frontElement = frontRef.current;
     const backElement = backRef.current;
-    console.log("flipcard");
+    // console.log("flipcard");
     if (!flipped) {
       setFlipped(true);
       setActiveCard(seccion);

@@ -57,7 +57,7 @@ const Timeline = ({ weedding }) => {
 
     Promise.all([preloadImages(imageUrls), preloadAudios(audioRefs)])
       .then(() => {
-        console.log("Imágenes y audios cargados.");
+        // console.log("Imágenes y audios cargados.");
         setImagesLoaded(true);
         setAudiosLoaded(true);
 
@@ -98,7 +98,7 @@ const Timeline = ({ weedding }) => {
   useEffect(() => {
     // Actualiza el índice entero solo si cambia
     const newIndex = Math.round(sliderValue);
-    console.log(newIndex);
+    // console.log(newIndex);
     if (newIndex !== currentIndex) {
       setCurrentIndex(newIndex);
     }
@@ -131,7 +131,7 @@ const Timeline = ({ weedding }) => {
 
   useEffect(() => {
     const newDuration = currentIndex < 3 || currentIndex > 6 ? 3 : (8 - currentIndex) * .1;
-    gsap.set(".progress-bar ", { animation: `shadowPulse ${newDuration}s ease-in-out infinite` });
+    activeCard === "horarios" && gsap.set(".progress-bar ", { animation: `shadowPulse ${newDuration}s ease-in-out infinite` });
 
   }, [currentIndex]);
 

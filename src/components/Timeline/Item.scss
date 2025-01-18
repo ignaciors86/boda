@@ -64,13 +64,13 @@
       text-align: center;
       width: 88%;
       margin: 0 auto;
-      padding: calc(var(--size-unit) * 0.1) calc(var(--size-unit) * 0.2) calc(var(--size-unit) * 0.4);
+      padding: calc(var(--size-unit) * 0.1) calc(var(--size-unit) * 0.2) calc(var(--size-unit) * 0);
     }
 
     .texts {
       display: flex;
       flex-direction: column;
-      padding: calc(var(--size-unit)* 0);
+      padding: calc(var(--size-unit)* 0) 0 calc(var(--size-unit)* 0.4);
       width: 100%;
 
       b,
