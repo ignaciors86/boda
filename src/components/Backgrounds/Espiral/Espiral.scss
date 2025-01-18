@@ -1,0 +1,250 @@
+$particles: 7; // Número de partículas (las 7 bolas de dragón)
+$particleSize: calc(var(--size-unit)*.3); // Tamaño de las bolas
+$radius: calc(var(--size-unit)*1); // Radio de la espiral
+$lapDuration: 10s; // Duración de la animación
+$borderWidth: 1px; // Ancho del borde rojo
+
+.espiral {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); // Centrar la espiral
+  z-index: 2;
+  perspective: calc(var(--size-unit)*3);
+
+  &.paused .bola {
+    animation-play-state: paused; // Pausa la animación cuando se aplica la clase
+  }
+}
+
+.bola {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  width: $particleSize;
+  height: $particleSize;
+  border-radius: 50%; // Bolas redondas
+  background: radial-gradient(circle, #f08030, #f05000); // Gradiente naranja para simular las bolas de dragón
+  box-shadow: 0px 0px 20px rgba(255, 165, 0, 0.8); // Añadimos brillo naranja
+  border: $borderWidth solid #c8102e; // Borde rojo aumentado
+  opacity: 0; // Iniciamos con opacidad 0 para ocultar las partículas al inicio
+  position: relative; // Para la colocación de las Bubbles
+  overflow: hidden;
+  z-index: 2; // Aseguramos que las Bubbles queden por encima del fondo de la bola
+
+  // Añadimos animación de giro
+  animation: spin $lapDuration infinite linear;
+  animation-timing-function: ease-in-out;
+
+  .star-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    width: 200%;
+    height: 200%;
+    position: absolute;
+    top: -47%;
+    left: -51%;
+    scale: 0.5;
+
+  }
+
+  .star {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(var(--size-unit)*.3); // Ajusta el tamaño de las estrellas
+    height: calc(var(--size-unit)*.3); // Ajusta el tamaño de las estrellas
+  }
+
+  &:nth-of-type(2) {
+    margin-top: -30%;
+
+  }
+
+
+
+  &:nth-of-type(4) {
+    .star {
+      position: absolute;
+
+      &:nth-of-type(1) {
+        margin-top: 40%;
+        margin-right: 40%;
+      }
+
+      &:nth-of-type(2) {
+        margin-top: 40%;
+        margin-right: -40%;
+      }
+
+      &:nth-of-type(3) {
+        margin-top: -40%;
+        margin-right: -40%;
+      }
+
+      &:nth-of-type(4) {
+        margin-top: -40%;
+        margin-right: 40%;
+      }
+    }
+  }
+
+
+  &:nth-of-type(5) {
+    .star {
+
+      &:nth-of-type(2) {
+        margin-top: -0%;
+      }
+
+      &:nth-of-type(3) {
+        margin-top: -10%;
+      }
+
+      &:nth-of-type(4) {
+        margin-top: -1%;
+      }
+
+      &:nth-of-type(5) {
+        margin-top: -100%;
+      }
+    }
+  }
+
+  &:nth-of-type(6) {
+    .star {
+
+      position: absolute;
+
+      &:nth-of-type(1) {
+        margin-top: 41%;
+        margin-left: 61%;
+      }
+
+      &:nth-of-type(2) {
+        margin-top: 68%;
+        margin-left: -16%;
+      }
+
+      &:nth-of-type(3) {
+        margin-top: -35%;
+        margin-left: 61%;
+      }
+
+      &:nth-of-type(4) {
+        margin-top: -11%;
+        margin-left: -70%;
+      }
+
+      &:nth-of-type(5) {
+        margin-top: -73%;
+        margin-left: -2%;
+      }
+
+      &:nth-of-type(6) {
+        margin-top: -3%;
+        margin-left: -2%;
+      }
+    }
+  }
+
+  &:nth-of-type(7) {
+    margin-top: -30%;
+
+    .star {
+
+      position: absolute;
+
+      &:nth-of-type(1) {
+        margin-top: 41%;
+        margin-left: 61%;
+      }
+
+      &:nth-of-type(2) {
+        margin-top: 68%;
+        margin-left: 0%;
+      }
+
+      &:nth-of-type(3) {
+        margin-top: -35%;
+        margin-left: 61%;
+      }
+
+      &:nth-of-type(4) {
+        margin-top: 33%;
+        margin-left: -63%;
+      }
+
+      &:nth-of-type(5) {
+        margin-top: -73%;
+        margin-left: -2%;
+      }
+
+      &:nth-of-type(6) {
+        margin-top: -3%;
+        margin-left: -2%;
+      }
+
+      &:nth-of-type(7) {
+        margin-top: -36%;
+        margin-left: -61%;
+      }
+    }
+  }
+
+}
+
+// Ajustar el retraso de animación para cada bola
+@for $i from 1 through $particles {
+  .bola:nth-child(#{$i}) {
+    $angle: (
+      $i / $particles) * 720; // Ajuste de los ángulos para 7 bolas
+    $delay: (
+      $i - 1) * ($lapDuration / $particles
+    ); // Ajuste del retraso para espaciarlas correctamente
+
+  transform: rotate(#{$angle}deg) translate3d($radius, 0, 0);
+  animation-delay: $delay; // Ajuste del retraso para espaciarlas correctamente
+}
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg) translate3d($radius, 0, 0);
+    opacity: 0; // Inicia invisible
+  }
+
+  50% {
+    opacity: 1; // Se vuelven visibles en la mitad del recorrido
+  }
+
+  100% {
+    transform: rotate(720deg) translate3d($radius, 0, 600px); // Movimiento hacia el fondo en 3D
+    opacity: 0; // Desaparecen al final del ciclo
+  }
+}
+
+// Botón para pausar la animación
+.button-container {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 3;
+
+  button {
+    padding: 10px 20px;
+    background-color: #c8102e; // Color de fondo del botón
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+
+    &:hover {
+      background-color: #a00d1b; // Color de fondo al pasar el ratón
+    }
+  }
+}

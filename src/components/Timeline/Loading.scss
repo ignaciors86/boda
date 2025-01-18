@@ -1,0 +1,33 @@
+.loading {
+  display: flex;
+  position: absolute;
+  left: 0;
+  height: 60%;
+  justify-content: space-evenly;
+  align-items: center;
+  color: #333;
+  flex-direction: column;
+  width: 100%;
+  pointer-events: none;
+  background: cadetblue;
+  box-sizing: border-box;
+  p{
+    padding: 10% 5%;
+  }
+  em{
+    border: unset;
+  }
+  img{
+    width: 30%;
+  }
+  em{
+    color: white;
+  }
+  h2{
+    color: var(--greenSuperTransparent);
+    width: 100%;
+    font-size: calc(var(--size-unit)* .225);
+    line-height: calc(var(--size-unit)* .225);
+    width: 100%;
+  }
+}

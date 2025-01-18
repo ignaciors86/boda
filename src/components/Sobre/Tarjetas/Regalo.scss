@@ -1,0 +1,47 @@
+.card .seccion{
+    &.regalo{
+        display: flex;
+        padding: 0;
+        img {
+            width: 80%;
+            margin: -10% auto 0;
+            position: absolute;
+            z-index: 0;
+            opacity: .2;
+        }
+        span{
+            font-size: calc(var(--size-unit)* 0.20);
+            line-height: calc(var(--size-unit)* 0.16);
+        }
+        em{
+            z-index: 1;
+            width: 100%;
+            box-sizing: border-box;
+            font-style: normal;
+            padding: 2% 5%;
+            display: flex;
+            font-family: var(--tipo), monospace;
+            color: white;
+            font-size: calc(var(--size-unit)* 0.15);
+            line-height: calc(var(--size-unit)* 0.15);
+        }
+        .link{
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+            margin: 0 auto calc(var(--size-unit)* .2);
+            font-family: var(--tipo), monospace;
+            a{
+                display: flex;
+                border-radius: 50%;
+                width: calc(var(--size-unit)* .75);
+                height: calc(var(--size-unit)* .75);
+                flex-direction: column;
+                background: var(--darkGray);
+            }
+
+        }
+        
+    }
+}

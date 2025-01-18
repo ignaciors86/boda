@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../strapi-boda"
+		},
+		{
+			"path": "../boda-strapi"
+		}
+	],
+	"settings": {
+		"CodeGPT.apiKey": "CodeGPT Plus Beta",
+		"CodeGPT.Autocomplete.maxTokens": 16
+	}
+}

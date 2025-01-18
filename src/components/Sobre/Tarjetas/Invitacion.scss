@@ -1,0 +1,89 @@
+.seccion {
+    &.invitacion {
+      box-sizing: border-box;
+      background-size: 100% !important;
+      display: flex;
+      justify-content: flex-end;
+      padding: 0;
+      position: relative;
+      text-align: center;
+
+      .card-front{
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+    }
+      p, em, h2 {
+        background: rgba(95, 158, 160, 0.8);
+        width: 100%;
+        padding: calc(var(--size-unit) * 0.06) calc(var(--size-unit) * 0.1);
+        box-sizing: border-box;
+        margin: 0 calc(var(--size-unit) * 1) calc(var(--size-unit) * 0.1);
+        // text-shadow: 0px 0px calc(var(--size-unit) * 0.3) black;
+        z-index: 1;
+        opacity: 0;
+        text-align: center;
+      }
+      p.fijo{
+        min-height: calc(var(--size-unit) * 1);
+        display: flex;
+      }
+      .Typewriter{
+        width: 100%;
+      }
+      .Typewriter__wrapper{
+        width: 100%;
+      }
+
+      h2{
+        color: transparent;
+      }
+      .nosotros-svg {
+        position: absolute;
+        top: -5%;
+        left: -6%;
+        width: 111%;
+        height: auto;
+        object-fit: contain;
+        z-index: 0;
+        opacity: 0; /* Inicialmente oculto */
+        background: white;
+        path {
+          stroke: cadetblue;
+          stroke-width: 2;
+          fill: var(--orange);
+          stroke-dasharray: 1000; /* Establecemos un valor grande por defecto */
+          stroke-dashoffset: 1000;
+          animation: drawPath 5s ease forwards;
+        }
+      }
+  
+      /* Animación para dibujar los trazos */
+      @keyframes drawPath {
+        to {
+          stroke-dashoffset: 0;
+        }
+      }
+  
+      &.active .nosotros-svg {
+        opacity: 1;
+        animation: drawPath 5s ease forwards;  /* Reinicia la animación */
+      }
+    }
+    .nosotros-jpg-color{
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        opacity: 0;
+    }
+    .nosotros-jpg{
+        top: -5%;
+        left: -6%;
+        width: 111%;
+        opacity: 0;
+        height: auto;
+    }
+
+  }
+  
