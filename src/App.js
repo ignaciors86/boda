@@ -13,13 +13,16 @@ const App = () => {
   const [articles, setArticles] = useState([]);
 
   useEffect(() => {
-    fetch('boda-strapi-production.up.railway.app/invitados')
+    fetch('https://boda-strapi-production.up.railway.app/api/invitados')
       .then(response => response.json())
       .then(data => setArticles(data));
   }, []);  
 
   const duration = 1;
-  console.log(articles);
+  useEffect(() => {
+    console.log(articles);
+  }, [articles]);
+
 
   // Precarga de audios
   useEffect(() => {
