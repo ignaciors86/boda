@@ -15,6 +15,7 @@ const CartaInvitado = ({ weedding, invitado }) => {
                     <p>Document ID: {invitado?.documentId}</p>
                     <p>Mesa: {invitado?.mesa?.nombre || 'No asignada'}</p>
                     <p>Grupo de origen: {invitado?.grupo_origen?.nombre || 'No asignado'}</p>
+                    <p>{invitado?.dedicatoria || 'No asignado'}</p>
                     {/* Agrega más detalles según los datos disponibles */}
                 </div>
             ) : (
