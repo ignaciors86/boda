@@ -23,8 +23,9 @@
         height: 100%;
         z-index: 0;
         bottom: -0.5%;
+
         // opacity: 0;
-        .nosotros-jpg-imagen{
+        .nosotros-jpg-imagen {
             height: 100%;
             width: auto;
             text-align: center;
@@ -43,6 +44,7 @@
         object-fit: contain;
         z-index: 0;
         animation: drawPath 10s ease forwards;
+
         // opacity: .5;
         /* Reinicia la animación */
         path {
@@ -56,7 +58,8 @@
             animation: drawPath 400s ease forwards;
             transition: .5s ease;
         }
-        &.nosotros-svg-inicial{
+
+        &.nosotros-svg-inicial {
             path {
                 opacity: 0;
             }
@@ -127,13 +130,17 @@
         font-size: calc(var(--size-unit)* 0.7);
         color: var(--darkPurple);
 
+        
+
         em {
             font-size: calc(var(--size-unit)* 0.5);
             font-style: normal;
             margin: 0 calc(var(--size-unit)* 0.05);
         }
     }
-
+    h3 {
+        font-size: calc(var(--size-unit)* 0.4) !important;
+    }
     &-body {
         position: absolute;
         bottom: 0;
@@ -222,9 +229,11 @@
         cursor: pointer;
         z-index: 3;
         opacity: 1 !important;
-        &.cierrame{
+
+        &.cierrame {
             animation: shadowPulse 1s ease-in-out 0s infinite;
         }
+
         &:before {
             background-color: var(--orange);
             transition: calc(var(--duration-envelope)*.25) ease calc(var(--duration-envelope)*3.5);
@@ -292,6 +301,7 @@
             transform: translate(-50%, -50%) scale(1) !important;
             transition: calc(var(--duration-envelope)*.25) ease calc(var(--duration-envelope)*.5);
             background: var(--darkGrayTransparent);
+
             &:before {
                 transition: calc(var(--duration-envelope)*.25) ease calc(var(--duration-envelope)*.5);
                 background: transparent;
@@ -410,8 +420,8 @@
                         }
 
                         @media (orientation: portrait) {
-          left: calc(var(--size-unit)* -1.4);
-        top: calc(var(--size-unit)* 1.4);
+                            left: calc(var(--size-unit)* -1.4);
+                            top: calc(var(--size-unit)* 1.4);
                             rotate: -47deg !important;
                         }
 
