@@ -1,3 +1,10 @@
+:root{
+  --rasca-ancho: 40dvh;
+}
 .rasca {
-  }
-  
+  position: relative;
+  width: var(--rasca-ancho);
+  height: var(--rasca-ancho);
+  border-radius: var(--rasca-ancho);
+  overflow: hidden;
+}

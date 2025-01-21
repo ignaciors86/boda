@@ -1,9 +1,14 @@
 import React, { useRef, useEffect, useState } from 'react';
-
+import './Rasca.scss';
 const Rasca = ({ url }) => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 0, height: 0 });
+  const [revealPercentage, setRevealPercentage] = useState(0);
+
+  // Controla el grosor del pincel (en dvh)
+  const brushSizeInDvh = 4;
+  const brushSize = () => canvasDimensions.height * (brushSizeInDvh / 100);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -38,11 +43,13 @@ const Rasca = ({ url }) => {
 
   const handleMouseUp = () => {
     setIsDrawing(false);
+    calculateRevealPercentage(); // Recalcular el porcentaje al finalizar el trazo
   };
 
   const handleMouseMove = (e) => {
     if (!isDrawing) return;
     draw(e);
+    calculateRevealPercentage(); // Actualizar el porcentaje mientras se rasca
   };
 
   const draw = (e) => {
@@ -55,12 +62,51 @@ const Rasca = ({ url }) => {
     // Estilo del "pincel"
     ctx.globalCompositeOperation = 'destination-out'; // Eliminar la capa gris al rascar
     ctx.beginPath();
-    ctx.arc(x, y, canvasDimensions.height * 0.1, 0, 2 * Math.PI); // Grosor 4dvh
+    ctx.arc(x, y, brushSize(), 0, 2 * Math.PI); // Grosor definido por brushSize()
     ctx.fill();
   };
 
+  const calculateRevealPercentage = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const totalPixels = imageData.data.length / 4; // Cada píxel tiene 4 valores (RGBA)
+    let clearedPixels = 0;
+
+    for (let i = 3; i < imageData.data.length; i += 4) {
+      if (imageData.data[i] === 0) clearedPixels++; // Pixel completamente transparente
+    }
+
+    const percentage = (clearedPixels / totalPixels) * 100;
+    setRevealPercentage(percentage);
+
+    if (percentage >= 20) {
+      autoReveal(); // Simula el borrado completo si llega al 70%
+    }
+  };
+
+  const autoReveal = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    let interval;
+    let remaining = 100 - revealPercentage;
+
+    const revealStep = () => {
+      remaining -= 1; // Revela en pasos del 5%
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.fillStyle = '#000';
+      ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, brushSize() * 2, brushSize() * 2);
+
+      if (remaining <= 0) {
+        clearInterval(interval);
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpiar todo
+      }
+    };
+    interval = setInterval(revealStep, 250); // Rápidos trazos cada 50ms
+  };
+
   return (
-    <div className="rasca" style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div className="rasca" >
       {/* Imagen de fondo */}
       <img
         src={url}
