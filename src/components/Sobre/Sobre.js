@@ -20,10 +20,11 @@ import Espiral from 'components/Backgrounds/Espiral/Espiral';
 import Bubbles from 'components/Backgrounds/Bubles/Bubles';
 import { CustomEase } from 'gsap/all';
 import MobileDetect from "mobile-detect";
+import CartaInvitado from './Tarjetas/CartaInvitado';
 
-const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
+const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado }) => {
 
-  tipo && document.documentElement.style.setProperty('--tipo', 'VCR');
+  weedding && document.documentElement.style.setProperty('--tipo', 'VCR');
 
   const { activeCard, setActiveCard } = useDragContext();
   const [moving, setMoving] = useState(false);
@@ -381,7 +382,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
 
 
 
-      if(!md.mobile() && fullScreen !== null){
+      if (!md.mobile() && fullScreen !== null) {
         const boton = document.querySelector(".fullscreen");
         boton.classList.toggle("active");
         gsap.set(boton, { animation: "none", });
@@ -422,7 +423,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
       <Bubbles />
       {isOpen === null && <Espiral weedding={weedding} isOpen={isOpen} uri={uri} />}
       {isOpen === false && <Espiral weedding={weedding} isOpen={isOpen} option2={true} />}
-      <div className={`sobre closed ${tipo ? "weedding" : ""}`} ref={sobreRef}>
+      <div className={`sobre closed ${weedding ? "weedding" : ""}`} ref={sobreRef}>
 
         <div alt="Nosotros" className="nosotros-jpg" >
           {!isOpen && <Nosotros
@@ -454,8 +455,11 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
               </Card>
               <Card seccion="ubicaciones" onClick={() => handleClick("ubicaciones")} trasera={<Lugar weedding={weedding} hosteado={hosteado} />}>                <h2>Lugar</h2>
               </Card>
-              <Card seccion={"asistencia"} onClick={() => handleClick("asistencia")} trasera={<Asistencia weedding={weedding} />}>
-                <h2>Confirmar Asistencia</h2>
+              <Card className={"asistencia"}
+                seccion={casandonos ? "carta-invitado" : "asistencia"}
+                onClick={() => handleClick(casandonos ? "carta-invitado" : "asistencia")}
+                trasera={casandonos && invitado?.data ? <CartaInvitado invitado={invitado} weedding={weedding} /> : <Asistencia weedding={weedding}/>}>
+                <h2>{casandonos ? invitado?.data?.nombre : "Confirmar Asistencia"}</h2>
               </Card>
             </div>
           </div>
@@ -486,7 +490,7 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
       >
       </button>
 
-      { !md.mobile() && <button
+      {!md.mobile() && <button
         className={`back fullscreen`}
         onClick={() => {
           gsap.to(".fullscreen", {
@@ -498,9 +502,9 @@ const Sobre = ({ weedding, hosteado, atajo, tipo, uri }) => {
             onComplete: function () { this.kill() }
           });
           setFullScreen(!fullScreen);
-        }} 
+        }}
       >
-      </button> }
+      </button>}
 
       {weedding && <p className="link-fino"><a href='/'>
         ir a la versión fina de la web

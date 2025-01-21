@@ -136,32 +136,32 @@ const Timeline = ({ weedding }) => {
   }, [currentIndex]);
 
   const handleMouseDown = () => {
-    gsap.to(".loading", { opacity: 1, duration: 0.15, delay: .15 }); // Aumenta la opacidad al hacer clic
-    gsap.to(".elementsToHide", { opacity: 0, duration: 0.15, delay: 0, }); // Reduce la opacidad al soltar
+    gsap?.to(".loading", { opacity: 1, duration: 0.15, delay: .15 }); // Aumenta la opacidad al hacer clic
+    gsap?.to(".elementsToHide", { opacity: 0, duration: 0.15, delay: 0, }); // Reduce la opacidad al soltar
   };
 
   const handleMouseUp = () => {
-    gsap.to(".loading", { opacity: 0, duration: 0.3, delay: 0, }); // Reduce la opacidad al soltar
-    gsap.to(".elementsToHide", { opacity: 1, duration: 0.3, delay: .3, }); // Reduce la opacidad al soltar
+    gsap?.to(".loading", { opacity: 0, duration: 0.3, delay: 0, }); // Reduce la opacidad al soltar
+    gsap?.to(".elementsToHide", { opacity: 1, duration: 0.3, delay: .3, }); // Reduce la opacidad al soltar
   };
 
   useEffect(() => {
     const sliderElement = document.querySelector(".slider");
 
     // Añadir eventos de mouse
-    sliderElement.addEventListener("mousedown", handleMouseDown);
-    sliderElement.addEventListener("mouseup", handleMouseUp);
+    sliderElement?.addEventListener("mousedown", handleMouseDown);
+    sliderElement?.addEventListener("mouseup", handleMouseUp);
 
     // Añadir eventos táctiles
-    sliderElement.addEventListener("touchstart", handleMouseDown);
-    sliderElement.addEventListener("touchend", handleMouseUp);
+    sliderElement?.addEventListener("touchstart", handleMouseDown);
+    sliderElement?.addEventListener("touchend", handleMouseUp);
 
     // Limpiar eventos cuando el componente se desmonte
     return () => {
-      sliderElement.removeEventListener("mousedown", handleMouseDown);
-      sliderElement.removeEventListener("mouseup", handleMouseUp);
-      sliderElement.removeEventListener("touchstart", handleMouseDown);
-      sliderElement.removeEventListener("touchend", handleMouseUp);
+      sliderElement?.removeEventListener("mousedown", handleMouseDown);
+      sliderElement?.removeEventListener("mouseup", handleMouseUp);
+      sliderElement?.removeEventListener("touchstart", handleMouseDown);
+      sliderElement?.removeEventListener("touchend", handleMouseUp);
     };
   }, []);
 

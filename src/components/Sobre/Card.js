@@ -3,7 +3,7 @@ import { gsap } from 'gsap';
 import './Card.scss';
 import { useDragContext } from '../DragContext';
 
-const Card = ({ seccion, children, trasera }) => {
+const Card = ({ className, seccion, children, trasera }) => {
   const cardRef = useRef(null);
   const frontRef = useRef(null);
   const backRef = useRef(null);
@@ -82,7 +82,7 @@ const Card = ({ seccion, children, trasera }) => {
 
   return (
     <div
-      className={`card ${seccion} ${flipped ? 'flipped' : 'unflipped'}`}
+      className={`card ${className} ${seccion} ${flipped ? 'flipped' : 'unflipped'}`}
       ref={cardRef}
       onDrag={() => !flipped && flipCard()}
       onClick={() => !flipped && flipCard()}
