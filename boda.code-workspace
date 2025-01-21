@@ -4,9 +4,6 @@
 			"path": "."
 		},
 		{
-			"path": "../strapi-boda"
-		},
-		{
 			"path": "../boda-strapi"
 		}
 	],
