@@ -116,13 +116,13 @@ const Rasca = ({ url, resultado }) => {
     if (contenidoRef.current) {
       // Establecemos z-index antes de la animación
       gsap.set(contenidoRef.current, { zIndex: 1 });
-
       // Animamos la opacidad
       gsap.to(contenidoRef.current, {
         opacity: 1,
         duration: 1, // Duración de la animación
         delay: 2,
       });
+      gsap.to(".rasca", { borderRadius: 0, minWidth: "100%", height: "100%", duration: 1, delay: 1, ease: "linear", });
     }
   };
 
