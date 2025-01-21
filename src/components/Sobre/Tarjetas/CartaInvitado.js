@@ -21,7 +21,7 @@ const CartaInvitado = ({ weedding, invitado }) => {
         activeCard === "invitado" ? <><div className="cartaInvitado seccion">
 
             {/* Agrega más detalles según los datos disponibles */}
-            <Rasca url={urlstrapi + invitado?.personaje.imagen.url} alt={invitado?.personaje.imagen.alt} resultado={resultado} />
+            <Rasca url={urlstrapi + invitado?.personaje?.imagen?.url} alt={invitado?.personaje?.imagen?.alt} resultado={resultado} />
 
         </div><button className="back" onClick={() => setActiveCard("sobre")} /></> : <Loading />
     );

@@ -40,6 +40,7 @@ const Rasca = ({ url, resultado }) => {
   }, []);
 
   const handleMouseDown = (e) => {
+    e.preventDefault();
     setIsDrawing(true);
     draw(e); // Empezar a rascar al hacer clic
   };
@@ -126,9 +127,40 @@ const Rasca = ({ url, resultado }) => {
     }
   };
 
+  // Manejar los eventos táctiles
+  const handleTouchStart = (e) => {
+    e.preventDefault();
+    setIsDrawing(true);
+    drawTouch(e); // Empezar a rascar al tocar
+  };
+
+  const handleTouchEnd = () => {
+    setIsDrawing(false);
+    calculateRevealPercentage(); // Recalcular el porcentaje al finalizar el trazo
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isDrawing) return;
+    drawTouch(e);
+    calculateRevealPercentage(); // Actualizar el porcentaje mientras se rasca
+  };
+
+  const drawTouch = (e) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const x = e.touches[0].clientX - rect.left;
+    const y = e.touches[0].clientY - rect.top;
+
+    // Estilo del "pincel"
+    ctx.globalCompositeOperation = 'destination-out'; // Eliminar la capa gris al rascar
+    ctx.beginPath();
+    ctx.arc(x, y, brushSize(), 0, 2 * Math.PI); // Grosor definido por brushSize()
+    ctx.fill();
+  };
+
   return (
     <>
-
       <div className="rasca">
         {/* Imagen de fondo */}
         <img
@@ -142,8 +174,11 @@ const Rasca = ({ url, resultado }) => {
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp} // Para detener el dibujo si el puntero sale del canvas
+          onTouchStart={handleTouchStart} // Manejar toque en dispositivos móviles
+          onTouchMove={handleTouchMove} // Mover el dedo
+          onTouchEnd={handleTouchEnd} // Terminar el toque
+          onTouchCancel={handleTouchEnd} // Cancelar el toque
         ></canvas>
-
       </div>
 
       {/* Elemento resultado (oculto al inicio) */}
