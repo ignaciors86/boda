@@ -195,8 +195,9 @@ em {
   }
 }
 
-.volumen {
+.volumen {  
   &.stop {
+    background: var(--orange);
     animation: shadowPulse 1s ease-in-out infinite;
   }
 }
@@ -236,7 +237,7 @@ em {
 .play {
   &:before {
     mask-image: url("../assets/images/stop.png");
-    background: red !important;
+    background: var(--orange) !important;
   }
 }
 
