@@ -1,11 +1,10 @@
 :root {
-  --rasca-ancho: 40dvh;
+  --rasca-ancho: 50dvh;
 }
 
 .rasca {
   position: relative;
-  width: inherit;
-  max-width: var(--rasca-ancho);
+  width: var(--rasca-ancho);
   height: var(--rasca-ancho);
   border-radius: var(--rasca-ancho);
   overflow: hidden;
