@@ -84,7 +84,7 @@ const Rasca = ({ url, resultado }) => {
     const percentage = (clearedPixels / totalPixels) * 100;
     setRevealPercentage(percentage);
 
-    if (percentage >= 50) {
+    if (percentage >= 30) {
       autoReveal(); // Simula el borrado completo si llega al 70%
       animateContenido(); // Inicia la animación del contenido
     }
