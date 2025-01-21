@@ -1,8 +1,18 @@
 .cartaInvitado {
 
+    &.seccion {
+        background: var(--darkGray);
+    }
+
     &__contenido {
         position: absolute;
         opacity: 0;
         z-index: -1;
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-evenly;
+        background: var(--purpleTransparent);
     }
 }

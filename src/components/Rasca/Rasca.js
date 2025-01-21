@@ -127,20 +127,24 @@ const Rasca = ({ url, resultado }) => {
   };
 
   return (
-    <div className="rasca">
-      {/* Imagen de fondo */}
-      <img
-        src={url}
-        alt="Premio oculto"
-      />
-      {/* Capa gris interactiva */}
-      <canvas
-        ref={canvasRef}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp} // Para detener el dibujo si el puntero sale del canvas
-      ></canvas>
+    <>
+
+      <div className="rasca">
+        {/* Imagen de fondo */}
+        <img
+          src={url}
+          alt="Premio oculto"
+        />
+        {/* Capa gris interactiva */}
+        <canvas
+          ref={canvasRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp} // Para detener el dibujo si el puntero sale del canvas
+        ></canvas>
+
+      </div>
 
       {/* Elemento resultado (oculto al inicio) */}
       <div
@@ -149,7 +153,7 @@ const Rasca = ({ url, resultado }) => {
       >
         {resultado}
       </div>
-    </div>
+    </>
   );
 };
 
