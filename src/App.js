@@ -63,31 +63,44 @@ const App = () => {
     const { documentId } = useParams(); // Obtener el parámetro de la URL
     const [localInvitado, setLocalInvitado] = useState(null); // Estado local para el invitado
     const [isLoading, setIsLoading] = useState(true); // Estado para controlar la carga
-  
+    const [allInvitados, setAllInvitados] = useState([]); // Estado para controlar la carga
+    
     useEffect(() => {
-      if (!documentId || localInvitado) return; // Evita hacer el fetch si ya tienes datos o falta el ID
-  
-      // Realiza el fetch solo si no hay datos
-      setIsLoading(true); // Inicia el estado de carga
-      fetch(`https://boda-strapi-production.up.railway.app/api/invitados/${documentId}?populate=*`)
+      if (!documentId || localInvitado) return;
+    
+      setIsLoading(true);
+      fetch('https://boda-strapi-production.up.railway.app/api/invitados?populate=*')
         .then((response) => response.json())
         .then((data) => {
-          setLocalInvitado(data); // Guarda los datos en el estado local
-          setIsLoading(false); // Termina la carga
+          console.log('Datos de invitados:', data); // Verifica los datos recibidos
+          setAllInvitados(data);
+          
+          const invitadoConcreto = data.data.find((invitado) => invitado.documentId === documentId);
+          console.log('documentId buscado:', documentId); // Verifica el valor del documentId
+          if (invitadoConcreto) {
+            setLocalInvitado(invitadoConcreto);
+            console.log(invitadoConcreto)
+          } else {
+            console.error('No se encontró el invitado con el documentId proporcionado.');
+          }
+    
+          setIsLoading(false);
         })
         .catch((error) => {
-          console.error('Error al obtener los datos del invitado:', error);
-          setIsLoading(false); // Maneja el error y termina la carga
+          console.error('Error al obtener los datos de los invitados:', error);
+          setIsLoading(false);
         });
-    }, [documentId, localInvitado]); // Se ejecuta solo si cambia documentId o localInvitado
+    }, [documentId, localInvitado]);
+    
   
     // Renderizar mientras se cargan los datos
     if (isLoading) {
-      return <div>Cargando invitado...</div>;
+      return;
+      // return <div>Cargando invitado...</div>;
     }
   
     // Renderizar el componente <Sobre> una vez que los datos están disponibles
-    return <Sobre casandonos={true} invitado={localInvitado} />;
+    return <Sobre casandonos={true} weedding={localInvitado.weedding} invitado={localInvitado} />;
   };
   
   return (

@@ -458,8 +458,8 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado }) => {
               <Card className={"asistencia"}
                 seccion={casandonos ? "carta-invitado" : "asistencia"}
                 onClick={() => handleClick(casandonos ? "carta-invitado" : "asistencia")}
-                trasera={casandonos && invitado?.data ? <CartaInvitado invitado={invitado} weedding={weedding} /> : <Asistencia weedding={weedding}/>}>
-                <h2>{casandonos ? invitado?.data?.nombre : "Confirmar Asistencia"}</h2>
+                trasera={casandonos && invitado ? <CartaInvitado invitado={invitado} weedding={weedding} /> : <Asistencia weedding={weedding}/>}>
+                <h2>{casandonos ? invitado?.nombre : "Confirmar Asistencia"}</h2>
               </Card>
             </div>
           </div>
