@@ -9,7 +9,7 @@ const Lugar = ({ weedding, hosteado }) => {
     const mapRef = useRef(null);
     const claimRefs = useRef([]); // Referencias para las etiquetas con clase .claim
     const { activeCard, setActiveCard } = useDragContext();
-    const duracion = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--duration').trim().replace('s', '')) * 10;
+    const duracion = 10;
     const [visible, setVisible] = useState(true);
     useEffect(() => {
         if(activeCard !== "ubicaciones") return;
