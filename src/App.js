@@ -69,7 +69,7 @@ const App = () => {
       if (!documentId || localInvitado) return;
     
       setIsLoading(true);
-      fetch('https://boda-strapi-production.up.railway.app/api/invitados?populate[personaje][populate]=imagen')
+      fetch('https://boda-strapi-production.up.railway.app/api/invitados?populate[personaje][populate]=imagen&populate[mesa][populate]=*')
         .then((response) => response.json())
         .then((data) => {
           console.log('Datos de invitados:', data); // Verifica los datos recibidos

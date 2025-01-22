@@ -5,7 +5,6 @@ import { throttle } from 'lodash';
 import './QEQ.scss';
 import Loading from './Loading.js';
 import { imageUrls, items, renderItems } from "./items.js";
-import ositosDrag from "./assets/images/ositos-drag.png";
 import { useDragContext } from '../DragContext.js';
 import Marquee from 'react-fast-marquee';
 gsap.registerPlugin(Draggable);
