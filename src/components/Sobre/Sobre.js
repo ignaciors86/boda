@@ -21,6 +21,7 @@ import Bubbles from 'components/Backgrounds/Bubles/Bubles';
 import { CustomEase } from 'gsap/all';
 import MobileDetect from "mobile-detect";
 import CartaInvitado from './Tarjetas/CartaInvitado';
+import QEQ from 'components/Timeline/QEQ';
 
 const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado }) => {
 
@@ -461,8 +462,10 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado }) => {
                 }
 
               </Card>
-              <Card seccion="horarios" onClick={() => handleClick("horarios")} trasera={<Timeline weedding={weedding} />}>
-                <h2>Agenda</h2>
+              <Card seccion="horarios" onClick={() => handleClick("horarios")} trasera={
+                invitado ? <QEQ weedding={weedding} /> : <Timeline weedding={weedding} />
+                }>
+                <h2>{invitado ? "Quién Es Quién" : "Agenda"}</h2>
               </Card>
               <Card seccion="regalo" onClick={() => handleClick("regalo")} trasera={<Regalo />}>
                 <h2>Regalo</h2>
