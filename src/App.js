@@ -59,31 +59,55 @@ const App = () => {
   }, []);
 
   // Ruta que obtiene el documentId y carga los datos de invitado
+  // Ruta que obtiene el documentId y carga los datos de invitado
   const LoadInvitado = () => {
     const { documentId } = useParams(); // Obtener el parámetro de la URL
     const [localInvitado, setLocalInvitado] = useState(null); // Estado local para el invitado
     const [isLoading, setIsLoading] = useState(true); // Estado para controlar la carga
-    const [allInvitados, setAllInvitados] = useState([]); // Estado para controlar la carga
-    
+    const [allInvitados, setAllInvitados] = useState([]); // Estado para todos los invitados
+    const [mesasOrganizadas, setMesasOrganizadas] = useState({}); // Estado para mesas organizadas
+
     useEffect(() => {
       if (!documentId || localInvitado) return;
-    
+
       setIsLoading(true);
       fetch('https://boda-strapi-production.up.railway.app/api/invitados?populate[personaje][populate]=imagen&populate[mesa][populate]=*')
         .then((response) => response.json())
         .then((data) => {
           console.log('Datos de invitados:', data); // Verifica los datos recibidos
           setAllInvitados(data);
-          
+
+          // Organizar los datos por mesas
+          const mesas = {};
+          data.data.forEach((invitado) => {
+            
+            const mesa = invitado.mesa?.nombre || 'Sin mesa'; // Usa "Sin mesa" si no tiene mesa asignada
+            
+            if (!mesas[mesa]) {
+              mesas[mesa] = {
+                himno: invitado.himno,
+                imagen: invitado.imagen,
+                capitan: invitado.capitan,
+                invitados: []
+              }; // Crear array para esta mesa si no existe
+            }
+            console.log(mesas[mesa])
+            mesas[mesa].invitados.push(invitado); // Añadir el invitado a la mesa correspondiente
+          });
+
+          setMesasOrganizadas(mesas); // Guardar el objeto en el estado
+          console.log('Mesas organizadas:', mesas); // Mostrar el resultado en consola
+
+          // Buscar invitado específico por documentId
           const invitadoConcreto = data.data.find((invitado) => invitado.documentId === documentId);
           console.log('documentId buscado:', documentId); // Verifica el valor del documentId
           if (invitadoConcreto) {
             setLocalInvitado(invitadoConcreto);
-            console.log(invitadoConcreto)
+            console.log('Invitado encontrado:', invitadoConcreto);
           } else {
             console.error('No se encontró el invitado con el documentId proporcionado.');
           }
-    
+
           setIsLoading(false);
         })
         .catch((error) => {
@@ -91,18 +115,18 @@ const App = () => {
           setIsLoading(false);
         });
     }, [documentId, localInvitado]);
-    
-  
+
     // Renderizar mientras se cargan los datos
     if (isLoading) {
       return;
       // return <div>Cargando invitado...</div>;
     }
-  
+
     // Renderizar el componente <Sobre> una vez que los datos están disponibles
     return <Sobre casandonos={true} weedding={localInvitado.weedding} invitado={localInvitado} />;
   };
-  
+
+
   return (
     <Router>
       <DragProvider>
