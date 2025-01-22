@@ -412,7 +412,7 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado }) => {
         } catch (error) {
           console.error("Error toggling fullscreen mode:", error);
         }
-      } 
+      }
     };
 
     toggleFullScreen();
@@ -441,11 +441,25 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado }) => {
           <div className="envelope-flap-bg"></div>
           <div className="envelope-body">
             <div className="envelope-content">
-              <Card seccion="invitacion" onClick={() => handleClick("invitacion")} trasera={<Invitacion />}>
-                <img src={invitacion} alt="Invitacion" />
-                <span className='nombres'>Mario y Nacho</span>
-                <span className="fecha">24 de Mayo<strong>2025</strong></span>
-                <span className="lugar">Salamanca</span>
+              <Card seccion="invitacion"
+                onClick={() => handleClick("invitacion")}
+                trasera={<Invitacion invitado={invitado} />}>
+                {
+                  invitado ? <>
+                    <img src={invitacion} alt="Invitacion" />
+                    <span className='nombres'>{invitado?.nombre}</span>
+                    <span className="fecha"><strong>Los</strong>Entremesas</span>
+                    <span className="lugar">hora de hacer el capullo</span>
+                  </>
+                    :
+                    <>
+                      <img src={invitacion} alt="Invitacion" />
+                      <span className='nombres'>Mario y Nacho</span>
+                      <span className="fecha">24 de Mayo<strong>2025</strong></span>
+                      <span className="lugar">Salamanca</span>
+                    </>
+                }
+
               </Card>
               <Card seccion="horarios" onClick={() => handleClick("horarios")} trasera={<Timeline weedding={weedding} />}>
                 <h2>Agenda</h2>
@@ -458,8 +472,12 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado }) => {
               <Card className={"asistencia"}
                 seccion={casandonos ? "invitado" : "asistencia"}
                 onClick={() => handleClick(casandonos ? "invitado" : "asistencia")}
-                trasera={invitado ? <CartaInvitado invitado={invitado} weedding={weedding} /> : <Asistencia weedding={weedding}/>}>
-                <h2>{casandonos ? invitado?.nombre : "Confirmar Asistencia"}</h2>
+                trasera={
+                  invitado ?
+                    <CartaInvitado invitado={invitado} weedding={weedding} /> :
+                    <Asistencia weedding={weedding} />
+                }>
+                <h2>{casandonos ? "Tu personaje" : "Confirmar Asistencia"}</h2>
               </Card>
             </div>
           </div>

@@ -9,7 +9,7 @@ import gsap from "gsap";
 import Loading from "components/Timeline/Loading";
 import Typewriter from "typewriter-effect";
 
-const Invitacion = () => {
+const Invitacion = ({ invitado }) => {
   const { activeCard, setActiveCard } = useDragContext();
   const [animationKey, setAnimationKey] = useState(0);
   const [visible, setVisible] = useState(true);
@@ -33,18 +33,18 @@ const Invitacion = () => {
 
         // Animación del trazo
         setTimeout(() => {
-    
+
           gsap.to(".invitacion .nosotros-jpg", {
             opacity: 0, duration: .5, delay: .5,
             onComplete: () => {
-              path.style.strokeDashoffset = 0; 
+              path.style.strokeDashoffset = 0;
               const tlCaretos = gsap.timeline();
-              const duration = .2 ;
-              tlCaretos.to(".invitacion .nosotros-svg", { opacity: 1, duration: duration*2, })
-                .to(".invitacion .nosotros-jpg-color", { opacity: 1, duration: duration*3 }, "<")
-                .to(".invitacion h2", { opacity: 1, duration: duration*1, })
-                .to(".invitacion h2", { duration: duration*3, color: "white", }, ">")
-                .to(".invitacion p, .invitacion em", { opacity: 1, duration: duration*2, delay: duration*1, });
+              const duration = .2;
+              tlCaretos.to(".invitacion .nosotros-svg", { opacity: 1, duration: duration * 2, })
+                .to(".invitacion .nosotros-jpg-color", { opacity: 1, duration: duration * 3 }, "<")
+                .to(".invitacion h2", { opacity: 1, duration: duration * 1, })
+                .to(".invitacion h2", { duration: duration * 3, color: "white", }, ">")
+                .to(".invitacion p, .invitacion em", { opacity: 1, duration: duration * 2, delay: duration * 1, });
             }
           });
         }, 0);
@@ -67,13 +67,16 @@ const Invitacion = () => {
   // useEffect(() => {
   //   console.log(visible);
   // }, [visible]);
-  
+
   const TypewriterContent = () => (
     <Typewriter
       onInit={(typewriter) => {
         setTimeout(() => {
           typewriter
             .typeString(
+              invitado ? 
+              "Mientras esperas a que traigan la comida, échale un ojo a los juegos que hemos preparado." 
+              :
               "En cada tarjeta tienes información relevante para ese día. Si tienes alguna duda, no dudes en preguntar. Porfa, decidnos algo lo antes posible para poder gestionar movidas...\nNo olvides cerrar el sobre antes de salir, jeje"
             )
             .start();
@@ -89,31 +92,35 @@ const Invitacion = () => {
 
   return (
     <>
-    <Loading text={false}/>
-    {activeCard === "invitacion" && <><div
-      className={`invitacion seccion ${activeCard === "invitacion" ? "active" : ""
-        }`}
-    >
-      <Nosotros
-        key={animationKey} // Fuerza el reinicio de la animación
-        className="nosotros-svg"
-        viewBox="0 0 843 840"
-      />
-      <img src={nosotrosjpg} alt="Nosotros" className="nosotros-jpg" />
-      <img src={nosotrosjpgcolor} alt="Nosotros" className="nosotros-jpg-color" />
+      <Loading text={false} />
+      {activeCard === "invitacion" && <><div
+        className={`invitacion seccion ${activeCard === "invitacion" ? "active" : ""
+          }`}
+      >
+        <Nosotros
+          key={animationKey} // Fuerza el reinicio de la animación
+          className="nosotros-svg"
+          viewBox="0 0 843 840"
+        />
+        <img src={nosotrosjpg} alt="Nosotros" className="nosotros-jpg" />
+        <img src={nosotrosjpgcolor} alt="Nosotros" className="nosotros-jpg-color" />
+        
+        {invitado ?
+          <h2>
+            Bienvenido a los <strong>Entremesas</strong>
+          </h2>
+          : <h2>
+            Nos casamos. Molaría que vengas
+          </h2>}
 
-      <h2>
-        Nos casamos. Molaría que vengas
-      </h2>
-      
-      <p className="fijo">
-      {visible ? TypewriterContent() : null}
-       
-      </p>
+        <p className="fijo">
+          {visible ? TypewriterContent() : null}
 
-    </div>
-      <button className="back" onClick={ocultar} />
-    </>}</>
+        </p>
+
+      </div>
+        <button className="back" onClick={ocultar} />
+      </>}</>
   );
 };
 
