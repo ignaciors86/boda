@@ -109,9 +109,17 @@ const QEQ = ({ mesas }) => {
           this.initialY = this.y;
         },
         onDrag: function () {
+
+          gsap.to(invitadoRef, {
+            scale: 6,
+            duration: .5,
+          });
+
+
+        },
+        onRelease: function () {
           const droppedId = invitado.id;
           const droppedName = invitado.nombre;
-
           if (this.hitTest(correctCircleRef?.current)) {
             console.log("Nombre objetivo (desde ref):", currentNameRef.current);
             console.log("Nombre arrastrado:", droppedName);
@@ -137,7 +145,7 @@ const QEQ = ({ mesas }) => {
               setTimeout(() => {
                 correctCircleRef?.current?.classList?.remove('correct');
                 updateCurrentName();
-              }, 500);
+              }, 1000);
             } else {
               console.log("Nombre incorrecto.");
               correctCircleRef?.current?.classList?.add('incorrect');
@@ -146,11 +154,10 @@ const QEQ = ({ mesas }) => {
               }, 500);
             }
           }
-        },
-        onRelease: function () {
           gsap.to(invitadoRef, {
             x: this.initialX,
             y: this.initialY,
+            scale: 1,
             duration: 0.5,
             ease: 'power1.out',
           });
