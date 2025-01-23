@@ -1,5 +1,5 @@
 :root{
-    --circulo-qeq-size: 12dvh;
+    --circulo-qeq-size: calc(var(--size-unit)* .6);
 }
 
 .qeq {
@@ -41,7 +41,7 @@
             border-radius: 50%;
             overflow: hidden;
             transition: opacity 0.5s ease; /* Transición suave para cuando se acierte un invitado */
-
+            // position: absolute;
             img {
                 width: 100%;
                 height: 100%;

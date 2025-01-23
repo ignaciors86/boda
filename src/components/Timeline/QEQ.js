@@ -14,49 +14,63 @@ const QEQ = ({ mesas }) => {
 
   const [selectedMesa, setSelectedMesa] = useState('');
   const [invitadosAcertados, setInvitadosAcertados] = useState([]);
+  const [invitadosMostrados, setInvitadosMostrados] = useState([]);
   const [currentName, setCurrentName] = useState(null);
-  const currentNameRef = useRef(null); // Ref para el valor actual de currentName
+  const currentNameRef = useRef(null);
   const { activeCard } = useDragContext();
 
   const correctCircleRef = useRef(null);
   const invitadosRef = useRef([]);
-  const draggablesRef = useRef([]); // Array para rastrear instancias de Draggable
+  const draggablesRef = useRef([]);
 
-  // Cambiar de mesa
+  const generatePastelColor = () => {
+    const r = Math.floor(200 + Math.random() * 55);
+    const g = Math.floor(200 + Math.random() * 55);
+    const b = Math.floor(200 + Math.random() * 55);
+    return `rgb(${r}, ${g}, ${b})`;
+  };
+
   const handleMesaChange = (event) => {
     setSelectedMesa(event.target.value);
   };
 
-  // Mesa seleccionada
   const mesaSeleccionada = mesas[selectedMesa];
 
-  // Obtener el próximo invitado no acertado
   const getNextRandomInvitado = () => {
     if (!mesaSeleccionada) return null;
 
     const invitadosRestantes = mesaSeleccionada.invitados.filter(
-      (invitado) => !invitadosAcertados.includes(invitado.id)
+      (invitado) =>
+        !invitadosAcertados.includes(invitado.id) &&
+        !invitadosMostrados.includes(invitado.id)
     );
 
-    if (invitadosRestantes.length > 0) {
-      const randomIndex = Math.floor(Math.random() * invitadosRestantes.length);
-      return invitadosRestantes[randomIndex];
+    console.log("Invitados restantes:", invitadosRestantes.map((i) => i.nombre));
+
+    if (invitadosRestantes.length === 0) {
+      console.log("No quedan invitados disponibles para mostrar.");
+      return null;
     }
 
-    return null;
+    const randomIndex = Math.floor(Math.random() * invitadosRestantes.length);
+    const randomInvitado = invitadosRestantes[randomIndex];
+
+    console.log("Siguiente invitado seleccionado:", randomInvitado.nombre);
+    return randomInvitado;
   };
 
-  // Actualizar el nombre del siguiente invitado
   const updateCurrentName = () => {
     const nextInvitado = getNextRandomInvitado();
+
     if (nextInvitado) {
-      console.log("Nuevo invitado a acertar:", nextInvitado.nombre); // Depuración
-      setCurrentName(nextInvitado.nombre); // Actualizar el estado
-      currentNameRef.current = nextInvitado.nombre; // Actualizar la referencia
+      setInvitadosMostrados((prev) => [...prev, nextInvitado.id]);
+      setCurrentName(nextInvitado.nombre);
+      currentNameRef.current = nextInvitado.nombre;
+      console.log("Nombre actual:", nextInvitado.nombre);
     } else {
-      console.log("Todos los invitados han sido acertados.");
+      console.log("Todos los invitados han sido acertados o mostrados.");
       setCurrentName(null);
-      currentNameRef.current = null; // Limpiar la referencia
+      currentNameRef.current = null;
     }
   };
 
@@ -65,31 +79,29 @@ const QEQ = ({ mesas }) => {
 
     console.log("Mesa seleccionada:", mesaSeleccionada);
 
-    // Resetear el estado
     setInvitadosAcertados([]);
+    setInvitadosMostrados([]); // Reiniciar mostrados
     setCurrentName(null);
-    currentNameRef.current = null; // Limpiar la referencia
+    currentNameRef.current = null;
     updateCurrentName();
 
-    // Limpiar draggables existentes
     draggablesRef.current.forEach((draggable) => draggable.kill());
     draggablesRef.current = [];
 
-    // Configurar los invitados
     mesaSeleccionada.invitados.forEach((invitado, index) => {
       const invitadoRef = invitadosRef.current[index];
 
-      // Animación de flotación
       gsap.to(invitadoRef, {
         duration: 3 + Math.random() * 3,
-        x: Math.random() * 20 - 10 + 'dvh',
-        y: Math.random() * 20 - 10 + 'dvh',
+        x: "+=2dvh",
+        y: "+=2dvh",
+        translateX: Math.random() * 4 - 2 + 'dvh',
+        translateY: Math.random() * 4 - 2 + 'dvh',
         repeat: -1,
         yoyo: true,
         ease: 'power1.inOut',
       });
 
-      // Configurar Draggable
       const draggableInstance = Draggable.create(invitadoRef, {
         type: "x,y",
         onDragStart: function () {
@@ -100,27 +112,39 @@ const QEQ = ({ mesas }) => {
           const droppedId = invitado.id;
           const droppedName = invitado.nombre;
 
-          // Verificar si se arrastró al círculo correcto
           if (this.hitTest(correctCircleRef.current)) {
             console.log("Nombre objetivo (desde ref):", currentNameRef.current);
             console.log("Nombre arrastrado:", droppedName);
 
-            // Comparación correcta
             if (droppedName.trim().toLowerCase() === currentNameRef.current?.trim().toLowerCase()) {
               console.log("¡Nombre correcto!");
 
-              setInvitadosAcertados((prev) => [...prev, droppedId]);
+              // Animar desvanecimiento antes de eliminar el invitado
+              gsap.to(invitadoRef, {
+                opacity: 0,
+                duration: 0.5,
+                onComplete: () => {
+                  // Excluir el invitado del array, no eliminarlo completamente
+                  mesaSeleccionada.invitados = mesaSeleccionada.invitados.filter(
+                    (i) => i.id !== droppedId
+                  );
 
-              correctCircleRef.current.classList.add('correct');
+                  // Actualizamos los estados de acertados y mostrados
+                  setInvitadosAcertados((prev) => [...prev, droppedId]);
+                  setInvitadosMostrados((prev) => [...prev, droppedId]);
+                },
+              });
+
+              correctCircleRef?.current?.classList?.add('correct');
               setTimeout(() => {
-                correctCircleRef.current.classList.remove('correct');
-                updateCurrentName(); // Actualizar el siguiente nombre
+                correctCircleRef?.current?.classList?.remove('correct');
+                updateCurrentName();
               }, 500);
             } else {
               console.log("Nombre incorrecto.");
-              correctCircleRef.current.classList.add('incorrect');
+              correctCircleRef?.current?.classList?.add('incorrect');
               setTimeout(() => {
-                correctCircleRef.current.classList.remove('incorrect');
+                correctCircleRef?.current?.classList?.remove('incorrect');
               }, 500);
             }
           }
@@ -137,8 +161,6 @@ const QEQ = ({ mesas }) => {
       draggablesRef.current.push(draggableInstance);
     });
   }, [mesaSeleccionada]);
-
-  if (activeCard !== "horarios") return null;
 
   return (
     <div className={MAINCLASS}>
@@ -160,6 +182,7 @@ const QEQ = ({ mesas }) => {
               key={invitado.id}
               className={`invitado ${invitadosAcertados.includes(invitado.id) ? 'correct' : ''}`}
               ref={(el) => (invitadosRef.current[index] = el)}
+              style={{ backgroundColor: generatePastelColor() }}
             >
               <img
                 src={invitado.personaje?.imagen?.url ? urlstrapi + invitado.personaje.imagen.url : dummyImage}
