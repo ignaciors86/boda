@@ -112,29 +112,25 @@ const QEQ = ({ mesas }) => {
           const droppedId = invitado.id;
           const droppedName = invitado.nombre;
 
-          if (this.hitTest(correctCircleRef.current)) {
+          if (this.hitTest(correctCircleRef?.current)) {
             console.log("Nombre objetivo (desde ref):", currentNameRef.current);
             console.log("Nombre arrastrado:", droppedName);
 
             if (droppedName.trim().toLowerCase() === currentNameRef.current?.trim().toLowerCase()) {
               console.log("¡Nombre correcto!");
-                  // Excluir el invitado del array, no eliminarlo completamente
-                  mesaSeleccionada.invitados = mesaSeleccionada.invitados.filter(
-                    (i) => i.id !== droppedId
-                  );
+              // Excluir el invitado del array, no eliminarlo completamente
+              mesaSeleccionada.invitados = mesaSeleccionada.invitados.filter(
+                (i) => i.id !== droppedId
+              );
 
-                  // Actualizamos los estados de acertados y mostrados
-                  setInvitadosAcertados((prev) => [...prev, droppedId]);
-                  setInvitadosMostrados((prev) => [...prev, droppedId]);
+              // Actualizamos los estados de acertados y mostrados
+              setInvitadosAcertados((prev) => [...prev, droppedId]);
+              setInvitadosMostrados((prev) => [...prev, droppedId]);
               // Animar desvanecimiento antes de eliminar el invitado
               gsap.to(invitadoRef, {
                 opacity: 0,
                 scale: 3,
                 duration: 2,
-                onComplete: () => {
-                  
-
-                },
               });
 
               correctCircleRef?.current?.classList?.add('correct');
