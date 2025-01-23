@@ -26,7 +26,7 @@ const App = () => {
   const duration = 1;
 
   useEffect(() => {
-    console.log(articles);
+    // console.log(articles);
   }, [articles]);
 
   // Precarga de audios
@@ -74,7 +74,7 @@ const App = () => {
       fetch('https://boda-strapi-production.up.railway.app/api/invitados?populate[personaje][populate]=imagen&populate[mesa][populate]=*')
         .then((response) => response.json())
         .then((data) => {
-          console.log('Datos de invitados:', data); // Verifica los datos recibidos
+          // console.log('Datos de invitados:', data); // Verifica los datos recibidos
           setAllInvitados(data);
 
           // Organizar los datos por mesas
@@ -85,13 +85,14 @@ const App = () => {
             
             if (!mesas[mesa]) {
               mesas[mesa] = {
+                nombre: mesa,
                 himno: invitado.himno,
                 imagen: invitado.imagen,
                 capitan: invitado.capitan,
                 invitados: []
               }; // Crear array para esta mesa si no existe
             }
-            console.log(mesas[mesa])
+            // console.log(mesas[mesa])
             mesas[mesa].invitados.push(invitado); // Añadir el invitado a la mesa correspondiente
           });
 
@@ -100,10 +101,10 @@ const App = () => {
 
           // Buscar invitado específico por documentId
           const invitadoConcreto = data.data.find((invitado) => invitado.documentId === documentId);
-          console.log('documentId buscado:', documentId); // Verifica el valor del documentId
+          // console.log('documentId buscado:', documentId); // Verifica el valor del documentId
           if (invitadoConcreto) {
             setLocalInvitado(invitadoConcreto);
-            console.log('Invitado encontrado:', invitadoConcreto);
+            // console.log('Invitado encontrado:', invitadoConcreto);
           } else {
             console.error('No se encontró el invitado con el documentId proporcionado.');
           }
@@ -123,7 +124,7 @@ const App = () => {
     }
 
     // Renderizar el componente <Sobre> una vez que los datos están disponibles
-    return <Sobre casandonos={true} weedding={localInvitado.weedding} invitado={localInvitado} />;
+    return <Sobre casandonos={true} weedding={localInvitado.weedding} mesas={mesasOrganizadas} invitado={localInvitado} />;
   };
 
 

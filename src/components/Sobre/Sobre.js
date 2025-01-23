@@ -23,7 +23,7 @@ import MobileDetect from "mobile-detect";
 import CartaInvitado from './Tarjetas/CartaInvitado';
 import QEQ from 'components/Timeline/QEQ';
 
-const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado }) => {
+const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) => {
 
   weedding && document.documentElement.style.setProperty('--tipo', 'VCR');
 
@@ -463,7 +463,7 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado }) => {
 
               </Card>
               <Card seccion="horarios" onClick={() => handleClick("horarios")} trasera={
-                invitado ? <QEQ weedding={weedding} /> : <Timeline weedding={weedding} />
+                invitado ? <QEQ weedding={weedding} mesas={mesas} invitado={invitado} /> : <Timeline weedding={weedding} />
                 }>
                 <h2>{invitado ? "Quién Es Quién" : "Agenda"}</h2>
               </Card>

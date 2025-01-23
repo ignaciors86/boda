@@ -1,203 +1,185 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { gsap } from 'gsap';
-import { Draggable } from 'gsap/Draggable';
-import { throttle } from 'lodash';
 import './QEQ.scss';
-import Loading from './Loading.js';
-import { imageUrls, items, renderItems } from "./items.js";
-import { useDragContext } from '../DragContext.js';
-import Marquee from 'react-fast-marquee';
+import { useState, useEffect, useRef } from 'react';
+import dummyImage from "./assets/images/ositos-drag.png";
+import gsap from 'gsap';
+import { Draggable } from 'gsap/Draggable';
+import { useDragContext } from 'components/DragContext';
+
 gsap.registerPlugin(Draggable);
 
-const QEQ = ({ weedding }) => {
+const urlstrapi = "https://boda-strapi-production.up.railway.app";
+
+const QEQ = ({ mesas }) => {
   const MAINCLASS = "qeq";
-  const { activeCard, setActiveCard } = useDragContext();
-  const [imagesLoaded, setImagesLoaded] = useState(false);
-  const [sliderValue, setSliderValue] = useState(0); // Control del slider con pasos pequeños
-  const [currentIndex, setCurrentIndex] = useState(0); // Índice actual del elemento activo
-  const [isMuted, setIsMuted] = useState(false);
-  const [isDomStable, setIsDomStable] = useState(false);
-  const [audiosLoaded, setAudiosLoaded] = useState(false);
 
-  const audioRefs = useRef(
-    items.map((item) => {
-      const audio = new Audio(weedding && item.audioWedding ? item.audioWedding : item.audio);
-      audio.preload = "auto";
-      // audio.muted = isMuted;
-      audio.loop = true;
-      return audio;
-    })
-  );
+  const [selectedMesa, setSelectedMesa] = useState('');
+  const [invitadosAcertados, setInvitadosAcertados] = useState([]);
+  const [currentName, setCurrentName] = useState(null);
+  const currentNameRef = useRef(null); // Ref para el valor actual de currentName
+  const { activeCard } = useDragContext();
 
-  const preloadAudios = (audioRefs) => {
-    return Promise.all(
-      audioRefs.current.map((audio) => {
-        return new Promise((resolve, reject) => {
-          audio.oncanplaythrough = () => resolve();
-          audio.onerror = (e) => reject(e);
-          audio.load(); // Forzamos la carga del audio
-        });
-      })
+  const correctCircleRef = useRef(null);
+  const invitadosRef = useRef([]);
+  const draggablesRef = useRef([]); // Array para rastrear instancias de Draggable
+
+  // Cambiar de mesa
+  const handleMesaChange = (event) => {
+    setSelectedMesa(event.target.value);
+  };
+
+  // Mesa seleccionada
+  const mesaSeleccionada = mesas[selectedMesa];
+
+  // Obtener el próximo invitado no acertado
+  const getNextRandomInvitado = () => {
+    if (!mesaSeleccionada) return null;
+
+    const invitadosRestantes = mesaSeleccionada.invitados.filter(
+      (invitado) => !invitadosAcertados.includes(invitado.id)
     );
+
+    if (invitadosRestantes.length > 0) {
+      const randomIndex = Math.floor(Math.random() * invitadosRestantes.length);
+      return invitadosRestantes[randomIndex];
+    }
+
+    return null;
   };
 
-  useLayoutEffect(() => {
-    const preloadImages = (urls) =>
-      Promise.all(
-        urls.map((url) => {
-          return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.src = url;
-            img.onload = resolve;
-            img.onerror = reject;
-          });
-        })
-      );
-
-    Promise.all([preloadImages(imageUrls), preloadAudios(audioRefs)])
-      .then(() => {
-        // console.log("Imágenes y audios cargados.");
-        setImagesLoaded(true);
-        setAudiosLoaded(true);
-
-        const elements = document.querySelectorAll(".elements");
-        if (elements.length > 0) {
-          console.log("Elementos DOM estables.");
-          setIsDomStable(true);
-        }
-      })
-      .catch(console.error);
-  }, []);
-
-  const handleSliderChange = (e) => {
-    const newValue = Number(e.target.value);
-    requestAnimationFrame(() => setSliderValue(newValue));
-  };
-
-  const play = throttle(() => {
-    if (activeCard === "horarios") {
-      audioRefs.current.forEach((audio, index) => {
-        if (index === currentIndex) {
-          if (audio.paused) {
-            audio.play().catch(console.error);
-          }
-          audio.muted = isMuted;
-        } else {
-          if (!audio.paused) {
-            audio.pause();
-          }
-          audio.muted = true;
-        }
-      });
+  // Actualizar el nombre del siguiente invitado
+  const updateCurrentName = () => {
+    const nextInvitado = getNextRandomInvitado();
+    if (nextInvitado) {
+      console.log("Nuevo invitado a acertar:", nextInvitado.nombre); // Depuración
+      setCurrentName(nextInvitado.nombre); // Actualizar el estado
+      currentNameRef.current = nextInvitado.nombre; // Actualizar la referencia
     } else {
-      audioRefs.current[currentIndex].pause();
+      console.log("Todos los invitados han sido acertados.");
+      setCurrentName(null);
+      currentNameRef.current = null; // Limpiar la referencia
     }
-  }, 300); // Ajusta el límite de tiempo según sea necesario
-
-  useEffect(() => {
-    // Actualiza el índice entero solo si cambia
-    const newIndex = Math.round(sliderValue);
-    // console.log(newIndex);
-    if (newIndex !== currentIndex) {
-      setCurrentIndex(newIndex);
-    }
-  }, [sliderValue]);
-
-  useEffect(() => {
-    play();
-  }, [currentIndex]);
-
-  const handleMuteToggle = () => {
-    audioRefs.current[currentIndex].muted = !isMuted;
-    setIsMuted(!isMuted);
   };
 
   useEffect(() => {
-    play();
-  }, [activeCard]);
+    if (!mesaSeleccionada) return;
 
+    console.log("Mesa seleccionada:", mesaSeleccionada);
 
-  // Pausar todos los audios al minimizar o cambiar de pestaña
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      audioRefs.current[currentIndex].volume = document.hidden && !isMuted ? 0 : 1;
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [currentIndex]);
+    // Resetear el estado
+    setInvitadosAcertados([]);
+    setCurrentName(null);
+    currentNameRef.current = null; // Limpiar la referencia
+    updateCurrentName();
 
-  useEffect(() => {
-    const newDuration = currentIndex < 3 || currentIndex > 6 ? 3 : (8 - currentIndex) * .1;
-    activeCard === "horarios" && gsap.set(".progress-bar ", { animation: `shadowPulse ${newDuration}s ease-in-out infinite` });
+    // Limpiar draggables existentes
+    draggablesRef.current.forEach((draggable) => draggable.kill());
+    draggablesRef.current = [];
 
-  }, [currentIndex]);
+    // Configurar los invitados
+    mesaSeleccionada.invitados.forEach((invitado, index) => {
+      const invitadoRef = invitadosRef.current[index];
 
-  const handleMouseDown = () => {
-    gsap?.to(".loading", { opacity: 1, duration: 0.15, delay: .15 }); // Aumenta la opacidad al hacer clic
-    gsap?.to(".elementsToHide", { opacity: 0, duration: 0.15, delay: 0, }); // Reduce la opacidad al soltar
-  };
+      // Animación de flotación
+      gsap.to(invitadoRef, {
+        duration: 3 + Math.random() * 3,
+        x: Math.random() * 20 - 10 + 'dvh',
+        y: Math.random() * 20 - 10 + 'dvh',
+        repeat: -1,
+        yoyo: true,
+        ease: 'power1.inOut',
+      });
 
-  const handleMouseUp = () => {
-    gsap?.to(".loading", { opacity: 0, duration: 0.3, delay: 0, }); // Reduce la opacidad al soltar
-    gsap?.to(".elementsToHide", { opacity: 1, duration: 0.3, delay: .3, }); // Reduce la opacidad al soltar
-  };
+      // Configurar Draggable
+      const draggableInstance = Draggable.create(invitadoRef, {
+        type: "x,y",
+        onDragStart: function () {
+          this.initialX = this.x;
+          this.initialY = this.y;
+        },
+        onDrag: function () {
+          const droppedId = invitado.id;
+          const droppedName = invitado.nombre;
 
-  useEffect(() => {
-    const sliderElement = document.querySelector(".slider");
+          // Verificar si se arrastró al círculo correcto
+          if (this.hitTest(correctCircleRef.current)) {
+            console.log("Nombre objetivo (desde ref):", currentNameRef.current);
+            console.log("Nombre arrastrado:", droppedName);
 
-    // Añadir eventos de mouse
-    sliderElement?.addEventListener("mousedown", handleMouseDown);
-    sliderElement?.addEventListener("mouseup", handleMouseUp);
+            // Comparación correcta
+            if (droppedName.trim().toLowerCase() === currentNameRef.current?.trim().toLowerCase()) {
+              console.log("¡Nombre correcto!");
 
-    // Añadir eventos táctiles
-    sliderElement?.addEventListener("touchstart", handleMouseDown);
-    sliderElement?.addEventListener("touchend", handleMouseUp);
+              setInvitadosAcertados((prev) => [...prev, droppedId]);
 
-    // Limpiar eventos cuando el componente se desmonte
-    return () => {
-      sliderElement?.removeEventListener("mousedown", handleMouseDown);
-      sliderElement?.removeEventListener("mouseup", handleMouseUp);
-      sliderElement?.removeEventListener("touchstart", handleMouseDown);
-      sliderElement?.removeEventListener("touchend", handleMouseUp);
-    };
-  }, []);
+              correctCircleRef.current.classList.add('correct');
+              setTimeout(() => {
+                correctCircleRef.current.classList.remove('correct');
+                updateCurrentName(); // Actualizar el siguiente nombre
+              }, 500);
+            } else {
+              console.log("Nombre incorrecto.");
+              correctCircleRef.current.classList.add('incorrect');
+              setTimeout(() => {
+                correctCircleRef.current.classList.remove('incorrect');
+              }, 500);
+            }
+          }
+        },
+        onRelease: function () {
+          gsap.to(invitadoRef, {
+            x: this.initialX,
+            y: this.initialY,
+            duration: 0.5,
+            ease: 'power1.out',
+          });
+        },
+      })[0];
+      draggablesRef.current.push(draggableInstance);
+    });
+  }, [mesaSeleccionada]);
+
+  if (activeCard !== "horarios") return null;
 
   return (
-    <>
-      <div className={`${MAINCLASS} seccion`}>
+    <div className={MAINCLASS}>
+      <h2>Selecciona una Mesa</h2>
 
-        {imagesLoaded && audiosLoaded && (
-          <>
-            <div className="elements">{renderItems(currentIndex, weedding || null)}</div>
-            <Loading text={true} />
-            <div className="progress-bar">
-              <Marquee speed={50}>
-                <span>
-                  Arrastra la bolita hacia los lados para ver bien el finde que hemos planeado. Hay mucho gif y música en proceso de descarga y estoy usando un servidor gratuíto. Esto, al principio, provoca dolor de tripita en los iPhone{weedding ? " (como las setas)" : ""}, y sí, probablemente podría estar más optimizado, pero {!weedding ? "yo que se, algo tenía que malir sal..." : "me esta dando una pereza ya que flipas revisarlo más"}
-                </span>
-              </Marquee>
-              <input
-                type="range"
-                min="0"
-                max={items.length - 1}
-                step={1}
-                value={sliderValue}
-                onChange={handleSliderChange}
-                onMouseDown={handleMouseDown}
-                onTouchStart={handleMouseDown}
-                onMouseUp={handleMouseUp}
-                onTouchEnd={handleMouseUp}
-                className="slider"
+      <select onChange={handleMesaChange} value={selectedMesa}>
+        <option value="">Seleccione una mesa</option>
+        {Object.keys(mesas).map((mesaKey) => (
+          <option key={mesaKey} value={mesaKey}>
+            {mesas[mesaKey].nombre}
+          </option>
+        ))}
+      </select>
+
+      {mesaSeleccionada && (
+        <div className="invitados-container" style={{ "--num-invitados": mesaSeleccionada.invitados.length }}>
+          {mesaSeleccionada.invitados.map((invitado, index) => (
+            <div
+              key={invitado.id}
+              className={`invitado ${invitadosAcertados.includes(invitado.id) ? 'correct' : ''}`}
+              ref={(el) => (invitadosRef.current[index] = el)}
+            >
+              <img
+                src={invitado.personaje?.imagen?.url ? urlstrapi + invitado.personaje.imagen.url : dummyImage}
+                alt={invitado.nombre}
               />
             </div>
-          </>
-        )}
-      </div>
-      <button className="back" onClick={() => setActiveCard("home")} />
-      <button className={`back ${isMuted ? "play" : "stop"}`} onClick={handleMuteToggle} />
-    </>
+          ))}
+        </div>
+      )}
+
+      {currentName ? (
+        <div ref={correctCircleRef} className="name-circle">
+          {currentName}
+        </div>
+      ) : (
+        <div className="completed-message">
+          ¡Todos los invitados de esta mesa han sido acertados!
+        </div>
+      )}
+    </div>
   );
 };
 

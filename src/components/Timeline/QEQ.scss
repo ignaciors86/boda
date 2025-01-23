@@ -1,230 +1,93 @@
-.timeline {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  width: 100%;
-  flex-direction: column;
-  background: cadetblue;
-.loading{
-  box-sizing: border-box;
-  z-index: 1;
-  height: 100%;
-  opacity: 0;
-  padding: 0% 0;
-  background: transparent;
-}
-  em {
-    font-weight: bolder;
-    text-transform: uppercase;
-    width: fit-content;
-    border-bottom: 2px solid white;
-    padding: 0 5% 1%;
-    margin: 0 auto 3%;
-    font-size: calc(var(--size-unit)* 0.12 );
-    border: 0;
-  }
-
-  .rfm-marquee {
-    z-index: 0;
-    padding: 0 8% 0 32%;
-    
-  }
-
-  h3 {
-    margin-bottom: 2%;
-    color: var(--greenSuperTransparent);
-    font-size: calc(var(--size-unit) * 0.225) !important;
-    // background: linear-gradient(to bottom, transparent, var(--darkPurple));
-  }
-  .domingo{
-    h3{
-      margin-top: 4%;
-    }
-  }
+:root{
+    --circulo-qeq-size: 12dvh;
 }
 
-.hidden {
-  display: none;
-}
-
-.progress-bar {
-  z-index: 4;
-  animation: shadowPulse 10s ease-in-out infinite;
-  margin: auto;
-  background: var(--purpleTransparent);
-  z-index: 1;
-  position: absolute;
-  bottom: calc(var(--size-unit)* 0.19);
-  height: calc(var(--size-unit)* 0.3);
-  width: 88%;
-  display: flex;
-  justify-content: center;
-  left: 6%;
-  border-radius: calc(var(--size-unit)* 0.5);
-  span {
+.qeq {
     display: flex;
-    justify-content: center;
-    color: var(--green);
-    font-family: var(--tipo), monospace;
-    line-height: calc(var(--size-unit)* 0.1);
+    flex-direction: column;
     align-items: center;
-    text-align: center;
     width: 100%;
-  }
 
-
-  .slider {
-
-    will-change: transform;
-    touch-action: none;
-    background: transparent;
-    outline: none;
-    cursor: pointer;
-    width: 100%;
-    height: 100%;
-    position: absolute;
-
-    -webkit-appearance: none;
-    appearance: none;
-    &-container {
-      position: relative;
-      width: 100%;
+    h2 {
+        margin-bottom: 20px;
     }
 
-
-    &::-webkit-slider-thumb {
-      
-      -webkit-appearance: none;
-      appearance: none;
-      width: 50px;
-      height: 50px;
-      background-color: var(--orange);
-      background-image: url('./assets/images/ositos-drag.png');
-      background-repeat: no-repeat;
-      background-position: center;
-      background-size: contain;
-      cursor: pointer;
-      border: none;
-      height: calc(var(--size-unit) * 0.55);
-      width: calc(var(--size-unit) * 0.55);
-      // margin-top: calc(var(--size-unit) * -0.02);
-      // margin-left: calc(var(--size-unit) * -0.25);
-      border: calc(var(--size-unit) * 0.04) solid var(--purpleTransparent);
-      
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      box-shadow: calc(var(--size-unit) * -0) calc(var(--size-unit) * -0.0) calc(var(--size-unit) * .15) var(--purpleTransparent);
-      &:not(:active) {
-        
-        /* Aplicar la animación */
-      }
-    }
-    
-    &::-moz-range-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 50px;
-      height: 50px;
-      background: url('./assets/images/ositos-drag.png') no-repeat center;
-      background-size: contain;
-      cursor: pointer;
-      border: none;
-      height: calc(var(--size-unit) * 0.5);
-      margin-top: calc(var(--size-unit) * -0.125);
-      width: calc(var(--size-unit) * 0.5);
-      margin-left: calc(var(--size-unit) * -0.25);
-      border: calc(var(--size-unit) * 0.04) solid var(--purpleTransparent);
-      // background: var(--orange);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      box-shadow: calc(var(--size-unit) * -0) calc(var(--size-unit) * -0.0) calc(var(--size-unit) * .15) var(--purpleTransparent);
-    }
-    
-
-    &:active {
-      box-shadow: "none";
+    select {
+        padding: 10px;
+        font-size: 16px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
     }
 
+    .invitados-container {
+        display: flex;
+        width: 100%;
+        height: auto;
+        position: relative;
+        --circle-size: 100%;
+        justify-items: center;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-content: center;
 
-    img {
-      height: 100%;
-      width: auto;
-      text-align: center;
-      position: relative;
+        .invitado {
+            width: var(--circulo-qeq-size);
+            height: var(--circulo-qeq-size);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            overflow: hidden;
+            transition: opacity 0.5s ease; /* Transición suave para cuando se acierte un invitado */
+
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+            /* El truco del "ladrillo" se logra utilizando la propiedad grid */
+            &:nth-child(even) {
+                margin-top: 20px;
+                /* Desplazar algunos elementos en la segunda fila */
+            }
+        }
     }
-  }
-}
 
-.elements {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  height: 100%;
-  flex-direction: row;
-  align-items: flex-start;
-  margin-top: 0;
-}
+    .name-circle {
+        margin-top: 30px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        font-size: 18px;
+        font-weight: bold;
+        color: #000;
+        text-align: center;
+        background-color: white;
+        border: 2px solid #ccc;
+        cursor: pointer;
+        transition: background-color 0.3s ease; /* Transición de fondo suave */
+    }
 
+    /* Estilo cuando el círculo de nombre tiene el fondo verde (correcto) */
+    .name-circle.correct {
+        background-color: green;
+        color: white;
+    }
 
+    /* Estilo cuando el círculo de nombre tiene el fondo rojo (incorrecto) */
+    .name-circle.incorrect {
+        background-color: red;
+        color: white;
+    }
 
-/* Definir la animación con distancias reducidas */
-@keyframes shadowPulse {
-  0% {
-    box-shadow: 0 0 0.75dvh rgba(224, 3, 3, 0.8),
-      0 0 1dvh rgba(255, 140, 0, 0.8),
-      0 0 1.25dvh rgba(255, 237, 0, 0.8),
-      0 0 1.5dvh rgba(0, 128, 38, 0.8),
-      0 0 1.75dvh rgba(0, 77, 255, 0.8),
-      0 0 2dvh rgba(117, 7, 135, 0.8);
-  }
-
-  20% {
-    box-shadow: 0 0 0.75dvh rgba(255, 140, 0, 0.8),
-      0 0 1dvh rgba(255, 237, 0, 0.8),
-      0 0 1.25dvh rgba(0, 128, 38, 0.8),
-      0 0 1.5dvh rgba(0, 77, 255, 0.8),
-      0 0 1.75dvh rgba(117, 7, 135, 0.8),
-      0 0 2dvh rgba(224, 3, 3, 0.8);
-  }
-
-  40% {
-    box-shadow: 0 0 0.75dvh rgba(255, 237, 0, 0.8),
-      0 0 1dvh rgba(0, 128, 38, 0.8),
-      0 0 1.25dvh rgba(0, 77, 255, 0.8),
-      0 0 1.5dvh rgba(117, 7, 135, 0.8),
-      0 0 1.75dvh rgba(224, 3, 3, 0.8),
-      0 0 2dvh rgba(255, 140, 0, 0.8);
-  }
-
-  60% {
-    box-shadow: 0 0 0.75dvh rgba(0, 128, 38, 0.8),
-      0 0 1dvh rgba(0, 77, 255, 0.8),
-      0 0 1.25dvh rgba(117, 7, 135, 0.8),
-      0 0 1.5dvh rgba(224, 3, 3, 0.8),
-      0 0 1.75dvh rgba(255, 140, 0, 0.8),
-      0 0 2dvh rgba(255, 237, 0, 0.8);
-  }
-
-  80% {
-    box-shadow: 0 0 0.75dvh rgba(0, 77, 255, 0.8),
-      0 0 1dvh rgba(117, 7, 135, 0.8),
-      0 0 1.25dvh rgba(224, 3, 3, 0.8),
-      0 0 1.5dvh rgba(255, 140, 0, 0.8),
-      0 0 1.75dvh rgba(255, 237, 0, 0.8),
-      0 0 2dvh rgba(0, 128, 38, 0.8);
-  }
-
-  100% {
-    box-shadow: 0 0 0.75dvh rgba(224, 3, 3, 0.8),
-      0 0 1dvh rgba(255, 140, 0, 0.8),
-      0 0 1.25dvh rgba(255, 237, 0, 0.8),
-      0 0 1.5dvh rgba(0, 128, 38, 0.8),
-      0 0 1.75dvh rgba(0, 77, 255, 0.8),
-      0 0 2dvh rgba(117, 7, 135, 0.8);
-  }
+    /* Estilo cuando el invitado ha sido acertado (opacidad reducida) */
+    .invitado.correct {
+        opacity: 0.5; /* Disminuir opacidad cuando ya está acertado */
+    }
 }
