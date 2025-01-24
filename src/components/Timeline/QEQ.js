@@ -119,53 +119,70 @@ const QEQ = ({ mesas }) => {
             console.log("pincha");
             correctCircleRef?.current?.classList?.add('hover');
             correctCircleRef?.current?.classList?.add('inTouch');
-          }else{
+          } else {
             correctCircleRef?.current?.classList?.remove('inTouch');
           }
         },
         onRelease: function () {
+          const tlRelease = gsap.timeline();
           const droppedId = invitado.id;
-          
+          const acertado = droppedName.trim().toLowerCase() === currentNameRef.current?.trim().toLowerCase();
           if (this.hitTest(correctCircleRef?.current)) {
             console.log("Nombre objetivo (desde ref):", currentNameRef.current);
             console.log("Nombre arrastrado:", droppedName);
             correctCircleRef?.current?.classList?.remove('inTouch');
-            if (droppedName.trim().toLowerCase() === currentNameRef.current?.trim().toLowerCase()) {
+            if (acertado) {
               console.log("¡Nombre correcto!");
-              // Excluir el invitado del array, no eliminarlo completamente
-              mesaSeleccionada.invitados = mesaSeleccionada.invitados.filter(
-                (i) => i.id !== droppedId
-              );
+     
+              // gsap.killTweensOf(invitadoRef);
+              tlRelease
+                .to(invitadoRef, {
+                  duration: .5,
+                  zIndex: 3000,
+                  opacity: 0,
+                  ease: "linear",
+                  // position: "absolute",
+                }, 0)
+                .to(invitadoRef, {
+                  duration: 0,
+                  onComplete: () => {
+                    // Excluir el invitado del array, no eliminarlo completamente
+                    mesaSeleccionada.invitados = mesaSeleccionada.invitados.filter(
+                      (i) => i.id !== droppedId
+                    );
 
-              // Actualizamos los estados de acertados y mostrados
-              setInvitadosAcertados((prev) => [...prev, droppedId]);
-              setInvitadosMostrados((prev) => [...prev, droppedId]);
-              // Animar desvanecimiento antes de eliminar el invitado
-              gsap.to(invitadoRef, {
-                opacity: 0,
-                scale: 2,
-                duration: 2,
-              });
+                    // Actualizamos los estados de acertados y mostrados
+                    setInvitadosAcertados((prev) => [...prev, droppedId]);
+                    setInvitadosMostrados((prev) => [...prev, droppedId]);
+                    // Animar desvanecimiento antes de eliminar el invitado
+                    gsap.to(invitadoRef, {
+                      opacity: 0,
+                      scale: 2,
+                      duration: 2,
+                    });
 
-              gsap.timeline().to(correctCircleRef.current, {
-                scale: "+=.1",
-                yoyo: true,
-                repeat: 2,
-                duration: .5,
-                ease: 'power1.inOut',
-              })
-              .to(correctCircleRef.current, {
-                scale: 1,
-                duration: 2,
-                ease: 'power1.inOut',
-                delay: .5,
-              });
+                    gsap.timeline().to(correctCircleRef.current, {
+                      scale: "+=.1dvh",
+                      yoyo: true,
+                      repeat: 2,
+                      duration: .5,
+                      ease: 'power1.inOut',
+                    })
+                      .to(correctCircleRef.current, {
+                        scale: 1,
+                        duration: 2,
+                        ease: 'power1.inOut',
+                        delay: .5,
+                      });
 
-              correctCircleRef?.current?.classList?.add('correct');
-              setTimeout(() => {
-                correctCircleRef?.current?.classList?.remove('correct');
-                updateCurrentName();
-              }, 1000);
+                    correctCircleRef?.current?.classList?.add('correct');
+                    setTimeout(() => {
+                      correctCircleRef?.current?.classList?.remove('correct');
+                      updateCurrentName();
+                    }, 1000);
+                  },
+
+                }, ">")
             } else {
               console.log("Nombre incorrecto.");
               correctCircleRef?.current?.classList?.add('incorrect');
@@ -175,30 +192,39 @@ const QEQ = ({ mesas }) => {
             }
             correctCircleRef?.current?.classList?.remove('hover');
           }
-          gsap.to(invitadoRef, {
+          tlRelease
+          .to(invitadoRef, {
             x: this.initialX,
             y: this.initialY,
-            scale: .2,
-            duration: 0.5,
             ease: 'power1.out',
-          });
+          }, ">");
+          tlRelease
+          .to(invitadoRef, {
+            scale: acertado ? 1.3 : .2,
+            duration: acertado ? 1 : 0.5,
+            ease: 'power1.out',
+          }, ">");
         },
       })[0];
       draggablesRef.current.push(draggableInstance);
     });
   }, [mesaSeleccionada]);
 
-  useEffect(() =>{
-    activeCard && "horarios" && gsap.to(correctCircleRef.current, {
-      scale: "+=.1",
-      yoyo: true,
-      repeat: -1,
-      duration: .5,
-      ease: 'power1.inOut',
-    });
+  useEffect(() => {
+    let tlpalpita = null;
+    if (activeCard && "horarios" && !tlpalpita) {
+      tlpalpita = gsap.timeline();
+      tlpalpita.to(correctCircleRef.current, {
+        scale: "+=.1",
+        yoyo: true,
+        repeat: -1,
+        duration: .5,
+        ease: 'power1.inOut',
+      });
+    }
   }, [currentName])
 
-  return (
+  return activeCard === "horarios" && (
     <div className={MAINCLASS}>
       <h2>Selecciona una Mesa</h2>
 
