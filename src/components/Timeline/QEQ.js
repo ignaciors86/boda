@@ -141,6 +141,20 @@ const QEQ = ({ mesas }) => {
                 duration: 2,
               });
 
+              gsap.timeline().to(correctCircleRef.current, {
+                scale: "+=.1",
+                yoyo: true,
+                repeat: 2,
+                duration: .5,
+                ease: 'power1.inOut',
+              })
+              .to(correctCircleRef.current, {
+                scale: 1,
+                duration: 2,
+                ease: 'power1.inOut',
+                delay: .5,
+              });
+
               correctCircleRef?.current?.classList?.add('correct');
               setTimeout(() => {
                 correctCircleRef?.current?.classList?.remove('correct');

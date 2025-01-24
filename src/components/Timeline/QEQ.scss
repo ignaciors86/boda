@@ -40,7 +40,7 @@
             align-items: center;
             border-radius: 50%;
             overflow: hidden;
-            transition: opacity 0.5s ease; /* Transición suave para cuando se acierte un invitado */
+            transition: opacity 5s ease; /* Transición suave para cuando se acierte un invitado */
             // position: absolute;
             img {
                 width: 100%;
@@ -68,10 +68,11 @@
         font-weight: bold;
         color: #000;
         text-align: center;
-        background-color: white;
-        border: 2px solid #ccc;
+        color: white;
+        background-color: var(--purpleTransparent);
+        // border: 2px solid #ccc;
         cursor: pointer;
-        transition: background-color 0.3s ease; /* Transición de fondo suave */
+        transition: background-color 1s ease; /* Transición de fondo suave */
     }
 
     /* Estilo cuando el círculo de nombre tiene el fondo verde (correcto) */
@@ -83,6 +84,7 @@
     /* Estilo cuando el círculo de nombre tiene el fondo rojo (incorrecto) */
     .name-circle.incorrect {
         background-color: red;
+        transition: background-color .5s ease; /* Transición de fondo suave */
         color: white;
     }
 
