@@ -69,7 +69,7 @@ const QEQ = ({ mesas }) => {
       console.log("Nombre actual:", nextInvitado.nombre);
     } else {
       console.log("Todos los invitados han sido acertados o mostrados.");
-      setCurrentName(null);
+      setCurrentName(false);
       currentNameRef.current = null;
     }
   };
@@ -111,13 +111,16 @@ const QEQ = ({ mesas }) => {
         onDrag: function () {
 
           gsap.to(invitadoRef, {
-            scale: 6,
+            scale: 1,
             duration: .5,
           });
 
           if (this.hitTest(correctCircleRef?.current)) {
             console.log("pincha");
             correctCircleRef?.current?.classList?.add('hover');
+            correctCircleRef?.current?.classList?.add('inTouch');
+          }else{
+            correctCircleRef?.current?.classList?.remove('inTouch');
           }
         },
         onRelease: function () {
@@ -126,7 +129,7 @@ const QEQ = ({ mesas }) => {
           if (this.hitTest(correctCircleRef?.current)) {
             console.log("Nombre objetivo (desde ref):", currentNameRef.current);
             console.log("Nombre arrastrado:", droppedName);
-
+            correctCircleRef?.current?.classList?.remove('inTouch');
             if (droppedName.trim().toLowerCase() === currentNameRef.current?.trim().toLowerCase()) {
               console.log("¡Nombre correcto!");
               // Excluir el invitado del array, no eliminarlo completamente
@@ -140,7 +143,7 @@ const QEQ = ({ mesas }) => {
               // Animar desvanecimiento antes de eliminar el invitado
               gsap.to(invitadoRef, {
                 opacity: 0,
-                scale: 3,
+                scale: 2,
                 duration: 2,
               });
 
@@ -175,7 +178,7 @@ const QEQ = ({ mesas }) => {
           gsap.to(invitadoRef, {
             x: this.initialX,
             y: this.initialY,
-            scale: 1,
+            scale: .2,
             duration: 0.5,
             ease: 'power1.out',
           });
@@ -221,6 +224,8 @@ const QEQ = ({ mesas }) => {
                 src={invitado.personaje?.imagen?.url ? urlstrapi + invitado.personaje.imagen.url : dummyImage}
                 alt={invitado.nombre}
               />
+              <p>{invitado.personaje?.nombre}</p>
+              <p>{invitado.personaje?.descripcion}</p>
             </div>
           ))}
         </div>
@@ -230,7 +235,7 @@ const QEQ = ({ mesas }) => {
         <div ref={correctCircleRef} className="name-circle">
           {currentName}
         </div>
-      ) : (
+      ) : currentName !== null && (
         <div className="completed-message">
           ¡Todos los invitados de esta mesa han sido acertados!
         </div>
