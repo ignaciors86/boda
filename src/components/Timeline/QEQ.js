@@ -101,7 +101,7 @@ const QEQ = ({ mesas }) => {
         yoyo: true,
         ease: 'power1.inOut',
       });
-
+      const droppedName = invitado.nombre;
       const draggableInstance = Draggable.create(invitadoRef, {
         type: "x,y",
         onDragStart: function () {
@@ -115,11 +115,14 @@ const QEQ = ({ mesas }) => {
             duration: .5,
           });
 
-
+          if (this.hitTest(correctCircleRef?.current)) {
+            console.log("pincha");
+            correctCircleRef?.current?.classList?.add('hover');
+          }
         },
         onRelease: function () {
           const droppedId = invitado.id;
-          const droppedName = invitado.nombre;
+          
           if (this.hitTest(correctCircleRef?.current)) {
             console.log("Nombre objetivo (desde ref):", currentNameRef.current);
             console.log("Nombre arrastrado:", droppedName);
@@ -167,6 +170,7 @@ const QEQ = ({ mesas }) => {
                 correctCircleRef?.current?.classList?.remove('incorrect');
               }, 500);
             }
+            correctCircleRef?.current?.classList?.remove('hover');
           }
           gsap.to(invitadoRef, {
             x: this.initialX,
@@ -180,6 +184,16 @@ const QEQ = ({ mesas }) => {
       draggablesRef.current.push(draggableInstance);
     });
   }, [mesaSeleccionada]);
+
+  useEffect(() =>{
+    activeCard && "horarios" && gsap.to(correctCircleRef.current, {
+      scale: "+=.1",
+      yoyo: true,
+      repeat: -1,
+      duration: .5,
+      ease: 'power1.inOut',
+    });
+  }, [currentName])
 
   return (
     <div className={MAINCLASS}>

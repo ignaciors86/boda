@@ -1,4 +1,4 @@
-:root{
+:root {
     --circulo-qeq-size: calc(var(--size-unit)* .6);
 }
 
@@ -7,15 +7,12 @@
     flex-direction: column;
     align-items: center;
     width: 100%;
-
-    h2 {
-        margin-bottom: 20px;
-    }
+    height: 100%;
+    justify-content: space-evenly;
 
     select {
         padding: 10px;
         font-size: 16px;
-        margin-bottom: 20px;
         border-radius: 5px;
         border: 1px solid #ccc;
     }
@@ -31,7 +28,7 @@
         flex-wrap: wrap;
         justify-content: center;
         align-content: center;
-
+        margin: calc(var(--size-unit)*.2) 0;
         .invitado {
             width: var(--circulo-qeq-size);
             height: var(--circulo-qeq-size);
@@ -40,7 +37,9 @@
             align-items: center;
             border-radius: 50%;
             overflow: hidden;
-            transition: opacity 5s ease; /* Transición suave para cuando se acierte un invitado */
+            transition: opacity 5s ease;
+
+            /* Transición suave para cuando se acierte un invitado */
             // position: absolute;
             img {
                 width: 100%;
@@ -57,12 +56,12 @@
     }
 
     .name-circle {
-        margin-top: 30px;
         display: flex;
         justify-content: center;
         align-items: center;
-        width: 120px;
-        height: 120px;
+        width: calc(var(--size-unit)* .7);
+        height: calc(var(--size-unit)* .7);
+        margin: calc(var(--size-unit)*.15) 0 calc(var(--size-unit)*.2) 0;
         border-radius: 50%;
         font-size: 18px;
         font-weight: bold;
@@ -72,24 +71,38 @@
         background-color: var(--purpleTransparent);
         // border: 2px solid #ccc;
         cursor: pointer;
-        transition: background-color 1s ease; /* Transición de fondo suave */
+        transition: background-color 1s ease;
+        /* Transición de fondo suave */
+        z-index: 2000;
+        font-family: var(--tipo);
+        font-size: calc(var(--size-unit) * 0.125);
     }
 
     /* Estilo cuando el círculo de nombre tiene el fondo verde (correcto) */
-    .name-circle.correct {
-        background-color: green;
-        color: white;
+    .name-circle {
+
+        &.hover {
+            background-color: var(--orangeTransparent);
+            color: white;
+        }
+
+        &.correct {
+            background-color: green;
+            color: white;
+        }
     }
 
     /* Estilo cuando el círculo de nombre tiene el fondo rojo (incorrecto) */
     .name-circle.incorrect {
         background-color: red;
-        transition: background-color .5s ease; /* Transición de fondo suave */
+        transition: background-color .5s ease;
+        /* Transición de fondo suave */
         color: white;
     }
 
     /* Estilo cuando el invitado ha sido acertado (opacidad reducida) */
     .invitado.correct {
-        opacity: 0.5; /* Disminuir opacidad cuando ya está acertado */
+        opacity: 0.5;
+        /* Disminuir opacidad cuando ya está acertado */
     }
 }
