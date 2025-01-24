@@ -1,5 +1,5 @@
 :root {
-    --circulo-qeq-size: calc(var(--size-unit)* .6);
+    --circulo-qeq-size: calc(var(--size-unit)* .5);
 }
 
 .qeq {
@@ -29,6 +29,7 @@
         justify-content: space-evenly;
         align-content: center;
         padding: 5%;
+
         .invitado {
             width: calc(var(--circulo-qeq-size) * 5);
             height: calc(var(--circulo-qeq-size) * 5);
@@ -37,9 +38,9 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            border-radius: 50%;
-            overflow: hidden;
-            
+
+            justify-content: flex-start;
+            flex-direction: column;
 
             /* Transición suave para cuando se acierte un invitado */
             // position: absolute;
@@ -47,6 +48,7 @@
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
+                border-radius: 50%;
             }
 
             /* El truco del "ladrillo" se logra utilizando la propiedad grid */
@@ -54,11 +56,46 @@
                 margin-top: 20px;
                 /* Desplazar algunos elementos en la segunda fila */
             }
-            p{
+
+            .invitado-info {
                 position: absolute;
-                width: 100%;
-                background: var(--purpleTransparent);
+                width: auto;
+                display: flex;
+                justify-content: flex-start;
+                flex-direction: column;
+
+                box-sizing: border-box;
+
+           
+
+                p {
+                    
+                    position: absolute;
+                    background: var(--purpleTransparent);
+                    padding: calc(var(--size-unit) * .1);
+                    border-radius: calc(var(--size-unit) * .2);
+                    color: black;
+                    opacity: 0;
+                    // margin-top: calc(var(--size-unit) * -.5);
+                    // margin-left: calc(var(--size-unit) * 1.5);
+                    &:first-of-type {
+                        rotate: 6deg;
+                        top: calc(var(--size-unit) * -.25);
+                        right: calc(var(--size-unit) * -1);
+                        max-width: calc(var(--size-unit)* 10);
+                        min-width: calc(var(--size-unit)* 1.5);
+                    }
+
+                    &:not(:first-of-type) {
+                        width: calc(var(--size-unit) * 1);
+                        // min-width: calc(var(--size-unit)* 1.5);
+                        rotate: -10deg;
+                        left: calc(var(--size-unit) * -2);
+                        top: calc(var(--size-unit) * .5);
+                    }
+                }
             }
+
         }
     }
 
@@ -112,7 +149,8 @@
         opacity: 0.5;
         /* Disminuir opacidad cuando ya está acertado */
     }
-    .completed-message{
+
+    .completed-message {
         position: absolute;
         bottom: 0;
         width: 100%;

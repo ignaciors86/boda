@@ -110,11 +110,39 @@ const QEQ = ({ mesas }) => {
         },
         onDrag: function () {
 
-          gsap.to(invitadoRef, {
-            scale: 1,
-            duration: .5,
-          });
-
+          gsap.timeline()
+            .to(invitadoRef, {
+              scale: 1,
+              duration: 0.5,
+            })
+            .to(invitadoRef.querySelector("p.primero"), { // Selecciona el <p> hijo directamente
+              opacity: 1,
+              duration: 0.25,
+              ease: "power1.inOut",
+            }, 0)
+            .to(invitadoRef.querySelector("p.segundo"), { // Selecciona el <p> hijo directamente
+              opacity: 1,
+              duration: 0.5,
+              ease: "power1.inOut",
+            }, ">")
+            .to(invitadoRef.querySelector("p.primero"), {
+              rotation: -6, // Gira 10 grados hacia un lado
+              duration: 3.5, // Tiempo para alcanzar la rotación
+              ease: "power1.inOut", // Animación suave
+              yoyo: true, // Vuelve al estado inicial
+              repeat: -1, // Repite infinitamente
+              y: "+=1dvh",
+              x: "+=1dvh",
+            }, "<")
+            .to(invitadoRef.querySelector("p.segundo"), {
+              rotation: -5, // Gira 10 grados hacia un lado
+              duration: 2, // Tiempo para alcanzar la rotación
+              ease: "power1.inOut", // Animación suave
+              yoyo: true, // Vuelve al estado inicial
+              repeat: -1, // Repite infinitamente
+              y: "+=1dvh",
+              y: "+=.5dvh",
+            }, "<")
           if (this.hitTest(correctCircleRef?.current)) {
             console.log("pincha");
             correctCircleRef?.current?.classList?.add('hover');
@@ -133,8 +161,11 @@ const QEQ = ({ mesas }) => {
             correctCircleRef?.current?.classList?.remove('inTouch');
             if (acertado) {
               console.log("¡Nombre correcto!");
-     
-              // gsap.killTweensOf(invitadoRef);
+              correctCircleRef?.current?.classList?.add('correct');
+              setTimeout(() => {
+                correctCircleRef?.current?.classList?.remove('correct');
+                updateCurrentName();
+              }, 500);
               tlRelease
                 .to(invitadoRef, {
                   duration: .5,
@@ -155,31 +186,27 @@ const QEQ = ({ mesas }) => {
                     setInvitadosAcertados((prev) => [...prev, droppedId]);
                     setInvitadosMostrados((prev) => [...prev, droppedId]);
                     // Animar desvanecimiento antes de eliminar el invitado
-                    gsap.to(invitadoRef, {
-                      opacity: 0,
-                      scale: 2,
-                      duration: 2,
-                    });
+                    gsap.timeline()
+                      .to(invitadoRef, {
+                        opacity: 0,
+                        scale: 2,
+                        duration: 2,
+                      }, 0)
 
-                    gsap.timeline().to(correctCircleRef.current, {
-                      scale: "+=.1dvh",
-                      yoyo: true,
-                      repeat: 2,
-                      duration: .5,
-                      ease: 'power1.inOut',
-                    })
+                      .to(correctCircleRef.current, {
+                        scale: "+=.1dvh",
+                        yoyo: true,
+                        repeat: 2,
+                        duration: .5,
+                        ease: 'power1.inOut',
+                      }, "<")
                       .to(correctCircleRef.current, {
                         scale: 1,
                         duration: 2,
                         ease: 'power1.inOut',
                         delay: .5,
-                      });
+                      }, ">")
 
-                    correctCircleRef?.current?.classList?.add('correct');
-                    setTimeout(() => {
-                      correctCircleRef?.current?.classList?.remove('correct');
-                      updateCurrentName();
-                    }, 1000);
                   },
 
                 }, ">")
@@ -193,17 +220,32 @@ const QEQ = ({ mesas }) => {
             correctCircleRef?.current?.classList?.remove('hover');
           }
           tlRelease
-          .to(invitadoRef, {
-            x: this.initialX,
-            y: this.initialY,
-            ease: 'power1.out',
-          }, ">");
+            .to(invitadoRef, {
+              x: this.initialX,
+              y: this.initialY,
+              ease: 'power1.out',
+            }, ">");
           tlRelease
-          .to(invitadoRef, {
-            scale: acertado ? 1.3 : .2,
-            duration: acertado ? 1 : 0.5,
-            ease: 'power1.out',
-          }, ">");
+            .to(invitadoRef, {
+              scale: acertado ? 1.3 : .2,
+              duration: acertado ? 1 : 0.5,
+              ease: 'power1.out',
+            }, "<")
+            .to(invitadoRef.querySelector("p.primero"), {
+              opacity: 0,
+              duration: 0.25,
+              ease: 'power1.out',
+            }, "<")
+            .to(invitadoRef.querySelector("p.segundo"), {
+              opacity: 0,
+              duration: 0.25,
+              ease: 'power1.out',
+              onComplete: () => {
+                gsap.killTweensOf(invitadoRef.querySelector("p.primero"));
+                gsap.killTweensOf(invitadoRef.querySelector("p.segundo"));
+              }
+            }, ">");
+
         },
       })[0];
       draggablesRef.current.push(draggableInstance);
@@ -244,14 +286,26 @@ const QEQ = ({ mesas }) => {
               key={invitado.id}
               className={`invitado ${invitadosAcertados.includes(invitado.id) ? 'correct' : ''}`}
               ref={(el) => (invitadosRef.current[index] = el)}
-              style={{ backgroundColor: generatePastelColor() }}
             >
               <img
+                style={{ backgroundColor: generatePastelColor() }}
                 src={invitado.personaje?.imagen?.url ? urlstrapi + invitado.personaje.imagen.url : dummyImage}
                 alt={invitado.nombre}
               />
-              <p>{invitado.personaje?.nombre}</p>
-              <p>{invitado.personaje?.descripcion}</p>
+              <div className="invitado-info"
+
+              >
+
+                {invitado.personaje?.nombre && <p
+                  className="primero"
+                  style={{ backgroundColor: generatePastelColor() }}
+                >{invitado.personaje?.nombre}</p>}
+                {invitado.personaje?.descripcion && <p
+                  className="segundo"
+                  style={{ backgroundColor: generatePastelColor() }}
+                >{invitado.personaje?.descripcion}</p>}
+
+              </div>
             </div>
           ))}
         </div>
