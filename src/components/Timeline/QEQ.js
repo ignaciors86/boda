@@ -114,7 +114,9 @@ const QEQ = ({ mesas }) => {
           this.initialY = this.y;
         },
         onDrag: function () {
-
+          gsap.set(correctCircleRef.current, {
+            animation: "shadowPulse 1s ease-in-out infinite",
+          });
           gsap.timeline()
             .to(invitadoRef, {
               scale: 1,
@@ -160,6 +162,9 @@ const QEQ = ({ mesas }) => {
           const tlRelease = gsap.timeline();
           const droppedId = invitado.id;
           const acertado = droppedName.trim().toLowerCase() === currentNameRef.current?.trim().toLowerCase();
+          gsap.set(correctCircleRef.current, {
+            animation: "none",
+          });
           if (this.hitTest(correctCircleRef?.current)) {
             console.log("Nombre objetivo (desde ref):", currentNameRef.current);
             console.log("Nombre arrastrado:", droppedName);
