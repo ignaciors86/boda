@@ -3,7 +3,7 @@ import $ from 'jquery';
 import gsap from 'gsap';
 import './Bubles.scss';
 
-const Bubbles = () => {
+const Bubbles = ({amount, color}) => {
     const canvasRefs = useRef([]);
 
     useEffect(() => {
@@ -24,13 +24,13 @@ const Bubbles = () => {
         const green = getComputedStyle(document.documentElement).getPropertyValue('--green');
         const orange = getComputedStyle(document.documentElement).getPropertyValue('--orange');
         const purple = getComputedStyle(document.documentElement).getPropertyValue('--purpleTransparent');
-
+console.log([157, 97, 207]);
         const config = {
             circle: {
-                amount: 7,
+                amount: amount ? amount : 7,
                 layer: 3,
                 
-                color: [157, 97, 207],
+                color: color ? color : [157, 97, 207],
                 alpha: .4
             },
             line: {

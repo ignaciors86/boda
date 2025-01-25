@@ -4,6 +4,7 @@ import dummyImage from "./assets/images/ositos-drag.png";
 import gsap from 'gsap';
 import { Draggable } from 'gsap/Draggable';
 import { useDragContext } from 'components/DragContext';
+import Bubbles from 'components/Backgrounds/Bubles/Bubles';
 
 gsap.registerPlugin(Draggable);
 
@@ -24,11 +25,11 @@ const QEQ = ({ mesas, invitado }) => {
   const invitadosRef = useRef([]);
   const draggablesRef = useRef([]);
 
-  const generatePastelColor = () => {
+  const generatePastelColor = (short) => {
     const r = Math.floor(200 + Math.random() * 55);
     const g = Math.floor(200 + Math.random() * 55);
     const b = Math.floor(200 + Math.random() * 55);
-    return `rgb(${r}, ${g}, ${b})`;
+    return short ? [parseInt(r), parseInt(g), parseInt(b)] : `rgb(${r}, ${g}, ${b})`;
   };
 
   const handleMesaChange = (event) => {
@@ -254,14 +255,9 @@ const QEQ = ({ mesas, invitado }) => {
                     setInvitadosMostrados((prev) => [...prev, droppedId]);
                     // Animar desvanecimiento antes de eliminar el invitado
                     gsap.timeline()
-                      .to(invitadoRef, {
-                        // opacity: 0,
-                        // scale: 2,
-                        duration: 2,
-                      }, 0)
                       .to(correctCircleRef.current, {
                         scale: 1,
-                        duration: 2,
+                        duration: .5,
                         ease: 'power1.inOut',
                         delay: .5,
                       }, ">")
@@ -326,7 +322,7 @@ const QEQ = ({ mesas, invitado }) => {
       })[0];
       draggablesRef.current.push(draggableInstance);
     });
-  }, [mesaSeleccionada]);
+  }, [mesaSeleccionada, activeCard]);
 
   useEffect(() => {
     console.log(invitado?.mesa?.nombre);
@@ -349,9 +345,10 @@ const QEQ = ({ mesas, invitado }) => {
       });
     }
   }, [currentName])
-
+console.log(generatePastelColor(true));
   return activeCard === "horarios" && (
     <div className={MAINCLASS}>
+      <Bubbles amount={30} color={generatePastelColor(true)} />
       <h2>Selecciona una Mesa</h2>
 
       <select onChange={handleMesaChange} value={selectedMesa}>

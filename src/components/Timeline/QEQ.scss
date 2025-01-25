@@ -1,5 +1,5 @@
 :root {
-    --circulo-qeq-size: calc(var(--size-unit)* .6);
+    --circulo-qeq-size: calc(var(--size-unit)* .5);
 }
 
 .qeq {
@@ -10,6 +10,13 @@
     height: 100%;
     justify-content: space-evenly;
     box-sizing: border-box;
+    position: relative;
+
+    #bg {
+        opacity: 1;
+        position: absolute;
+    }
+
 
     select {
         padding: 10px;
@@ -134,6 +141,7 @@
         transition: .5s ease;
         border: 0 solid transparent;
         box-shadow: 0 0 0 transparent;
+
         &.hover {
             background-color: var(--orangeTransparent);
             color: white;
@@ -149,6 +157,7 @@
             color: transparent;
             box-shadow: 0 0 5dvh green;
         }
+
         &.incorrect {
             border: 0dvh solid red;
             box-shadow: 0 0 5dvh red;
