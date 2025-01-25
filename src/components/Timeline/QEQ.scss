@@ -18,7 +18,8 @@
         border: 1px solid #ccc;
         font-family: var(--tipo);
         width: 90%;
-        option{
+
+        option {
             font-family: var(--tipo);
             width: 90%;
         }
@@ -36,6 +37,7 @@
         align-content: center;
         padding: 5%;
         box-sizing: border-box;
+
         .invitado {
             width: calc(var(--circulo-qeq-size) * 5);
             height: calc(var(--circulo-qeq-size) * 5);
@@ -72,7 +74,7 @@
 
                 box-sizing: border-box;
 
-           
+
 
                 p {
                     font-size: calc(var(--size-unit) * 0.2) !important;
@@ -83,6 +85,7 @@
                     border-radius: calc(var(--size-unit) * .2);
                     color: black;
                     opacity: 0;
+
                     // margin-top: calc(var(--size-unit) * -.5);
                     // margin-left: calc(var(--size-unit) * 1.5);
                     &:first-of-type {
@@ -129,6 +132,8 @@
         font-family: var(--tipo);
         font-size: calc(var(--size-unit) * 0.125);
         transition: .5s ease;
+        border: 0 solid transparent;
+        box-shadow: 0 0 0 transparent;
         &.hover {
             background-color: var(--orangeTransparent);
             color: white;
@@ -140,23 +145,25 @@
         }
 
         &.correct {
-            background-color: green;
+            border: 0dvh solid green;
             color: transparent;
+            box-shadow: 0 0 5dvh green;
+        }
+        &.incorrect {
+            border: 0dvh solid red;
+            box-shadow: 0 0 5dvh red;
+            transition: background-color .5s ease;
+            /* Transición de fondo suave */
+            color: white;
         }
 
-        span{
+        span {
             background: var(--purpleTransparent);
             width: 100%;
         }
     }
 
-    /* Estilo cuando el círculo de nombre tiene el fondo rojo (incorrecto) */
-    .name-circle.incorrect {
-        background-color: red;
-        transition: background-color .5s ease;
-        /* Transición de fondo suave */
-        color: white;
-    }
+
 
     /* Estilo cuando el invitado ha sido acertado (opacidad reducida) */
     .invitado.correct {

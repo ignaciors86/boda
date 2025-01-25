@@ -9,10 +9,10 @@ gsap.registerPlugin(Draggable);
 
 const urlstrapi = "https://boda-strapi-production.up.railway.app";
 
-const QEQ = ({ mesas }) => {
+const QEQ = ({ mesas, invitado }) => {
   const MAINCLASS = "qeq";
 
-  const [selectedMesa, setSelectedMesa] = useState('');
+  const [selectedMesa, setSelectedMesa] = useState(null);
   const [invitadosAcertados, setInvitadosAcertados] = useState([]);
   const [invitadosMostrados, setInvitadosMostrados] = useState([]);
   const [currentName, setCurrentName] = useState(null);
@@ -32,11 +32,12 @@ const QEQ = ({ mesas }) => {
   };
 
   const handleMesaChange = (event) => {
+    const evento = event.target.value;
     gsap.to(".qeq, .qeq .name-circle", {
       opacity: 0,
       duration: .125,
       onComplete: () => {
-        setSelectedMesa(event.target.value);
+        setSelectedMesa(evento);
         gsap.to(".qeq", {
           opacity: 1,
           duration: .5,
@@ -119,7 +120,7 @@ const QEQ = ({ mesas }) => {
       }
     })
 
-    draggablesRef.current.forEach((draggable) => draggable.kill());
+    draggablesRef?.current?.forEach((draggable) => draggable?.kill());
     draggablesRef.current = [];
 
     const reseteoBg = () => {
@@ -294,7 +295,7 @@ const QEQ = ({ mesas }) => {
           tlRelease
             .to(invitadoRef, {
               scale: .25,
-              duration: acertado ? 1 : 0.5,
+              duration: acertado ? 1 : 2.5,
               ease: 'power1.out',
             }, "<")
             .to(invitadoRef.querySelector("p.primero"), {
@@ -329,6 +330,11 @@ const QEQ = ({ mesas }) => {
       draggablesRef.current.push(draggableInstance);
     });
   }, [mesaSeleccionada]);
+
+  useEffect(() => {
+    console.log(invitado?.mesa?.nombre);
+    activeCard === "horarios" && setSelectedMesa(invitado?.mesa?.nombre)
+  }, [activeCard]);
 
   useEffect(() => {
     let tlpalpita = null;
