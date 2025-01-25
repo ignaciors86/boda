@@ -229,7 +229,7 @@ const QEQ = ({ mesas, invitado }) => {
               
               gsap.to(".qeq .invitado", {
                 opacity: 0,
-                duration: 1,
+                duration: .25,
                 onComplete: () => {
                   correctCircleRef?.current?.classList?.remove('correct');
                   updateCurrentName();
@@ -289,7 +289,7 @@ const QEQ = ({ mesas, invitado }) => {
             .to(invitadoRef, {
               scale: .25,
               duration: acertado ? .5 : .5,
-              delay: acertado ? .5 : .5,
+              delay: acertado ? .5 : 0,
               ease: 'power1.out',
             }, "<")
             .to(invitadoRef.querySelector("p.primero"), {
