@@ -27,6 +27,7 @@
     .mi-select {
         font-family: var(--tipo);
         max-width: 85%;
+        z-index: 2;
         div{
             color: var(--purpleTransparent) !important;
         }
@@ -70,7 +71,7 @@
         align-content: center;
         // padding: 5%;
         box-sizing: border-box;
-
+        position: relative;
         .invitado {
             width: calc(var(--circulo-qeq-size) * 5);
             height: calc(var(--circulo-qeq-size) * 5);
@@ -222,6 +223,7 @@
         align-items: center;
         font-family: var(--tipo);
         font-size: calc(var(--size-unit) * 0.2);
+        z-index: 1;
     }
 
     .Typewriter{

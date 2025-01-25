@@ -62,21 +62,11 @@ const QEQ = ({ mesas, invitado }) => {
 
   const handleMesaChange = (selectedOption) => {
 
-    gsap.to(".qeq .name-circle, .qeq .invitado", {
+    gsap.to(".qeq .name-circle, .qeq .invitado, .qeq .completed-message", {
       opacity: 0,
       duration: .25,
       onComplete: () => {
         setSelectedMesa(selectedOption.value);
-        gsap.to(".qeq", {
-          opacity: 1,
-          duration: 1,
-          delay: 0.5,
-        })
-        gsap.to(".qeq .name-circle, .qeq .invitado", {
-          opacity: 1,
-          duration: 1.5,
-          delay: 2,
-        })
       }
     })
 
@@ -93,17 +83,17 @@ const QEQ = ({ mesas, invitado }) => {
         !invitadosMostrados.includes(invitado.id)
     );
 
-    console.log("Invitados restantes:", invitadosRestantes.map((i) => i.nombre));
+    //console.log("Invitados restantes:", invitadosRestantes.map((i) => i.nombre));
 
     if (invitadosRestantes.length === 0) {
-      console.log("No quedan invitados disponibles para mostrar.");
+      //console.log("No quedan invitados disponibles para mostrar.");
       return null;
     }
 
     const randomIndex = Math.floor(Math.random() * invitadosRestantes.length);
     const randomInvitado = invitadosRestantes[randomIndex];
 
-    console.log("Siguiente invitado seleccionado:", randomInvitado.nombre);
+    //console.log("Siguiente invitado seleccionado:", randomInvitado.nombre);
     return randomInvitado;
   };
 
@@ -118,14 +108,30 @@ const QEQ = ({ mesas, invitado }) => {
         opacity: 1, duration: .5,
       });
 
-      console.log("Nombre actual:", nextInvitado.nombre);
-      gsap.to(".qeq .invitado, .qeq .name-circle", {
+      //console.log("Nombre actual:", nextInvitado.nombre);
+      gsap.to(".qeq .name-circle", {
         opacity: 1,
         duration: .5,
         delay: 0,
       })
+      // Orden aleatorio de los invitados
+      const invitados = gsap.utils.toArray(".qeq .invitado");
+      gsap.set(".qeq .invitado", {opacity: 0, scale: 0,})
+      const shuffledInvitados = gsap.utils.shuffle(invitados);
+
+      // Animación secuencial para cada invitado
+      shuffledInvitados.forEach((invitado, index) => {
+        //console.log(index);
+        gsap.to(invitado, {
+          opacity: 1,
+          scale: .3,
+          duration: .5,
+          delay: 0 + index * 0.2,
+          ease: "power2.out",
+        });
+      });
     } else {
-      console.log("Todos los invitados han sido acertados o mostrados.");
+      //console.log("Todos los invitados han sido acertados o mostrados.");
       setCurrentName(false);
       currentNameRef.current = null;
     }
@@ -221,7 +227,7 @@ const QEQ = ({ mesas, invitado }) => {
               y: "+=.5dvh",
             }, "<")
           if (this.hitTest(correctCircleRef?.current)) {
-            console.log("pincha");
+            //console.log("pincha");
             correctCircleRef?.current?.classList?.add('hover');
             correctCircleRef?.current?.classList?.add('inTouch');
             setCircleBgImage(invitado.personaje?.imagen?.url ? urlstrapi + invitado.personaje.imagen.url : dummyImage);
@@ -249,11 +255,11 @@ const QEQ = ({ mesas, invitado }) => {
           });
 
           if (this.hitTest(correctCircleRef?.current)) {
-            console.log("Nombre objetivo (desde ref):", currentNameRef.current);
-            console.log("Nombre arrastrado:", droppedName);
+            //console.log("Nombre objetivo (desde ref):", currentNameRef.current);
+            //console.log("Nombre arrastrado:", droppedName);
             correctCircleRef?.current?.classList?.remove('inTouch');
             if (acertado) {
-              console.log("¡Nombre correcto!");
+              //console.log("¡Nombre correcto!");
               correctCircleRef?.current?.classList?.add('correct');
 
               gsap.to(".qeq .invitado", {
@@ -296,7 +302,7 @@ const QEQ = ({ mesas, invitado }) => {
 
                 }, ">")
             } else {
-              console.log("Nombre incorrecto.");
+              //console.log("Nombre incorrecto.");
               correctCircleRef?.current?.classList?.add('incorrect');
               setTimeout(() => {
                 correctCircleRef?.current?.classList?.remove('incorrect');
@@ -355,7 +361,7 @@ const QEQ = ({ mesas, invitado }) => {
   }, [mesaSeleccionada, activeCard]);
 
   useEffect(() => {
-    console.log(invitado?.mesa?.nombre);
+    //console.log(invitado?.mesa?.nombre);
     activeCard === "horarios" && setSelectedMesa(invitado?.mesa?.nombre)
   }, [activeCard]);
 
@@ -375,7 +381,7 @@ const QEQ = ({ mesas, invitado }) => {
       });
     }
   }, [currentName])
-  console.log(generatePastelColor(true));
+  //console.log(generatePastelColor(true));
 
 
   return activeCard === "horarios" && (<>
