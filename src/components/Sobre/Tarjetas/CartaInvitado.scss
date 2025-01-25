@@ -1,7 +1,7 @@
 .cartaInvitado {
 
     &.seccion {
-        background: var(--darkGray);
+        background: cadetblue;
         padding: 0;
     }
 
@@ -9,11 +9,13 @@
         position: absolute;
         opacity: 0;
         z-index: -1;
-        min-height: 100%;
+        height: auto;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: space-evenly;
         background: var(--purpleTransparent);
+        bottom: 0;
+        padding: 10% 5%;
     }
 }

@@ -269,8 +269,11 @@ em {
     mask-image: url("../assets/images/play.png");
   }
 }
-
+.orange{
+  background: var(--orangeTransparent) !important;
+}
 .close {
+  
   &:before {
     mask-image: url("../assets/images/close.png");
   }

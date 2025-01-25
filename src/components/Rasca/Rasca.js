@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { gsap } from 'gsap'; // Importamos GSAP
 import './Rasca.scss';
-
+import Typewriter from "typewriter-effect";
 const Rasca = ({ url, resultado }) => {
   const canvasRef = useRef(null);
   const contenidoRef = useRef(null); // Referencia al elemento .cartaInvitado__contenido
@@ -52,6 +52,7 @@ const Rasca = ({ url, resultado }) => {
 
   const handleMouseMove = (e) => {
     if (!isDrawing) return;
+    gsap.to(".explicacion", { opacity: 0, duration: 0.5, delay: 0, });
     draw(e);
     calculateRevealPercentage(); // Actualizar el porcentaje mientras se rasca
   };
@@ -84,7 +85,7 @@ const Rasca = ({ url, resultado }) => {
     const percentage = (clearedPixels / totalPixels) * 100;
     setRevealPercentage(percentage);
 
-    if (percentage >= 30) {
+    if (percentage >= 50) {
       autoReveal(); // Simula el borrado completo si llega al 70%
       animateContenido(); // Inicia la animación del contenido
     }
@@ -121,9 +122,14 @@ const Rasca = ({ url, resultado }) => {
       gsap.to(contenidoRef.current, {
         opacity: 1,
         duration: 1, // Duración de la animación
-        delay: 2,
+        delay: 1,
       });
-      gsap.to(".rasca", { borderRadius: 0, minWidth: "100%", height: "100%", duration: 1, delay: 1, ease: "linear", });
+      gsap.to(".rasca", { borderRadius: 0, 
+        width: "90%", 
+        height: "90%", 
+        duration: 1, 
+        delay: 0, 
+        ease: "linear", });
     }
   };
 
@@ -179,6 +185,24 @@ const Rasca = ({ url, resultado }) => {
           onTouchEnd={handleTouchEnd} // Terminar el toque
           onTouchCancel={handleTouchEnd} // Cancelar el toque
         ></canvas>
+        <div className='explicacion'>
+        <Typewriter
+            onInit={(typewriter) => {
+                typewriter
+                    .typeString(
+                        "  Rasca para descubrir tu personaje"
+                    )
+                    .start();
+            }}
+            options={{
+                autoStart: true,
+                loop: false, // No repetir la animación
+                delay: 25, // Velocidad de escritura
+                // cursor: "", // Elimina el cursor al finalizar
+            }}
+        />
+          
+        </div>
       </div>
 
       {/* Elemento resultado (oculto al inicio) */}

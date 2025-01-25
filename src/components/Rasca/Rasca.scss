@@ -1,16 +1,17 @@
 :root {
-  --rasca-ancho: 60dvh;
+  --rasca-ancho: 50dvh;
+  --border-radius: 4dvh;
 }
 
 .rasca {
   position: relative;
   width: var(--rasca-ancho);
   height: var(--rasca-ancho);
-  border-radius: var(--rasca-ancho);
+  border-radius: var(--border-radius);
   overflow: hidden;
   -webkit-user-select: none;
   user-select: none;
-
+  
   img {
     position: absolute;
     top: 0;
@@ -18,14 +19,34 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    border-radius: var(--border-radius);
   }
 
-  canvas {
+  canvas,
+  .explicacion {
     position: absolute;
     top: 0;
     left: 0;
-    // width: 100%;
     height: 100%;
-    min-width: 100%;  
+    width: 100%;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  .explicacion {
+    pointer-events: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: var(--tipo);
+    text-align: center;
+    padding: 10%;
+
+    span {
+
+      font-size: calc(var(--size-unit)* 0.25) !important;
+      line-height: calc(var(--size-unit)* 0.3) !important;
+    }
   }
 }

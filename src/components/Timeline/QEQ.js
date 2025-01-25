@@ -19,7 +19,7 @@ const QEQ = ({ mesas, invitado }) => {
   const [currentName, setCurrentName] = useState(null);
   const [circleBgImage, setCircleBgImage] = useState(null);
   const currentNameRef = useRef(null);
-  const { activeCard } = useDragContext();
+  const { activeCard, setActiveCard } = useDragContext();
 
   const correctCircleRef = useRef(null);
   const invitadosRef = useRef([]);
@@ -51,7 +51,7 @@ const QEQ = ({ mesas, invitado }) => {
         })
       }
     })
-    
+
   };
 
   const mesaSeleccionada = mesas[selectedMesa];
@@ -226,7 +226,7 @@ const QEQ = ({ mesas, invitado }) => {
             if (acertado) {
               console.log("¡Nombre correcto!");
               correctCircleRef?.current?.classList?.add('correct');
-              
+
               gsap.to(".qeq .invitado", {
                 opacity: 0,
                 duration: .25,
@@ -346,11 +346,11 @@ const QEQ = ({ mesas, invitado }) => {
       });
     }
   }, [currentName])
-console.log(generatePastelColor(true));
-  return activeCard === "horarios" && (
+  console.log(generatePastelColor(true));
+  return activeCard === "horarios" && (<>
     <div className={MAINCLASS}>
       <Bubbles amount={30} color={generatePastelColor(true)} />
-      <h2>Selecciona una Mesa</h2>
+      {/* <h2>Selecciona una Mesa</h2> */}
 
       <select onChange={handleMesaChange} value={selectedMesa}>
         <option value="">Seleccione una mesa</option>
@@ -407,6 +407,8 @@ console.log(generatePastelColor(true));
         </div>
       )}
     </div>
+    <button className="back orange" onClick={() => setActiveCard("sobre")} />
+  </>
   );
 };
 
