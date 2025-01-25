@@ -6,6 +6,7 @@ import { Draggable } from 'gsap/Draggable';
 import { useDragContext } from 'components/DragContext';
 import Bubbles from 'components/Backgrounds/Bubles/Bubles';
 import Select from 'react-select';
+import Typewriter from "typewriter-effect";
 gsap.registerPlugin(Draggable);
 
 const urlstrapi = "https://boda-strapi-production.up.railway.app";
@@ -59,15 +60,9 @@ const QEQ = ({ mesas, invitado }) => {
     label: mesas[mesaKey].nombre,
   }));
 
-  // Manejar el cambio en la selección
-  const handleSelectChange = (selectedOption) => {
-    setSelectedMesa(selectedOption.value); // Actualiza el estado con la mesa seleccionada
-    console.log('Mesa seleccionada:', selectedOption.value);
-  };
-
   const handleMesaChange = (selectedOption) => {
 
-    gsap.to(".qeq, .qeq .name-circle", {
+    gsap.to(".qeq .name-circle, .qeq .invitado", {
       opacity: 0,
       duration: .25,
       onComplete: () => {
@@ -77,10 +72,10 @@ const QEQ = ({ mesas, invitado }) => {
           duration: 1,
           delay: 0.5,
         })
-        gsap.to(".qeq .name-circle", {
+        gsap.to(".qeq .name-circle, .qeq .invitado", {
           opacity: 1,
           duration: 1.5,
-          delay: 1,
+          delay: 2,
         })
       }
     })
@@ -321,7 +316,7 @@ const QEQ = ({ mesas, invitado }) => {
             }, ">");
           tlRelease
             .to(invitadoRef, {
-              scale: .25,
+              scale: .3,
               duration: acertado ? .5 : .5,
               delay: acertado ? .5 : 0,
               ease: 'power1.out',
@@ -450,6 +445,22 @@ const QEQ = ({ mesas, invitado }) => {
           ¡Todos los invitados de esta mesa han sido acertados!
         </div>
       )}
+      <Typewriter
+            onInit={(typewriter) => {
+                typewriter
+                    .typeString(
+                        "Arrastra el personaje correcto hasta el nombre del invitado"
+                    )
+                    .start();
+            }}
+            options={{
+                autoStart: true,
+                loop: false, // No repetir la animación
+                delay: 50, // Velocidad de escritura
+                // cursor: "", // Elimina el cursor al finalizar
+            }}
+        />
+
     </div>
     <button className="back orange" onClick={() => setActiveCard("sobre")} />
   </>

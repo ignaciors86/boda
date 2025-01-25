@@ -1,5 +1,5 @@
 :root {
-    --circulo-qeq-size: calc(var(--size-unit)* .7);
+    --circulo-qeq-size: calc(var(--size-unit)* .5);
 }
 
 .qeq {
@@ -12,13 +12,31 @@
     box-sizing: border-box;
     position: relative;
     padding: 10% 10% 7%;
-
+    border-radius: calc(var(--size-unit) * .1); 
+    overflow: hidden;
+    &:before{
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        opacity: .2;
+        background: lightskyblue;
+    }
     .mi-select {
         font-family: var(--tipo);
+        max-width: 85%;
+        div{
+            color: var(--purpleTransparent) !important;
+        }
+        
         // position: absolute;
         // top: 11%;
         // right: 5%;
     }
+
+    
 
     #bg {
         opacity: 1;
@@ -29,7 +47,7 @@
     select {
         padding: 10px;
         font-size: 16px;
-        border-radius: 5px;
+        border-radius: calc(var(--size-unit) * .1);
         border: 1px solid #ccc;
         font-family: var(--tipo);
         width: 90%;
@@ -50,14 +68,14 @@
         flex-wrap: wrap;
         justify-content: space-evenly;
         align-content: center;
-        padding: 5%;
+        // padding: 5%;
         box-sizing: border-box;
 
         .invitado {
             width: calc(var(--circulo-qeq-size) * 5);
             height: calc(var(--circulo-qeq-size) * 5);
-            margin: calc(var(--circulo-qeq-size) * 1.5) calc(var(--circulo-qeq-size) * -2.4) calc(var(--circulo-qeq-size) * 0.5);
-            scale: .25;
+            margin: calc(var(--circulo-qeq-size) * 2.5) calc(var(--circulo-qeq-size) * -2.4) calc(var(--circulo-qeq-size) * 0.5);
+            scale: .3;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -65,7 +83,7 @@
             flex-direction: column;
             box-shadow: 0 0 15dvh var(--darkGray);
             border-radius: 50%;
-
+            opacity: 0;
             img {
                 width: 100%;
                 height: 100%;
@@ -96,7 +114,7 @@
                     position: absolute;
                     background: var(--purpleTransparent);
                     padding: calc(var(--size-unit) * .1);
-                    border-radius: calc(var(--size-unit) * .2);
+                    border-radius: calc(var(--size-unit) * .1);
                     color: black;
                     opacity: 0;
 
@@ -190,10 +208,32 @@
 
     .completed-message {
         position: absolute;
-        bottom: 0;
+        top: 0;
+        left: 0;
         width: 100%;
+        height: 100%;
+        box-sizing: border-box;
         transform: scale(1) !important;
-        padding: calc(var(--size-unit)* 1);
+        padding: calc(var(--size-unit)* .2);
         text-align: center;
+        background: var(--purpleTransparent);
+        display: flex;
+        justify-content: space-evenly;
+        align-items: center;
+        font-family: var(--tipo);
+        font-size: calc(var(--size-unit) * 0.2);
+    }
+
+    .Typewriter{
+        position: absolute;
+        width: 55%;
+        right: 5%;
+        bottom: 12%;
+        text-align: right;
+        font-weight: bold;
+        span{
+            color: var(--purpleTransparent);
+        }
+        
     }
 }
