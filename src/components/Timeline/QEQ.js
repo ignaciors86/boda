@@ -36,12 +36,12 @@ const QEQ = ({ mesas, invitado }) => {
     const evento = event.target.value;
     gsap.to(".qeq, .qeq .name-circle", {
       opacity: 0,
-      duration: .125,
+      duration: .25,
       onComplete: () => {
         setSelectedMesa(evento);
         gsap.to(".qeq", {
           opacity: 1,
-          duration: .5,
+          duration: 1,
           delay: 0.5,
         })
         gsap.to(".qeq .name-circle", {
@@ -87,14 +87,14 @@ const QEQ = ({ mesas, invitado }) => {
       setCurrentName(nextInvitado.nombre);
       currentNameRef.current = nextInvitado.nombre;
       gsap.to(correctCircleRef.current, {
-        opacity: 1, duration: .15,
+        opacity: 1, duration: .5,
       });
 
       console.log("Nombre actual:", nextInvitado.nombre);
       gsap.to(".qeq .invitado, .qeq .name-circle", {
         opacity: 1,
         duration: .5,
-        delay: .5,
+        delay: 0,
       })
     } else {
       console.log("Todos los invitados han sido acertados o mostrados.");
@@ -229,7 +229,7 @@ const QEQ = ({ mesas, invitado }) => {
               
               gsap.to(".qeq .invitado", {
                 opacity: 0,
-                duration: .25,
+                duration: 1,
                 onComplete: () => {
                   correctCircleRef?.current?.classList?.remove('correct');
                   updateCurrentName();
@@ -257,7 +257,7 @@ const QEQ = ({ mesas, invitado }) => {
                     gsap.timeline()
                       .to(correctCircleRef.current, {
                         scale: 1,
-                        duration: .5,
+                        duration: .125,
                         ease: 'power1.inOut',
                         delay: .5,
                       }, ">")
@@ -340,7 +340,7 @@ const QEQ = ({ mesas, invitado }) => {
         scale: "+=.1",
         yoyo: true,
         repeat: -1,
-        duration: .5,
+        duration: .125,
         ease: 'power1.inOut',
       });
     }
