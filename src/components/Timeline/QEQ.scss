@@ -117,7 +117,7 @@
         // border: 2px solid #ccc;
         cursor: pointer;
         transition: background-color 1s ease;
-        
+        overflow: hidden;
         /* Transición de fondo suave */
         z-index: 2000;
         font-family: var(--tipo);
@@ -127,7 +127,6 @@
             background-color: var(--orangeTransparent);
             color: white;
             scale: 1.5 !important;
-            
         }
 
         &.inTouch {
@@ -137,6 +136,11 @@
         &.correct {
             background-color: green;
             color: transparent;
+        }
+
+        span{
+            background: var(--purpleTransparent);
+            width: 100%;
         }
     }
 

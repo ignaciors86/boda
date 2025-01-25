@@ -16,6 +16,7 @@ const QEQ = ({ mesas }) => {
   const [invitadosAcertados, setInvitadosAcertados] = useState([]);
   const [invitadosMostrados, setInvitadosMostrados] = useState([]);
   const [currentName, setCurrentName] = useState(null);
+  const [circleBgImage, setCircleBgImage] = useState(null);
   const currentNameRef = useRef(null);
   const { activeCard } = useDragContext();
 
@@ -66,8 +67,12 @@ const QEQ = ({ mesas }) => {
       setInvitadosMostrados((prev) => [...prev, nextInvitado.id]);
       setCurrentName(nextInvitado.nombre);
       currentNameRef.current = nextInvitado.nombre;
+      gsap.to(correctCircleRef.current, { 
+        opacity: 1, duration: .15,
+      });
+      
       console.log("Nombre actual:", nextInvitado.nombre);
-      gsap.to(".qeq .invitado", {
+      gsap.to(".qeq .invitado, .qeq .name-circle", {
         opacity: 1,
         duration: .5,
         delay: .5,
@@ -82,17 +87,26 @@ const QEQ = ({ mesas }) => {
   useEffect(() => {
     if (!mesaSeleccionada) return;
 
-    console.log("Mesa seleccionada:", mesaSeleccionada);
-
     setInvitadosAcertados([]);
-    setInvitadosMostrados([]); // Reiniciar mostrados
+    setInvitadosMostrados([]);
     setCurrentName(null);
+    setCircleBgImage(null);
+    
     currentNameRef.current = null;
     updateCurrentName();
 
     draggablesRef.current.forEach((draggable) => draggable.kill());
     draggablesRef.current = [];
 
+    const reseteoBg = () => {
+      setCircleBgImage(null);
+      gsap.to(correctCircleRef.current, { 
+        opacity: 1, duration: .25,
+      });
+      gsap.to(".qeq .invitado", { 
+        opacity: 1, duration: .25,
+      });
+    }
     mesaSeleccionada.invitados.forEach((invitado, index) => {
       const invitadoRef = invitadosRef.current[index];
 
@@ -106,6 +120,7 @@ const QEQ = ({ mesas }) => {
         yoyo: true,
         ease: 'power1.inOut',
       });
+
       const droppedName = invitado.nombre;
       const draggableInstance = Draggable.create(invitadoRef, {
         type: "x,y",
@@ -154,9 +169,19 @@ const QEQ = ({ mesas }) => {
             console.log("pincha");
             correctCircleRef?.current?.classList?.add('hover');
             correctCircleRef?.current?.classList?.add('inTouch');
+            setCircleBgImage(invitado.personaje?.imagen?.url ? urlstrapi + invitado.personaje.imagen.url : dummyImage);
+            gsap.to(invitadoRef, {
+              opacity: 0,
+              duration: 0.5,
+            })
           } else {
             correctCircleRef?.current?.classList?.remove('hover');
             correctCircleRef?.current?.classList?.remove('inTouch');
+            reseteoBg();
+            gsap.to(invitadoRef, {
+              opacity: 1,
+              duration: 0.5,
+            })
           }
         },
         onRelease: function () {
@@ -166,6 +191,7 @@ const QEQ = ({ mesas }) => {
           gsap.set(correctCircleRef.current, {
             animation: "none",
           });
+          
           if (this.hitTest(correctCircleRef?.current)) {
             console.log("Nombre objetivo (desde ref):", currentNameRef.current);
             console.log("Nombre arrastrado:", droppedName);
@@ -173,6 +199,7 @@ const QEQ = ({ mesas }) => {
             if (acertado) {
               console.log("¡Nombre correcto!");
               correctCircleRef?.current?.classList?.add('correct');
+              
               gsap.to(".qeq .invitado", {
                 opacity: 0,
                 duration: .5,
@@ -188,7 +215,7 @@ const QEQ = ({ mesas }) => {
                   opacity: 0,
                   ease: "linear",
                   // position: "absolute",
-                }, 0)
+                }, ">")
                 .to(invitadoRef, {
                   duration: 0,
                   onComplete: () => {
@@ -196,15 +223,14 @@ const QEQ = ({ mesas }) => {
                     mesaSeleccionada.invitados = mesaSeleccionada.invitados.filter(
                       (i) => i.id !== droppedId
                     );
-
                     // Actualizamos los estados de acertados y mostrados
                     setInvitadosAcertados((prev) => [...prev, droppedId]);
                     setInvitadosMostrados((prev) => [...prev, droppedId]);
                     // Animar desvanecimiento antes de eliminar el invitado
                     gsap.timeline()
                       .to(invitadoRef, {
-                        opacity: 0,
-                        scale: 2,
+                        // opacity: 0,
+                        // scale: 2,
                         duration: 2,
                       }, 0)
                       .to(correctCircleRef.current, {
@@ -223,6 +249,10 @@ const QEQ = ({ mesas }) => {
               correctCircleRef?.current?.classList?.add('incorrect');
               setTimeout(() => {
                 correctCircleRef?.current?.classList?.remove('incorrect');
+                gsap.to(correctCircleRef.current, { 
+                  opacity: 1, duration: .15,
+                });
+              
               }, 500);
             }
             correctCircleRef?.current?.classList?.remove('hover');
@@ -235,7 +265,7 @@ const QEQ = ({ mesas }) => {
             }, ">");
           tlRelease
             .to(invitadoRef, {
-              scale: acertado ? 1.3 : .25,
+              scale: .25,
               duration: acertado ? 1 : 0.5,
               ease: 'power1.out',
             }, "<")
@@ -256,6 +286,13 @@ const QEQ = ({ mesas }) => {
               onComplete: () => {
                 gsap.killTweensOf(invitadoRef.querySelector("p.primero"));
                 gsap.killTweensOf(invitadoRef.querySelector("p.segundo"));
+                gsap.to(correctCircleRef.current, { 
+                  opacity: 0, duration: .25,
+                  onComplete: () => {
+                    reseteoBg();
+                  }
+                });
+                
               }
             }, ">");
 
@@ -294,7 +331,6 @@ const QEQ = ({ mesas }) => {
           </option>
         ))}
       </select>
-
       {mesaSeleccionada && (
         <div className="invitados-container" style={{ "--num-invitados": mesaSeleccionada.invitados.length }}>
           {mesaSeleccionada.invitados.map((invitado, index) => (
@@ -308,28 +344,33 @@ const QEQ = ({ mesas }) => {
                 src={invitado.personaje?.imagen?.url ? urlstrapi + invitado.personaje.imagen.url : dummyImage}
                 alt={invitado.nombre}
               />
-              <div className="invitado-info"
-
-              >
-
-                {invitado.personaje?.nombre && <p
-                  className="primero"
-                  style={{ backgroundColor: generatePastelColor() }}
-                >{invitado.personaje?.nombre}</p>}
-                {invitado.personaje?.descripcion && <p
-                  className="segundo"
-                  style={{ backgroundColor: generatePastelColor() }}
-                >{invitado.personaje?.descripcion}</p>}
-
+              <div className="invitado-info">
+                {invitado.personaje?.nombre && (
+                  <p className="primero" style={{ backgroundColor: generatePastelColor() }}>
+                    {invitado.personaje?.nombre}
+                  </p>
+                )}
+                {invitado.personaje?.descripcion && (
+                  <p className="segundo" style={{ backgroundColor: generatePastelColor() }}>
+                    {invitado.personaje?.descripcion}
+                  </p>
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
-
       {currentName ? (
-        <div ref={correctCircleRef} className="name-circle">
-          {currentName}
+        <div
+          ref={correctCircleRef}
+          className="name-circle"
+          style={{
+            backgroundImage: circleBgImage ? `url(${circleBgImage})` : 'none',
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        >
+          <span>{currentName}</span>
         </div>
       ) : currentName !== null && (
         <div className="completed-message">
