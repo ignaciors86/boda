@@ -62,7 +62,7 @@ const QEQ = ({ mesas, invitado }) => {
 
   const handleMesaChange = (selectedOption) => {
 
-    gsap.to(".qeq .name-circle, .qeq .invitado, .qeq .completed-message", {
+    gsap.to(".qeq .name-circle, .qeq .invitado", {
       opacity: 0,
       duration: .25,
       onComplete: () => {
