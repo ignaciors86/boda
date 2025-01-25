@@ -16,6 +16,12 @@
         font-size: 16px;
         border-radius: 5px;
         border: 1px solid #ccc;
+        font-family: var(--tipo);
+        width: 90%;
+        option{
+            font-family: var(--tipo);
+            width: 90%;
+        }
     }
 
     .invitados-container {
