@@ -200,10 +200,10 @@ const QEQ = ({ mesas }) => {
               console.log("¡Nombre correcto!");
               correctCircleRef?.current?.classList?.add('correct');
               
-              gsap.to(".qeq .invitado", {
-                opacity: 0,
-                duration: .5,
-              }, ">")
+              // gsap.to(".qeq .invitado", {
+              //   opacity: 0,
+              //   duration: .5,
+              // }, ">")
               setTimeout(() => {
                 correctCircleRef?.current?.classList?.remove('correct');
                 updateCurrentName();
