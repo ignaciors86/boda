@@ -32,7 +32,24 @@ const QEQ = ({ mesas }) => {
   };
 
   const handleMesaChange = (event) => {
-    setSelectedMesa(event.target.value);
+    gsap.to(".qeq, .qeq .name-circle", {
+      opacity: 0,
+      duration: .125,
+      onComplete: () => {
+        setSelectedMesa(event.target.value);
+        gsap.to(".qeq", {
+          opacity: 1,
+          duration: .5,
+          delay: 0.5,
+        })
+        gsap.to(".qeq .name-circle", {
+          opacity: 1,
+          duration: 1.5,
+          delay: 1,
+        })
+      }
+    })
+    
   };
 
   const mesaSeleccionada = mesas[selectedMesa];
@@ -67,10 +84,10 @@ const QEQ = ({ mesas }) => {
       setInvitadosMostrados((prev) => [...prev, nextInvitado.id]);
       setCurrentName(nextInvitado.nombre);
       currentNameRef.current = nextInvitado.nombre;
-      gsap.to(correctCircleRef.current, { 
+      gsap.to(correctCircleRef.current, {
         opacity: 1, duration: .15,
       });
-      
+
       console.log("Nombre actual:", nextInvitado.nombre);
       gsap.to(".qeq .invitado, .qeq .name-circle", {
         opacity: 1,
@@ -91,19 +108,26 @@ const QEQ = ({ mesas }) => {
     setInvitadosMostrados([]);
     setCurrentName(null);
     setCircleBgImage(null);
-    
+
     currentNameRef.current = null;
-    updateCurrentName();
+    gsap.to(correctCircleRef?.current, {
+      opacity: 1,
+      duration: 1,
+      delay: .5,
+      onStart: () => {
+        updateCurrentName();
+      }
+    })
 
     draggablesRef.current.forEach((draggable) => draggable.kill());
     draggablesRef.current = [];
 
     const reseteoBg = () => {
       setCircleBgImage(null);
-      gsap.to(correctCircleRef.current, { 
+      gsap.to(correctCircleRef.current, {
         opacity: 1, duration: .25,
       });
-      gsap.to(".qeq .invitado", { 
+      gsap.to(".qeq .invitado", {
         opacity: 1, duration: .25,
       });
     }
@@ -191,7 +215,7 @@ const QEQ = ({ mesas }) => {
           gsap.set(correctCircleRef.current, {
             animation: "none",
           });
-          
+
           if (this.hitTest(correctCircleRef?.current)) {
             console.log("Nombre objetivo (desde ref):", currentNameRef.current);
             console.log("Nombre arrastrado:", droppedName);
@@ -199,15 +223,19 @@ const QEQ = ({ mesas }) => {
             if (acertado) {
               console.log("¡Nombre correcto!");
               correctCircleRef?.current?.classList?.add('correct');
-              
+
               // gsap.to(".qeq .invitado", {
               //   opacity: 0,
               //   duration: .5,
               // }, ">")
-              setTimeout(() => {
-                correctCircleRef?.current?.classList?.remove('correct');
-                updateCurrentName();
-              }, 500);
+              gsap.to(correctCircleRef?.current, {
+                opacity: 0,
+                duration: 1,
+                onComplete: () => {
+                  correctCircleRef?.current?.classList?.remove('correct');
+                  updateCurrentName();
+                }
+              })
               tlRelease
                 .to(invitadoRef, {
                   duration: .5,
@@ -239,7 +267,7 @@ const QEQ = ({ mesas }) => {
                         ease: 'power1.inOut',
                         delay: .5,
                       }, ">")
-        
+
 
                   },
 
@@ -249,10 +277,10 @@ const QEQ = ({ mesas }) => {
               correctCircleRef?.current?.classList?.add('incorrect');
               setTimeout(() => {
                 correctCircleRef?.current?.classList?.remove('incorrect');
-                gsap.to(correctCircleRef.current, { 
+                gsap.to(correctCircleRef.current, {
                   opacity: 1, duration: .15,
                 });
-              
+
               }, 500);
             }
             correctCircleRef?.current?.classList?.remove('hover');
@@ -286,13 +314,13 @@ const QEQ = ({ mesas }) => {
               onComplete: () => {
                 gsap.killTweensOf(invitadoRef.querySelector("p.primero"));
                 gsap.killTweensOf(invitadoRef.querySelector("p.segundo"));
-                gsap.to(correctCircleRef.current, { 
-                  opacity: 0, duration: .25,
+                tlRelease.to(".name-circle span", {
+                  opacity: 1, duration: .25,
                   onComplete: () => {
                     reseteoBg();
                   }
-                });
-                
+                }, ">");
+
               }
             }, ">");
 
