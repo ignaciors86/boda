@@ -1,5 +1,5 @@
 :root {
-    --circulo-qeq-size: calc(var(--size-unit)* .5);
+    --circulo-qeq-size: calc(var(--size-unit)* .6);
 }
 
 .qeq {
@@ -29,12 +29,12 @@
         justify-content: space-evenly;
         align-content: center;
         padding: 5%;
-
+        box-sizing: border-box;
         .invitado {
             width: calc(var(--circulo-qeq-size) * 5);
             height: calc(var(--circulo-qeq-size) * 5);
             margin: -20dvh calc(var(--circulo-qeq-size) * -2.5) -6dvh;
-            scale: .2;
+            scale: .25;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -69,7 +69,8 @@
            
 
                 p {
-                    
+                    font-size: calc(var(--size-unit) * 0.2) !important;
+                    font-weight: bold;
                     position: absolute;
                     background: var(--purpleTransparent);
                     padding: calc(var(--size-unit) * .1);
@@ -132,7 +133,7 @@
 
         &.correct {
             background-color: green;
-            color: white;
+            color: transparent;
         }
     }
 

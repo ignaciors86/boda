@@ -67,6 +67,11 @@ const QEQ = ({ mesas }) => {
       setCurrentName(nextInvitado.nombre);
       currentNameRef.current = nextInvitado.nombre;
       console.log("Nombre actual:", nextInvitado.nombre);
+      gsap.to(".qeq .invitado", {
+        opacity: 1,
+        duration: .5,
+        delay: .5,
+      })
     } else {
       console.log("Todos los invitados han sido acertados o mostrados.");
       setCurrentName(false);
@@ -162,6 +167,10 @@ const QEQ = ({ mesas }) => {
             if (acertado) {
               console.log("¡Nombre correcto!");
               correctCircleRef?.current?.classList?.add('correct');
+              gsap.to(".qeq .invitado", {
+                opacity: 0,
+                duration: .5,
+              }, ">")
               setTimeout(() => {
                 correctCircleRef?.current?.classList?.remove('correct');
                 updateCurrentName();
@@ -192,20 +201,13 @@ const QEQ = ({ mesas }) => {
                         scale: 2,
                         duration: 2,
                       }, 0)
-
-                      .to(correctCircleRef.current, {
-                        scale: "+=.1dvh",
-                        yoyo: true,
-                        repeat: 2,
-                        duration: .5,
-                        ease: 'power1.inOut',
-                      }, "<")
                       .to(correctCircleRef.current, {
                         scale: 1,
                         duration: 2,
                         ease: 'power1.inOut',
                         delay: .5,
                       }, ">")
+        
 
                   },
 
@@ -227,8 +229,13 @@ const QEQ = ({ mesas }) => {
             }, ">");
           tlRelease
             .to(invitadoRef, {
-              scale: acertado ? 1.3 : .2,
+              scale: acertado ? 1.3 : .25,
               duration: acertado ? 1 : 0.5,
+              ease: 'power1.out',
+            }, "<")
+            .to(invitadoRef.querySelector("p.primero"), {
+              opacity: 0,
+              duration: 0.25,
               ease: 'power1.out',
             }, "<")
             .to(invitadoRef.querySelector("p.primero"), {
@@ -255,6 +262,9 @@ const QEQ = ({ mesas }) => {
   useEffect(() => {
     let tlpalpita = null;
     if (activeCard && "horarios" && !tlpalpita) {
+      gsap.to(correctCircleRef.current, {
+        scale: 1,
+      });
       tlpalpita = gsap.timeline();
       tlpalpita.to(correctCircleRef.current, {
         scale: "+=.1",
