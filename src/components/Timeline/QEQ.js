@@ -155,6 +155,7 @@ const QEQ = ({ mesas }) => {
             correctCircleRef?.current?.classList?.add('hover');
             correctCircleRef?.current?.classList?.add('inTouch');
           } else {
+            correctCircleRef?.current?.classList?.remove('hover');
             correctCircleRef?.current?.classList?.remove('inTouch');
           }
         },

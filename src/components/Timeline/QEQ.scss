@@ -104,8 +104,8 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        width: calc(var(--size-unit)* .6);
-        height: calc(var(--size-unit)* .6);
+        width: calc(var(--size-unit)* .8);
+        height: calc(var(--size-unit)* .8);
         margin: calc(var(--size-unit)*.1) 0 calc(var(--size-unit)*.1) 0;
         border-radius: 50%;
         font-size: 18px;
@@ -121,11 +121,13 @@
         /* Transición de fondo suave */
         z-index: 2000;
         font-family: var(--tipo);
-        font-size: calc(var(--size-unit) * 0.1);
-
+        font-size: calc(var(--size-unit) * 0.125);
+        transition: .5s ease;
         &.hover {
             background-color: var(--orangeTransparent);
             color: white;
+            scale: 1.5 !important;
+            
         }
 
         &.inTouch {
