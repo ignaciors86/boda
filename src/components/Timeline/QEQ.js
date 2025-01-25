@@ -5,7 +5,7 @@ import gsap from 'gsap';
 import { Draggable } from 'gsap/Draggable';
 import { useDragContext } from 'components/DragContext';
 import Bubbles from 'components/Backgrounds/Bubles/Bubles';
-
+import Select from 'react-select';
 gsap.registerPlugin(Draggable);
 
 const urlstrapi = "https://boda-strapi-production.up.railway.app";
@@ -32,13 +32,46 @@ const QEQ = ({ mesas, invitado }) => {
     return short ? [parseInt(r), parseInt(g), parseInt(b)] : `rgb(${r}, ${g}, ${b})`;
   };
 
-  const handleMesaChange = (event) => {
-    const evento = event.target.value;
+  // Estilos personalizados para react-select
+  const customStyles = {
+    control: (base) => ({
+      ...base,
+      backgroundColor: 'white',
+      border: '1px solid #ccc',
+      boxShadow: 'none',
+      '&:hover': {
+        borderColor: '#aaa',
+      },
+    }),
+    option: (base, { isFocused, isSelected }) => ({
+      ...base,
+      backgroundColor: isFocused ? '#f0f0f0' : isSelected ? '#e6e6e6' : 'white',
+      color: isSelected ? '#333' : '#666',
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 9999, // Asegura que el menú esté por encima de otros elementos
+    }),
+  };
+
+  const options = Object.keys(mesas).map((mesaKey) => ({
+    value: mesaKey,
+    label: mesas[mesaKey].nombre,
+  }));
+
+  // Manejar el cambio en la selección
+  const handleSelectChange = (selectedOption) => {
+    setSelectedMesa(selectedOption.value); // Actualiza el estado con la mesa seleccionada
+    console.log('Mesa seleccionada:', selectedOption.value);
+  };
+
+  const handleMesaChange = (selectedOption) => {
+
     gsap.to(".qeq, .qeq .name-circle", {
       opacity: 0,
       duration: .25,
       onComplete: () => {
-        setSelectedMesa(evento);
+        setSelectedMesa(selectedOption.value);
         gsap.to(".qeq", {
           opacity: 1,
           duration: 1,
@@ -138,8 +171,9 @@ const QEQ = ({ mesas, invitado }) => {
 
       gsap.to(invitadoRef, {
         duration: 3 + Math.random() * 3,
-        x: "+=2dvh",
-        y: "+=2dvh",
+        x: `${Math.random() < 0.5 ? '+' : '-'}=${Math.random() * 2}dvh`,
+        y: `${Math.random() < 0.5 ? '+' : '-'}=${Math.random() * 2}dvh`,
+
         translateX: Math.random() * 4 - 2 + 'dvh',
         translateY: Math.random() * 4 - 2 + 'dvh',
         repeat: -1,
@@ -347,19 +381,29 @@ const QEQ = ({ mesas, invitado }) => {
     }
   }, [currentName])
   console.log(generatePastelColor(true));
+
+
   return activeCard === "horarios" && (<>
     <div className={MAINCLASS}>
       <Bubbles amount={30} color={generatePastelColor(true)} />
       {/* <h2>Selecciona una Mesa</h2> */}
-
-      <select onChange={handleMesaChange} value={selectedMesa}>
+      {mesas && <Select
+        className="mi-select"
+        styles={customStyles}
+        options={options}
+        value={options.find((option) => option.value === selectedMesa)}
+        onChange={handleMesaChange}
+        isSearchable={false} // Desactiva la búsqueda si no la necesitas
+        placeholder="Seleccione una mesa"
+      />}
+      {/* <select onChange={handleMesaChange} value={selectedMesa}>
         <option value="">Seleccione una mesa</option>
         {Object.keys(mesas).map((mesaKey) => (
           <option key={mesaKey} value={mesaKey}>
             {mesas[mesaKey].nombre}
           </option>
         ))}
-      </select>
+      </select> */}
       {mesaSeleccionada && (
         <div className="invitados-container" style={{ "--num-invitados": mesaSeleccionada.invitados.length }}>
           {mesaSeleccionada.invitados.map((invitado, index) => (
