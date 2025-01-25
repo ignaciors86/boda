@@ -288,7 +288,8 @@ const QEQ = ({ mesas, invitado }) => {
           tlRelease
             .to(invitadoRef, {
               scale: .25,
-              duration: acertado ? 1 : 2.5,
+              duration: acertado ? .5 : .5,
+              delay: acertado ? .5 : .5,
               ease: 'power1.out',
             }, "<")
             .to(invitadoRef.querySelector("p.primero"), {
