@@ -210,6 +210,7 @@ const QEQ = ({ mesas, invitado }) => {
           }
         },
         onRelease: function () {
+          gsap.killTweensOf(invitadoRef);
           const tlRelease = gsap.timeline();
           const droppedId = invitado.id;
           const acertado = droppedName.trim().toLowerCase() === currentNameRef.current?.trim().toLowerCase();
@@ -224,14 +225,10 @@ const QEQ = ({ mesas, invitado }) => {
             if (acertado) {
               console.log("¡Nombre correcto!");
               correctCircleRef?.current?.classList?.add('correct');
-
-              // gsap.to(".qeq .invitado", {
-              //   opacity: 0,
-              //   duration: .5,
-              // }, ">")
-              gsap.to(correctCircleRef?.current, {
+              
+              gsap.to(".qeq .invitado", {
                 opacity: 0,
-                duration: 1,
+                duration: .25,
                 onComplete: () => {
                   correctCircleRef?.current?.classList?.remove('correct');
                   updateCurrentName();
@@ -239,7 +236,7 @@ const QEQ = ({ mesas, invitado }) => {
               })
               tlRelease
                 .to(invitadoRef, {
-                  duration: .5,
+                  duration: .25,
                   zIndex: 3000,
                   opacity: 0,
                   ease: "linear",
