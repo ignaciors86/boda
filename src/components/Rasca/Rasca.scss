@@ -1,5 +1,5 @@
 :root {
-  --rasca-ancho: 50dvh;
+  --rasca-ancho: calc(var(--size-unit)* 2.5);
   --border-radius: 4dvh;
 }
 

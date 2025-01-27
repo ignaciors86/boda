@@ -116,7 +116,7 @@ const QEQ = ({ mesas, invitado }) => {
       })
       // Orden aleatorio de los invitados
       const invitados = gsap.utils.toArray(".qeq .invitado");
-      gsap.set(".qeq .invitado", {opacity: 0, scale: 0,})
+      gsap.set(".qeq .invitado", { opacity: 0, scale: 0, })
       const shuffledInvitados = gsap.utils.shuffle(invitados);
 
       // Animación secuencial para cada invitado
@@ -190,24 +190,30 @@ const QEQ = ({ mesas, invitado }) => {
           this.initialY = this.y;
         },
         onDrag: function () {
+          const tlondrag = gsap.timeline();
           gsap.set(correctCircleRef.current, {
             animation: "shadowPulse 1s ease-in-out infinite",
           });
-          gsap.timeline()
+          invitadoRef && tlondrag
             .to(invitadoRef, {
               scale: 1,
               duration: 0.5,
             })
+
+
+          invitadoRef && tlondrag
             .to(invitadoRef.querySelector("p.primero"), { // Selecciona el <p> hijo directamente
               opacity: 1,
               duration: 0.25,
               ease: "power1.inOut",
             }, 0)
+            // invitadoRef && invitado.personaje?.descripcion && tlondrag
             .to(invitadoRef.querySelector("p.segundo"), { // Selecciona el <p> hijo directamente
               opacity: 1,
               duration: 0.5,
               ease: "power1.inOut",
             }, ">")
+            // invitadoRef && invitado.personaje?.nombre && tlondrag
             .to(invitadoRef.querySelector("p.primero"), {
               rotation: -6, // Gira 10 grados hacia un lado
               duration: 3.5, // Tiempo para alcanzar la rotación
@@ -314,20 +320,21 @@ const QEQ = ({ mesas, invitado }) => {
             }
             correctCircleRef?.current?.classList?.remove('hover');
           }
-          tlRelease
+          invitadoRef && tlRelease
             .to(invitadoRef, {
               x: this.initialX,
               y: this.initialY,
               ease: 'power1.out',
-            }, ">");
-          tlRelease
+            }, ">")
             .to(invitadoRef, {
               scale: .3,
               duration: acertado ? .5 : .5,
               delay: acertado ? .5 : 0,
               ease: 'power1.out',
             }, "<")
-            .to(invitadoRef.querySelector("p.primero"), {
+            const primero = invitadoRef.querySelector("p.primero");
+            const segundo = invitadoRef.querySelector("p.segundo");
+            invitadoRef && primero && tlRelease.to(primero, {
               opacity: 0,
               duration: 0.25,
               ease: 'power1.out',
@@ -366,6 +373,8 @@ const QEQ = ({ mesas, invitado }) => {
   }, [activeCard]);
 
   useEffect(() => {
+    console.log(invitadosAcertados.length);
+    console.log(options.length);
     let tlpalpita = null;
     if (activeCard && "horarios" && !tlpalpita) {
       gsap.to(correctCircleRef.current, {
@@ -386,7 +395,7 @@ const QEQ = ({ mesas, invitado }) => {
 
   return activeCard === "horarios" && (<>
     <div className={MAINCLASS}>
-      <Bubbles amount={30} color={generatePastelColor(true)} />
+      {/* <Bubbles amount={10} color={generatePastelColor(true)} /> */}
       {/* <h2>Selecciona una Mesa</h2> */}
       {mesas && <Select
         className="mi-select"
@@ -419,14 +428,14 @@ const QEQ = ({ mesas, invitado }) => {
                 alt={invitado.nombre}
               />
               <div className="invitado-info">
-                {invitado.personaje?.nombre && (
+                {(
                   <p className="primero" style={{ backgroundColor: generatePastelColor() }}>
-                    {invitado.personaje?.nombre}
+                    {invitado.personaje?.nombre || "nombre personaje"}
                   </p>
                 )}
-                {invitado.personaje?.descripcion && (
+                {(
                   <p className="segundo" style={{ backgroundColor: generatePastelColor() }}>
-                    {invitado.personaje?.descripcion}
+                    {invitado.personaje?.descripcion || "descripción personaje"}
                   </p>
                 )}
               </div>
@@ -452,20 +461,20 @@ const QEQ = ({ mesas, invitado }) => {
         </div>
       )}
       <Typewriter
-            onInit={(typewriter) => {
-                typewriter
-                    .typeString(
-                        "Arrastra el personaje correcto hasta el nombre del invitado"
-                    )
-                    .start();
-            }}
-            options={{
-                autoStart: true,
-                loop: false, // No repetir la animación
-                delay: 50, // Velocidad de escritura
-                // cursor: "", // Elimina el cursor al finalizar
-            }}
-        />
+        onInit={(typewriter) => {
+          typewriter
+            .typeString(
+              "Arrastra el personaje correcto hasta el nombre del invitado"
+            )
+            .start();
+        }}
+        options={{
+          autoStart: true,
+          loop: false, // No repetir la animación
+          delay: 50, // Velocidad de escritura
+          // cursor: "", // Elimina el cursor al finalizar
+        }}
+      />
 
     </div>
     <button className="back orange" onClick={() => setActiveCard("sobre")} />
