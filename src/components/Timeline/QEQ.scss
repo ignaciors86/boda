@@ -1,5 +1,6 @@
 :root {
-    --circulo-qeq-size: calc(var(--size-unit)* .5);
+    --circulo-qeq-size: calc(var(--size-unit)* .4);
+    --invitado-scale: .45;
 }
 
 .qeq {
@@ -28,14 +29,12 @@
         font-family: var(--tipo);
         font-size: calc(var(--size-unit) * 0.15);
         max-width: 80%;
-        z-index: 2;
+        max-height: 50dvh;
+        z-index: 4002;
+        transition: 1s ease;
         div{
             color: var(--purpleTransparent) !important;
         }
-        
-        // position: absolute;
-        // top: 11%;
-        // right: 5%;
     }
 
     
@@ -63,7 +62,7 @@
             width: calc(var(--circulo-qeq-size) * 5);
             height: calc(var(--circulo-qeq-size) * 5);
             margin: calc(var(--circulo-qeq-size) * 2.5) calc(var(--circulo-qeq-size) * -2.4) calc(var(--circulo-qeq-size) * 0.5);
-            scale: .3;
+            scale: var(--invitado-scale);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -148,7 +147,7 @@
         transition: background-color 1s ease;
         overflow: hidden;
         /* Transición de fondo suave */
-        z-index: 2000;
+        // z-index: 2000;
         font-family: var(--tipo);
         font-size: calc(var(--size-unit) * 0.125);
         transition: .5s ease;

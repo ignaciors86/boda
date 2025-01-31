@@ -26,6 +26,8 @@ const QEQ = ({ mesas, invitado }) => {
   const invitadosRef = useRef([]);
   const draggablesRef = useRef([]);
 
+  const escala = .5;
+
   const generatePastelColor = (short) => {
     const r = Math.floor(200 + Math.random() * 55);
     const g = Math.floor(200 + Math.random() * 55);
@@ -40,18 +42,31 @@ const QEQ = ({ mesas, invitado }) => {
       backgroundColor: 'white',
       border: '1px solid #ccc',
       boxShadow: 'none',
+      // zIndex: 5001, 
       '&:hover': {
         borderColor: '#aaa',
       },
     }),
     option: (base, { isFocused, isSelected }) => ({
       ...base,
-      backgroundColor: isFocused ? '#f0f0f0' : isSelected ? '#e6e6e6' : 'white',
+      backgroundColor: isFocused ? 'var(--orangeTransparent)' : isSelected ? 'var(--darkGray)' : 'white',
       color: isSelected ? '#333' : '#666',
+      maxHeight: "40dvh",
     }),
     menu: (base) => ({
       ...base,
-      zIndex: 9999, // Asegura que el menú esté por encima de otros elementos
+      // margin: 0,
+      
+    }),
+    menuList: (base) => ({
+      ...base,
+      width: "125%",
+      background: "#FFF",
+      borderRadius: "1dvh",
+      overflow: "hidden",
+      zIndex: 2001, // Asegura que el menú esté por encima de otros elementos
+      // margin: 0,
+      maxHeight: '40dvh', // Establece el alto máximo del contenedor de opciones
     }),
   };
 
@@ -124,7 +139,7 @@ const QEQ = ({ mesas, invitado }) => {
         //console.log(index);
         gsap.to(invitado, {
           opacity: 1,
-          scale: .3,
+          scale: escala,
           duration: .5,
           delay: 0 + index * 0.2,
           ease: "power2.out",
@@ -191,14 +206,19 @@ const QEQ = ({ mesas, invitado }) => {
         },
         onDrag: function () {
           const tlondrag = gsap.timeline();
+          gsap.set(".mi-select", {
+            zIndex: 1001,
+          })
           gsap.set(correctCircleRef.current, {
             animation: "shadowPulse 1s ease-in-out infinite",
           });
+     
           invitadoRef && tlondrag
             .to(invitadoRef, {
               scale: 1,
               duration: 0.5,
             })
+            
 
 
           invitadoRef && tlondrag
@@ -259,6 +279,9 @@ const QEQ = ({ mesas, invitado }) => {
           gsap.set(correctCircleRef.current, {
             animation: "none",
           });
+          gsap.set(".mi-select", {
+            zIndex: 4001,
+          })
 
           if (this.hitTest(correctCircleRef?.current)) {
             //console.log("Nombre objetivo (desde ref):", currentNameRef.current);
@@ -327,7 +350,7 @@ const QEQ = ({ mesas, invitado }) => {
               ease: 'power1.out',
             }, ">")
             .to(invitadoRef, {
-              scale: .3,
+              scale: escala,
               duration: acertado ? .5 : .5,
               delay: acertado ? .5 : 0,
               ease: 'power1.out',

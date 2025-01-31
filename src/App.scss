@@ -192,7 +192,7 @@ em {
 
 .volumen {  
   &.stop {
-    background: var(--orange);
+    background: var(--orangeTransparent);
     animation: shadowPulse 1s ease-in-out infinite;
   }
 }
@@ -304,6 +304,9 @@ em {
   &.stop {
     left: calc(var(--size-unit) * 0.1);
   }
+  &.stop {
+    background: var(--orangeTransparent);
+  }
 }
 
 .seccion.lugar {
@@ -365,6 +368,7 @@ em {
   a,
   span {
     font-size: calc(var(--size-unit)* 0.15) !important;
+    line-height: calc(var(--size-unit)* 0.15) !important;
   }
 
 

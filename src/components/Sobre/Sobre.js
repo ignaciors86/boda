@@ -217,6 +217,7 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
   const pasoPrevio = () => {
     const bola4 = document.querySelector(".bola-3");
 
+invitado && animateOpacity();
     if (bola4) {
       // Eliminar animaciones CSS aplicadas
       const tlBolita = gsap.timeline({ repeat: false, });
@@ -273,6 +274,7 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
 
   const inicializar = () => {
     const canvas = document.getElementById('myCanvas');
+    invitado && pasoPrevio();
     if (canvas) {
       canvas.addEventListener('mouseenter', pasoPrevio);
       canvas.addEventListener('mouseleave', pasoPrevio);
@@ -290,7 +292,7 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
     const skipeaStorage = localStorage.getItem("skipea");
     // console.log(skipeaStorage)
     // Si no existe, la configuramos y la primera vez que se abra la página se debe ejecutar inicializar
-    if (skipeaStorage || atajo) {
+    if (skipeaStorage || atajo || invitado) {
 
       inicializar();
 
@@ -422,8 +424,8 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
   return (
     <>
       <Bubbles />
-      {isOpen === null && <Espiral weedding={weedding} isOpen={isOpen} uri={uri} />}
-      {isOpen === false && <Espiral weedding={weedding} isOpen={isOpen} option2={true} />}
+      {isOpen === null && !invitado && <Espiral weedding={weedding} isOpen={isOpen} uri={uri} />}
+      {isOpen === false && !invitado && <Espiral weedding={weedding} isOpen={isOpen} option2={true} />}
       <div className={`sobre closed ${weedding ? "weedding" : ""}`} ref={sobreRef}>
 
         <div alt="Nosotros" className="nosotros-jpg" >
