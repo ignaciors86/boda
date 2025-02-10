@@ -320,13 +320,11 @@
                 // transition: calc(var(--duration-envelope)*1) ease;
                 transition: calc(var(--duration-envelope)*3) ease calc(var(--duration-envelope)* 0);
             }
-            // &-body {
-            //     z-index: 10;
-            // }
+
             &-content {
                 transform: translateY(calc(var(--size-unit)* -5)) rotateZ(3deg) translateX(calc(var(--size-unit)* -.6)) rotateX(0deg) rotateZ(15deg);
                 transition: opacity 0s, transform calc(var(--duration-envelope)*3) ease calc(var(--duration-envelope)*1.2);
-                z-index: 5;
+                z-index: 3;
 
                 .card {
                     opacity: 1;
