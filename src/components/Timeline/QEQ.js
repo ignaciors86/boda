@@ -450,6 +450,7 @@ const QEQ = ({ mesas, invitado }) => {
                 src={invitado.personaje?.imagen?.url ? urlstrapi + invitado.personaje.imagen.url : dummyImage}
                 alt={invitado.nombre}
               />
+              {/* <span>{invitado.nombre}</span> */}
               <div className="invitado-info">
                 {(
                   <p className="primero" style={{ backgroundColor: generatePastelColor() }}>
