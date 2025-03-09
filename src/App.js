@@ -7,6 +7,7 @@ import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-
 import FondosBaile from './components/FondosBaile/FondosBaile'; // Importa tu nuevo componente
 import { renderItems } from 'components/Timeline/items';
 import { items } from './components/Timeline/items'; // Asegúrate de importar correctamente
+import Creditos from 'components/Creditos/Creditos';
 
 const App = () => {
   const tlApp = gsap.timeline();
@@ -157,10 +158,10 @@ const App = () => {
             }
           />
           <Route
-            path="/atajo"
+            path="/creditos-finales"
             element={
               <>
-                <Sobre atajo={true} weedding={true} />
+                <Creditos />
               </>
             }
           />
