@@ -1,5 +1,5 @@
 :root{
-    --ancho-invitado: 40dvh;
+    --ancho-invitado: 36dvh;
 }
 #root {
     position: absolute;
@@ -29,7 +29,7 @@
         background: transparent;
         pointer-events: none;
         opacity: .1;
-        opacity: 0;
+        // opacity: 0;
     }
 
     .ecualizador-bolitas {
@@ -59,7 +59,7 @@
         align-items: center;
         flex-wrap: wrap;
         flex-direction: column;
-        // opacity: 0;
+        
         .invitado {
             width: var(--ancho-invitado);
             height: var(--ancho-invitado);
@@ -69,22 +69,49 @@
             transition: opacity 1s ease-in-out, transform 0.5s ease-in-out;
             transform: scale(0.8);
             background: darkcyan;
+            position: relative;
+            
+            &::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: radial-gradient(
+                    circle at center,
+                    transparent 30%,
+                    rgb(0, 247, 255, 0.2) 60%,
+                    rgba(0, 247, 255, 0.8) 100%
+                );
+                z-index: 1;
+                pointer-events: none;
+            }
             
             &.visible {
                 opacity: 1;
                 transform: scale(1);
+                filter: url('#fisheye');
             }
 
             img {
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
+                filter: brightness(1.2) contrast(1.1);
             }
-            &:nth-of-type(n){
-                margin-left: calc(var(--ancho-invitado) / -2);
+
+            &.aparecer-derecha {
+                transform: translateX(100dvw) scale(0.8);
+                &.visible {
+                    transform: translateX(0) scale(1);
+                }
             }
-            &:nth-of-type(2n){
-                margin-left: calc(var(--ancho-invitado) / 2);
+            &.desvanecer-izquierda {
+                transform: translateX(0) scale(1);
+                &.visible {
+                    transform: translateX(-100dvw) scale(0.8);
+                }
             }
         }
     }

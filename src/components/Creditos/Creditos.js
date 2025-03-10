@@ -4,11 +4,26 @@ import "./Creditos.scss";
 import gsap from "gsap";
 import Prompt from "components/Prompt/Prompt";
 
-const MAX_INVITADOS_POR_GRUPO = 6;
+// Tiempos de la canción
 const TIEMPO_INICIO_ESPIRAL = 4;
 const TIEMPO_INICIO_BARRITAS = 224.5;
 const TIEMPO_INICIO_INVITADOS = 20; // segundos
+const DURACION_SECCION_INVITADOS = 200; // 2 minutos en segundos
+const TIEMPO_FIN_INVITADOS = TIEMPO_INICIO_INVITADOS + DURACION_SECCION_INVITADOS;
 const TIEMPO_FIN = 400; // segundos
+const TIEMPO_PARON = 341.5; // tiempo en segundos donde ocurre el parón
+const DURACION_PARON = .75; // duración del parón en segundos
+const TIEMPO_INICIO_ACELERACION = TIEMPO_INICIO_INVITADOS + DURACION_SECCION_INVITADOS * 0.75; // Comienza la aceleración al 75% de la sección
+const TIEMPO_MINIMO_POR_INVITADO = 1; // Tiempo mínimo que debe estar visible cada invitado en la primera fase
+
+// Configuración de invitados
+const MAX_INVITADOS_POR_GRUPO = 1;
+const MIN_TIEMPO_ENTRE_CAMBIOS = 0.3; // Tiempo mínimo entre cambios de invitado
+const UMBRAL_INTENSIDAD = 0.7; // Umbral de intensidad para detectar golpes de bajo
+const GOLPES_POR_CAMBIO = 4; // Número de golpes antes de cambiar de invitado
+const TIEMPO_POR_INVITADO = 2; // 3 segundos de pausa + 1 segundo de transición
+const DURACION_TRANSICION = 1; // 0.5s entrada + 0.5s salida
+const DURACION_PAUSA = 3; // tiempo que se muestra cada invitado
 const PAUSA_ENTRE_GRUPOS = 1; // segundos
 const TIEMPO_TRANSICION = 1; // segundos para mostrar/ocultar invitados
 
@@ -29,6 +44,13 @@ const Creditos = () => {
   const timeoutRef = useRef(null);
   const animationRef = useRef(null);
   const posicionesImagenes = useRef([]); // Añadir esta línea para rastrear las posiciones de las imágenes
+  const [invitadosFlotando, setInvitadosFlotando] = useState(new Set());
+  const [animacionesMesa, setAnimacionesMesa] = useState({});
+  const ultimoCambio = useRef(0);
+  const contadorGolpes = useRef(0);
+  const ultimoGolpe = useRef(0);
+  const [coloresInvitados, setColoresInvitados] = useState({}); // Nuevo estado para los colores
+  const [primerCicloCompletado, setPrimerCicloCompletado] = useState(false);
 
   // Función para cargar una imagen con reintentos
   const cargarImagen = (url, index) => {
@@ -65,6 +87,20 @@ const Creditos = () => {
             mesaId: invitado?.mesa?.id || 0,
           }))
           .sort((a, b) => a.mesaId - b.mesaId);
+        console.log('Datos de invitados cargados:', invitadosData);
+        
+        // Generar colores aleatorios para invitados sin imagen
+        const colores = {};
+        invitadosData.forEach(invitado => {
+          if (!invitado.imagen) {
+            const hue = Math.random() * 360; // Tono aleatorio
+            const saturation = 30 + Math.random() * 20; // Saturación baja (30-50%)
+            const lightness = 85 + Math.random() * 10; // Luminosidad alta (85-95%)
+            colores[invitado.id] = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+          }
+        });
+        setColoresInvitados(colores);
+        
         setDatosInvitados(invitadosData);
         setDatosCargados(true);
 
@@ -83,7 +119,8 @@ const Creditos = () => {
       );
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
+  const handleResize = () => {
     if (canvasBarsRef.current && canvasDotsRef.current) {
       const resizeCanvas = (canvas) => {
         const ctx = canvas.getContext("2d");
@@ -96,9 +133,19 @@ const Creditos = () => {
       resizeCanvas(canvasBarsRef.current);
       resizeCanvas(canvasDotsRef.current);
     }
+  };
 
+  // Llamar al resize inicial
+  handleResize();
 
-  }, []);
+  // Añadir event listener para el resize
+  window.addEventListener('resize', handleResize);
+
+  // Limpiar el event listener
+  return () => {
+    window.removeEventListener('resize', handleResize);
+  };
+}, [datosInvitados]);
 
   useEffect(() => {
     if (analyser && canvasBarsRef.current && canvasDotsRef.current) {
@@ -148,6 +195,7 @@ const Creditos = () => {
         const centerY = dotsHeight / 2;
         const maxRadius = Math.min(dotsWidth, dotsHeight) * 0.4;
         const totalInvitados = datosInvitados.length;
+        const totalBolitas = 200; // Aumentamos el número de bolitas para cubrir toda la pantalla
 
         // Obtener el tiempo actual y la duración total de la canción
         const tiempoAudio = audioRef.current ? audioRef.current.currentTime : 0;
@@ -155,6 +203,17 @@ const Creditos = () => {
 
         // Calcular el progreso de la canción (0 a 1)
         const progreso = tiempoAudio / duracionTotal;
+
+        // Calcular el progreso de la animación de la espiral
+        const tiempoInicioEspiral = TIEMPO_INICIO_ESPIRAL;
+        const duracionAnimacionEspiral = 10; // 10 segundos para mostrar todas las bolitas
+        const progresoAnimacionEspiral = Math.max(0, Math.min(1, (tiempoAudio - tiempoInicioEspiral) / duracionAnimacionEspiral));
+
+        // Calcular el factor de contracción al final de la canción
+        const tiempoRestante = duracionTotal - tiempoAudio;
+        const duracionContraccion = 20; // 20 segundos para contraer
+        const factorContraccion = tiempoRestante <= duracionContraccion ? 
+          tiempoRestante / duracionContraccion : 1;
 
         // Invertir la dirección cuando llegue a TIEMPO_INICIO_BARRITAS
         if (tiempoAudio >= TIEMPO_INICIO_BARRITAS) {
@@ -164,7 +223,7 @@ const Creditos = () => {
         }
 
         // Calcular la opacidad de las bolitas
-        const opacidadBolitas = 1 - progreso;
+        const opacidadBolitas = (1 - progreso) * factorContraccion;
 
         // Ajustar la velocidad de giro en función de la intensidad de la música
         const intensidadMusica = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
@@ -184,6 +243,9 @@ const Creditos = () => {
         const barWidth = (barsWidth / bufferLength) * 2.5;
         let x = 0;
 
+        // Calcular la opacidad de las barras basada en la intensidad de la música
+        const opacidadBarras = Math.max(0.1, Math.min(0.7, intensidadAmplificada * 0.7));
+
         for (let i = 0; i < bufferLength; i++) {
           const barHeight = (dataArray[i] / 255) * barsHeight;
           const scaledHeight = barHeight * 1.5;
@@ -191,9 +253,13 @@ const Creditos = () => {
           const intensity = dataArray[i] / 255;
           
           ctxBars.fillStyle = getRainbowColor(progress, tiempoAudio);
-          ctxBars.fillRect(x, barsHeight - scaledHeight, barWidth, scaledHeight);
+          ctxBars.globalAlpha = opacidadBarras;
+          // Dibujamos desde el centro hacia arriba y abajo
+          const y = (barsHeight / 2) - (scaledHeight / 2);
+          ctxBars.fillRect(x, y, barWidth, scaledHeight);
           x += barWidth + 2;
         }
+        ctxBars.globalAlpha = 1;
 
         const velocidadMinima = 0.0000001;
         const velocidadMaxima = 1.0;
@@ -222,13 +288,13 @@ const Creditos = () => {
         // Aplicar transformaciones al canvas de las bolitas
         ctxDots.save();
         ctxDots.translate(centerX, centerY);
-        ctxDots.scale(escalaActual, escalaActual);
+        ctxDots.scale(escalaActual * factorContraccion, escalaActual * factorContraccion);
         ctxDots.rotate(rotacionAcumulativa);
         ctxDots.translate(-centerX, -centerY);
 
         // Primero dibujamos la espiral de colores
-        for (let i = 0; i < totalInvitados; i++) {
-          const progress = i / totalInvitados;
+        for (let i = 0; i < totalBolitas; i++) {
+          const progress = i / totalBolitas;
           const angle = progress * Math.PI * 10;
           const radius = progress * maxRadius;
           
@@ -239,23 +305,30 @@ const Creditos = () => {
           const intensity = dataArray[frequencyIndex] / 255;
 
           // Calcular el tamaño de la bola con crecimiento dinámico
-          const tamañoBase = radius / 20;
+          const tamañoBase = (radius / 20) * 1.5; // Aumentamos un 50% el tamaño base de los invitados
           const crecimientoDinamico = intensity * 5;
           const crecimientoMusica = tamañoBase * intensidadAmplificada;
           const tamañoFinal = tamañoBase + crecimientoDinamico + crecimientoMusica;
 
-          // Dibujar la bolita con opacidad decreciente
-          ctxDots.fillStyle = getRainbowColor(progress, tiempoAudio);
-          ctxDots.globalAlpha = opacidadBolitas;
-          ctxDots.beginPath();
-          ctxDots.arc(x, y, tamañoFinal, 0, Math.PI * 2);
-          ctxDots.fill();
-          ctxDots.globalAlpha = 1;
+          // Calcular si esta bolita debe mostrarse basado en el progreso de la animación
+          const bolitaProgreso = i / totalBolitas;
+          const mostrarBolita = bolitaProgreso <= progresoAnimacionEspiral;
+
+          if (mostrarBolita) {
+            // Dibujar la bolita con opacidad decreciente
+            ctxDots.fillStyle = getRainbowColor(progress, tiempoAudio);
+            ctxDots.globalAlpha = opacidadBolitas;
+            ctxDots.beginPath();
+            ctxDots.arc(x, y, tamañoFinal, 0, Math.PI * 2);
+            ctxDots.fill();
+            ctxDots.globalAlpha = 1;
+          }
         }
 
         // Luego dibujamos la espiral de imágenes
         for (let i = 0; i < totalInvitados; i++) {
-          const progress = i / totalInvitados;
+          // Modificamos el cálculo del progreso para que las imágenes se concentren más en la parte exterior
+          const progress = 0.5 + (i / totalInvitados) * 0.5; // Esto hace que las imágenes empiecen desde la mitad de la espiral
           const angle = progress * Math.PI * 10;
           const radius = progress * maxRadius;
           
@@ -266,67 +339,73 @@ const Creditos = () => {
           const intensity = dataArray[frequencyIndex] / 255;
 
           // Calcular el tamaño de la bola con crecimiento dinámico
-          const tamañoBase = radius / 20;
+          const tamañoBase = (radius / 20) * 1.5; // Aumentamos un 50% el tamaño base de los invitados
           const crecimientoDinamico = intensity * 5;
           const crecimientoMusica = tamañoBase * intensidadAmplificada;
           const tamañoFinal = tamañoBase + crecimientoDinamico + crecimientoMusica;
 
-          // Actualizar la posición de la imagen
-          const posicionImagen = posicionesImagenes.current[i];
-          const velocidadBase = 0.0001;
-          const velocidadMusica = intensidadAmplificada * 0.001;
-          const velocidadTotal = velocidadBase + velocidadMusica;
+          // Calcular si esta imagen debe mostrarse basado en el progreso de la animación
+          const imagenProgreso = i / totalInvitados;
+          const mostrarImagen = imagenProgreso <= progresoAnimacionEspiral;
 
-          // Actualizar la transición
-          posicionImagen.transicion += velocidadTotal;
+          if (mostrarImagen) {
+            // Actualizar la posición de la imagen
+            const posicionImagen = posicionesImagenes.current[i];
+            const velocidadBase = 0.0001;
+            const velocidadMusica = intensidadAmplificada * 0.001;
+            const velocidadTotal = velocidadBase + velocidadMusica;
 
-          // Si la transición supera 1, mover la imagen a la siguiente posición
-          if (posicionImagen.transicion >= 1) {
-            posicionImagen.transicion = 0;
-            posicionImagen.posicionActual = (posicionImagen.posicionActual + 1) % totalInvitados;
-          }
+            // Actualizar la transición
+            posicionImagen.transicion += velocidadTotal;
 
-          // Calcular la posición interpolada
-          const posicionActual = posicionImagen.posicionActual;
-          const siguientePosicion = (posicionActual + 1) % totalInvitados;
-          const progressActual = posicionActual / totalInvitados;
-          const progressSiguiente = siguientePosicion / totalInvitados;
-          
-          const angleActual = progressActual * Math.PI * 10;
-          const angleSiguiente = progressSiguiente * Math.PI * 10;
-          const radiusActual = progressActual * maxRadius;
-          const radiusSiguiente = progressSiguiente * maxRadius;
+            // Si la transición supera 1, mover la imagen a la siguiente posición
+            if (posicionImagen.transicion >= 1) {
+              posicionImagen.transicion = 0;
+              posicionImagen.posicionActual = (posicionImagen.posicionActual + 1) % totalInvitados;
+            }
 
-          const xActual = centerX + Math.cos(angleActual) * radiusActual;
-          const yActual = centerY + Math.sin(angleActual) * radiusActual;
-          const xSiguiente = centerX + Math.cos(angleSiguiente) * radiusSiguiente;
-          const ySiguiente = centerY + Math.sin(angleSiguiente) * radiusSiguiente;
+            // Calcular la posición interpolada
+            const posicionActual = posicionImagen.posicionActual;
+            const siguientePosicion = (posicionActual + 1) % totalInvitados;
+            const progressActual = 0.5 + (posicionActual / totalInvitados) * 0.5;
+            const progressSiguiente = 0.5 + (siguientePosicion / totalInvitados) * 0.5;
+            
+            const angleActual = progressActual * Math.PI * 10;
+            const angleSiguiente = progressSiguiente * Math.PI * 10;
+            const radiusActual = progressActual * maxRadius;
+            const radiusSiguiente = progressSiguiente * maxRadius;
 
-          const xInterpolado = xActual + (xSiguiente - xActual) * posicionImagen.transicion;
-          const yInterpolado = yActual + (ySiguiente - yActual) * posicionImagen.transicion;
+            const xActual = centerX + Math.cos(angleActual) * radiusActual;
+            const yActual = centerY + Math.sin(angleActual) * radiusActual;
+            const xSiguiente = centerX + Math.cos(angleSiguiente) * radiusSiguiente;
+            const ySiguiente = centerY + Math.sin(angleSiguiente) * radiusSiguiente;
 
-          // Dibujar la imagen del invitado
-          const img = imagenesRef.current[i];
-          if (img && img.complete && img.naturalWidth !== 0) {
-            const imgSize = tamañoFinal * 2;
-            ctxDots.save();
+            const xInterpolado = xActual + (xSiguiente - xActual) * posicionImagen.transicion;
+            const yInterpolado = yActual + (ySiguiente - yActual) * posicionImagen.transicion;
 
-            // Aplicar rotación individual a la imagen
-            ctxDots.translate(xInterpolado, yInterpolado);
-            ctxDots.rotate(rotaciones[i].rotacionActual + rotacionAcumulativa + (intensidadAmplificada * Math.PI * direccionGiro));
-            ctxDots.translate(-xInterpolado, -yInterpolado);
+            // Dibujar la imagen del invitado
+            const img = imagenesRef.current[i];
+            if (img && img.complete && img.naturalWidth !== 0) {
+              const imgSize = tamañoFinal * 2;
+              ctxDots.save();
 
-            ctxDots.beginPath();
-            ctxDots.arc(xInterpolado, yInterpolado, tamañoFinal, 0, Math.PI * 2);
-            ctxDots.clip();
-            ctxDots.drawImage(
-              img,
-              xInterpolado - imgSize / 2,
-              yInterpolado - imgSize / 2,
-              imgSize,
-              imgSize
-            );
-            ctxDots.restore();
+              // Aplicar rotación individual a la imagen
+              ctxDots.translate(xInterpolado, yInterpolado);
+              ctxDots.rotate(rotaciones[i].rotacionActual + rotacionAcumulativa + (intensidadAmplificada * Math.PI * direccionGiro));
+              ctxDots.translate(-xInterpolado, -yInterpolado);
+
+              ctxDots.beginPath();
+              ctxDots.arc(xInterpolado, yInterpolado, tamañoFinal, 0, Math.PI * 2);
+              ctxDots.clip();
+              ctxDots.drawImage(
+                img,
+                xInterpolado - imgSize / 2,
+                yInterpolado - imgSize / 2,
+                imgSize,
+                imgSize
+              );
+              ctxDots.restore();
+            }
           }
         }
 
@@ -334,7 +413,10 @@ const Creditos = () => {
         ctxDots.restore();
 
         // Dibujar el kamehameha en el centro (ahora por encima de todo, sin transformaciones de la espiral)
-        const kamehamehaSize = maxRadius * 0.3 * (1 + intensidadAmplificada * 2);
+        const kamehamehaSizeBase = maxRadius * 0.75; // Aumentamos un 50% el tamaño base (de 0.5 a 0.75)
+        const factorTamañoPost = tiempoAudio > TIEMPO_FIN_INVITADOS ? 
+          1 + intensidadAmplificada : 1; // Factor de tamaño que crece con la intensidad después del fin de invitados
+        const kamehamehaSize = kamehamehaSizeBase * (1 + intensidadAmplificada * 2) * factorContraccion * factorTamañoPost; // Ajustamos para que crezca hasta 3 veces
         const kamehamehaRotation = rotacionAcumulativa * direccionGiro;
         
         // Crear gradiente para el kamehameha
@@ -343,10 +425,11 @@ const Creditos = () => {
           centerX, centerY, kamehamehaSize
         );
         
-        // Colores del kamehameha
-        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
-        gradient.addColorStop(0.2, 'rgba(0, 255, 255, 0.6)');
-        gradient.addColorStop(0.4, 'rgba(0, 128, 255, 0.4)');
+        // Colores del kamehameha con opacidad ajustada según la intensidad
+        gradient.addColorStop(0, `rgba(255, 255, 255, ${(0.9 + intensidadAmplificada * 0.1) * factorContraccion})`);
+        gradient.addColorStop(0.2, `rgba(0, 255, 255, ${(0.7 + intensidadAmplificada * 0.3) * factorContraccion})`);
+        gradient.addColorStop(0.4, `rgba(0, 128, 255, ${(0.5 + intensidadAmplificada * 0.5) * factorContraccion})`);
+        gradient.addColorStop(0.6, `rgba(0, 64, 255, ${(0.3 + intensidadAmplificada * 0.7) * factorContraccion})`);
         gradient.addColorStop(1, 'rgba(0, 0, 255, 0)');
 
         // Dibujar el kamehameha
@@ -360,11 +443,11 @@ const Creditos = () => {
         ctxDots.fillStyle = gradient;
         ctxDots.fill();
 
-        // Añadir efecto de brillo
+        // Añadir efecto de brillo con intensidad variable
         ctxDots.globalCompositeOperation = 'lighter';
         ctxDots.beginPath();
         ctxDots.arc(centerX, centerY, kamehamehaSize * 0.5, 0, Math.PI * 2);
-        ctxDots.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctxDots.fillStyle = `rgba(255, 255, 255, ${(0.4 + intensidadAmplificada * 0.6) * factorContraccion})`;
         ctxDots.fill();
         ctxDots.globalCompositeOperation = 'source-over';
         ctxDots.restore();
@@ -390,82 +473,184 @@ const Creditos = () => {
     };
   }, []);
 
-  const mostrarSiguienteGrupo = () => {
-    if (indexInvitado.current >= datosInvitados.length) return;
+  // Función para calcular el índice del invitado basado en el tiempo
+  const calcularIndiceInvitado = (currentTime, bassIntensity, intensidadAmplificada) => {
+    if (currentTime < TIEMPO_INICIO_INVITADOS || currentTime > TIEMPO_FIN_INVITADOS) {
+      return -1;
+    }
 
-    const duracionTotal = (TIEMPO_FIN - TIEMPO_INICIO_INVITADOS) * 1000;
-    const totalGrupos = Math.ceil(datosInvitados.length / MAX_INVITADOS_POR_GRUPO);
-    const tiempoPausaTotal = (totalGrupos - 1) * PAUSA_ENTRE_GRUPOS * 1000;
-    const tiempoDisponible = duracionTotal - tiempoPausaTotal;
+    const tiempoDesdeInicio = currentTime - TIEMPO_INICIO_INVITADOS;
+    const indiceActual = grupoActual.length > 0 ? 
+      datosInvitados.findIndex(inv => inv.id === grupoActual[0].id) : -1;
 
-    const tiempoPorInvitado = tiempoDisponible / datosInvitados.length;
+    // Si estamos rebobinando o avanzando rápido
+    if (Math.abs(currentTime - ultimoCambio.current) > 1) {
+      const golpesEstimados = Math.floor(tiempoDesdeInicio / MIN_TIEMPO_ENTRE_CAMBIOS);
+      return golpesEstimados % datosInvitados.length;
+    }
 
-    const siguienteGrupo = datosInvitados.slice(
-      indexInvitado.current,
-      indexInvitado.current + MAX_INVITADOS_POR_GRUPO
-    );
-    indexInvitado.current += MAX_INVITADOS_POR_GRUPO;
-    setMesaActual(siguienteGrupo[0]?.mesaId || null);
+    // Detectar si hemos completado el primer ciclo
+    if (!primerCicloCompletado && indiceActual === datosInvitados.length - 1) {
+      setPrimerCicloCompletado(true);
+    }
 
-    setGrupoActual(
-      siguienteGrupo.map((invitado) => ({ ...invitado, visible: false }))
-    );
+    // Detectar golpe usando la intensidadAmplificada en lugar de bassIntensity
+    if (intensidadAmplificada > 0.5) { // Umbral de intensidad para cambiar invitado
+      // Después del primer ciclo, no hay tiempo mínimo entre cambios
+      if (primerCicloCompletado || currentTime - ultimoGolpe.current > MIN_TIEMPO_ENTRE_CAMBIOS) {
+        ultimoGolpe.current = currentTime;
+        ultimoCambio.current = currentTime;
+        return (indiceActual + 1) % datosInvitados.length;
+      }
+    }
 
-    siguienteGrupo.forEach((_, i) => {
-      setTimeout(() => {
-        setGrupoActual((prev) =>
-          prev.map((invitado, idx) =>
-            idx === i ? { ...invitado, visible: true } : invitado
-          )
-        );
-      }, i * tiempoPorInvitado);
-    });
-
-    timeoutRef.current = setTimeout(() => {
-      setGrupoActual((prev) =>
-        prev.map((invitado) => ({ ...invitado, visible: false }))
-      );
-      setTimeout(mostrarSiguienteGrupo, PAUSA_ENTRE_GRUPOS * 1000);
-    }, tiempoPorInvitado * MAX_INVITADOS_POR_GRUPO + TIEMPO_TRANSICION * 1000);
+    return indiceActual;
   };
 
-  // Añadir un manejador para el evento timeupdate
+  // Función para determinar la animación de una mesa
+  const determinarAnimacion = (mesaId) => {
+    if (!animacionesMesa[mesaId]) {
+      const modalidad = {
+        entrada: 'aparecer-derecha',
+        salida: 'desvanecer-izquierda',
+        posicionX: 30,
+        posicionY: 0
+      };
+
+      setAnimacionesMesa(prev => ({
+        ...prev,
+        [mesaId]: modalidad
+      }));
+      return modalidad;
+    }
+    return animacionesMesa[mesaId];
+  };
+
+  // Añadir función para calcular posición en la espiral
+  const calcularPosicionEspiral = (indice, totalInvitados) => {
+    const progress = 0.5 + (indice / totalInvitados) * 0.5;
+    const angle = progress * Math.PI * 10;
+    const maxRadius = Math.min(window.innerWidth, window.innerHeight) * 0.4;
+    const radius = progress * maxRadius;
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius;
+    const tamañoBase = radius / 20;
+    
+    return {
+      x,
+      y,
+      tamaño: tamañoBase,
+      angulo: angle,
+      radio: radius
+    };
+  };
+
+  // Modificar el useEffect que maneja el timeupdate
   useEffect(() => {
     const audioElement = audioRef.current;
     const handleTimeUpdate = () => {
       const currentTime = audioElement.currentTime;
       
-      // Ajustar opacidad de la espiral
-      if (currentTime >= TIEMPO_INICIO_ESPIRAL) {
-        gsap.to(".ecualizador-bolitas", {
-          opacity: .2,
-          duration: 2,
-        });
-      } else {
+      // Manejar el parón en el minuto 5:50
+      if (currentTime >= TIEMPO_PARON && currentTime < TIEMPO_PARON + DURACION_PARON) {
+        // Apagar todos los efectos
         gsap.to(".ecualizador-bolitas", {
           opacity: 0,
           duration: 0.5,
         });
-      }
+        gsap.to(".ecualizador-barras", {
+          opacity: 0,
+          duration: 0.5,
+        });
+      } else if (currentTime >= TIEMPO_PARON + DURACION_PARON) {
+        // Volver a encender los efectos
+        gsap.to(".ecualizador-bolitas", {
+          opacity: .5,
+          duration: 0.5,
+        });
+        gsap.to(".ecualizador-barras", {
+          opacity: 0.8,
+          duration: 0.5,
+        });
+      } else {
+        // Comportamiento normal antes del parón
+        if (currentTime >= TIEMPO_INICIO_ESPIRAL) {
+          if (currentTime < TIEMPO_INICIO_ESPIRAL + 2) {
+            gsap.to(".ecualizador-bolitas", {
+              opacity: 0,
+              duration: 0.5,
+            });
+          } else {
+            gsap.to(".ecualizador-bolitas", {
+              opacity: 1,
+              duration: 10,
+            });
+          }
+        } else {
+          gsap.to(".ecualizador-bolitas", {
+            opacity: 0,
+            duration: 0.5,
+          });
+        }
 
-      // Ajustar opacidad de las barras
-      if (currentTime >= TIEMPO_INICIO_BARRITAS) {
-        gsap.to(".ecualizador-barras", {
-          opacity: .7,
-          duration: 60,
-        });
+        // Ajustar opacidad de las barras
+        if (currentTime >= TIEMPO_INICIO_BARRITAS) {
+          gsap.to(".ecualizador-barras", {
+            opacity: 0.5,
+            duration: 0.5,
+          });
+        } else {
+          gsap.to(".ecualizador-barras", {
+            opacity: 0,
+            duration: 0.5,
+          });
+        }
+      }
+      
+      if (currentTime >= TIEMPO_INICIO_INVITADOS && currentTime <= TIEMPO_FIN_INVITADOS && analyser) {
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        analyser.getByteFrequencyData(dataArray);
+        
+        // Calcular intensidad general de la música
+        const intensidadMusica = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
+        const intensidadAmplificada = Math.pow(intensidadMusica / 255, 2);
+        
+        // Calcular intensidad de bajos (ya no la usamos para el cambio pero la mantenemos por si acaso)
+        const lowFreqs = dataArray.slice(0, Math.floor(bufferLength * 0.1));
+        const bassIntensity = lowFreqs.reduce((sum, value) => sum + value, 0) / lowFreqs.length / 255;
+        
+        // Calcular el índice del invitado actual usando la intensidadAmplificada
+        const indiceInvitado = calcularIndiceInvitado(currentTime, bassIntensity, intensidadAmplificada);
+        
+        if (indiceInvitado >= 0 && indiceInvitado < datosInvitados.length) {
+          const invitado = datosInvitados[indiceInvitado];
+          const animacion = determinarAnimacion(invitado.mesaId);
+          
+          setGrupoActual([{
+            ...invitado,
+            visible: true,
+            entrando: true,
+            animacionEntrada: animacion.entrada,
+            animacionSalida: animacion.salida
+          }]);
+          
+          setInvitadosFlotando(new Set([invitado.id]));
+        } else {
+          setGrupoActual([]);
+          setInvitadosFlotando(new Set());
+        }
       } else {
-        gsap.to(".ecualizador-barras", {
-          opacity: 0,
-          duration: 0.5,
-        });
+        setGrupoActual([]);
+        setInvitadosFlotando(new Set());
       }
     };
+
     audioElement.addEventListener("timeupdate", handleTimeUpdate);
     return () => {
       audioElement.removeEventListener("timeupdate", handleTimeUpdate);
     };
-  }, []);
+  }, [datosInvitados, analyser, grupoActual]);
 
   const iniciarAudio = () => {
     if (!datosCargados) return;
@@ -483,26 +668,32 @@ const Creditos = () => {
       setAnalyser(newAnalyser);
     }
     if (audioRef.current.paused) {
-      // Establecer el tiempo actual a TIEMPO_INICIO_BARRITAS para probar las animaciones
-      audioRef.current.currentTime = TIEMPO_INICIO_BARRITAS;
       audioRef.current.play();
-      setTimeout(mostrarSiguienteGrupo, TIEMPO_INICIO_INVITADOS * 1000);
     } else {
       audioRef.current.pause();
-      clearTimeout(timeoutRef.current);
     }
   };
 
   return (
     <div ref={containerRef} className="creditos" onClick={iniciarAudio}>
-
-      <canvas ref={canvasDotsRef} className="ecualizador-bolitas" />
       <canvas ref={canvasBarsRef} className="ecualizador-barras" />
+      <canvas ref={canvasDotsRef} className="ecualizador-bolitas" />
+      
 
       <div className="invitados">
         {grupoActual.map((invitado) => (
-          <div key={invitado.id} className={`invitado ${invitado.visible ? "visible" : "desvanecer"}`}>
-            <img src={invitado.imagen} alt={invitado.nombre} />
+          <div 
+            key={invitado.id} 
+            className={`invitado ${invitado.visible ? "visible" : ""} ${
+              invitadosFlotando.has(invitado.id) ? "flotando" : ""
+            }`}
+            style={{ 
+              '--pos-x': animacionesMesa[invitado.mesaId]?.posicionX || 0,
+              '--pos-y': animacionesMesa[invitado.mesaId]?.posicionY || 0,
+              backgroundColor: !invitado.imagen ? coloresInvitados[invitado.id] : 'transparent'
+            }}
+          >
+            {invitado.imagen && <img src={invitado.imagen} alt={invitado.nombre} />}
           </div>
         ))}
       </div>
