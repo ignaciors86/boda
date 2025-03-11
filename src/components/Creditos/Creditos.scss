@@ -54,7 +54,7 @@
         align-items: center;
         flex-wrap: wrap;
         flex-direction: column;
-
+// opacity: 0 !important;
         .invitado {
             width: var(--ancho-invitado);
             height: var(--ancho-invitado);

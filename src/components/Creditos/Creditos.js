@@ -14,7 +14,7 @@ const TIEMPO_FIN = 400; // segundos
 const TIEMPO_PARON = 341.5; // tiempo en segundos donde ocurre el parón
 const DURACION_PARON = .75; // duración del parón en segundos
 const TIEMPO_INICIO_ACELERACION = TIEMPO_INICIO_INVITADOS + DURACION_SECCION_INVITADOS * 0.75; // Comienza la aceleración al 75% de la sección
-const TIEMPO_MINIMO_POR_INVITADO = 1; // Tiempo mínimo que debe estar visible cada invitado en la primera fase
+const TIEMPO_MINIMO_POR_INVITADO = 0.1; // Reducido de 1 a 0.1 segundos
 
 // Configuración de invitados
 const MAX_INVITADOS_POR_GRUPO = 1;
@@ -54,9 +54,11 @@ const Creditos = () => {
 
   // Función para cargar una imagen con reintentos
   const cargarImagen = (url, index) => {
+    console.log(`Intentando cargar imagen ${index}: ${url}`);
     const img = new Image();
     img.src = url;
     img.onload = () => {
+      console.log(`Imagen ${index} cargada correctamente`);
       // Actualizar el estado de imágenes cargadas
       setImagenesCargadas((prev) => {
         const nuevasImagenesCargadas = [...prev];
@@ -64,8 +66,10 @@ const Creditos = () => {
         return nuevasImagenesCargadas;
       });
       imagenesRef.current[index] = img; // Guardar la imagen cargada
+      console.log(`Imagen ${index} guardada en imagenesRef`);
     };
     img.onerror = () => {
+      console.error(`Error al cargar imagen ${index}: ${url}`);
       // Reintentar la carga después de un tiempo
       setTimeout(() => cargarImagen(url, index), 2000); // Reintentar cada 2 segundos
     };
@@ -285,14 +289,14 @@ useEffect(() => {
         // Actualizar la rotación acumulativa de la espiral
         rotacionAcumulativa += velocidadGiroActual * (deltaTime / 16) * direccionGiro;
 
-        // Aplicar transformaciones al canvas de las bolitas
+        // Aplicar transformaciones globales al canvas
         ctxDots.save();
         ctxDots.translate(centerX, centerY);
         ctxDots.scale(escalaActual * factorContraccion, escalaActual * factorContraccion);
         ctxDots.rotate(rotacionAcumulativa);
         ctxDots.translate(-centerX, -centerY);
 
-        // Primero dibujamos la espiral de colores
+        // Dibujamos la espiral unificada
         for (let i = 0; i < totalBolitas; i++) {
           const progress = i / totalBolitas;
           const angle = progress * Math.PI * 10;
@@ -305,111 +309,57 @@ useEffect(() => {
           const intensity = dataArray[frequencyIndex] / 255;
 
           // Calcular el tamaño de la bola con crecimiento dinámico
-          const tamañoBase = (radius / 20) * 1.5; // Aumentamos un 50% el tamaño base de los invitados
+          const tamañoBase = (radius / 20) * 1.5;
           const crecimientoDinamico = intensity * 5;
-          const crecimientoMusica = tamañoBase * intensidadAmplificada;
-          const tamañoFinal = tamañoBase + crecimientoDinamico + crecimientoMusica;
+          const tamañoFinal = tamañoBase + crecimientoDinamico;
 
           // Calcular si esta bolita debe mostrarse basado en el progreso de la animación
           const bolitaProgreso = i / totalBolitas;
           const mostrarBolita = bolitaProgreso <= progresoAnimacionEspiral;
 
           if (mostrarBolita) {
-            // Dibujar la bolita con opacidad decreciente
-            ctxDots.fillStyle = getRainbowColor(progress, tiempoAudio);
-            ctxDots.globalAlpha = opacidadBolitas;
+            ctxDots.save();
+
+            // Dibujar la bolita de color
             ctxDots.beginPath();
             ctxDots.arc(x, y, tamañoFinal, 0, Math.PI * 2);
+            ctxDots.fillStyle = getRainbowColor(progress, tiempoAudio);
+            ctxDots.globalAlpha = opacidadBolitas;
             ctxDots.fill();
-            ctxDots.globalAlpha = 1;
-          }
-        }
 
-        // Luego dibujamos la espiral de imágenes
-        for (let i = 0; i < totalInvitados; i++) {
-          // Modificamos el cálculo del progreso para que las imágenes se concentren más en la parte exterior
-          const progress = 0.5 + (i / totalInvitados) * 0.5; // Esto hace que las imágenes empiecen desde la mitad de la espiral
-          const angle = progress * Math.PI * 10;
-          const radius = progress * maxRadius;
-          
-          const x = centerX + Math.cos(angle) * radius;
-          const y = centerY + Math.sin(angle) * radius;
-
-          const frequencyIndex = Math.floor(progress * bufferLength);
-          const intensity = dataArray[frequencyIndex] / 255;
-
-          // Calcular el tamaño de la bola con crecimiento dinámico
-          const tamañoBase = (radius / 20) * 1.5; // Aumentamos un 50% el tamaño base de los invitados
-          const crecimientoDinamico = intensity * 5;
-          const crecimientoMusica = tamañoBase * intensidadAmplificada;
-          const tamañoFinal = tamañoBase + crecimientoDinamico + crecimientoMusica;
-
-          // Calcular si esta imagen debe mostrarse basado en el progreso de la animación
-          const imagenProgreso = i / totalInvitados;
-          const mostrarImagen = imagenProgreso <= progresoAnimacionEspiral;
-
-          if (mostrarImagen) {
-            // Actualizar la posición de la imagen
-            const posicionImagen = posicionesImagenes.current[i];
-            const velocidadBase = 0.0001;
-            const velocidadMusica = intensidadAmplificada * 0.001;
-            const velocidadTotal = velocidadBase + velocidadMusica;
-
-            // Actualizar la transición
-            posicionImagen.transicion += velocidadTotal;
-
-            // Si la transición supera 1, mover la imagen a la siguiente posición
-            if (posicionImagen.transicion >= 1) {
-              posicionImagen.transicion = 0;
-              posicionImagen.posicionActual = (posicionImagen.posicionActual + 1) % totalInvitados;
-            }
-
-            // Calcular la posición interpolada
-            const posicionActual = posicionImagen.posicionActual;
-            const siguientePosicion = (posicionActual + 1) % totalInvitados;
-            const progressActual = 0.5 + (posicionActual / totalInvitados) * 0.5;
-            const progressSiguiente = 0.5 + (siguientePosicion / totalInvitados) * 0.5;
+            // Calcular el índice del invitado para esta bolita
+            const indiceInvitado = Math.floor((i / totalBolitas) * datosInvitados.length);
             
-            const angleActual = progressActual * Math.PI * 10;
-            const angleSiguiente = progressSiguiente * Math.PI * 10;
-            const radiusActual = progressActual * maxRadius;
-            const radiusSiguiente = progressSiguiente * maxRadius;
-
-            const xActual = centerX + Math.cos(angleActual) * radiusActual;
-            const yActual = centerY + Math.sin(angleActual) * radiusActual;
-            const xSiguiente = centerX + Math.cos(angleSiguiente) * radiusSiguiente;
-            const ySiguiente = centerY + Math.sin(angleSiguiente) * radiusSiguiente;
-
-            const xInterpolado = xActual + (xSiguiente - xActual) * posicionImagen.transicion;
-            const yInterpolado = yActual + (ySiguiente - yActual) * posicionImagen.transicion;
-
-            // Dibujar la imagen del invitado
-            const img = imagenesRef.current[i];
-            if (img && img.complete && img.naturalWidth !== 0) {
-              const imgSize = tamañoFinal * 2;
-              ctxDots.save();
-
-              // Aplicar rotación individual a la imagen
-              ctxDots.translate(xInterpolado, yInterpolado);
-              ctxDots.rotate(rotaciones[i].rotacionActual + rotacionAcumulativa + (intensidadAmplificada * Math.PI * direccionGiro));
-              ctxDots.translate(-xInterpolado, -yInterpolado);
-
-              ctxDots.beginPath();
-              ctxDots.arc(xInterpolado, yInterpolado, tamañoFinal, 0, Math.PI * 2);
-              ctxDots.clip();
-              ctxDots.drawImage(
-                img,
-                xInterpolado - imgSize / 2,
-                yInterpolado - imgSize / 2,
-                imgSize,
-                imgSize
-              );
-              ctxDots.restore();
+            // Calcular cuántos invitados deberían ser visibles basado en el tiempo
+            const tiempoDesdeInicio = tiempoAudio - TIEMPO_INICIO_INVITADOS;
+            const invitadosVisibles = Math.max(0, Math.floor(tiempoDesdeInicio / TIEMPO_MINIMO_POR_INVITADO));
+            
+            // Mostrar la imagen del invitado si existe y si ya debería ser visible
+            if (indiceInvitado < datosInvitados.length && 
+                (indiceInvitado <= invitadosVisibles || primerCicloCompletado)) {
+              const img = imagenesRef.current[indiceInvitado];
+              if (img && img.complete && img.naturalWidth !== 0) {
+                ctxDots.save();
+                ctxDots.translate(x, y);
+                ctxDots.beginPath();
+                ctxDots.arc(0, 0, tamañoFinal, 0, Math.PI * 2);
+                ctxDots.clip();
+                ctxDots.drawImage(
+                  img,
+                  -tamañoFinal,
+                  -tamañoFinal,
+                  tamañoFinal * 2,
+                  tamañoFinal * 2
+                );
+                ctxDots.restore();
+              }
             }
+
+            ctxDots.restore();
           }
         }
 
-        // Restaurar el estado del canvas de la espiral
+        // Restaurar el estado del canvas
         ctxDots.restore();
 
         // Dibujar el kamehameha en el centro (ahora por encima de todo, sin transformaciones de la espiral)
@@ -489,18 +439,18 @@ useEffect(() => {
       return golpesEstimados % datosInvitados.length;
     }
 
-    // Detectar si hemos completado el primer ciclo
-    if (!primerCicloCompletado && indiceActual === datosInvitados.length - 1) {
-      setPrimerCicloCompletado(true);
-    }
-
-    // Detectar golpe usando la intensidadAmplificada en lugar de bassIntensity
-    if (intensidadAmplificada > 0.5) { // Umbral de intensidad para cambiar invitado
-      // Después del primer ciclo, no hay tiempo mínimo entre cambios
-      if (primerCicloCompletado || currentTime - ultimoGolpe.current > MIN_TIEMPO_ENTRE_CAMBIOS) {
+    // Detectar golpe usando la intensidadAmplificada
+    if (intensidadAmplificada > UMBRAL_INTENSIDAD) {
+      if (currentTime - ultimoGolpe.current > MIN_TIEMPO_ENTRE_CAMBIOS) {
         ultimoGolpe.current = currentTime;
-        ultimoCambio.current = currentTime;
-        return (indiceActual + 1) % datosInvitados.length;
+        contadorGolpes.current++;
+
+        // Cambiar de invitado cada GOLPES_POR_CAMBIO golpes
+        if (contadorGolpes.current >= GOLPES_POR_CAMBIO) {
+          contadorGolpes.current = 0;
+          ultimoCambio.current = currentTime;
+          return (indiceActual + 1) % datosInvitados.length;
+        }
       }
     }
 
