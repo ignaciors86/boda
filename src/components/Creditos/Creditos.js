@@ -7,25 +7,39 @@ import Prompt from "components/Prompt/Prompt";
 // Tiempos de la canción
 const TIEMPO_INICIO_ESPIRAL = 4;
 const TIEMPO_INICIO_BARRITAS = 224.5;
-const TIEMPO_INICIO_INVITADOS = 20; // segundos
-const DURACION_SECCION_INVITADOS = 200; // 2 minutos en segundos
+const TIEMPO_INICIO_INVITADOS = 20; // volvemos al tiempo original
+const DURACION_SECCION_INVITADOS = 250; // mantenemos la duración total de la sección
 const TIEMPO_FIN_INVITADOS = TIEMPO_INICIO_INVITADOS + DURACION_SECCION_INVITADOS;
 const TIEMPO_FIN = 400; // segundos
 const TIEMPO_PARON = 341.5; // tiempo en segundos donde ocurre el parón
 const DURACION_PARON = .75; // duración del parón en segundos
-const TIEMPO_INICIO_ACELERACION = TIEMPO_INICIO_INVITADOS + DURACION_SECCION_INVITADOS * 0.75; // Comienza la aceleración al 75% de la sección
-const TIEMPO_MINIMO_POR_INVITADO = 0.1; // Reducido de 1 a 0.1 segundos
+
+// Ajustes específicos para Opus
+const TIEMPO_INICIO_ACELERACION = 120; // 2 minutos - cuando empieza a acelerar
+const TIEMPO_MAXIMA_VELOCIDAD = 180; // 3 minutos - punto de máxima velocidad
+const TIEMPO_INICIO_DESACELERACION = 280; // extendido para incluir toda la sección intensa
+const DURACION_ANIMACION_INICIAL = 0.8;
+const DURACION_ANIMACION_RAPIDA = 0.25; // ligeramente más rápido para momentos intensos
+const TIEMPO_ENTRE_INVITADOS_INICIAL = 1.2;
+const TIEMPO_ENTRE_INVITADOS_RAPIDO = 0.4; // reducido para momentos más intensos
+const UMBRAL_INTENSIDAD_CAMBIO = 0.5; // más sensible a los beats
+const MIN_TIEMPO_ENTRE_PICOS = 0.12; // permite cambios aún más rápidos en momentos intensos
 
 // Configuración de invitados
 const MAX_INVITADOS_POR_GRUPO = 1;
-const MIN_TIEMPO_ENTRE_CAMBIOS = 0.3; // Tiempo mínimo entre cambios de invitado
-const UMBRAL_INTENSIDAD = 0.7; // Umbral de intensidad para detectar golpes de bajo
-const GOLPES_POR_CAMBIO = 4; // Número de golpes antes de cambiar de invitado
-const TIEMPO_POR_INVITADO = 2; // 3 segundos de pausa + 1 segundo de transición
-const DURACION_TRANSICION = 1; // 0.5s entrada + 0.5s salida
-const DURACION_PAUSA = 3; // tiempo que se muestra cada invitado
-const PAUSA_ENTRE_GRUPOS = 1; // segundos
-const TIEMPO_TRANSICION = 1; // segundos para mostrar/ocultar invitados
+const UMBRAL_INTENSIDAD = 0.7;
+const GOLPES_POR_CAMBIO = 4;
+const TIEMPO_POR_INVITADO = 2;
+const DURACION_TRANSICION = 1;
+const DURACION_PAUSA = 3;
+const PAUSA_ENTRE_GRUPOS = 1;
+const TIEMPO_TRANSICION = 1;
+
+// Ajustamos los tiempos de animación
+const DURACION_ANIMACION_BASE = 1; // Duración base de la animación
+const MIN_DURACION_ANIMACION = 0.5; // Duración mínima de la animación en momentos rápidos
+const UMBRAL_INTENSIDAD_TIEMPO = 0.8; // Umbral de intensidad para ajustar la duración
+const MIN_TIEMPO_ENTRE_INVITADOS = 1.2; // Tiempo mínimo entre invitados (ligeramente mayor que la duración de la animación)
 
 const Creditos = () => {
   const audioRef = useRef(null);
@@ -51,6 +65,9 @@ const Creditos = () => {
   const ultimoGolpe = useRef(0);
   const [coloresInvitados, setColoresInvitados] = useState({}); // Nuevo estado para los colores
   const [primerCicloCompletado, setPrimerCicloCompletado] = useState(false);
+  const [invitadoActual, setInvitadoActual] = useState(null);
+  const [invitadosEnEsquinas, setInvitadosEnEsquinas] = useState([]);
+  const ultimoIndiceEsquina = useRef(0);
 
   // Función para cargar una imagen con reintentos
   const cargarImagen = (url, index) => {
@@ -332,7 +349,7 @@ useEffect(() => {
             
             // Calcular cuántos invitados deberían ser visibles basado en el tiempo
             const tiempoDesdeInicio = tiempoAudio - TIEMPO_INICIO_INVITADOS;
-            const invitadosVisibles = Math.max(0, Math.floor(tiempoDesdeInicio / TIEMPO_MINIMO_POR_INVITADO));
+            const invitadosVisibles = Math.max(0, Math.floor(tiempoDesdeInicio / TIEMPO_ENTRE_INVITADOS_INICIAL));
             
             // Mostrar la imagen del invitado si existe y si ya debería ser visible
             if (indiceInvitado < datosInvitados.length && 
@@ -435,13 +452,13 @@ useEffect(() => {
 
     // Si estamos rebobinando o avanzando rápido
     if (Math.abs(currentTime - ultimoCambio.current) > 1) {
-      const golpesEstimados = Math.floor(tiempoDesdeInicio / MIN_TIEMPO_ENTRE_CAMBIOS);
+      const golpesEstimados = Math.floor(tiempoDesdeInicio / TIEMPO_ENTRE_INVITADOS_INICIAL);
       return golpesEstimados % datosInvitados.length;
     }
 
     // Detectar golpe usando la intensidadAmplificada
     if (intensidadAmplificada > UMBRAL_INTENSIDAD) {
-      if (currentTime - ultimoGolpe.current > MIN_TIEMPO_ENTRE_CAMBIOS) {
+      if (currentTime - ultimoGolpe.current > TIEMPO_ENTRE_INVITADOS_RAPIDO) {
         ultimoGolpe.current = currentTime;
         contadorGolpes.current++;
 
@@ -476,131 +493,156 @@ useEffect(() => {
     return animacionesMesa[mesaId];
   };
 
-  // Añadir función para calcular posición en la espiral
-  const calcularPosicionEspiral = (indice, totalInvitados) => {
-    const progress = 0.5 + (indice / totalInvitados) * 0.5;
-    const angle = progress * Math.PI * 10;
-    const maxRadius = Math.min(window.innerWidth, window.innerHeight) * 0.4;
-    const radius = progress * maxRadius;
-    const x = Math.cos(angle) * radius;
-    const y = Math.sin(angle) * radius;
-    const tamañoBase = radius / 20;
-    
-    return {
-      x,
-      y,
-      tamaño: tamañoBase,
-      angulo: angle,
-      radio: radius
-    };
+  const calcularPosicionEsquina = (indice) => {
+    const posiciones = [
+      { x: '25%', y: '25%' },  // 0: Cuadrante superior izquierdo
+      { x: '75%', y: '25%' },  // 1: Cuadrante superior derecho
+      { x: '75%', y: '75%' },  // 2: Cuadrante inferior derecho
+      { x: '25%', y: '75%' }   // 3: Cuadrante inferior izquierdo
+    ];
+    return posiciones[indice];
   };
 
-  // Modificar el useEffect que maneja el timeupdate
   useEffect(() => {
     const audioElement = audioRef.current;
     const handleTimeUpdate = () => {
       const currentTime = audioElement.currentTime;
       
-      // Manejar el parón en el minuto 5:50
-      if (currentTime >= TIEMPO_PARON && currentTime < TIEMPO_PARON + DURACION_PARON) {
-        // Apagar todos los efectos
-        gsap.to(".ecualizador-bolitas", {
-          opacity: 0,
-          duration: 0.5,
-        });
-        gsap.to(".ecualizador-barras", {
-          opacity: 0,
-          duration: 0.5,
-        });
-      } else if (currentTime >= TIEMPO_PARON + DURACION_PARON) {
-        // Volver a encender los efectos
-        gsap.to(".ecualizador-bolitas", {
-          opacity: 1,
-          duration: 0.5,
-        });
-        gsap.to(".ecualizador-barras", {
-          opacity: 1,
-          duration: 0.5,
-        });
-      } else {
-        // Comportamiento normal antes del parón
-        if (currentTime >= TIEMPO_INICIO_ESPIRAL) {
-          if (currentTime < TIEMPO_INICIO_ESPIRAL + 2) {
-            gsap.to(".ecualizador-bolitas", {
-              opacity: 0,
-              duration: 0.5,
-            });
-          } else {
-            gsap.to(".ecualizador-bolitas", {
-              opacity: 1,
-              duration: 10,
-            });
-          }
-        } else {
-          gsap.to(".ecualizador-bolitas", {
-            opacity: 0,
-            duration: 0.5,
-          });
-        }
-
-        // Ajustar opacidad de las barras
-        if (currentTime >= TIEMPO_INICIO_BARRITAS) {
-          gsap.to(".ecualizador-barras", {
-            opacity: 1,
-            duration: 0.5,
-          });
-        } else {
-          gsap.to(".ecualizador-barras", {
-            opacity: 0,
-            duration: 0.5,
-          });
-        }
-      }
-      
       if (currentTime >= TIEMPO_INICIO_INVITADOS && currentTime <= TIEMPO_FIN_INVITADOS && analyser) {
+        // Obtener datos de frecuencia
         const bufferLength = analyser.frequencyBinCount;
         const dataArray = new Uint8Array(bufferLength);
         analyser.getByteFrequencyData(dataArray);
         
-        // Calcular intensidad general de la música
-        const intensidadMusica = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
-        const intensidadAmplificada = Math.pow(intensidadMusica / 255, 2);
+        // Mejorar la detección de beats enfocándose en frecuencias bajas y medias-bajas
+        const lowFreq = dataArray.slice(0, Math.floor(bufferLength / 4))
+          .reduce((sum, value) => sum + value, 0) / (bufferLength / 4);
+        const midLowFreq = dataArray.slice(Math.floor(bufferLength / 4), Math.floor(bufferLength / 2))
+          .reduce((sum, value) => sum + value, 0) / (bufferLength / 4);
         
-        // Calcular intensidad de bajos (ya no la usamos para el cambio pero la mantenemos por si acaso)
-        const lowFreqs = dataArray.slice(0, Math.floor(bufferLength * 0.1));
-        const bassIntensity = lowFreqs.reduce((sum, value) => sum + value, 0) / lowFreqs.length / 255;
+        // Dar más peso a las frecuencias bajas para la detección de beats
+        const intensidadPromedio = (lowFreq * 0.7 + midLowFreq * 0.3) / 255;
         
-        // Calcular el índice del invitado actual usando la intensidadAmplificada
-        const indiceInvitado = calcularIndiceInvitado(currentTime, bassIntensity, intensidadAmplificada);
-        
-        if (indiceInvitado >= 0 && indiceInvitado < datosInvitados.length) {
-          const invitado = datosInvitados[indiceInvitado];
-          const animacion = determinarAnimacion(invitado.mesaId);
-          
-          setGrupoActual([{
-            ...invitado,
-            visible: true,
-            entrando: true,
-            animacionEntrada: animacion.entrada,
-            animacionSalida: animacion.salida
-          }]);
-          
-          setInvitadosFlotando(new Set([invitado.id]));
-        } else {
-          setGrupoActual([]);
-          setInvitadosFlotando(new Set());
+        // Calcular la duración de la animación basada en el tiempo de la canción
+        let duracionAnimacion = DURACION_ANIMACION_INICIAL;
+        let tiempoEntreInvitados = TIEMPO_ENTRE_INVITADOS_INICIAL;
+        let usarPicosDeIntensidad = false;
+
+        if (currentTime >= TIEMPO_INICIO_ACELERACION && currentTime <= TIEMPO_MAXIMA_VELOCIDAD) {
+          // Fase de aceleración
+          const progresoAceleracion = (currentTime - TIEMPO_INICIO_ACELERACION) / 
+                                    (TIEMPO_MAXIMA_VELOCIDAD - TIEMPO_INICIO_ACELERACION);
+          duracionAnimacion = DURACION_ANIMACION_INICIAL - 
+                            (progresoAceleracion * (DURACION_ANIMACION_INICIAL - DURACION_ANIMACION_RAPIDA));
+          tiempoEntreInvitados = TIEMPO_ENTRE_INVITADOS_INICIAL - 
+                                (progresoAceleracion * (TIEMPO_ENTRE_INVITADOS_INICIAL - TIEMPO_ENTRE_INVITADOS_RAPIDO));
+          usarPicosDeIntensidad = true;
+        } else if (currentTime > TIEMPO_MAXIMA_VELOCIDAD && currentTime <= TIEMPO_INICIO_DESACELERACION) {
+          // Mantener velocidad máxima y ajustar según intensidad
+          duracionAnimacion = intensidadPromedio > 0.8 ? 
+            DURACION_ANIMACION_RAPIDA * 0.8 : DURACION_ANIMACION_RAPIDA;
+          tiempoEntreInvitados = intensidadPromedio > 0.8 ? 
+            TIEMPO_ENTRE_INVITADOS_RAPIDO * 0.8 : TIEMPO_ENTRE_INVITADOS_RAPIDO;
+          usarPicosDeIntensidad = true;
+        } else if (currentTime > TIEMPO_INICIO_DESACELERACION) {
+          // Fase de desaceleración gradual
+          const progresoDesaceleracion = (currentTime - TIEMPO_INICIO_DESACELERACION) / 
+                                       (TIEMPO_FIN_INVITADOS - TIEMPO_INICIO_DESACELERACION);
+          duracionAnimacion = DURACION_ANIMACION_RAPIDA + 
+                            (progresoDesaceleracion * (DURACION_ANIMACION_INICIAL - DURACION_ANIMACION_RAPIDA));
+          tiempoEntreInvitados = TIEMPO_ENTRE_INVITADOS_RAPIDO + 
+                                (progresoDesaceleracion * (TIEMPO_ENTRE_INVITADOS_INICIAL - TIEMPO_ENTRE_INVITADOS_RAPIDO));
+          // Mantener detección de picos durante más tiempo
+          usarPicosDeIntensidad = progresoDesaceleracion < 0.7;
         }
-      } else {
-        setGrupoActual([]);
-        setInvitadosFlotando(new Set());
+
+        const tiempoDesdeUltimaAnimacion = currentTime - ultimoCambio.current;
+        let deberiaAnimar = false;
+
+        if (usarPicosDeIntensidad) {
+          deberiaAnimar = intensidadPromedio > UMBRAL_INTENSIDAD_CAMBIO && 
+                         tiempoDesdeUltimaAnimacion >= MIN_TIEMPO_ENTRE_PICOS;
+        } else {
+          deberiaAnimar = tiempoDesdeUltimaAnimacion >= tiempoEntreInvitados;
+        }
+
+        // Forzar animación si ha pasado demasiado tiempo
+        if (tiempoDesdeUltimaAnimacion > tiempoEntreInvitados * 1.5) {
+          deberiaAnimar = true;
+        }
+        
+        if (deberiaAnimar && !invitadoActual) {
+          // Asegurarnos de que siempre haya un siguiente invitado disponible
+          let siguienteIndice = (invitadosEnEsquinas.length > 0 ? 
+            datosInvitados.findIndex(inv => inv.id === invitadosEnEsquinas[invitadosEnEsquinas.length - 1].id) + 1 : 0);
+          
+          // Si llegamos al final, volvemos a empezar
+          if (siguienteIndice >= datosInvitados.length) {
+            siguienteIndice = 0;
+          }
+          
+          const invitado = datosInvitados[siguienteIndice];
+          
+          // Solo verificamos que no esté en las esquinas actuales
+          if (!invitadosEnEsquinas.some(inv => inv.id === invitado.id)) {
+            const nuevaPosicion = calcularPosicionEsquina(ultimoIndiceEsquina.current);
+            setInvitadoActual(invitado);
+            ultimoCambio.current = currentTime;
+            
+            setTimeout(() => {
+              const elementoNuevo = document.querySelector(`[data-invitado-id="${invitado.id}"]`);
+              if (elementoNuevo) {
+                gsap.fromTo(elementoNuevo, 
+                  {
+                    left: '50%',
+                    top: '50%',
+                    opacity: 0
+                  },
+                  {
+                    left: nuevaPosicion.x,
+                    top: nuevaPosicion.y,
+                    opacity: 1,
+                    duration: duracionAnimacion,
+                    ease: "power2.inOut",
+                    onComplete: () => {
+                      setInvitadosEnEsquinas(prev => {
+                        let nuevosInvitados = [...prev];
+                        if (nuevosInvitados.length >= 4) {
+                          nuevosInvitados.shift();
+                        }
+                        return [...nuevosInvitados, {
+                          ...invitado,
+                          posicion: nuevaPosicion
+                        }];
+                      });
+                      
+                      ultimoIndiceEsquina.current = (ultimoIndiceEsquina.current + 1) % 4;
+                      setInvitadoActual(null);
+                    }
+                  }
+                );
+              }
+            }, 100);
+          }
+        }
       }
     };
 
+    const handleSeeking = () => {
+      setInvitadoActual(null);
+      setInvitadosEnEsquinas([]);
+      ultimoIndiceEsquina.current = 0;
+      ultimoCambio.current = audioElement.currentTime;
+    };
+
     audioElement.addEventListener("timeupdate", handleTimeUpdate);
+    audioElement.addEventListener("seeking", handleSeeking);
+    
     return () => {
       audioElement.removeEventListener("timeupdate", handleTimeUpdate);
+      audioElement.removeEventListener("seeking", handleSeeking);
     };
-  }, [datosInvitados, analyser, grupoActual]);
+  }, [datosInvitados, analyser, invitadoActual, invitadosEnEsquinas]);
 
   const iniciarAudio = () => {
     if (!datosCargados) return;
@@ -629,24 +671,103 @@ useEffect(() => {
       <canvas ref={canvasBarsRef} className="ecualizador-barras" />
       <canvas ref={canvasDotsRef} className="ecualizador-bolitas" />
       
+      {/* Invitado actual en el centro */}
+      {invitadoActual && (
+        <div 
+          data-invitado-id={invitadoActual.id}
+          className="invitado"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            width: '20dvh',
+            height: '20dvh',
+            borderRadius: '50%',
+            overflow: 'hidden',
+            backgroundColor: !invitadoActual.imagen ? coloresInvitados[invitadoActual.id] : 'transparent',
+            zIndex: 1000,
+            transform: 'translate(-50%, -50%)',
+            opacity: 0
+          }}
+        >
+          {invitadoActual.imagen ? (
+            <img 
+              src={invitadoActual.imagen} 
+              alt={invitadoActual.nombre}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                borderRadius: '50%'
+              }}
+            />
+          ) : (
+            <div style={{
+              width: '100%',
+              height: '100%',
+              borderRadius: '50%',
+              backgroundColor: coloresInvitados[invitadoActual.id]
+            }} />
+          )}
+        </div>
+      )}
 
-      <div className="invitados">
-        {grupoActual.map((invitado) => (
-          <div 
-            key={invitado.id} 
-            className={`invitado ${invitado.visible ? "visible" : ""} ${
-              invitadosFlotando.has(invitado.id) ? "flotando" : ""
-            }`}
-            style={{ 
-              '--pos-x': animacionesMesa[invitado.mesaId]?.posicionX || 0,
-              '--pos-y': animacionesMesa[invitado.mesaId]?.posicionY || 0,
-              backgroundColor: !invitado.imagen ? coloresInvitados[invitado.id] : 'transparent'
-            }}
-          >
-            {invitado.imagen && <img src={invitado.imagen} alt={invitado.nombre} />}
-          </div>
-        ))}
-      </div>
+      {/* Invitados en las esquinas */}
+      {invitadosEnEsquinas.map((invitado, index) => (
+        <div
+          key={`${invitado.id}-${index}`}
+          data-invitado-id={invitado.id}
+          className="invitado"
+          style={{
+            position: 'absolute',
+            left: invitado.posicion.x,
+            top: invitado.posicion.y,
+            transform: 'translate(-50%, -50%)',
+            width: '20dvh',
+            height: '20dvh',
+            borderRadius: '50%',
+            overflow: 'hidden',
+            backgroundColor: !invitado.imagen ? coloresInvitados[invitado.id] : 'transparent',
+            opacity: 1,
+            zIndex: 900
+          }}
+        >
+          {invitado.imagen ? (
+            <img 
+              src={invitado.imagen} 
+              alt={invitado.nombre}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                borderRadius: '50%'
+              }}
+            />
+          ) : (
+            <div style={{
+              width: '100%',
+              height: '100%',
+              borderRadius: '50%',
+              backgroundColor: coloresInvitados[invitado.id]
+            }} />
+          )}
+        </div>
+      ))}
+
+      <style>
+        {`
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+
+          .invitado-inicial {
+            transform: translate(-50%, -50%) scale(0) !important;
+            opacity: 0 !important;
+          }
+        `}
+      </style>
+
       <audio ref={audioRef} src={opus} className="audio-player" controls />
       {/* <Prompt/> */}
     </div>
