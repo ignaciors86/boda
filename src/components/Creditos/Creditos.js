@@ -565,11 +565,11 @@ useEffect(() => {
       } else if (currentTime >= TIEMPO_PARON + DURACION_PARON) {
         // Volver a encender los efectos
         gsap.to(".ecualizador-bolitas", {
-          opacity: .8,
+          opacity: 1,
           duration: 0.5,
         });
         gsap.to(".ecualizador-barras", {
-          opacity: 0.8,
+          opacity: 1,
           duration: 0.5,
         });
       } else {
@@ -596,7 +596,7 @@ useEffect(() => {
         // Ajustar opacidad de las barras
         if (currentTime >= TIEMPO_INICIO_BARRITAS) {
           gsap.to(".ecualizador-barras", {
-            opacity: 0.8,
+            opacity: 1,
             duration: 0.5,
           });
         } else {
