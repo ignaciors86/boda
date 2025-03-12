@@ -9,7 +9,6 @@ const TIEMPO_INICIO_ESPIRAL = 4;
 const TIEMPO_INICIO_BARRITAS = 224.5;
 const TIEMPO_INICIO_INVITADOS = 20; // volvemos al tiempo original
 const DURACION_SECCION_INVITADOS = 250; // mantenemos la duración total de la sección
-const TIEMPO_FIN_INVITADOS = TIEMPO_INICIO_INVITADOS + DURACION_SECCION_INVITADOS;
 const TIEMPO_FIN = 400; // segundos
 const TIEMPO_PARON = 341.5; // tiempo en segundos donde ocurre el parón
 const DURACION_PARON = .75; // duración del parón en segundos
@@ -92,6 +91,156 @@ const Creditos = () => {
       // Reintentar la carga después de un tiempo
       setTimeout(() => cargarImagen(url, index), 2000); // Reintentar cada 2 segundos
     };
+  };
+
+  const calcularPosicionEsquina = (indice) => {
+    const posiciones = [
+      { x: '25%', y: '25%' },  // 0: Cuadrante superior izquierdo
+      { x: '75%', y: '25%' },  // 1: Cuadrante superior derecho
+      { x: '75%', y: '75%' },  // 2: Cuadrante inferior derecho
+      { x: '25%', y: '75%' }   // 3: Cuadrante inferior izquierdo
+    ];
+    return posiciones[indice % 4];
+  };
+
+  const handleTimeUpdate = () => {
+    const currentTime = audioRef.current.currentTime;
+    
+    if (currentTime >= TIEMPO_INICIO_INVITADOS && analyser) {
+      // Si no hay invitados mostrados y estamos después del tiempo de inicio, mostrar el primero
+      if (invitadosEnEsquinas.length === 0 && !invitadoActual && currentTime >= TIEMPO_INICIO_INVITADOS) {
+        const primerInvitado = datosInvitados[0];
+        if (primerInvitado) {
+          manejarCambioInvitado(primerInvitado);
+          ultimoCambio.current = currentTime;
+          return;
+        }
+      }
+
+      // Lógica normal para cambio de invitados
+      const tiempoDesdeUltimaAnimacion = currentTime - ultimoCambio.current;
+      if (tiempoDesdeUltimaAnimacion >= TIEMPO_ENTRE_INVITADOS_INICIAL && !invitadoActual) {
+        let siguienteIndice = invitadosEnEsquinas.length > 0 ? 
+          datosInvitados.findIndex(inv => inv.id === invitadosEnEsquinas[invitadosEnEsquinas.length - 1].id) + 1 : 0;
+        
+        if (siguienteIndice >= datosInvitados.length) {
+          siguienteIndice = 0;
+        }
+        
+        const invitado = datosInvitados[siguienteIndice];
+        if (!invitadosEnEsquinas.some(inv => inv.id === invitado.id)) {
+          manejarCambioInvitado(invitado);
+          ultimoCambio.current = currentTime;
+        }
+      }
+    } else if (currentTime < TIEMPO_INICIO_INVITADOS) {
+      // Limpiar todos los invitados si estamos antes del tiempo de inicio
+      setInvitadosEnEsquinas([]);
+      setInvitadoActual(null);
+      ultimoIndiceEsquina.current = 0;
+    }
+  };
+
+  const manejarCambioInvitado = (invitado) => {
+    setInvitadoActual(invitado);
+
+    setTimeout(() => {
+      const elementoNuevo = document.querySelector(`[data-invitado-id="${invitado.id}"]`);
+      const elementoNombre = document.querySelector(`[data-invitado-nombre-id="${invitado.id}"]`);
+      
+      if (elementoNuevo && elementoNombre) {
+        // Configuración inicial del nuevo invitado
+        gsap.set([elementoNombre, elementoNuevo], {
+          left: '50%',
+          top: '50%',
+          opacity: 0,
+          scale: 0.5,
+          transform: 'translate(-50%, -50%)',
+          width: '40dvh',
+          height: '40dvh',
+          boxSizing: 'border-box'
+        });
+
+        // Timeline para el nuevo invitado
+        const timeline = gsap.timeline();
+
+        // Si hay que desvanecer un invitado existente
+        if (invitadosEnEsquinas.length >= 4) {
+          const invitadoSaliente = invitadosEnEsquinas[0];
+          const elementoSaliente = document.querySelector(`[data-invitado-id="${invitadoSaliente.id}"]`);
+          const nombreSaliente = document.querySelector(`[data-invitado-nombre-id="${invitadoSaliente.id}"]`);
+
+          if (elementoSaliente && nombreSaliente) {
+            // Animar el desvanecimiento
+            timeline.to([elementoSaliente, nombreSaliente], {
+              opacity: 0,
+              scale: 0.8,
+              duration: 1.5,
+              ease: "power2.inOut",
+              onStart: () => {
+                gsap.set([elementoSaliente, nombreSaliente], {
+                  zIndex: 800,
+                  pointerEvents: 'none'
+                });
+              }
+            })
+            .call(() => {
+              // Actualizar el estado después de que la animación de desvanecimiento termine
+              setInvitadosEnEsquinas(prev => {
+                const nuevosInvitados = prev.slice(1);
+                // Eliminar los elementos del DOM después de actualizar el estado
+                requestAnimationFrame(() => {
+                  try {
+                    if (elementoSaliente.parentNode) {
+                      elementoSaliente.parentNode.removeChild(elementoSaliente);
+                    }
+                    if (nombreSaliente.parentNode) {
+                      nombreSaliente.parentNode.removeChild(nombreSaliente);
+                    }
+                  } catch (error) {
+                    console.log("Elementos ya eliminados");
+                  }
+                });
+                return nuevosInvitados;
+              });
+            });
+          } else {
+            // Si no encontramos los elementos, solo actualizamos el estado
+            setInvitadosEnEsquinas(prev => prev.slice(1));
+          }
+        }
+
+        // Calcular la nueva posición
+        const nuevaPosicion = calcularPosicionEsquina(ultimoIndiceEsquina.current);
+
+        // Animar la entrada del nuevo invitado
+        timeline.to([elementoNombre, elementoNuevo], {
+          left: nuevaPosicion.x,
+          top: nuevaPosicion.y,
+          opacity: 1,
+          scale: 1,
+          duration: 0.6,
+          ease: "power2.out"
+        }, invitadosEnEsquinas.length >= 4 ? 1.5 : 0)
+        .to([elementoNuevo, elementoNombre], {
+          transform: (index) => {
+            const offsetX = index === 0 ? -15 : 15;
+            return `translate(calc(-50% + ${offsetX}dvh), -50%)`;
+          },
+          duration: 0.4,
+          ease: "power2.inOut",
+          onComplete: () => {
+            setInvitadosEnEsquinas(prev => [...prev, {
+              ...invitado,
+              posicion: nuevaPosicion
+            }]);
+            
+            ultimoIndiceEsquina.current = (ultimoIndiceEsquina.current + 1) % 4;
+            setInvitadoActual(null);
+          }
+        });
+      }
+    }, 100);
   };
 
   useEffect(() => {
@@ -468,7 +617,7 @@ useEffect(() => {
 
         // Dibujar el kamehameha en el centro (ahora por encima de todo, sin transformaciones de la espiral)
         const kamehamehaSizeBase = maxRadius * 0.75; // Aumentamos un 50% el tamaño base (de 0.5 a 0.75)
-        const factorTamañoPost = tiempoAudio > TIEMPO_FIN_INVITADOS ? 
+        const factorTamañoPost = tiempoAudio > TIEMPO_PARON ? 
           1 + intensidadAmplificada : 1; // Factor de tamaño que crece con la intensidad después del fin de invitados
         const kamehamehaSize = kamehamehaSizeBase * (1 + intensidadAmplificada * 2) * factorContraccion * factorTamañoPost; // Ajustamos para que crezca hasta 3 veces
         const kamehamehaRotation = rotacionAcumulativa * direccionGiro;
@@ -518,304 +667,57 @@ useEffect(() => {
   // Escuchar el evento "seeked" para reajustar la escala y rotación
   useEffect(() => {
     const audioElement = audioRef.current;
-    const handleSeeked = () => {
-      // No es necesario hacer nada aquí, ya que el tiempo actual se recalcula en cada frame
-    };
-    audioElement.addEventListener("seeked", handleSeeked);
-    return () => {
-      audioElement.removeEventListener("seeked", handleSeeked);
-    };
-  }, []);
-
-  // Función para calcular el índice del invitado basado en el tiempo
-  const calcularIndiceInvitado = (currentTime, bassIntensity, intensidadAmplificada) => {
-    if (currentTime < TIEMPO_INICIO_INVITADOS || currentTime > TIEMPO_FIN_INVITADOS) {
-      return -1;
-    }
-
-    const tiempoDesdeInicio = currentTime - TIEMPO_INICIO_INVITADOS;
-    const indiceActual = grupoActual.length > 0 ? 
-      datosInvitados.findIndex(inv => inv.id === grupoActual[0].id) : -1;
-
-    // Si estamos rebobinando o avanzando rápido
-    if (Math.abs(currentTime - ultimoCambio.current) > 1) {
-      const golpesEstimados = Math.floor(tiempoDesdeInicio / TIEMPO_ENTRE_INVITADOS_INICIAL);
-      return golpesEstimados % datosInvitados.length;
-    }
-
-    // Detectar golpe usando la intensidadAmplificada
-    if (intensidadAmplificada > UMBRAL_INTENSIDAD) {
-      if (currentTime - ultimoGolpe.current > MIN_TIEMPO_ENTRE_PICOS) {
-        ultimoGolpe.current = currentTime;
-        contadorGolpes.current++;
-
-        // Cambiar de invitado cada GOLPES_POR_CAMBIO golpes
-        if (contadorGolpes.current >= GOLPES_POR_CAMBIO) {
-          contadorGolpes.current = 0;
-          ultimoCambio.current = currentTime;
-          return (indiceActual + 1) % datosInvitados.length;
-        }
-      }
-    }
-
-    return indiceActual;
-  };
-
-  // Función para determinar la animación de una mesa
-  const determinarAnimacion = (mesaId) => {
-    if (!animacionesMesa[mesaId]) {
-      const modalidad = {
-        entrada: 'aparecer-derecha',
-        salida: 'desvanecer-izquierda',
-        posicionX: 30,
-        posicionY: 0
-      };
-
-      setAnimacionesMesa(prev => ({
-        ...prev,
-        [mesaId]: modalidad
-      }));
-      return modalidad;
-    }
-    return animacionesMesa[mesaId];
-  };
-
-  const calcularPosicionEsquina = (indice) => {
-    const posiciones = [
-      { x: '25%', y: '25%' },  // 0: Cuadrante superior izquierdo
-      { x: '75%', y: '25%' },  // 1: Cuadrante superior derecho
-      { x: '75%', y: '75%' },  // 2: Cuadrante inferior derecho
-      { x: '25%', y: '75%' }   // 3: Cuadrante inferior izquierdo
-    ];
-    return posiciones[indice];
-  };
-
-  useEffect(() => {
-    const audioElement = audioRef.current;
-    const handleTimeUpdate = () => {
+    const handleSeeking = () => {
       const currentTime = audioElement.currentTime;
       
-      if (currentTime >= TIEMPO_INICIO_INVITADOS && currentTime <= TIEMPO_FIN_INVITADOS && analyser) {
-        // Obtener datos de frecuencia
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-        analyser.getByteFrequencyData(dataArray);
-        
-        // Mejorar la detección de beats enfocándose en frecuencias bajas y medias-bajas
-        const lowFreq = dataArray.slice(0, Math.floor(bufferLength / 4))
-          .reduce((sum, value) => sum + value, 0) / (bufferLength / 4);
-        const midLowFreq = dataArray.slice(Math.floor(bufferLength / 4), Math.floor(bufferLength / 2))
-          .reduce((sum, value) => sum + value, 0) / (bufferLength / 4);
-        
-        // Dar más peso a las frecuencias bajas para la detección de beats
-        const intensidadPromedio = (lowFreq * 0.7 + midLowFreq * 0.3) / 255;
-        
-        // Calcular la duración de la animación basada en el tiempo de la canción
-        let duracionAnimacion = DURACION_ANIMACION_INICIAL;
-        let tiempoEntreInvitados = TIEMPO_ENTRE_INVITADOS_INICIAL;
-        let usarPicosDeIntensidad = false;
-
-        if (currentTime >= TIEMPO_INICIO_ACELERACION && currentTime <= TIEMPO_MAXIMA_VELOCIDAD) {
-          // Fase de aceleración
-          const progresoAceleracion = (currentTime - TIEMPO_INICIO_ACELERACION) / 
-                                    (TIEMPO_MAXIMA_VELOCIDAD - TIEMPO_INICIO_ACELERACION);
-          duracionAnimacion = DURACION_ANIMACION_INICIAL - 
-                            (progresoAceleracion * (DURACION_ANIMACION_INICIAL - DURACION_ANIMACION_RAPIDA));
-          tiempoEntreInvitados = TIEMPO_ENTRE_INVITADOS_INICIAL - 
-                                (progresoAceleracion * (TIEMPO_ENTRE_INVITADOS_INICIAL - TIEMPO_ENTRE_INVITADOS_RAPIDO));
-          usarPicosDeIntensidad = true;
-        } else if (currentTime > TIEMPO_MAXIMA_VELOCIDAD && currentTime <= TIEMPO_INICIO_DESACELERACION) {
-          // Mantener velocidad máxima y ajustar según intensidad
-          duracionAnimacion = intensidadPromedio > 0.8 ? 
-            DURACION_ANIMACION_RAPIDA * 0.8 : DURACION_ANIMACION_RAPIDA;
-          tiempoEntreInvitados = intensidadPromedio > 0.8 ? 
-            TIEMPO_ENTRE_INVITADOS_RAPIDO * 0.8 : TIEMPO_ENTRE_INVITADOS_RAPIDO;
-          usarPicosDeIntensidad = true;
-        } else if (currentTime > TIEMPO_INICIO_DESACELERACION) {
-          // Fase de desaceleración gradual
-          const progresoDesaceleracion = (currentTime - TIEMPO_INICIO_DESACELERACION) / 
-                                       (TIEMPO_FIN_INVITADOS - TIEMPO_INICIO_DESACELERACION);
-          duracionAnimacion = DURACION_ANIMACION_RAPIDA + 
-                            (progresoDesaceleracion * (DURACION_ANIMACION_INICIAL - DURACION_ANIMACION_RAPIDA));
-          tiempoEntreInvitados = TIEMPO_ENTRE_INVITADOS_RAPIDO + 
-                                (progresoDesaceleracion * (TIEMPO_ENTRE_INVITADOS_INICIAL - TIEMPO_ENTRE_INVITADOS_RAPIDO));
-          // Mantener detección de picos durante más tiempo
-          usarPicosDeIntensidad = progresoDesaceleracion < 0.7;
-        }
-
-        const tiempoDesdeUltimaAnimacion = currentTime - ultimoCambio.current;
-        let deberiaAnimar = false;
-
-        if (usarPicosDeIntensidad) {
-          deberiaAnimar = intensidadPromedio > UMBRAL_INTENSIDAD_CAMBIO && 
-                         tiempoDesdeUltimaAnimacion >= MIN_TIEMPO_ENTRE_PICOS;
-        } else {
-          deberiaAnimar = tiempoDesdeUltimaAnimacion >= tiempoEntreInvitados;
-        }
-
-        // Forzar animación si ha pasado demasiado tiempo
-        if (tiempoDesdeUltimaAnimacion > tiempoEntreInvitados * 1.5) {
-          deberiaAnimar = true;
-        }
-        
-        if (deberiaAnimar && !invitadoActual) {
-          // Asegurarnos de que siempre haya un siguiente invitado disponible
-          let siguienteIndice = (invitadosEnEsquinas.length > 0 ? 
-            datosInvitados.findIndex(inv => inv.id === invitadosEnEsquinas[invitadosEnEsquinas.length - 1].id) + 1 : 0);
-          
-          // Si llegamos al final, volvemos a empezar
-          if (siguienteIndice >= datosInvitados.length) {
-            siguienteIndice = 0;
-          }
-          
-          const invitado = datosInvitados[siguienteIndice];
-          
-          // Solo verificamos que no esté en las esquinas actuales
-          if (!invitadosEnEsquinas.some(inv => inv.id === invitado.id)) {
-            const nuevaPosicion = calcularPosicionEsquina(ultimoIndiceEsquina.current);
-            setInvitadoActual(invitado);
-            ultimoCambio.current = currentTime;
-            
-            setTimeout(() => {
-              const elementoNuevo = document.querySelector(`[data-invitado-id="${invitado.id}"]`);
-              const elementoNombre = document.querySelector(`[data-invitado-nombre-id="${invitado.id}"]`);
-              
-              if (elementoNuevo && elementoNombre) {
-                const timeline = gsap.timeline({
-                  onComplete: () => {
-                    // Esperamos a que termine la animación de separación antes de actualizar el estado
-                    setTimeout(() => {
-                      setInvitadosEnEsquinas(prev => {
-                        let nuevosInvitados = [...prev];
-                        if (nuevosInvitados.length >= 4) {
-                          // No eliminamos inmediatamente el invitado saliente
-                          const invitadoSaliente = nuevosInvitados[0];
-                          nuevosInvitados.shift();
-                          
-                          // Programamos la eliminación después de la animación de desvanecimiento
-                          setTimeout(() => {
-                            const elementoSaliente = document.querySelector(`[data-invitado-id="${invitadoSaliente.id}"]`);
-                            const nombreSaliente = document.querySelector(`[data-invitado-nombre-id="${invitadoSaliente.id}"]`);
-                            if (elementoSaliente) elementoSaliente.remove();
-                            if (nombreSaliente) nombreSaliente.remove();
-                          }, 1000); // Aseguramos que la animación de desvanecimiento haya terminado
-                        }
-                        return [...nuevosInvitados, {
-                          ...invitado,
-                          posicion: nuevaPosicion
-                        }];
-                      });
-                      
-                      ultimoIndiceEsquina.current = (ultimoIndiceEsquina.current + 1) % 4;
-                      setInvitadoActual(null);
-                    }, 400); // Esperamos el tiempo de la animación de separación
-                  }
-                });
-
-                // Asegurarnos de que ambos elementos empiecen con las mismas propiedades exactas
-                gsap.set([elementoNombre, elementoNuevo], {
-                  left: '50%',
-                  top: '50%',
-                  opacity: 0,
-                  scale: 0.5,
-                  transform: 'translate(-50%, -50%)',
-                  width: '40dvh',
-                  height: '40dvh',
-                  boxSizing: 'border-box'
-                });
-
-                if (invitadosEnEsquinas.length >= 4) {
-                  const invitadoSaliente = document.querySelector(`[data-invitado-id="${invitadosEnEsquinas[0].id}"]`);
-                  const nombreSaliente = document.querySelector(`[data-invitado-nombre-id="${invitadosEnEsquinas[0].id}"]`);
-                  
-                  if (invitadoSaliente && nombreSaliente) {
-                    // Matar cualquier animación previa
-                    gsap.killTweensOf([invitadoSaliente, nombreSaliente]);
-                    
-                    // Obtener las transformaciones actuales
-                    const currentTransforms = {
-                      invitado: window.getComputedStyle(invitadoSaliente).transform,
-                      nombre: window.getComputedStyle(nombreSaliente).transform
-                    };
-                    
-                    // Asegurar que los elementos mantienen su posición exacta
-                    gsap.set([invitadoSaliente, nombreSaliente], {
-                      display: 'block',
-                      visibility: 'visible',
-                      opacity: 1,
-                      zIndex: 800,
-                      transformOrigin: '50% 50%'
-                    });
-                    
-                    // Desvanecer ambos elementos manteniendo sus posiciones exactas
-                    timeline.to([invitadoSaliente, nombreSaliente], {
-                      opacity: 0,
-                      scale: 0.8,
-                      duration: 1.5,
-                      ease: "power1.inOut",
-                      transformOrigin: '50% 50%',
-                      onStart: () => {
-                        // Forzar las transformaciones originales
-                        invitadoSaliente.style.transform = currentTransforms.invitado;
-                        nombreSaliente.style.transform = currentTransforms.nombre;
-                        gsap.set([invitadoSaliente, nombreSaliente], {
-                          display: 'block',
-                          visibility: 'visible',
-                          pointerEvents: 'none'
-                        });
-                      },
-                      onUpdate: () => {
-                        // Mantener las transformaciones durante toda la animación
-                        const scaleMatrix = gsap.getProperty(invitadoSaliente, "scale");
-                        const translateX = gsap.getProperty(invitadoSaliente, "_gsap").x;
-                        invitadoSaliente.style.transform = `${currentTransforms.invitado} scale(${scaleMatrix})`;
-                        nombreSaliente.style.transform = `${currentTransforms.nombre} scale(${scaleMatrix})`;
-                      }
-                    }, "+=0.5");
-                  }
-                }
-
-                // Mover ambos elementos a su posición
-                timeline.to([elementoNombre, elementoNuevo], {
-                  left: nuevaPosicion.x,
-                  top: nuevaPosicion.y,
-                  opacity: 1,
-                  scale: 1,
-                  duration: 0.6,
-                  ease: "power2.out",
-                  transformOrigin: '50% 50%'
-                }, invitadosEnEsquinas.length >= 4 ? "-=0.8" : ">");
-
-                // Separar los elementos horizontalmente manteniendo la alineación vertical
-                timeline.to([elementoNuevo, elementoNombre], {
-                  transform: (index) => {
-                    const offsetX = index === 0 ? -15 : 15;
-                    return `translate(calc(-50% + ${offsetX}dvh), -50%)`;
-                  },
-                  duration: 0.4,
-                  ease: "power2.inOut",
-                  transformOrigin: '50% 50%'
-                }, "+=0.2");
-              }
-            }, 100);
-          }
-        }
-      }
-    };
-
-    const handleSeeking = () => {
+      // Limpiar el estado actual
       setInvitadoActual(null);
       setInvitadosEnEsquinas([]);
       ultimoIndiceEsquina.current = 0;
-      ultimoCambio.current = audioElement.currentTime;
+
+      // Si el tiempo actual es menor que TIEMPO_INICIO_INVITADOS, no mostrar invitados
+      if (currentTime < TIEMPO_INICIO_INVITADOS) {
+        return;
+      }
+
+      // Calcular cuántos invitados deberían haberse mostrado hasta este punto
+      const tiempoDesdeInicio = currentTime - TIEMPO_INICIO_INVITADOS;
+      const invitadosPorMostrar = Math.floor(tiempoDesdeInicio / TIEMPO_ENTRE_INVITADOS_INICIAL);
+      
+      // Calcular el índice del último invitado que debería estar visible
+      const indiceUltimoInvitado = invitadosPorMostrar % datosInvitados.length;
+      
+      // Calcular los últimos 4 invitados que deberían estar visibles
+      const invitadosAMostrar = [];
+      for (let i = 0; i < 4; i++) {
+        const indice = (indiceUltimoInvitado - i + datosInvitados.length) % datosInvitados.length;
+        if (indice >= 0 && indice < datosInvitados.length) {
+          invitadosAMostrar.unshift(datosInvitados[indice]);
+        }
+      }
+
+      // Mostrar los invitados en sus posiciones
+      invitadosAMostrar.forEach((invitado, index) => {
+        const posicion = calcularPosicionEsquina(index);
+        setInvitadosEnEsquinas(prev => [...prev, {
+          ...invitado,
+          posicion
+        }]);
+      });
+
+      // Actualizar los índices de control
+      ultimoIndiceEsquina.current = invitadosAMostrar.length % 4;
+      ultimoCambio.current = currentTime;
     };
 
     audioElement.addEventListener("timeupdate", handleTimeUpdate);
     audioElement.addEventListener("seeking", handleSeeking);
+    audioElement.addEventListener("seeked", handleSeeking); // Añadimos también el evento seeked
     
     return () => {
       audioElement.removeEventListener("timeupdate", handleTimeUpdate);
       audioElement.removeEventListener("seeking", handleSeeking);
+      audioElement.removeEventListener("seeked", handleSeeking);
     };
   }, [datosInvitados, analyser, invitadoActual, invitadosEnEsquinas]);
 
