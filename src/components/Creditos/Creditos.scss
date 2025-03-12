@@ -8,7 +8,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: black;
+    background: darkgreen;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -38,7 +38,7 @@
         pointer-events: none;
         opacity: 1;
         // filter: blur(6px);
-        opacity: 0.02 !important;
+        // opacity: 0.02 !important;
     }
 
     .invitados {
