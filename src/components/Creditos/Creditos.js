@@ -68,6 +68,8 @@ const Creditos = () => {
   const [invitadoActual, setInvitadoActual] = useState(null);
   const [invitadosEnEsquinas, setInvitadosEnEsquinas] = useState([]);
   const ultimoIndiceEsquina = useRef(0);
+  const [mostrarNombreMesa, setMostrarNombreMesa] = useState(false);
+  const ultimaMesaMostrada = useRef(null);
 
   // Función para cargar una imagen con reintentos
   const cargarImagen = (url, index) => {
@@ -261,7 +263,10 @@ useEffect(() => {
         };
 
         // Dibujar las barras del ecualizador
-        const barWidth = (barsWidth / bufferLength) * 2.5;
+        const numBars = Math.min(bufferLength, 64); // Máximo 64 barras
+        const availableWidth = barsWidth;
+        const barSpacing = 2;
+        const barWidth = Math.floor((availableWidth - (barSpacing * (numBars - 1))) / numBars);
         let x = 0;
 
         // Calcular la opacidad base de las barras
@@ -275,66 +280,91 @@ useEffect(() => {
           opacidadBase = 1;
         }
 
-        // Calcular la opacidad final basada en la intensidad de la música
-        const opacidadBarras = Math.max(0.1, Math.min(0.7, intensidadAmplificada * 0.7)) * opacidadBase;
-
         // Colores del orgullo oso
-        const bearPrideColors = [
-          '#623804', // Marrón
-          '#d99c4f', // Beige/Tostado
-          '#ffffff', // Blanco
-          '#666666', // Gris
-          '#000000', // Negro
-          '#ffd700'  // Dorado
+        const bearColors = [
+          '#4E2700',  // marrón oscuro
+          '#D86C00',  // naranja más vibrante
+          '#FFD52F',  // amarillo dorado
+          '#FFFFFF',  // blanco puro
+          '#666666',  // gris medio
+          '#000000'   // negro puro
         ];
 
         // Determinar si estamos en modo KITT (después del apagón)
         const modoKITT = tiempoAudio >= TIEMPO_PARON;
 
         if (modoKITT) {
-          // Efecto KITT con colores del orgullo oso
-          const numBars = Math.floor(bufferLength / 2);
           const centerBar = Math.floor(numBars / 2);
-          const maxDistance = centerBar;
+          const baseAmplitude = 0.4;  // Amplitud base
+          const maxAmplitude = 4.0;   // Amplitud máxima
+          const barsPerColorAdjusted = Math.ceil(numBars / bearColors.length);
 
           for (let i = 0; i < numBars; i++) {
-            const barHeight = (dataArray[i] / 255) * barsHeight;
-            const scaledHeight = barHeight * 1.5;
+            // Cálculo de altura no lineal
+            const rawHeight = Math.pow(dataArray[i] / 255, 0.7);
+            let scaledHeight;
+            if (rawHeight < 0.3) {
+              scaledHeight = rawHeight * baseAmplitude;
+            } else {
+              const excess = rawHeight - 0.3;
+              scaledHeight = (baseAmplitude * 0.3) + (excess * maxAmplitude);
+            }
+
+            // Factor de amplitud basado en la distancia al centro (efecto KITT)
+            const distanceFromCenter = Math.abs(i - centerBar);
+            const amplitudeFactor = Math.pow(1 - (distanceFromCenter / centerBar), 0.8);
+            const barHeight = scaledHeight * amplitudeFactor * barsHeight;
+
+            // Opacidad basada en la altura y la intensidad del audio
+            const opacityThreshold = barsHeight * 0.05;
+            let opacity = barHeight < opacityThreshold ? Math.max(0, barHeight / opacityThreshold) : 1;
+            opacity *= opacidadBase;
             
-            // Calcular la distancia al centro para el efecto KITT
-            const distanceToCenter = Math.abs(i - centerBar);
-            const normalizedDistance = distanceToCenter / maxDistance;
-            
-            // Seleccionar color basado en la posición
-            const colorIndex = Math.floor((i / numBars) * bearPrideColors.length);
-            const color = bearPrideColors[colorIndex];
-            
-            // Aplicar efecto de brillo basado en la distancia al centro
-            const brightness = Math.max(0, 1 - (normalizedDistance * 2));
+            // Añadir variación de opacidad basada en la intensidad del audio
+            const intensityOpacity = Math.max(0.3, Math.min(0.8, intensidadAmplificada));
+            opacity *= intensityOpacity;
+
+            // Asignar colores
+            const colorIndex = Math.floor(i / barsPerColorAdjusted);
+            const color = bearColors[Math.min(colorIndex, bearColors.length - 1)];
             
             ctxBars.fillStyle = color;
-            ctxBars.globalAlpha = opacidadBarras * brightness;
+            ctxBars.globalAlpha = opacity;
             
-            // Dibujar barra superior e inferior simétricamente
-            const y = (barsHeight / 2) - (scaledHeight / 2);
-            ctxBars.fillRect(x, y, barWidth, scaledHeight);
+            const y = (barsHeight / 2) - (barHeight / 2);
+            ctxBars.fillRect(x, y, barWidth, barHeight);
             
-            x += barWidth + 2;
+            x += barWidth + barSpacing;
           }
         } else {
           // Modo normal (arcoíris)
-          for (let i = 0; i < bufferLength; i++) {
+          for (let i = 0; i < numBars; i++) {
             const barHeight = (dataArray[i] / 255) * barsHeight;
-            const scaledHeight = barHeight * 1.5;
-            const progress = i / bufferLength;
+            const progress = i / numBars;
             
-            ctxBars.fillStyle = getRainbowColor(progress, tiempoAudio);
-            ctxBars.globalAlpha = opacidadBarras;
+            // Aplicar amplificación no lineal más suave
+            const baseAmplitude = 0.4;
+            const maxAmplitude = 1.5;
+            const normalizedHeight = barHeight / barsHeight;
+            const amplifiedHeight = Math.pow(normalizedHeight, 0.7);
+            const finalHeight = barsHeight * (baseAmplitude + (maxAmplitude - baseAmplitude) * amplifiedHeight);
             
-            const y = (barsHeight / 2) - (scaledHeight / 2);
-            ctxBars.fillRect(x, y, barWidth, scaledHeight);
+            // Obtener color del arcoíris
+            const hue = (progress * 360 + tiempoAudio * 30) % 360;
+            const saturation = 70 + (intensidadAmplificada * 30);
+            const lightness = 50 + (intensidadAmplificada * 20);
             
-            x += barWidth + 2;
+            // Calcular opacidad basada en la intensidad del audio
+            const opacityBase = Math.max(0.3, Math.min(0.8, intensidadAmplificada));
+            const opacity = opacityBase * opacidadBase;
+            
+            ctxBars.fillStyle = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+            ctxBars.globalAlpha = opacity;
+            
+            const y = (barsHeight / 2) - (finalHeight / 2);
+            ctxBars.fillRect(x, y, barWidth, finalHeight);
+            
+            x += barWidth + barSpacing;
           }
         }
         ctxBars.globalAlpha = 1;
@@ -383,9 +413,9 @@ useEffect(() => {
           const intensity = dataArray[frequencyIndex] / 255;
 
           // Calcular el tamaño de la bola con crecimiento dinámico
-          const tamañoBase = (radius / 20) * 1.5; // Mantenemos el tamaño original para las bolitas
-          const crecimientoDinamico = intensity * 5;
-          const tamañoFinal = tamañoBase + crecimientoDinamico;
+          const tamañoBase = Math.min((radius / 20) * 1.5, maxRadius * 0.05); // Limitamos el tamaño máximo de las bolitas
+          const crecimientoDinamico = intensity * 3; // Reducimos el crecimiento dinámico
+          const tamañoFinal = Math.min(tamañoBase + crecimientoDinamico, maxRadius * 0.08); // Limitamos el tamaño final
 
           // Calcular si esta bolita debe mostrarse basado en el progreso de la animación
           const bolitaProgreso = i / totalBolitas;
@@ -394,7 +424,7 @@ useEffect(() => {
           if (mostrarBolita) {
             ctxDots.save();
 
-            // Dibujar la bolita de color
+            // Dibujar la bolita de color con tamaño limitado
             ctxDots.beginPath();
             ctxDots.arc(x, y, tamañoFinal, 0, Math.PI * 2);
             ctxDots.fillStyle = getRainbowColor(progress, tiempoAudio);
@@ -515,7 +545,7 @@ useEffect(() => {
 
     // Detectar golpe usando la intensidadAmplificada
     if (intensidadAmplificada > UMBRAL_INTENSIDAD) {
-      if (currentTime - ultimoGolpe.current > TIEMPO_ENTRE_INVITADOS_RAPIDO) {
+      if (currentTime - ultimoGolpe.current > MIN_TIEMPO_ENTRE_PICOS) {
         ultimoGolpe.current = currentTime;
         contadorGolpes.current++;
 
@@ -653,28 +683,45 @@ useEffect(() => {
               if (elementoNuevo && elementoNombre) {
                 const timeline = gsap.timeline({
                   onComplete: () => {
-                    setInvitadosEnEsquinas(prev => {
-                      let nuevosInvitados = [...prev];
-                      if (nuevosInvitados.length >= 4) {
-                        nuevosInvitados.shift();
-                      }
-                      return [...nuevosInvitados, {
-                        ...invitado,
-                        posicion: nuevaPosicion
-                      }];
-                    });
-                    
-                    ultimoIndiceEsquina.current = (ultimoIndiceEsquina.current + 1) % 4;
-                    setInvitadoActual(null);
+                    // Esperamos a que termine la animación de separación antes de actualizar el estado
+                    setTimeout(() => {
+                      setInvitadosEnEsquinas(prev => {
+                        let nuevosInvitados = [...prev];
+                        if (nuevosInvitados.length >= 4) {
+                          // No eliminamos inmediatamente el invitado saliente
+                          const invitadoSaliente = nuevosInvitados[0];
+                          nuevosInvitados.shift();
+                          
+                          // Programamos la eliminación después de la animación de desvanecimiento
+                          setTimeout(() => {
+                            const elementoSaliente = document.querySelector(`[data-invitado-id="${invitadoSaliente.id}"]`);
+                            const nombreSaliente = document.querySelector(`[data-invitado-nombre-id="${invitadoSaliente.id}"]`);
+                            if (elementoSaliente) elementoSaliente.remove();
+                            if (nombreSaliente) nombreSaliente.remove();
+                          }, 1000); // Aseguramos que la animación de desvanecimiento haya terminado
+                        }
+                        return [...nuevosInvitados, {
+                          ...invitado,
+                          posicion: nuevaPosicion
+                        }];
+                      });
+                      
+                      ultimoIndiceEsquina.current = (ultimoIndiceEsquina.current + 1) % 4;
+                      setInvitadoActual(null);
+                    }, 400); // Esperamos el tiempo de la animación de separación
                   }
                 });
 
+                // Asegurarnos de que ambos elementos empiecen con las mismas propiedades exactas
                 gsap.set([elementoNombre, elementoNuevo], {
                   left: '50%',
                   top: '50%',
                   opacity: 0,
                   scale: 0.5,
-                  transform: 'translate(-50%, -50%)'
+                  transform: 'translate(-50%, -50%)',
+                  width: '40dvh',
+                  height: '40dvh',
+                  boxSizing: 'border-box'
                 });
 
                 if (invitadosEnEsquinas.length >= 4) {
@@ -682,17 +729,55 @@ useEffect(() => {
                   const nombreSaliente = document.querySelector(`[data-invitado-nombre-id="${invitadosEnEsquinas[0].id}"]`);
                   
                   if (invitadoSaliente && nombreSaliente) {
+                    // Matar cualquier animación previa
                     gsap.killTweensOf([invitadoSaliente, nombreSaliente]);
                     
+                    // Asegurarnos de que ambos elementos estén visibles
+                    gsap.set([invitadoSaliente, nombreSaliente], {
+                      display: 'block',
+                      visibility: 'visible',
+                      opacity: 1,
+                      zIndex: 800
+                    });
+                    
+                    // Desvanecer ambos elementos juntos
                     timeline.to([invitadoSaliente, nombreSaliente], {
                       opacity: 0,
                       scale: 0.8,
-                      duration: 0.5,
-                      ease: "power2.in"
-                    });
+                      duration: 1.5,
+                      ease: "power1.inOut",
+                      onStart: () => {
+                        gsap.set([invitadoSaliente, nombreSaliente], {
+                          display: 'block',
+                          visibility: 'visible',
+                          pointerEvents: 'none'
+                        });
+                      }
+                    }, "+=0.5"); // Añadimos un retraso antes de comenzar el desvanecimiento
                   }
                 }
 
+                // Verificar si es el primer invitado de una nueva mesa
+                const mesaInvitado = datosInvitados.find(inv => inv.id === invitado.id)?.mesaId;
+                if (mesaInvitado !== ultimaMesaMostrada.current) {
+                  ultimaMesaMostrada.current = mesaInvitado;
+                  // Buscar el nombre de la mesa en la API
+                  fetch(`https://boda-strapi-production.up.railway.app/api/mesas/${mesaInvitado}`)
+                    .then(response => response.json())
+                    .then(data => {
+                      const nombreMesa = data.data.attributes.nombre;
+                      setMesaActual(nombreMesa);
+                      setMostrarNombreMesa(true);
+                      
+                      // Ocultar el nombre de la mesa después de 3 segundos
+                      setTimeout(() => {
+                        setMostrarNombreMesa(false);
+                      }, 3000);
+                    })
+                    .catch(error => console.error('Error:', error));
+                }
+
+                // Mover ambos elementos a su posición
                 timeline.to([elementoNombre, elementoNuevo], {
                   left: nuevaPosicion.x,
                   top: nuevaPosicion.y,
@@ -700,19 +785,14 @@ useEffect(() => {
                   scale: 1,
                   duration: 0.6,
                   ease: "power2.out"
-                }, invitadosEnEsquinas.length >= 4 ? "-=0.3" : ">");
+                }, invitadosEnEsquinas.length >= 4 ? "-=0.8" : ">");
 
-                timeline.to(elementoNuevo, {
-                  transform: 'translate(calc(-50% - 15dvh), -50%)',
+                // Separar los elementos con la misma duración y ease
+                timeline.to([elementoNuevo, elementoNombre], {
+                  transform: (index) => `translate(calc(-50% ${index === 0 ? '-' : '+'} 15dvh), -50%)`,
                   duration: 0.4,
                   ease: "power2.inOut"
                 }, "+=0.2");
-
-                timeline.to(elementoNombre, {
-                  transform: 'translate(calc(-50% + 15dvh), -50%)',
-                  duration: 0.4,
-                  ease: "power2.inOut"
-                }, "<");
               }
             }, 100);
           }
@@ -763,6 +843,31 @@ useEffect(() => {
       <canvas ref={canvasBarsRef} className="ecualizador-barras" />
       <canvas ref={canvasDotsRef} className="ecualizador-bolitas" />
       
+      {/* Nombre de la mesa */}
+      {mostrarNombreMesa && mesaActual && (
+        <div
+          className="nombre-mesa"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '30%',
+            transform: 'translate(-50%, -50%)',
+            color: 'white',
+            fontSize: '10dvh',
+            fontWeight: 'bold',
+            textAlign: 'center',
+            padding: '2dvh',
+            zIndex: 2000,
+            textShadow: '0 0 10px rgba(0,0,255,0.8), 0 0 20px rgba(0,0,255,0.6), 0 0 30px rgba(0,0,255,0.4)',
+            animation: 'fadeInOut 3s ease-in-out',
+            whiteSpace: 'nowrap',
+            letterSpacing: '0.1em'
+          }}
+        >
+          {mesaActual}
+        </div>
+      )}
+
       {/* Invitado actual en el centro */}
       {invitadoActual && (
         <>
@@ -788,7 +893,8 @@ useEffect(() => {
               boxSizing: 'border-box',
               zIndex: 900,
               transform: 'translate(-50%, -50%)',
-              opacity: 0
+              opacity: 0,
+              pointerEvents: 'none'
             }}
           >
             {invitadoActual.nombre}
@@ -808,7 +914,8 @@ useEffect(() => {
               boxSizing: 'border-box',
               zIndex: 1000,
               transform: 'translate(-50%, -50%)',
-              opacity: 0
+              opacity: 0,
+              pointerEvents: 'none'
             }}
           >
             {invitadoActual.imagen ? (
@@ -844,7 +951,7 @@ useEffect(() => {
             style={{
               position: 'absolute',
               left: invitado.posicion.x,
-              top: invitado.posicion.y,
+              top: `calc(${invitado.posicion.y} + 15dvh)`, // Ajustamos la posición del nombre
               transform: 'translate(-50%, -50%)',
               width: '40dvh',
               height: '40dvh',
@@ -860,7 +967,8 @@ useEffect(() => {
               padding: '4dvh',
               boxSizing: 'border-box',
               opacity: 1,
-              zIndex: 900
+              zIndex: 900,
+              pointerEvents: 'none'
             }}
           >
             {invitado.nombre}
@@ -881,7 +989,8 @@ useEffect(() => {
               backgroundColor: !invitado.imagen ? coloresInvitados[invitado.id] : 'transparent',
               boxSizing: 'border-box',
               opacity: 1,
-              zIndex: 1000
+              zIndex: 1000,
+              pointerEvents: 'none'
             }}
           >
             {invitado.imagen ? (
@@ -909,14 +1018,12 @@ useEffect(() => {
 
       <style>
         {`
-          @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-          }
-
-          .invitado-inicial {
-            transform: translate(-50%, -50%) scale(0) !important;
-            opacity: 0 !important;
+          @keyframes fadeInOut {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            10% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            20% { transform: translate(-50%, -50%) scale(1); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
           }
         `}
       </style>
