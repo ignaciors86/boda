@@ -732,49 +732,47 @@ useEffect(() => {
                     // Matar cualquier animación previa
                     gsap.killTweensOf([invitadoSaliente, nombreSaliente]);
                     
-                    // Asegurarnos de que ambos elementos estén visibles
+                    // Obtener las transformaciones actuales
+                    const currentTransforms = {
+                      invitado: window.getComputedStyle(invitadoSaliente).transform,
+                      nombre: window.getComputedStyle(nombreSaliente).transform
+                    };
+                    
+                    // Asegurar que los elementos mantienen su posición exacta
                     gsap.set([invitadoSaliente, nombreSaliente], {
                       display: 'block',
                       visibility: 'visible',
                       opacity: 1,
-                      zIndex: 800
+                      zIndex: 800,
+                      transformOrigin: '50% 50%'
                     });
                     
-                    // Desvanecer ambos elementos juntos
+                    // Desvanecer ambos elementos manteniendo sus posiciones exactas
                     timeline.to([invitadoSaliente, nombreSaliente], {
                       opacity: 0,
                       scale: 0.8,
                       duration: 1.5,
                       ease: "power1.inOut",
+                      transformOrigin: '50% 50%',
                       onStart: () => {
+                        // Forzar las transformaciones originales
+                        invitadoSaliente.style.transform = currentTransforms.invitado;
+                        nombreSaliente.style.transform = currentTransforms.nombre;
                         gsap.set([invitadoSaliente, nombreSaliente], {
                           display: 'block',
                           visibility: 'visible',
                           pointerEvents: 'none'
                         });
+                      },
+                      onUpdate: () => {
+                        // Mantener las transformaciones durante toda la animación
+                        const scaleMatrix = gsap.getProperty(invitadoSaliente, "scale");
+                        const translateX = gsap.getProperty(invitadoSaliente, "_gsap").x;
+                        invitadoSaliente.style.transform = `${currentTransforms.invitado} scale(${scaleMatrix})`;
+                        nombreSaliente.style.transform = `${currentTransforms.nombre} scale(${scaleMatrix})`;
                       }
-                    }, "+=0.5"); // Añadimos un retraso antes de comenzar el desvanecimiento
+                    }, "+=0.5");
                   }
-                }
-
-                // Verificar si es el primer invitado de una nueva mesa
-                const mesaInvitado = datosInvitados.find(inv => inv.id === invitado.id)?.mesaId;
-                if (mesaInvitado !== ultimaMesaMostrada.current) {
-                  ultimaMesaMostrada.current = mesaInvitado;
-                  // Buscar el nombre de la mesa en la API
-                  fetch(`https://boda-strapi-production.up.railway.app/api/mesas/${mesaInvitado}`)
-                    .then(response => response.json())
-                    .then(data => {
-                      const nombreMesa = data.data.attributes.nombre;
-                      setMesaActual(nombreMesa);
-                      setMostrarNombreMesa(true);
-                      
-                      // Ocultar el nombre de la mesa después de 3 segundos
-                      setTimeout(() => {
-                        setMostrarNombreMesa(false);
-                      }, 3000);
-                    })
-                    .catch(error => console.error('Error:', error));
                 }
 
                 // Mover ambos elementos a su posición
@@ -784,14 +782,19 @@ useEffect(() => {
                   opacity: 1,
                   scale: 1,
                   duration: 0.6,
-                  ease: "power2.out"
+                  ease: "power2.out",
+                  transformOrigin: '50% 50%'
                 }, invitadosEnEsquinas.length >= 4 ? "-=0.8" : ">");
 
-                // Separar los elementos con la misma duración y ease
+                // Separar los elementos horizontalmente manteniendo la alineación vertical
                 timeline.to([elementoNuevo, elementoNombre], {
-                  transform: (index) => `translate(calc(-50% ${index === 0 ? '-' : '+'} 15dvh), -50%)`,
+                  transform: (index) => {
+                    const offsetX = index === 0 ? -15 : 15;
+                    return `translate(calc(-50% + ${offsetX}dvh), -50%)`;
+                  },
                   duration: 0.4,
-                  ease: "power2.inOut"
+                  ease: "power2.inOut",
+                  transformOrigin: '50% 50%'
                 }, "+=0.2");
               }
             }, 100);
@@ -951,8 +954,8 @@ useEffect(() => {
             style={{
               position: 'absolute',
               left: invitado.posicion.x,
-              top: `calc(${invitado.posicion.y} + 15dvh)`, // Ajustamos la posición del nombre
-              transform: 'translate(-50%, -50%)',
+              top: invitado.posicion.y,
+              transform: 'translate(calc(-50% + 15dvh), -50%)',
               width: '40dvh',
               height: '40dvh',
               borderRadius: '50%',
@@ -981,7 +984,7 @@ useEffect(() => {
               position: 'absolute',
               left: invitado.posicion.x,
               top: invitado.posicion.y,
-              transform: 'translate(-50%, -50%)',
+              transform: 'translate(calc(-50% - 15dvh), -50%)',
               width: '40dvh',
               height: '40dvh',
               borderRadius: '50%',
