@@ -264,21 +264,78 @@ useEffect(() => {
         const barWidth = (barsWidth / bufferLength) * 2.5;
         let x = 0;
 
-        // Calcular la opacidad de las barras basada en la intensidad de la música
-        const opacidadBarras = Math.max(0.1, Math.min(0.7, intensidadAmplificada * 0.7));
+        // Calcular la opacidad base de las barras
+        let opacidadBase = 0;
+        if (tiempoAudio < TIEMPO_INICIO_INVITADOS) {
+          opacidadBase = 0;
+        } else if (tiempoAudio < TIEMPO_INICIO_INVITADOS + 2) {
+          // FadeIn durante 2 segundos
+          opacidadBase = (tiempoAudio - TIEMPO_INICIO_INVITADOS) / 2;
+        } else {
+          opacidadBase = 1;
+        }
 
-        for (let i = 0; i < bufferLength; i++) {
-          const barHeight = (dataArray[i] / 255) * barsHeight;
-          const scaledHeight = barHeight * 1.5;
-          const progress = i / bufferLength;
-          const intensity = dataArray[i] / 255;
-          
-          ctxBars.fillStyle = getRainbowColor(progress, tiempoAudio);
-          ctxBars.globalAlpha = opacidadBarras;
-          // Dibujamos desde el centro hacia arriba y abajo
-          const y = (barsHeight / 2) - (scaledHeight / 2);
-          ctxBars.fillRect(x, y, barWidth, scaledHeight);
-          x += barWidth + 2;
+        // Calcular la opacidad final basada en la intensidad de la música
+        const opacidadBarras = Math.max(0.1, Math.min(0.7, intensidadAmplificada * 0.7)) * opacidadBase;
+
+        // Colores del orgullo oso
+        const bearPrideColors = [
+          '#623804', // Marrón
+          '#d99c4f', // Beige/Tostado
+          '#ffffff', // Blanco
+          '#666666', // Gris
+          '#000000', // Negro
+          '#ffd700'  // Dorado
+        ];
+
+        // Determinar si estamos en modo KITT (después del apagón)
+        const modoKITT = tiempoAudio >= TIEMPO_PARON;
+
+        if (modoKITT) {
+          // Efecto KITT con colores del orgullo oso
+          const numBars = Math.floor(bufferLength / 2);
+          const centerBar = Math.floor(numBars / 2);
+          const maxDistance = centerBar;
+
+          for (let i = 0; i < numBars; i++) {
+            const barHeight = (dataArray[i] / 255) * barsHeight;
+            const scaledHeight = barHeight * 1.5;
+            
+            // Calcular la distancia al centro para el efecto KITT
+            const distanceToCenter = Math.abs(i - centerBar);
+            const normalizedDistance = distanceToCenter / maxDistance;
+            
+            // Seleccionar color basado en la posición
+            const colorIndex = Math.floor((i / numBars) * bearPrideColors.length);
+            const color = bearPrideColors[colorIndex];
+            
+            // Aplicar efecto de brillo basado en la distancia al centro
+            const brightness = Math.max(0, 1 - (normalizedDistance * 2));
+            
+            ctxBars.fillStyle = color;
+            ctxBars.globalAlpha = opacidadBarras * brightness;
+            
+            // Dibujar barra superior e inferior simétricamente
+            const y = (barsHeight / 2) - (scaledHeight / 2);
+            ctxBars.fillRect(x, y, barWidth, scaledHeight);
+            
+            x += barWidth + 2;
+          }
+        } else {
+          // Modo normal (arcoíris)
+          for (let i = 0; i < bufferLength; i++) {
+            const barHeight = (dataArray[i] / 255) * barsHeight;
+            const scaledHeight = barHeight * 1.5;
+            const progress = i / bufferLength;
+            
+            ctxBars.fillStyle = getRainbowColor(progress, tiempoAudio);
+            ctxBars.globalAlpha = opacidadBarras;
+            
+            const y = (barsHeight / 2) - (scaledHeight / 2);
+            ctxBars.fillRect(x, y, barWidth, scaledHeight);
+            
+            x += barWidth + 2;
+          }
         }
         ctxBars.globalAlpha = 1;
 
@@ -326,7 +383,7 @@ useEffect(() => {
           const intensity = dataArray[frequencyIndex] / 255;
 
           // Calcular el tamaño de la bola con crecimiento dinámico
-          const tamañoBase = (radius / 20) * 1.5;
+          const tamañoBase = (radius / 20) * 1.5; // Mantenemos el tamaño original para las bolitas
           const crecimientoDinamico = intensity * 5;
           const tamañoFinal = tamañoBase + crecimientoDinamico;
 
@@ -591,36 +648,71 @@ useEffect(() => {
             
             setTimeout(() => {
               const elementoNuevo = document.querySelector(`[data-invitado-id="${invitado.id}"]`);
-              if (elementoNuevo) {
-                gsap.fromTo(elementoNuevo, 
-                  {
-                    left: '50%',
-                    top: '50%',
-                    opacity: 0
-                  },
-                  {
-                    left: nuevaPosicion.x,
-                    top: nuevaPosicion.y,
-                    opacity: 1,
-                    duration: duracionAnimacion,
-                    ease: "power2.inOut",
-                    onComplete: () => {
-                      setInvitadosEnEsquinas(prev => {
-                        let nuevosInvitados = [...prev];
-                        if (nuevosInvitados.length >= 4) {
-                          nuevosInvitados.shift();
-                        }
-                        return [...nuevosInvitados, {
-                          ...invitado,
-                          posicion: nuevaPosicion
-                        }];
-                      });
-                      
-                      ultimoIndiceEsquina.current = (ultimoIndiceEsquina.current + 1) % 4;
-                      setInvitadoActual(null);
-                    }
+              const elementoNombre = document.querySelector(`[data-invitado-nombre-id="${invitado.id}"]`);
+              
+              if (elementoNuevo && elementoNombre) {
+                const timeline = gsap.timeline({
+                  onComplete: () => {
+                    setInvitadosEnEsquinas(prev => {
+                      let nuevosInvitados = [...prev];
+                      if (nuevosInvitados.length >= 4) {
+                        nuevosInvitados.shift();
+                      }
+                      return [...nuevosInvitados, {
+                        ...invitado,
+                        posicion: nuevaPosicion
+                      }];
+                    });
+                    
+                    ultimoIndiceEsquina.current = (ultimoIndiceEsquina.current + 1) % 4;
+                    setInvitadoActual(null);
                   }
-                );
+                });
+
+                gsap.set([elementoNombre, elementoNuevo], {
+                  left: '50%',
+                  top: '50%',
+                  opacity: 0,
+                  scale: 0.5,
+                  transform: 'translate(-50%, -50%)'
+                });
+
+                if (invitadosEnEsquinas.length >= 4) {
+                  const invitadoSaliente = document.querySelector(`[data-invitado-id="${invitadosEnEsquinas[0].id}"]`);
+                  const nombreSaliente = document.querySelector(`[data-invitado-nombre-id="${invitadosEnEsquinas[0].id}"]`);
+                  
+                  if (invitadoSaliente && nombreSaliente) {
+                    gsap.killTweensOf([invitadoSaliente, nombreSaliente]);
+                    
+                    timeline.to([invitadoSaliente, nombreSaliente], {
+                      opacity: 0,
+                      scale: 0.8,
+                      duration: 0.5,
+                      ease: "power2.in"
+                    });
+                  }
+                }
+
+                timeline.to([elementoNombre, elementoNuevo], {
+                  left: nuevaPosicion.x,
+                  top: nuevaPosicion.y,
+                  opacity: 1,
+                  scale: 1,
+                  duration: 0.6,
+                  ease: "power2.out"
+                }, invitadosEnEsquinas.length >= 4 ? "-=0.3" : ">");
+
+                timeline.to(elementoNuevo, {
+                  transform: 'translate(calc(-50% - 15dvh), -50%)',
+                  duration: 0.4,
+                  ease: "power2.inOut"
+                }, "+=0.2");
+
+                timeline.to(elementoNombre, {
+                  transform: 'translate(calc(-50% + 15dvh), -50%)',
+                  duration: 0.4,
+                  ease: "power2.inOut"
+                }, "<");
               }
             }, 100);
           }
@@ -673,85 +765,146 @@ useEffect(() => {
       
       {/* Invitado actual en el centro */}
       {invitadoActual && (
-        <div 
-          data-invitado-id={invitadoActual.id}
-          className="invitado"
-          style={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            width: '20dvh',
-            height: '20dvh',
-            borderRadius: '50%',
-            overflow: 'hidden',
-            backgroundColor: !invitadoActual.imagen ? coloresInvitados[invitadoActual.id] : 'transparent',
-            zIndex: 1000,
-            transform: 'translate(-50%, -50%)',
-            opacity: 0
-          }}
-        >
-          {invitadoActual.imagen ? (
-            <img 
-              src={invitadoActual.imagen} 
-              alt={invitadoActual.nombre}
-              style={{
+        <>
+          <div
+            data-invitado-nombre-id={invitadoActual.id}
+            className="invitado-nombre"
+            style={{
+              position: 'absolute',
+              left: '50%',
+              top: '50%',
+              width: '40dvh',
+              height: '40dvh',
+              borderRadius: '50%',
+              backgroundColor: 'white',
+              color: 'black',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '5dvh',
+              fontWeight: 'bold',
+              textAlign: 'center',
+              padding: '4dvh',
+              boxSizing: 'border-box',
+              zIndex: 900,
+              transform: 'translate(-50%, -50%)',
+              opacity: 0
+            }}
+          >
+            {invitadoActual.nombre}
+          </div>
+          <div 
+            data-invitado-id={invitadoActual.id}
+            className="invitado"
+            style={{
+              position: 'absolute',
+              left: '50%',
+              top: '50%',
+              width: '40dvh',
+              height: '40dvh',
+              borderRadius: '50%',
+              overflow: 'hidden',
+              backgroundColor: !invitadoActual.imagen ? coloresInvitados[invitadoActual.id] : 'transparent',
+              boxSizing: 'border-box',
+              zIndex: 1000,
+              transform: 'translate(-50%, -50%)',
+              opacity: 0
+            }}
+          >
+            {invitadoActual.imagen ? (
+              <img 
+                src={invitadoActual.imagen} 
+                alt={invitadoActual.nombre}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  borderRadius: '50%'
+                }}
+              />
+            ) : (
+              <div style={{
                 width: '100%',
                 height: '100%',
-                objectFit: 'cover',
-                borderRadius: '50%'
-              }}
-            />
-          ) : (
-            <div style={{
-              width: '100%',
-              height: '100%',
-              borderRadius: '50%',
-              backgroundColor: coloresInvitados[invitadoActual.id]
-            }} />
-          )}
-        </div>
+                borderRadius: '50%',
+                backgroundColor: coloresInvitados[invitadoActual.id]
+              }} />
+            )}
+          </div>
+        </>
       )}
 
       {/* Invitados en las esquinas */}
       {invitadosEnEsquinas.map((invitado, index) => (
-        <div
-          key={`${invitado.id}-${index}`}
-          data-invitado-id={invitado.id}
-          className="invitado"
-          style={{
-            position: 'absolute',
-            left: invitado.posicion.x,
-            top: invitado.posicion.y,
-            transform: 'translate(-50%, -50%)',
-            width: '20dvh',
-            height: '20dvh',
-            borderRadius: '50%',
-            overflow: 'hidden',
-            backgroundColor: !invitado.imagen ? coloresInvitados[invitado.id] : 'transparent',
-            opacity: 1,
-            zIndex: 900
-          }}
-        >
-          {invitado.imagen ? (
-            <img 
-              src={invitado.imagen} 
-              alt={invitado.nombre}
-              style={{
+        <React.Fragment key={`container-${invitado.id}-${index}`}>
+          <div
+            key={`nombre-${invitado.id}-${index}`}
+            data-invitado-nombre-id={invitado.id}
+            className="invitado-nombre"
+            style={{
+              position: 'absolute',
+              left: invitado.posicion.x,
+              top: invitado.posicion.y,
+              transform: 'translate(-50%, -50%)',
+              width: '40dvh',
+              height: '40dvh',
+              borderRadius: '50%',
+              backgroundColor: 'white',
+              color: 'black',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '5dvh',
+              fontWeight: 'bold',
+              textAlign: 'center',
+              padding: '4dvh',
+              boxSizing: 'border-box',
+              opacity: 1,
+              zIndex: 900
+            }}
+          >
+            {invitado.nombre}
+          </div>
+          <div
+            key={`${invitado.id}-${index}`}
+            data-invitado-id={invitado.id}
+            className="invitado"
+            style={{
+              position: 'absolute',
+              left: invitado.posicion.x,
+              top: invitado.posicion.y,
+              transform: 'translate(-50%, -50%)',
+              width: '40dvh',
+              height: '40dvh',
+              borderRadius: '50%',
+              overflow: 'hidden',
+              backgroundColor: !invitado.imagen ? coloresInvitados[invitado.id] : 'transparent',
+              boxSizing: 'border-box',
+              opacity: 1,
+              zIndex: 1000
+            }}
+          >
+            {invitado.imagen ? (
+              <img 
+                src={invitado.imagen} 
+                alt={invitado.nombre}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  borderRadius: '50%'
+                }}
+              />
+            ) : (
+              <div style={{
                 width: '100%',
                 height: '100%',
-                objectFit: 'cover',
-                borderRadius: '50%'
-              }}
-            />
-          ) : (
-            <div style={{
-              width: '100%',
-              height: '100%',
-              borderRadius: '50%',
-              backgroundColor: coloresInvitados[invitado.id]
-            }} />
-          )}
-        </div>
+                borderRadius: '50%',
+                backgroundColor: coloresInvitados[invitado.id]
+              }} />
+            )}
+          </div>
+        </React.Fragment>
       ))}
 
       <style>
