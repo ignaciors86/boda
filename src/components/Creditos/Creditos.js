@@ -95,6 +95,8 @@ const Creditos = () => {
   const [analyser, setAnalyser] = useState(null);
   const [datosCargados, setDatosCargados] = useState(false);
   const [imagenesCargadas, setImagenesCargadas] = useState([]);
+  const [intensidadNormalizada, setIntensidadNormalizada] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const imagenesRef = useRef([]);
   const indexInvitado = useRef(0);
   const timeoutRef = useRef(null);
@@ -114,6 +116,7 @@ const Creditos = () => {
   const ultimaMesaMostrada = useRef(null);
   const ultimoInvitadoMostrado = useRef(-1);
   const invitadosMostrados = useRef([]);
+  const [animacionesActivas, setAnimacionesActivas] = useState(new Map());
 
   const animationState = useRef({
     tiempoAnterior: 0,
@@ -145,10 +148,10 @@ const Creditos = () => {
 
   const calcularPosicionEsquina = (indice) => {
     const posiciones = [
-      { x: '25%', y: '25%' },
-      { x: '75%', y: '25%' },
-      { x: '75%', y: '75%' },
-      { x: '25%', y: '75%' }
+      { x: '18%', y: '24%' },
+      { x: '80%', y: '22%' },
+      { x: '78%', y: '78%' },
+      { x: '21%', y: '75%' }
     ];
     return posiciones[indice % 4];
   };
@@ -165,7 +168,7 @@ const Creditos = () => {
 
     const handleTimeUpdate = () => {
       const currentTime = audioElement.currentTime;
-      if (!currentTime || !analyser) return;
+      if (!currentTime || !analyser || isPaused) return;
       
       if (currentTime >= TIEMPO_INICIO_INVITADOS) {
         const params = getAnimationParams(currentTime);
@@ -182,12 +185,15 @@ const Creditos = () => {
             })).filter(({elemento, nombre}) => elemento && nombre);
 
             const timeline = gsap.timeline();
-            elementosVisibles.forEach(({elemento, nombre}) => {
+
+            // Desvanecer los invitados gradualmente
+            elementosVisibles.forEach(({elemento, nombre}, index) => {
               timeline.to([elemento, nombre], {
                 opacity: 0,
                 scale: 0.8,
                 duration: 1.5,
                 ease: "power2.inOut",
+                delay: index * 0.2, // Pequeño retraso entre cada invitado
                 onStart: () => {
                   gsap.set([elemento, nombre], {
                     zIndex: 800,
@@ -197,9 +203,18 @@ const Creditos = () => {
               }, 0);
             });
 
-            timeline.call(() => {
-              setInvitadosEnEsquinas([]);
-              ultimoIndiceEsquina.current = 0;
+            // Desvanecer el nombre de la mesa después de los invitados
+            timeline.to('.nombre-mesa', {
+              opacity: 0,
+              scale: 0.8,
+              duration: 1,
+              ease: "power2.inOut",
+              delay: 1, // Esperar a que terminen los invitados
+              onComplete: () => {
+                setInvitadosEnEsquinas([]);
+                setMesaActual(null);
+                ultimoIndiceEsquina.current = 0;
+              }
             });
 
             return;
@@ -256,16 +271,28 @@ const Creditos = () => {
       ultimoInvitadoMostrado.current = invitadosPorMostrar;
     };
 
+    const handlePlay = () => {
+      setIsPaused(false);
+    };
+
+    const handlePause = () => {
+      setIsPaused(true);
+    };
+
     audioElement.addEventListener("timeupdate", handleTimeUpdate);
     audioElement.addEventListener("seeking", handleSeeking);
     audioElement.addEventListener("seeked", handleSeeking);
+    audioElement.addEventListener("play", handlePlay);
+    audioElement.addEventListener("pause", handlePause);
     
     return () => {
       audioElement.removeEventListener("timeupdate", handleTimeUpdate);
       audioElement.removeEventListener("seeking", handleSeeking);
       audioElement.removeEventListener("seeked", handleSeeking);
+      audioElement.removeEventListener("play", handlePlay);
+      audioElement.removeEventListener("pause", handlePause);
     };
-  }, [datosInvitados, analyser, invitadoActual, invitadosEnEsquinas]);
+  }, [datosInvitados, analyser, invitadoActual, invitadosEnEsquinas, isPaused]);
 
   useEffect(() => {
     fetch(
@@ -281,6 +308,7 @@ const Creditos = () => {
               ? `https://boda-strapi-production.up.railway.app${invitado?.personaje?.imagen?.url}`
               : "",
             mesaId: invitado?.mesa?.id || 0,
+            mesa: invitado?.mesa?.nombre || ""
           }))
           .sort((a, b) => a.mesaId - b.mesaId);
         console.log('Datos de invitados cargados:', invitadosData);
@@ -356,13 +384,12 @@ useEffect(() => {
 
         const centerX = dotsWidth / 2;
         const centerY = dotsHeight / 2;
-        const maxRadius = Math.min(dotsWidth, dotsHeight) * 0.4;
+        const maxRadius = Math.min(dotsWidth, dotsHeight) * 0.22;
         const totalInvitados = datosInvitados.length;
         const totalBolitas = 200;
 
         const tiempoAudio = audioRef.current ? audioRef.current.currentTime : 0;
         const duracionTotal = audioRef.current ? audioRef.current.duration : 1;
-
         const progreso = tiempoAudio / duracionTotal;
 
         const tiempoInicioEspiral = TIEMPO_INICIO_ESPIRAL;
@@ -383,14 +410,15 @@ useEffect(() => {
         const opacidadBolitas = (1 - progreso) * factorContraccion;
 
         const intensidadMusica = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
-        const intensidadAmplificada = Math.pow(intensidadMusica / 255, 2);
+        const intensidadNormalizadaActual = intensidadMusica / 255;
+        setIntensidadNormalizada(intensidadNormalizadaActual);
 
         const getRainbowColor = (progress, tiempo) => {
           const colorOffset = (tiempo * animationState.current.velocidadGiroActual * animationState.current.direccionGiro) % 1;
           const colorProgress = (progress + colorOffset) % 1;
           const hue = (colorProgress * 360) % 360;
-          const saturation = 70 + (intensidadAmplificada * 30);
-          const lightness = 50 + (intensidadAmplificada * 20);
+          const saturation = 70 + (intensidadNormalizadaActual * 30);
+          const lightness = 50 + (intensidadNormalizadaActual * 20);
           return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
         };
 
@@ -398,7 +426,12 @@ useEffect(() => {
         const availableWidth = barsWidth;
         const barSpacing = 2;
         const barWidth = Math.floor((availableWidth - (barSpacing * (numBars - 1))) / numBars);
-        let x = 0;
+        
+        // Calcular el ancho total de las barras
+        const totalWidth = (barWidth + barSpacing) * numBars - barSpacing;
+        // Calcular el punto de inicio para centrar
+        const startX = (barsWidth - totalWidth) / 2;
+        let x = startX;
 
         let opacidadBase = 0;
         if (tiempoAudio < TIEMPO_INICIO_INVITADOS) {
@@ -444,7 +477,7 @@ useEffect(() => {
             let opacity = barHeight < opacityThreshold ? Math.max(0, barHeight / opacityThreshold) : 1;
             opacity *= opacidadBase;
             
-            const intensityOpacity = Math.max(0.3, Math.min(0.8, intensidadAmplificada));
+            const intensityOpacity = Math.max(0.3, Math.min(0.8, intensidadNormalizadaActual));
             opacity *= intensityOpacity;
 
             const colorIndex = Math.floor(i / barsPerColorAdjusted);
@@ -460,27 +493,31 @@ useEffect(() => {
           }
         } else {
           for (let i = 0; i < numBars; i++) {
-          const barHeight = (dataArray[i] / 255) * barsHeight;
-            const progress = i / numBars;
-            
-            const baseAmplitude = 0.4;
-            const maxAmplitude = 1.5;
-            const normalizedHeight = barHeight / barsHeight;
-            const amplifiedHeight = Math.pow(normalizedHeight, 0.7);
-            const finalHeight = barsHeight * (baseAmplitude + (maxAmplitude - baseAmplitude) * amplifiedHeight);
-            
-            const hue = (progress * 360 + tiempoAudio * 30) % 360;
-            const saturation = 70 + (intensidadAmplificada * 30);
-            const lightness = 50 + (intensidadAmplificada * 20);
-            
-            const opacityBase = Math.max(0.3, Math.min(0.8, intensidadAmplificada));
-            const opacity = opacityBase * opacidadBase;
-            
-            ctxBars.fillStyle = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-            ctxBars.globalAlpha = opacity;
-            
-            const y = (barsHeight / 2) - (finalHeight / 2);
-            ctxBars.fillRect(x, y, barWidth, finalHeight);
+            const rawHeight = dataArray[i] / 255;
+            // Solo mostrar altura si hay sonido significativo
+            if (rawHeight > 0.05) {
+              const barHeight = rawHeight * barsHeight * 0.7; // Reducido al 70% de la altura máxima
+              const progress = i / numBars;
+              
+              const baseAmplitude = 0.4;
+              const maxAmplitude = 1.5;
+              const normalizedHeight = barHeight / barsHeight;
+              const amplifiedHeight = Math.pow(normalizedHeight, 0.7);
+              const finalHeight = barsHeight * (baseAmplitude + (maxAmplitude - baseAmplitude) * amplifiedHeight);
+              
+              const hue = (progress * 360 + tiempoAudio * 30) % 360;
+              const saturation = 70 + (intensidadNormalizadaActual * 30);
+              const lightness = 50 + (intensidadNormalizadaActual * 20);
+              
+              const opacityBase = Math.max(0.3, Math.min(0.8, intensidadNormalizadaActual));
+              const opacity = opacityBase * opacidadBase;
+              
+              ctxBars.fillStyle = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+              ctxBars.globalAlpha = opacity;
+              
+              const y = (barsHeight / 2) - (finalHeight / 2);
+              ctxBars.fillRect(x, y, barWidth, finalHeight);
+            }
             
             x += barWidth + barSpacing;
           }
@@ -489,14 +526,15 @@ useEffect(() => {
 
         const velocidadMinima = 0.0000001;
         const velocidadMaxima = 1.0;
-        const velocidadGiroDeseada = velocidadMinima + (velocidadMaxima - velocidadMinima) * Math.pow(intensidadAmplificada, 1.5);
+        const velocidadGiroDeseada = velocidadMinima + (velocidadMaxima - velocidadMinima) * Math.pow(intensidadNormalizadaActual, 1.5);
+        const velocidadGiroReducida = velocidadGiroDeseada * 0.35; // Reducido de 0.7 a 0.35 (la mitad)
 
         const suavizadoVelocidad = 0.005;
-        animationState.current.velocidadGiroActual += (velocidadGiroDeseada - animationState.current.velocidadGiroActual) * suavizadoVelocidad;
+        animationState.current.velocidadGiroActual += (velocidadGiroReducida - animationState.current.velocidadGiroActual) * suavizadoVelocidad;
 
         const escalaMinima = 0.4;
         const escalaMaxima = 10;
-        const escalaDeseada = escalaMinima + (escalaMaxima - escalaMinima) * intensidadAmplificada;
+        const escalaDeseada = escalaMinima + (escalaMaxima - escalaMinima) * intensidadNormalizadaActual;
 
         const suavizadoEscala = 0.25;
         animationState.current.escalaActual += (escalaDeseada - animationState.current.escalaActual) * suavizadoEscala;
@@ -520,12 +558,22 @@ useEffect(() => {
           const x = centerX + Math.cos(angle) * radius;
           const y = centerY + Math.sin(angle) * radius;
 
-          const frequencyIndex = Math.floor(progress * bufferLength);
-          const intensity = dataArray[frequencyIndex] / 255;
+          // Calcular el ángulo del siguiente punto
+          const nextProgress = (i + 1) / totalBolitas;
+          const nextAngle = nextProgress * Math.PI * 10;
+          const nextRadius = nextProgress * maxRadius;
+          const nextX = centerX + Math.cos(nextAngle) * nextRadius;
+          const nextY = centerY + Math.sin(nextAngle) * nextRadius;
 
-          const tamañoBase = Math.min((radius / 20) * 1.5, maxRadius * 0.05);
-          const crecimientoDinamico = intensity * 3;
-          const tamañoFinal = Math.min(tamañoBase + crecimientoDinamico, maxRadius * 0.08);
+          // Calcular la distancia entre puntos consecutivos
+          const dx = nextX - x;
+          const dy = nextY - y;
+          const distanciaEntrePuntos = Math.sqrt(dx * dx + dy * dy);
+
+          // Calcular el tamaño base para que las bolitas no se mezclen
+          const tamañoBase = distanciaEntrePuntos * 0.4; // Reducido de 0.5 a 0.4 para dejar más espacio
+          const crecimientoDinamico = dataArray[i] / 255 * 1.5; // Reducido de 2 a 1.5 para menos variación
+          const tamañoFinal = tamañoBase + (crecimientoDinamico * tamañoBase * 0.1); // Reducido de 0.2 a 0.1 para menos variación
 
           const bolitaProgreso = i / totalBolitas;
           const mostrarBolita = bolitaProgreso <= progresoAnimacionEspiral;
@@ -533,26 +581,25 @@ useEffect(() => {
           if (mostrarBolita) {
             ctxDots.save();
 
-            ctxDots.beginPath();
-            ctxDots.arc(x, y, tamañoFinal, 0, Math.PI * 2);
-            ctxDots.fillStyle = getRainbowColor(progress, tiempoAudio);
-            ctxDots.globalAlpha = opacidadBolitas;
-            ctxDots.fill();
-
             const indiceInvitado = Math.floor((i / totalBolitas) * datosInvitados.length);
-            
-            const tiempoDesdeInicio = tiempoAudio - TIEMPO_INICIO_INVITADOS;
-            const invitadosVisibles = Math.max(0, Math.floor(tiempoDesdeInicio / TIEMPO_ENTRE_INVITADOS_INICIAL));
-            
-            if (indiceInvitado < datosInvitados.length && 
-                (indiceInvitado <= invitadosVisibles || primerCicloCompletado)) {
-              const img = imagenesRef.current[indiceInvitado];
-              if (img && img.complete && img.naturalWidth !== 0) {
+            const img = imagenesRef.current[indiceInvitado];
+            const invitadoMostrado = indiceInvitado < datosInvitados.length && invitadosMostrados.current[indiceInvitado];
+
+            // Calcular la opacidad del color basada en el progreso
+            const opacidadColor = opacidadBolitas * (1 - progreso);
+            const opacidadImagen = opacidadBolitas * progreso;
+
+            if (invitadoMostrado && img && img.complete && img.naturalWidth !== 0) {
                 ctxDots.save();
                 ctxDots.translate(x, y);
                 ctxDots.beginPath();
                 ctxDots.arc(0, 0, tamañoFinal, 0, Math.PI * 2);
                 ctxDots.clip();
+              
+              // Aplicar brillo a la imagen basado en la intensidad
+              const brillo = Math.max(0, 1 - opacidadColor);
+              ctxDots.filter = `brightness(${1 + brillo * 0.5})`;
+              
                 ctxDots.drawImage(
                   img,
                   -tamañoFinal,
@@ -562,6 +609,14 @@ useEffect(() => {
                 );
                 ctxDots.restore();
               }
+
+            // Dibujar el color solo si hay opacidad
+            if (opacidadColor > 0) {
+              ctxDots.beginPath();
+              ctxDots.arc(x, y, tamañoFinal, 0, Math.PI * 2);
+              ctxDots.fillStyle = getRainbowColor(progress, tiempoAudio);
+              ctxDots.globalAlpha = opacidadColor;
+              ctxDots.fill();
             }
 
             ctxDots.restore();
@@ -572,19 +627,22 @@ useEffect(() => {
 
         const kamehamehaSizeBase = maxRadius * 0.75;
         const factorTamañoPost = tiempoAudio > TIEMPO_PARON ? 
-          1 + intensidadAmplificada : 1;
-        const kamehamehaSize = kamehamehaSizeBase * (1 + intensidadAmplificada * 2) * factorContraccion * factorTamañoPost;
+          1 + (intensidadNormalizadaActual * 0.3) : 1;
+        const kamehamehaSize = kamehamehaSizeBase * (1 + intensidadNormalizadaActual * 2) * factorContraccion * factorTamañoPost;
         const kamehamehaRotation = animationState.current.rotacionAcumulativa * animationState.current.direccionGiro;
+        
+        // Calcular la opacidad base del kamehameha basada en la intensidad de la música
+        const opacidadKamehameha = Math.max(0, Math.min(1, intensidadNormalizadaActual * 2));
         
         const gradient = ctxDots.createRadialGradient(
           centerX, centerY, 0,
           centerX, centerY, kamehamehaSize
         );
         
-        gradient.addColorStop(0, `rgba(255, 255, 255, ${(0.9 + intensidadAmplificada * 0.1) * factorContraccion})`);
-        gradient.addColorStop(0.2, `rgba(0, 255, 255, ${(0.7 + intensidadAmplificada * 0.3) * factorContraccion})`);
-        gradient.addColorStop(0.4, `rgba(0, 128, 255, ${(0.5 + intensidadAmplificada * 0.5) * factorContraccion})`);
-        gradient.addColorStop(0.6, `rgba(0, 64, 255, ${(0.3 + intensidadAmplificada * 0.7) * factorContraccion})`);
+        gradient.addColorStop(0, `rgba(255, 255, 255, ${(0.9 + intensidadNormalizadaActual * 0.8) * factorContraccion * opacidadKamehameha})`);
+        gradient.addColorStop(0.2, `rgba(0, 255, 255, ${(0.9 + intensidadNormalizadaActual * 0.3) * factorContraccion * opacidadKamehameha})`);
+        gradient.addColorStop(0.4, `rgba(0, 128, 255, ${(.5 + intensidadNormalizadaActual * 0.9) * factorContraccion * opacidadKamehameha})`);
+        gradient.addColorStop(0.6, `rgba(0, 64, 255, ${(0.1 + intensidadNormalizadaActual * 0.9) * factorContraccion * opacidadKamehameha})`);
         gradient.addColorStop(1, 'rgba(0, 0, 255, 0)');
 
         ctxDots.save();
@@ -599,8 +657,9 @@ useEffect(() => {
 
         ctxDots.globalCompositeOperation = 'lighter';
         ctxDots.beginPath();
-        ctxDots.arc(centerX, centerY, kamehamehaSize * 0.5, 0, Math.PI * 2);
-        ctxDots.fillStyle = `rgba(255, 255, 255, ${(0.4 + intensidadAmplificada * 0.6) * factorContraccion})`;
+        const nucleoSize = kamehamehaSize * (0.1 + (intensidadNormalizadaActual * 1.3));
+        ctxDots.arc(centerX, centerY, nucleoSize, 0, Math.PI * 2);
+        ctxDots.fillStyle = `rgba(255, 255, 255, ${(0.4 + intensidadNormalizadaActual * 1) * factorContraccion * opacidadKamehameha})`;
         ctxDots.fill();
         ctxDots.globalCompositeOperation = 'source-over';
         ctxDots.restore();
@@ -646,52 +705,103 @@ useEffect(() => {
     }
   }, [analyser, datosInvitados, imagenesCargadas]);
 
+  useEffect(() => {
+    return () => {
+      // Limpiar todas las animaciones al desmontar el componente
+      animacionesActivas.forEach(animacion => {
+        animacion.kill();
+      });
+      setAnimacionesActivas(new Map());
+    };
+  }, []);
+
   const manejarCambioInvitado = (invitado) => {
     const params = getAnimationParams(audioRef.current.currentTime);
     const currentTime = audioRef.current.currentTime;
     
     setInvitadoActual(invitado);
+    
+    // Actualizar la mesa actual con animación
+    if (invitado.mesaId !== ultimaMesaMostrada.current) {
+      const mesa = invitado.mesa;
+      const elementoMesa = document.querySelector('.nombre-mesa');
+      
+      if (elementoMesa) {
+        const timeline = gsap.timeline();
+        
+        // Desvanecer la mesa actual
+        timeline.to(elementoMesa, {
+          opacity: 0,
+          scale: 0.8,
+          duration: 0.5,
+          ease: "power2.inOut"
+        })
+        // Actualizar el texto y hacerlo aparecer
+        .call(() => {
+          setMesaActual(mesa);
+          ultimaMesaMostrada.current = invitado.mesaId;
+        })
+        .to(elementoMesa, {
+          opacity: 0.8,
+          scale: 1 + (intensidadNormalizada * 0.9),
+          duration: 0.5,
+          ease: "power2.out"
+        });
+      } else {
+        setMesaActual(mesa);
+        ultimaMesaMostrada.current = invitado.mesaId;
+      }
+    }
 
+    // Capturar la intensidad en el momento de la animación
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     analyser.getByteFrequencyData(dataArray);
-    
     const intensidadMusica = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
-    const intensidadNormalizada = intensidadMusica / 255;
+    const intensidadNormalizadaActual = intensidadMusica / 255;
+    
+    // Calcular la separación final basada en la intensidad capturada
+    const offsetBase = 15; // Aumentado de 12 a 15 para más separación
+    const offsetAdicional = intensidadNormalizadaActual * 4; // Aumentado de 3 a 4 para más variación
+    const offsetFinal = (offsetBase + offsetAdicional) * 0.8; // Reducido un 20% para que acaben más juntas
+
+    // Calculamos el tiempo de espera de forma inversa a la intensidad
+    const tiempoEsperaBase = 50;
+    const tiempoEsperaMaximo = 100;
+    const tiempoEspera = tiempoEsperaBase + (tiempoEsperaMaximo - tiempoEsperaBase) * (1 - intensidadNormalizadaActual);
 
     setTimeout(() => {
       const elementoNuevo = document.querySelector(`[data-invitado-id="${invitado.id}"]`);
       const elementoNombre = document.querySelector(`[data-invitado-nombre-id="${invitado.id}"]`);
       
       if (elementoNuevo && elementoNombre) {
-        const escalaInicial = 0.5 + (intensidadNormalizada * 0.3);
+        const escalaInicial = 0.5 + (intensidadNormalizadaActual * 0.3);
         
+        // Configuración inicial de los elementos
         gsap.set([elementoNombre, elementoNuevo], {
           left: '50%',
           top: '50%',
           opacity: 0,
           scale: escalaInicial,
           transform: 'translate(-50%, -50%)',
-          width: '40dvh',
-          height: '40dvh',
+          width: 'var(--ancho-invitado)',
+          height: 'var(--ancho-invitado)',
           boxSizing: 'border-box'
         });
 
         const timeline = gsap.timeline();
 
+        // Manejar la salida del invitado más antiguo si es necesario
         if (invitadosEnEsquinas.length >= 4) {
           const invitadoSaliente = invitadosEnEsquinas[0];
           const elementoSaliente = document.querySelector(`[data-invitado-id="${invitadoSaliente.id}"]`);
           const nombreSaliente = document.querySelector(`[data-invitado-nombre-id="${invitadoSaliente.id}"]`);
 
           if (elementoSaliente && nombreSaliente) {
-            const duracionDesvanecimiento = params.duracionAnimacion * (1 + intensidadNormalizada);
-            const escalaFinal = 0.8 - (intensidadNormalizada * 0.3);
-
             timeline.to([elementoSaliente, nombreSaliente], {
               opacity: 0,
-              scale: escalaFinal,
-              duration: duracionDesvanecimiento,
+              scale: 0.8,
+              duration: params.duracionAnimacion,
               ease: "power2.inOut",
               onStart: () => {
                 gsap.set([elementoSaliente, nombreSaliente], {
@@ -700,58 +810,60 @@ useEffect(() => {
                 });
               },
               onComplete: () => {
-                setInvitadosEnEsquinas(prev => {
-                  const nuevosInvitados = prev.slice(1);
-                  return nuevosInvitados;
-                });
+                setInvitadosEnEsquinas(prev => prev.slice(1));
               }
             });
-          } else {
-            setInvitadosEnEsquinas(prev => prev.slice(1));
           }
         }
 
         const nuevaPosicion = calcularPosicionEsquina(ultimoIndiceEsquina.current);
+        const duracionEntrada = params.duracionAnimacion * (1 + intensidadNormalizadaActual * 0.5);
 
-        const duracionEntrada = params.duracionAnimacion * (1 + intensidadNormalizada * 0.5);
-        const escalaMaxima = 1 + (intensidadNormalizada * 0.2);
-
+        // Animación combinada de movimiento y separación
         timeline.to([elementoNombre, elementoNuevo], {
+          opacity: 1,
+          scale: 1,
           left: nuevaPosicion.x,
           top: nuevaPosicion.y,
-          opacity: 1,
-          scale: escalaMaxima,
-          duration: duracionEntrada * 0.6,
-          ease: "power2.out"
-        }, invitadosEnEsquinas.length >= 4 ? params.duracionAnimacion : 0)
-        .to([elementoNombre, elementoNuevo], {
-          scale: 1,
-          duration: duracionEntrada * 0.4,
-          ease: "elastic.out(1, 0.3)"
-        })
-        .to([elementoNuevo, elementoNombre], {
-          transform: (index) => {
-            const offsetBase = 15;
-            const offsetAdicional = intensidadNormalizada * 5;
-            const offsetX = index === 0 ? -(offsetBase + offsetAdicional) : (offsetBase + offsetAdicional);
-            return `translate(calc(-50% + ${offsetX}dvh), -50%)`;
+          duration: duracionEntrada,
+          ease: "power1.out",
+          onUpdate: () => {
+            const progress = timeline.progress();
+            // Función que primero junta las bolas un 20% y luego las separa
+            let offsetActual;
+            if (progress < 0.3) {
+              // Primera fase: juntarse un 20%
+              offsetActual = (1 - (progress / 0.3) * 0.2) * offsetFinal;
+            } else {
+              // Segunda fase: separarse hasta la posición final
+              const remainingProgress = (progress - 0.3) / 0.7;
+              offsetActual = (0.8 + remainingProgress * 0.2) * offsetFinal;
+            }
+            
+            gsap.set(elementoNuevo, {
+              zIndex: 1000,
+              transform: `translate(calc(-50% - ${offsetActual}dvh), -50%)`
+            });
+            gsap.set(elementoNombre, {
+              zIndex: 1001,
+              transform: `translate(calc(-50% + ${offsetActual}dvh), -50%)`
+            });
           },
-          duration: params.duracionAnimacion * 0.5,
-          ease: "power2.inOut",
           onComplete: () => {
             setInvitadosEnEsquinas(prev => [...prev, {
               ...invitado,
-              posicion: nuevaPosicion
+              posicion: nuevaPosicion,
+              offsetFinal
             }]);
-            
             ultimoIndiceEsquina.current = (ultimoIndiceEsquina.current + 1) % 4;
             setInvitadoActual(null);
           }
         });
 
-        if (intensidadNormalizada > 0.6) {
+        // Efecto de pulso si la intensidad es alta
+        if (intensidadNormalizadaActual > 0.6) {
           timeline.to([elementoNuevo, elementoNombre], {
-            scale: 1 + (intensidadNormalizada * 0.1),
+            scale: 1 + (intensidadNormalizadaActual * 0.1),
             duration: 0.2,
             yoyo: true,
             repeat: 1,
@@ -759,11 +871,17 @@ useEffect(() => {
           }, "+=0.1");
         }
       }
-    }, Math.max(50, intensidadNormalizada * 100));
+    }, tiempoEspera);
   };
 
   const iniciarAudio = () => {
     if (!datosCargados) return;
+    
+    // Evitar múltiples llamadas en rápida sucesión
+    if (audioRef.current.playPromise) {
+      return;
+    }
+
     if (!audioContext) {
       const newAudioContext = new (window.AudioContext ||
         window.webkitAudioContext)();
@@ -777,10 +895,24 @@ useEffect(() => {
       setAudioContext(newAudioContext);
       setAnalyser(newAnalyser);
     }
-    if (audioRef.current.paused) {
-      audioRef.current.play();
-    } else {
-      audioRef.current.pause();
+
+    try {
+      if (audioRef.current.paused) {
+        audioRef.current.playPromise = audioRef.current.play();
+        audioRef.current.playPromise
+          .then(() => {
+            audioRef.current.playPromise = null;
+          })
+          .catch(error => {
+            console.error('Error al reproducir audio:', error);
+            audioRef.current.playPromise = null;
+          });
+      } else {
+        audioRef.current.pause();
+      }
+    } catch (error) {
+      console.error('Error al controlar el audio:', error);
+      audioRef.current.playPromise = null;
     }
   };
 
@@ -789,24 +921,27 @@ useEffect(() => {
       <canvas ref={canvasBarsRef} className="ecualizador-barras" />
       <canvas ref={canvasDotsRef} className="ecualizador-bolitas" />
       
-      {mostrarNombreMesa && mesaActual && (
+      {mesaActual && (
         <div
           className="nombre-mesa"
           style={{
             position: 'absolute',
             left: '50%',
-            top: '30%',
+            top: '50%',
             transform: 'translate(-50%, -50%)',
             color: 'white',
-            fontSize: '10dvh',
+            fontSize: '7dvh',
+            fontFamily: 'VCR',
             fontWeight: 'bold',
             textAlign: 'center',
             padding: '2dvh',
-            zIndex: 2000,
+            zIndex: 950,
             textShadow: '0 0 10px rgba(0,0,255,0.8), 0 0 20px rgba(0,0,255,0.6), 0 0 30px rgba(0,0,255,0.4)',
-            animation: 'fadeInOut 3s ease-in-out',
-            whiteSpace: 'nowrap',
-            letterSpacing: '0.1em'
+            opacity: 0.8,
+            pointerEvents: 'none',
+            transform: `translate(-50%, -50%) scale(${1 + (intensidadNormalizada * 0.9)})`,
+            transition: 'transform 0.1s ease-out',
+            lineHeight: 1.2
           }}
         >
           {mesaActual}
@@ -822,151 +957,189 @@ useEffect(() => {
               position: 'absolute',
               left: '50%',
               top: '50%',
-              width: '40dvh',
-              height: '40dvh',
+              width: 'var(--ancho-invitado)',
+              height: 'var(--ancho-invitado)',
               borderRadius: '50%',
               backgroundColor: 'white',
               color: 'black',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '5dvh',
+              fontSize: '4.5dvh',
+              fontFamily: 'VCR',
               fontWeight: 'bold',
               textAlign: 'center',
               padding: '4dvh',
               boxSizing: 'border-box',
-              zIndex: 900,
+              zIndex: 1001,
+              transform: 'translate(-50%, -50%)',
+              opacity: 0,
+              pointerEvents: 'none',
+              lineHeight: 1.2,
+              boxShadow: '0 0 20px rgba(0, 255, 255, 0.5), 0 0 40px rgba(0, 128, 255, 0.3)'
+            }}
+          >
+            {invitadoActual.nombre}
+          </div>
+          <div 
+            data-invitado-id={invitadoActual.id}
+            className="invitado"
+            style={{
+              position: 'absolute',
+              left: '50%',
+              top: '50%',
+              width: 'var(--ancho-invitado)',
+              height: 'var(--ancho-invitado)',
+              borderRadius: '50%',
+              overflow: 'hidden',
+              backgroundColor: !invitadoActual.imagen ? coloresInvitados[invitadoActual.id] : 'transparent',
+              boxSizing: 'border-box',
+              zIndex: 1000,
               transform: 'translate(-50%, -50%)',
               opacity: 0,
               pointerEvents: 'none'
             }}
           >
-            {invitadoActual.nombre}
-          </div>
-        <div 
-          data-invitado-id={invitadoActual.id}
-          className="invitado"
-          style={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-              width: '40dvh',
-              height: '40dvh',
-            borderRadius: '50%',
-            overflow: 'hidden',
-            backgroundColor: !invitadoActual.imagen ? coloresInvitados[invitadoActual.id] : 'transparent',
-              boxSizing: 'border-box',
-              zIndex: 1000,
-              transform: 'translate(-50%, -50%)',
-            opacity: 0,
-              pointerEvents: 'none'
-          }}
-        >
-          {invitadoActual.imagen ? (
-            <img 
-              src={invitadoActual.imagen} 
-              alt={invitadoActual.nombre}
-              style={{
+            {invitadoActual.imagen ? (
+              <img 
+                src={invitadoActual.imagen} 
+                alt={invitadoActual.nombre}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  borderRadius: '50%'
+                }}
+              />
+            ) : (
+              <div style={{
                 width: '100%',
                 height: '100%',
-                objectFit: 'cover',
-                borderRadius: '50%'
-              }}
-            />
-          ) : (
-            <div style={{
-              width: '100%',
-              height: '100%',
-              borderRadius: '50%',
-              backgroundColor: coloresInvitados[invitadoActual.id]
-            }} />
-          )}
-        </div>
+                borderRadius: '50%',
+                backgroundColor: coloresInvitados[invitadoActual.id]
+              }} />
+            )}
+          </div>
         </>
       )}
 
-      {invitadosEnEsquinas.map((invitado, index) => (
-        <React.Fragment key={`container-${invitado.id}-${index}`}>
-          <div
-            key={`nombre-${invitado.id}-${index}`}
-            data-invitado-nombre-id={invitado.id}
-            className="invitado-nombre"
-            style={{
-              position: 'absolute',
-              left: invitado.posicion.x,
-              top: invitado.posicion.y,
-              transform: 'translate(calc(-50% + 15dvh), -50%)',
-              width: '40dvh',
-              height: '40dvh',
-              borderRadius: '50%',
-              backgroundColor: 'white',
-              color: 'black',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '5dvh',
-              fontWeight: 'bold',
-              textAlign: 'center',
-              padding: '4dvh',
-              boxSizing: 'border-box',
-              opacity: 1,
-              zIndex: 900,
-              pointerEvents: 'none'
-            }}
-          >
-            {invitado.nombre}
-          </div>
-        <div
-          key={`${invitado.id}-${index}`}
-          data-invitado-id={invitado.id}
-          className="invitado"
-          style={{
-            position: 'absolute',
-            left: invitado.posicion.x,
-            top: invitado.posicion.y,
-              transform: 'translate(calc(-50% - 15dvh), -50%)',
-              width: '40dvh',
-              height: '40dvh',
-            borderRadius: '50%',
-            overflow: 'hidden',
-            backgroundColor: !invitado.imagen ? coloresInvitados[invitado.id] : 'transparent',
-              boxSizing: 'border-box',
-            opacity: 1,
-              zIndex: 1000,
-              pointerEvents: 'none'
-          }}
-        >
-          {invitado.imagen ? (
-            <img 
-              src={invitado.imagen} 
-              alt={invitado.nombre}
+      {invitadosEnEsquinas.map((invitado, index) => {
+        const offsetFinal = invitado.offsetFinal || 12;
+        
+        return (
+          <React.Fragment key={`container-${invitado.id}-${index}`}>
+            <div
+              key={`nombre-${invitado.id}-${index}`}
+              data-invitado-nombre-id={invitado.id}
+              className="invitado-nombre"
               style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                borderRadius: '50%'
+                position: 'absolute',
+                left: invitado.posicion.x,
+                top: invitado.posicion.y,
+                transform: `translate(calc(-50% + ${offsetFinal}dvh), -50%) scale(${1 + (intensidadNormalizada * 0.1)})`,
+                width: 'var(--ancho-invitado)',
+                height: 'var(--ancho-invitado)',
+                borderRadius: '50%',
+                backgroundColor: 'white',
+                color: 'black',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '4.5dvh',
+                fontFamily: 'VCR',
+                fontWeight: 'bold',
+                textAlign: 'center',
+                padding: '4dvh',
+                boxSizing: 'border-box',
+                opacity: 1,
+                zIndex: 1001,
+                pointerEvents: 'none',
+                lineHeight: 1.2,
+                boxShadow: `0 0 ${20 + intensidadNormalizada * 20}px rgba(0, 255, 255, 0.5), 0 0 ${40 + intensidadNormalizada * 40}px rgba(0, 128, 255, 0.3)`,
+                willChange: 'transform, box-shadow',
+                transition: 'transform 0.1s ease-out, box-shadow 0.1s ease-out'
               }}
-            />
-          ) : (
-            <div style={{
-              width: '100%',
-              height: '100%',
-              borderRadius: '50%',
-              backgroundColor: coloresInvitados[invitado.id]
-            }} />
-          )}
-        </div>
-        </React.Fragment>
-      ))}
+            >
+              {invitado.nombre}
+            </div>
+            <div
+              key={`${invitado.id}-${index}`}
+              data-invitado-id={invitado.id}
+              className="invitado"
+              style={{
+                position: 'absolute',
+                left: invitado.posicion.x,
+                top: invitado.posicion.y,
+                transform: `translate(calc(-50% - ${offsetFinal}dvh), -50%) scale(${1 + (intensidadNormalizada * 0.1)})`,
+                width: 'var(--ancho-invitado)',
+                height: 'var(--ancho-invitado)',
+                borderRadius: '50%',
+                overflow: 'hidden',
+                backgroundColor: !invitado.imagen ? coloresInvitados[invitado.id] : 'transparent',
+                boxSizing: 'border-box',
+                opacity: 1,
+                zIndex: 1000,
+                pointerEvents: 'none',
+                boxShadow: `0 0 ${20 + intensidadNormalizada * 20}px rgba(0, 255, 255, 0.5), 0 0 ${40 + intensidadNormalizada * 40}px rgba(0, 128, 255, 0.3)`,
+                willChange: 'transform, box-shadow',
+                transition: 'transform 0.1s ease-out, box-shadow 0.1s ease-out'
+              }}
+            >
+              {invitado.imagen ? (
+                <img 
+                  src={invitado.imagen} 
+                  alt={invitado.nombre}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    borderRadius: '50%',
+                    filter: `brightness(${1 + intensidadNormalizada * 0.3})`
+                  }}
+                />
+              ) : (
+                <div style={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '50%',
+                  backgroundColor: coloresInvitados[invitado.id]
+                }} />
+              )}
+            </div>
+          </React.Fragment>
+        );
+      })}
 
       <style>
         {`
-          @keyframes fadeInOut {
-            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
-            10% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-            20% { transform: translate(-50%, -50%) scale(1); }
-            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+          @keyframes pulse {
+            0% { 
+              transform: translate(calc(-50% - 12dvh), -50%) scale(1);
+              box-shadow: 0 0 20px rgba(0, 255, 255, 0.5), 0 0 40px rgba(0, 128, 255, 0.3);
+            }
+            50% { 
+              transform: translate(calc(-50% - 12dvh), -50%) scale(${1 + (intensidadNormalizada * 0.1)});
+              box-shadow: 0 0 30px rgba(0, 255, 255, 0.7), 0 0 60px rgba(0, 128, 255, 0.5);
+            }
+            100% { 
+              transform: translate(calc(-50% - 12dvh), -50%) scale(1);
+              box-shadow: 0 0 20px rgba(0, 255, 255, 0.5), 0 0 40px rgba(0, 128, 255, 0.3);
+            }
+          }
+
+          @keyframes pulseNombre {
+            0% { 
+              transform: translate(calc(-50% + 12dvh), -50%) scale(1);
+              box-shadow: 0 0 20px rgba(0, 255, 255, 0.5), 0 0 40px rgba(0, 128, 255, 0.3);
+            }
+            50% { 
+              transform: translate(calc(-50% + 12dvh), -50%) scale(${1 + (intensidadNormalizada * 0.1)});
+              box-shadow: 0 0 30px rgba(0, 255, 255, 0.7), 0 0 60px rgba(0, 128, 255, 0.5);
+            }
+            100% { 
+              transform: translate(calc(-50% + 12dvh), -50%) scale(1);
+              box-shadow: 0 0 20px rgba(0, 255, 255, 0.5), 0 0 40px rgba(0, 128, 255, 0.3);
+            }
           }
         `}
       </style>
