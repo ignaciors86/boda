@@ -773,7 +773,7 @@ useEffect(() => {
           top: '50%',
           opacity: 0,
           scale: escalaInicial,
-          transform: 'translate(-50%, -50%)',
+          transform: `translate(-50%, -50%)`,
           width: 'var(--ancho-invitado)',
           height: 'var(--ancho-invitado)',
           boxSizing: 'border-box'
@@ -851,9 +851,9 @@ useEffect(() => {
         });
 
         // Efecto de pulso si la intensidad es alta
-        if (intensidadNormalizadaActual > 0.6) {
+        if (intensidadNormalizadaActual > 0.4) {
           timeline.to([elementoNuevo, elementoNombre], {
-            scale: 1 + (intensidadNormalizadaActual * 0.1),
+            scale: 1 + (intensidadNormalizadaActual * 0.5),
             duration: 0.2,
             yoyo: true,
             repeat: 1,
@@ -966,7 +966,8 @@ useEffect(() => {
               opacity: 0,
               pointerEvents: 'none',
               lineHeight: 1.2,
-              boxShadow: '0 0 20px rgba(0, 255, 255, 0.5), 0 0 40px rgba(0, 128, 255, 0.3)'
+              boxShadow: `0 0 ${40 + intensidadNormalizada * 40}px rgba(0, 255, 255, 0.8), 0 0 ${80 + intensidadNormalizada * 80}px rgba(0, 128, 255, 0.6)`,
+              willChange: 'transform, box-shadow'
             }}
           >
             {invitadoActual.nombre}
@@ -987,7 +988,9 @@ useEffect(() => {
               zIndex: 1000,
               transform: 'translate(-50%, -50%)',
               opacity: 0,
-              pointerEvents: 'none'
+              pointerEvents: 'none',
+              boxShadow: `0 0 ${40 + intensidadNormalizada * 40}px rgba(0, 255, 255, 0.8), 0 0 ${80 + intensidadNormalizada * 80}px rgba(0, 128, 255, 0.6)`,
+              willChange: 'transform, box-shadow'
             }}
           >
             {invitadoActual.imagen ? (
@@ -998,7 +1001,8 @@ useEffect(() => {
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover',
-                  borderRadius: '50%'
+                  borderRadius: '50%',
+                  filter: `brightness(${1 + intensidadNormalizada * 0.8})`
                 }}
               />
             ) : (
@@ -1045,9 +1049,8 @@ useEffect(() => {
                 zIndex: 1001,
                 pointerEvents: 'none',
                 lineHeight: 1.2,
-                boxShadow: `0 0 ${20 + intensidadNormalizada * 20}px rgba(0, 255, 255, 0.5), 0 0 ${40 + intensidadNormalizada * 40}px rgba(0, 128, 255, 0.3)`,
-                willChange: 'transform, box-shadow',
-                transition: 'transform 0.1s ease-out, box-shadow 0.1s ease-out'
+                boxShadow: `0 0 ${40 + intensidadNormalizada * 40}px rgba(0, 255, 255, 0.8), 0 0 ${80 + intensidadNormalizada * 80}px rgba(0, 128, 255, 0.6)`,
+                willChange: 'transform, box-shadow'
               }}
             >
               {invitado.nombre}
@@ -1070,9 +1073,8 @@ useEffect(() => {
                 opacity: 1,
                 zIndex: 1000,
                 pointerEvents: 'none',
-                boxShadow: `0 0 ${20 + intensidadNormalizada * 20}px rgba(0, 255, 255, 0.5), 0 0 ${40 + intensidadNormalizada * 40}px rgba(0, 128, 255, 0.3)`,
-                willChange: 'transform, box-shadow',
-                transition: 'transform 0.1s ease-out, box-shadow 0.1s ease-out'
+                boxShadow: `0 0 ${40 + intensidadNormalizada * 40}px rgba(0, 255, 255, 0.8), 0 0 ${80 + intensidadNormalizada * 80}px rgba(0, 128, 255, 0.6)`,
+                willChange: 'transform, box-shadow'
               }}
             >
               {invitado.imagen ? (
@@ -1084,7 +1086,7 @@ useEffect(() => {
                     height: '100%',
                     objectFit: 'cover',
                     borderRadius: '50%',
-                    filter: `brightness(${1 + intensidadNormalizada * 0.3})`
+                    filter: `brightness(${1 + intensidadNormalizada * 0.8})`
                   }}
                 />
               ) : (
