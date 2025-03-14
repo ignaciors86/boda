@@ -543,7 +543,12 @@ useEffect(() => {
         for (let i = 0; i < totalBolitas; i++) {
           const progress = i / totalBolitas;
           const angle = progress * Math.PI * 10;
-          const radius = progress * maxRadius;
+          const baseRadius = progress * maxRadius;
+          
+          // Calcular el movimiento hacia el centro basado en la intensidad
+          const umbralIntensidad = 0.3; // Umbral para considerar la música "lenta"
+          const factorMovimiento = Math.max(0, umbralIntensidad - intensidadNormalizadaActual) / umbralIntensidad;
+          const radius = baseRadius * (1 - factorMovimiento * 0.8); // Reducir hasta un 80% el radio
           
           const x = centerX + Math.cos(angle) * radius;
           const y = centerY + Math.sin(angle) * radius;
@@ -551,7 +556,8 @@ useEffect(() => {
           // Calcular el ángulo del siguiente punto
           const nextProgress = (i + 1) / totalBolitas;
           const nextAngle = nextProgress * Math.PI * 10;
-          const nextRadius = nextProgress * maxRadius;
+          const nextBaseRadius = nextProgress * maxRadius;
+          const nextRadius = nextBaseRadius * (1 - factorMovimiento * 0.8);
           const nextX = centerX + Math.cos(nextAngle) * nextRadius;
           const nextY = centerY + Math.sin(nextAngle) * nextRadius;
 
@@ -560,10 +566,11 @@ useEffect(() => {
           const dy = nextY - y;
           const distanciaEntrePuntos = Math.sqrt(dx * dx + dy * dy);
 
-          // Calcular el tamaño base para que las bolitas no se mezclen
-          const tamañoBase = distanciaEntrePuntos * 0.4; // Reducido de 0.5 a 0.4 para dejar más espacio
-          const crecimientoDinamico = dataArray[i] / 255 * 1.5; // Reducido de 2 a 1.5 para menos variación
-          const tamañoFinal = tamañoBase + (crecimientoDinamico * tamañoBase * 0.1); // Reducido de 0.2 a 0.1 para menos variación
+          // Ajustar el tamaño cuando se acercan al centro
+          const factorTamaño = 1 + (factorMovimiento * 0.5); // Aumentar hasta un 50% el tamaño
+          const tamañoBase = distanciaEntrePuntos * 0.4 * factorTamaño;
+          const crecimientoDinamico = dataArray[i] / 255 * 1.5;
+          const tamañoFinal = tamañoBase + (crecimientoDinamico * tamañoBase * 0.1);
 
           const bolitaProgreso = i / totalBolitas;
           const mostrarBolita = bolitaProgreso <= progresoAnimacionEspiral;
