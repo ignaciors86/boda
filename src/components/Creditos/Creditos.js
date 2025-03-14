@@ -94,9 +94,6 @@ const Creditos = () => {
   const [imagenesCargadas, setImagenesCargadas] = useState([]);
   const [intensidadNormalizada, setIntensidadNormalizada] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [usarAudioSistema, setUsarAudioSistema] = useState(false);
-  const mediaStreamSourceRef = useRef(null);
-  const mediaElementSourceRef = useRef(null);
   const imagenesRef = useRef([]);
   const indexInvitado = useRef(0);
   const animationRef = useRef(null);
@@ -118,9 +115,6 @@ const Creditos = () => {
     escalaActual: 1.0,
     direccionGiro: 1
   });
-
-  const previousAveragesRef = useRef([0, 0, 0]);
-  const targetAveragesRef = useRef([0, 0, 0]);
 
   const cargarImagen = (url, index) => {
     console.log(`Intentando cargar imagen ${index}: ${url}`);
@@ -377,170 +371,6 @@ useEffect(() => {
         const { width: dotsWidth, height: dotsHeight } = canvasDotsRef.current.getBoundingClientRect();
         ctxBars.clearRect(0, 0, barsWidth, barsHeight);
         ctxDots.clearRect(0, 0, dotsWidth, dotsHeight);
-
-        // Si estamos usando el audio del sistema, dibujamos el ecualizador KITT
-        if (usarAudioSistema) {
-          // Limpiar completamente el canvas antes de empezar
-          ctxBars.clearRect(0, 0, barsWidth, barsHeight);
-          ctxBars.fillStyle = 'rgb(0, 0, 0)';
-          ctxBars.fillRect(0, 0, barsWidth, barsHeight);
-          ctxDots.clearRect(0, 0, dotsWidth, dotsHeight);
-
-          // Configuración del ecualizador KITT
-          const numBars = 3;
-          const numSegments = 13;
-          const segmentSpacing = 2;
-          const segmentWidth = Math.min(barsWidth * 0.06, 24);
-          const columnSpacing = segmentWidth * 0.8;
-          const maxHeight = barsHeight * 0.48;
-          const segmentHeight = (maxHeight / numSegments) / 2;
-          const centerGap = 1;
-
-          // Calcular el ancho total y posición central
-          const totalWidth = (segmentWidth * numBars) + (columnSpacing * (numBars - 1));
-          const centerX = barsWidth / 2;
-          const startX = centerX - (totalWidth / 2);
-          const centerY = barsHeight / 2;
-
-          // Dividir el array de frecuencias en tres secciones
-          const bajos = dataArray.slice(0, Math.floor(dataArray.length * 0.33));
-          const medios = dataArray.slice(Math.floor(dataArray.length * 0.33), Math.floor(dataArray.length * 0.66));
-          const altos = dataArray.slice(Math.floor(dataArray.length * 0.66));
-
-          const calcularPromedio = (arr) => {
-            const sum = arr.reduce((sum, val) => sum + val, 0);
-            const rawAverage = sum / arr.length / 255;
-            // Aumentamos la sensibilidad para mayor reactividad
-            return Math.pow(rawAverage, 0.3) * 255;
-          };
-          
-          // Calculamos los promedios base
-          const rawCentral = calcularPromedio(medios);
-          const rawLateral = Math.min(
-            calcularPromedio(bajos),
-            calcularPromedio(altos)
-          );
-
-          // Aplicamos una curva suave para mantener proporciones consistentes
-          const factorIntensidad = (valor) => {
-            if (valor < 20) return 0; // Umbral de silencio
-            if (valor < 60) {
-              // Transición suave desde el silencio
-              const factor = (valor - 20) / 40;
-              return Math.pow(factor, 0.7);
-            }
-            // Curva logarítmica con más rango dinámico
-            const logValue = Math.log10(((valor - 60) / 195) * 9 + 1);
-            return Math.max(logValue * 1.2, 0.3); // Aumentamos el rango dinámico
-          };
-
-          // Calculamos los promedios finales manteniendo proporciones
-          const promedioCentral = rawCentral * 2.6 * factorIntensidad(rawCentral);
-          const promedioLateral = Math.min(
-            rawLateral * 2.6 * factorIntensidad(rawLateral),
-            promedioCentral
-          );
-          
-          // Aseguramos un mínimo de altura cuando hay música alta
-          const minHeight = (valor) => {
-            if (valor < 3) return 0; // Umbral más estricto para silencio
-            if (valor > 100) {
-              return Math.max(valor * 0.35, 35);
-            }
-            return valor;
-          };
-
-          // Actualizamos los objetivos
-          targetAveragesRef.current = [
-            minHeight(promedioLateral),
-            minHeight(promedioCentral),
-            minHeight(promedioLateral)
-          ];
-
-          // Aplicamos suavizado más rápido para mayor reactividad
-          const smoothingFactor = 0.4;
-          const averages = previousAveragesRef.current.map((prev, i) => {
-            const target = targetAveragesRef.current[i];
-            const smoothed = prev + (target - prev) * smoothingFactor;
-            return smoothed < 3 ? 0 : smoothed;
-          });
-
-          previousAveragesRef.current = averages;
-
-          // Dibujar las columnas desde el centro hacia afuera
-          const barOrder = [1, 0, 2]; // Orden de dibujo: centro, izquierda, derecha
-          for (const i of barOrder) {
-            const isCenter = i === 1;
-            const distanceFromCenter = i === 0 ? -1 : (i === 2 ? 1 : 0);
-            const x = centerX + (distanceFromCenter * (segmentWidth + columnSpacing));
-            
-            let normalizedValue;
-            if (!isCenter) {
-              normalizedValue = Math.min(averages[2] / 255, 1); // Mismo valor para ambas laterales
-              // Si hay algo de audio (central > umbral mínimo), aseguramos al menos un segmento
-              if (averages[1] > 3 && normalizedValue * 255 >= 1) {
-                normalizedValue = Math.max(normalizedValue, 1/numSegments);
-              }
-            } else {
-              normalizedValue = Math.min(averages[i] / 255, 1);
-            }
-            
-            // Si el valor es muy bajo, no mostramos nada
-            if (normalizedValue * 255 < 3) continue;
-            
-            const activeSegments = Math.ceil(normalizedValue * numSegments);
-            
-            // Dibujamos los segmentos desde el centro hacia afuera
-            for (let direction = -1; direction <= 1; direction += 2) {
-              for (let j = 0; j < numSegments; j++) {
-                const isActive = j < activeSegments;
-                if (!isActive) continue;
-                
-                const y = centerY + (direction * ((j * (segmentHeight + segmentSpacing)) + centerGap));
-                const segmentIntensity = Math.pow(1 - (j / numSegments), 0.7);
-                const musicIntensity = normalizedValue * 0.3;
-                const finalIntensity = segmentIntensity + musicIntensity;
-                
-                const baseIntensity = isCenter ? 0.7 : 0.8;
-                ctxBars.fillStyle = `rgba(255, 0, 0, ${baseIntensity + finalIntensity * 0.3})`;
-                
-                // Dibujamos desde el centro
-                const barX = x - (segmentWidth / 2);
-                ctxBars.fillRect(barX, y, segmentWidth, direction * segmentHeight);
-              }
-            }
-          }
-
-          // Aplicar gradiente oscuro más amplio
-          const totalBarHeight = (numSegments * (segmentHeight + segmentSpacing) + centerGap) * 2;
-          const startY = centerY - (totalBarHeight / 2);
-          
-          // Crear gradiente vertical para todo el canvas
-          const fadeGradient = ctxBars.createLinearGradient(0, startY, 0, startY + totalBarHeight);
-          
-          // Degradado superior más pronunciado y extendido
-          fadeGradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
-          fadeGradient.addColorStop(0.15, 'rgba(0, 0, 0, 0.98)');
-          fadeGradient.addColorStop(0.45, 'rgba(0, 0, 0, 0)');
-          fadeGradient.addColorStop(0.5, 'rgba(0, 0, 0, 0)');
-          fadeGradient.addColorStop(0.55, 'rgba(0, 0, 0, 0)');
-          fadeGradient.addColorStop(0.85, 'rgba(0, 0, 0, 0.98)');
-          fadeGradient.addColorStop(1, 'rgba(0, 0, 0, 1)');
-          
-          // Guardar el estado actual del contexto
-          ctxBars.save();
-          
-          // Aplicar el gradiente con composición multiply
-          ctxBars.globalCompositeOperation = 'multiply';
-          ctxBars.fillStyle = fadeGradient;
-          ctxBars.fillRect(0, 0, barsWidth, barsHeight);
-          
-          // Restaurar el estado original del contexto
-          ctxBars.restore();
-
-          // No dibujamos las bolitas cuando está en modo KITT
-          return;
-        }
 
         const centerX = dotsWidth / 2;
         const centerY = dotsHeight / 2;
@@ -1041,214 +871,52 @@ useEffect(() => {
     }, tiempoEspera);
   };
 
-  const desconectarAudio = async () => {
-    console.log('Desconectando audio...');
+  const iniciarAudio = () => {
+    if (!datosCargados) return;
     
-    // Pausar y limpiar el audio si existe
-    if (audioRef.current) {
-      console.log('Pausando y limpiando elemento de audio...');
-      audioRef.current.pause();
-      audioRef.current.src = '';
-      audioRef.current.load();
-    }
-
-    // Desconectar y limpiar MediaStreamSource
-    if (mediaStreamSourceRef.current) {
-      console.log('Desconectando mediaStreamSource...');
-      mediaStreamSourceRef.current.disconnect();
-      mediaStreamSourceRef.current = null;
-    }
-
-    // Desconectar y limpiar MediaElementSource
-    if (mediaElementSourceRef.current) {
-      console.log('Desconectando mediaElementSource...');
-      mediaElementSourceRef.current.disconnect();
-      mediaElementSourceRef.current = null;
-    }
-
-    // Cerrar y limpiar AudioContext
-    if (audioContext) {
-      if (audioContext.state !== 'closed') {
-        console.log('Cerrando contexto de audio...');
-        await audioContext.close();
-      }
-      setAudioContext(null);
-      setAnalyser(null);
-    }
-  };
-
-  const crearElementoAudio = () => {
-    console.log('Creando nuevo elemento de audio...');
-    const audioElement = document.createElement('audio');
-    audioElement.src = opus;
-    audioElement.className = 'audio-player';
-    audioElement.controls = true;
-    audioElement.preload = 'auto';
-    audioElement.crossOrigin = 'anonymous';
-    
-    // Reemplazar el elemento de audio existente
-    const container = containerRef.current;
-    const oldAudio = container.querySelector('.audio-player');
-    if (oldAudio) {
-      container.removeChild(oldAudio);
-    }
-    container.appendChild(audioElement);
-    audioRef.current = audioElement;
-    
-    return audioElement;
-  };
-
-  const iniciarAudio = async () => {
-    console.log('Iniciando audio...');
-    if (!datosCargados) {
-      console.log('Datos no cargados aún');
+    // Evitar múltiples llamadas en rápida sucesión
+    if (audioRef.current.playPromise) {
       return;
     }
-    
-    try {
-      // Primero, desconectar todo el audio existente
-      await desconectarAudio();
 
-      // Crear nuevo elemento de audio si no estamos usando audio del sistema
-      if (!usarAudioSistema) {
-        crearElementoAudio();
-      }
-
-      // Crear nuevo contexto de audio
-      console.log('Creando nuevo contexto de audio...');
-      const newAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-      
-      if (newAudioContext.state === 'suspended') {
-        console.log('Reanudando contexto de audio...');
-        await newAudioContext.resume();
-      }
-      
+    if (!audioContext) {
+      const newAudioContext = new (window.AudioContext ||
+        window.webkitAudioContext)();
       const newAnalyser = newAudioContext.createAnalyser();
       newAnalyser.fftSize = 256;
-      
-      if (usarAudioSistema) {
-        console.log('Intentando capturar audio del sistema...');
-        try {
-          const stream = await navigator.mediaDevices.getDisplayMedia({
-            video: {
-              displaySurface: "monitor",
-              logicalSurface: true,
-              cursor: "never"
-            },
-            audio: {
-              suppressLocalAudioPlayback: false,
-              autoGainControl: false,
-              echoCancellation: false,
-              noiseSuppression: false,
-              latency: 0
-            },
-            preferCurrentTab: false,
-            selfBrowserSurface: "exclude",
-            systemAudio: "include"
-          });
 
-          // Verificar si tenemos audio
-          const audioTracks = stream.getAudioTracks();
-          console.log('Pistas de audio disponibles:', audioTracks);
-          
-          if (audioTracks.length === 0) {
-            throw new Error('No se detectaron pistas de audio');
-          }
-
-          // Detener el video ya que solo queremos el audio
-          stream.getVideoTracks().forEach(track => {
-            track.stop();
-            stream.removeTrack(track);
-          });
-
-          console.log('Audio del sistema capturado correctamente');
-          mediaStreamSourceRef.current = newAudioContext.createMediaStreamSource(stream);
-          mediaStreamSourceRef.current.connect(newAnalyser);
-
-          // Manejar cuando el usuario detiene la compartición
-          stream.getAudioTracks()[0].onended = () => {
-            console.log('Compartir audio detenido por el usuario');
-            setUsarAudioSistema(false);
-          };
-
-        } catch (error) {
-          console.error('Error al acceder al audio del sistema:', error);
-          setUsarAudioSistema(false);
-          return;
-        }
-      } else {
-        console.log('Configurando audio de Opus...');
-        if (!audioRef.current) {
-          throw new Error('Elemento de audio no encontrado');
-        }
-
-        try {
-          console.log('Creando nuevo MediaElementSource...');
-          mediaElementSourceRef.current = newAudioContext.createMediaElementSource(audioRef.current);
-          mediaElementSourceRef.current.connect(newAnalyser);
-          newAnalyser.connect(newAudioContext.destination);
-          
-          console.log('Audio de Opus configurado correctamente');
-          
-          if (audioRef.current.paused) {
-            console.log('Intentando reproducir audio...');
-            audioRef.current.currentTime = 0;
-            await audioRef.current.play();
-            console.log('Audio reproduciendo correctamente');
-          }
-        } catch (error) {
-          console.error('Error al configurar audio de Opus:', error);
-          throw error;
-        }
-      }
+      const source = newAudioContext.createMediaElementSource(audioRef.current);
+      source.connect(newAnalyser);
+      newAnalyser.connect(newAudioContext.destination);
 
       setAudioContext(newAudioContext);
       setAnalyser(newAnalyser);
-      console.log('Configuración de audio completada correctamente');
+    }
+
+    try {
+      if (audioRef.current.paused) {
+        audioRef.current.playPromise = audioRef.current.play();
+        audioRef.current.playPromise
+          .then(() => {
+            audioRef.current.playPromise = null;
+          })
+          .catch(error => {
+            console.error('Error al reproducir audio:', error);
+            audioRef.current.playPromise = null;
+          });
+      } else {
+        audioRef.current.pause();
+      }
     } catch (error) {
-      console.error('Error general en iniciarAudio:', error);
+      console.error('Error al controlar el audio:', error);
+      audioRef.current.playPromise = null;
     }
   };
-
-  // Efecto inicial para crear el elemento de audio
-  useEffect(() => {
-    crearElementoAudio();
-  }, []);
-
-  // Efecto para manejar el cambio de fuente de audio
-  useEffect(() => {
-    if (datosCargados) {
-      iniciarAudio();
-    }
-  }, [usarAudioSistema, datosCargados]);
 
   return (
     <div ref={containerRef} className="creditos" onClick={iniciarAudio}>
       <canvas ref={canvasBarsRef} className="ecualizador-barras" />
       <canvas ref={canvasDotsRef} className="ecualizador-bolitas" />
-      
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setUsarAudioSistema(!usarAudioSistema);
-        }}
-        style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          zIndex: 9999,
-          padding: '10px',
-          backgroundColor: usarAudioSistema ? '#4CAF50' : '#f44336',
-          color: 'white',
-          border: 'none',
-          borderRadius: '5px',
-          cursor: 'pointer',
-          fontFamily: 'VCR',
-          fontSize: '16px'
-        }}
-      >
-        {usarAudioSistema ? '🎤 Audio Sistema' : '🎵 Opus'}
-      </button>
       
       {mesaActual && (
         <div

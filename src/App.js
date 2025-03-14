@@ -8,6 +8,7 @@ import FondosBaile from './components/FondosBaile/FondosBaile'; // Importa tu nu
 import { renderItems } from 'components/Timeline/items';
 import { items } from './components/Timeline/items'; // Asegúrate de importar correctamente
 import Creditos from 'components/Creditos/Creditos';
+import KITT from 'components/KITT/KITT';
 
 const App = () => {
   const tlApp = gsap.timeline();
@@ -166,7 +167,7 @@ const App = () => {
             }
           />
           <Route path="/fondos-baile" element={<FondosBaile />} />
-          {/* Ruta para cargar los datos del invitado */}
+          <Route path="/kitt" element={<KITT />} />
           <Route path="/:documentId" element={<LoadInvitado />} />
         </Routes>
       </DragProvider>
