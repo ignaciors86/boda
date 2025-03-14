@@ -8,10 +8,8 @@ import Prompt from "components/Prompt/Prompt";
 const TIEMPO_INICIO_ESPIRAL = 4;
 const TIEMPO_INICIO_BARRITAS = 224.5;
 const TIEMPO_INICIO_INVITADOS = 20;
-const DURACION_SECCION_INVITADOS = 77;
 const TIEMPO_FIN = 400;
 const TIEMPO_PARON = 341.5;
-const DURACION_PARON = 0.75;
 
 // Ajustes específicos para Opus y sus diferentes secciones
 const TIEMPO_INICIO_ACELERACION = 75;
@@ -89,7 +87,6 @@ const Creditos = () => {
   const canvasDotsRef = useRef(null);
   const containerRef = useRef(null);
   const [datosInvitados, setDatosInvitados] = useState([]);
-  const [grupoActual, setGrupoActual] = useState([]);
   const [mesaActual, setMesaActual] = useState(null);
   const [audioContext, setAudioContext] = useState(null);
   const [analyser, setAnalyser] = useState(null);
@@ -99,23 +96,16 @@ const Creditos = () => {
   const [isPaused, setIsPaused] = useState(false);
   const imagenesRef = useRef([]);
   const indexInvitado = useRef(0);
-  const timeoutRef = useRef(null);
   const animationRef = useRef(null);
-  const posicionesImagenes = useRef([]);
   const [invitadosFlotando, setInvitadosFlotando] = useState(new Set());
-  const [animacionesMesa, setAnimacionesMesa] = useState({});
   const ultimoCambio = useRef(0);
-  const contadorGolpes = useRef(0);
-  const ultimoGolpe = useRef(0);
   const [coloresInvitados, setColoresInvitados] = useState({});
-  const [primerCicloCompletado, setPrimerCicloCompletado] = useState(false);
   const [invitadoActual, setInvitadoActual] = useState(null);
   const [invitadosEnEsquinas, setInvitadosEnEsquinas] = useState([]);
   const ultimoIndiceEsquina = useRef(0);
-  const [mostrarNombreMesa, setMostrarNombreMesa] = useState(false);
   const ultimaMesaMostrada = useRef(null);
-  const ultimoInvitadoMostrado = useRef(-1);
   const invitadosMostrados = useRef([]);
+  const ultimoInvitadoMostrado = useRef(0);
   const [animacionesActivas, setAnimacionesActivas] = useState(new Map());
 
   const animationState = useRef({
