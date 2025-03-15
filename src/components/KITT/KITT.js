@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import './KITT.scss';
 
-const KITT = ({ onClose }) => {
+const KITT = ({ onClose, audioFile, delayPlay }) => {
   const containerRef = useRef(null);
   const canvasBarsRef = useRef(null);
   const audioRef = useRef(null);
@@ -230,35 +230,29 @@ const KITT = ({ onClose }) => {
         const calcularPromedio = (arr) => {
           const sum = arr.reduce((sum, val) => sum + val, 0);
           const rawAverage = sum / arr.length / 255;
-          return Math.pow(rawAverage, 0.3) * 255;
+          return Math.pow(rawAverage, 0.25) * 255;
         };
         
+        const rawLateral = calcularPromedio(medios) * 0.85;
         const rawCentral = calcularPromedio(medios);
-        const rawLateral = Math.min(
-          calcularPromedio(bajos),
-          calcularPromedio(altos)
-        );
 
         const factorIntensidad = (valor) => {
-          if (valor < 20) return 0;
-          if (valor < 60) {
-            const factor = (valor - 20) / 40;
-            return Math.pow(factor, 0.7);
+          if (valor < 15) return 0;
+          if (valor < 45) {
+            const factor = (valor - 15) / 30;
+            return Math.pow(factor, 0.6);
           }
-          const logValue = Math.log10(((valor - 60) / 195) * 9 + 1);
-          return Math.max(logValue * 1.2, 0.3);
+          const logValue = Math.log10(((valor - 45) / 210) * 9 + 1);
+          return Math.max(logValue * 1.4, 0.4);
         };
 
-        const promedioCentral = rawCentral * 2.6 * factorIntensidad(rawCentral);
-        const promedioLateral = Math.min(
-          rawLateral * 2.6 * factorIntensidad(rawLateral),
-          promedioCentral
-        );
+        const promedioCentral = rawCentral * 3.0 * factorIntensidad(rawCentral);
+        const promedioLateral = rawLateral * 3.0 * factorIntensidad(rawLateral);
         
         const minHeight = (valor) => {
-          if (valor < 3) return 0;
+          if (valor < 2) return 0;
           if (valor > 100) {
-            return Math.max(valor * 0.35, 35);
+            return Math.max(valor * 0.4, 40);
           }
           return valor;
         };
@@ -286,9 +280,9 @@ const KITT = ({ onClose }) => {
           
           let normalizedValue;
           if (!isCenter) {
-            normalizedValue = Math.min(averages[2] / 255, 1);
+            normalizedValue = Math.min(averages[i] / 255, 1);
             if (averages[1] > 3 && normalizedValue * 255 >= 1) {
-              normalizedValue = Math.max(normalizedValue, 1/numSegments);
+              normalizedValue = Math.max(normalizedValue * 0.85, 1/numSegments);
             }
           } else {
             normalizedValue = Math.min(averages[i] / 255, 1);
@@ -359,37 +353,88 @@ const KITT = ({ onClose }) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (audioFile) {
+      const initAudioFile = async () => {
+        try {
+          await desconectarAudio();
+
+          const newAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+          const newAnalyser = newAudioContext.createAnalyser();
+          newAnalyser.fftSize = 256;
+          
+          const audioElement = new Audio(audioFile);
+          audioElement.crossOrigin = 'anonymous';
+          audioRef.current = audioElement;
+
+          await new Promise((resolve) => {
+            audioElement.addEventListener('canplaythrough', resolve, { once: true });
+            audioElement.load();
+          });
+
+          if (newAudioContext.state === 'suspended') {
+            await newAudioContext.resume();
+          }
+
+          const source = newAudioContext.createMediaElementSource(audioElement);
+          source.connect(newAnalyser);
+          newAnalyser.connect(newAudioContext.destination);
+
+          setAudioContext(newAudioContext);
+          setAnalyser(newAnalyser);
+
+          audioElement.addEventListener('ended', () => {
+            if (onClose) onClose();
+          });
+
+          if (!delayPlay) {
+            await audioElement.play();
+          }
+
+        } catch (error) {
+          console.error('Error al inicializar el audio:', error);
+        }
+      };
+
+      initAudioFile();
+    }
+  }, [audioFile, onClose, delayPlay]);
+
   return (
-    <div ref={containerRef} className="kitt-container">
+    <div ref={containerRef} className={`kitt-container ${audioFile ? 'kitt-audio-only' : ''}`}>
       <canvas ref={canvasBarsRef} className="kitt-bars" />
       
-      <div className="kitt-controls">
-        <input
-          type="text"
-          value={textoParaLeer}
-          onChange={(e) => setTextoParaLeer(e.target.value)}
-          placeholder="Escribe algo para leer..."
-          className="kitt-input"
-        />
-        <button
-          onClick={generarVoz}
-          disabled={estaGenerandoVoz || !textoParaLeer.trim()}
-          className="kitt-button"
-        >
-          {estaGenerandoVoz ? '🎙️ Generando...' : '🎙️ Leer'}
-        </button>
-      </div>
+      {!audioFile && (
+        <>
+          <div className="kitt-controls">
+            <input
+              type="text"
+              value={textoParaLeer}
+              onChange={(e) => setTextoParaLeer(e.target.value)}
+              placeholder="Escribe algo para leer..."
+              className="kitt-input"
+            />
+            <button
+              onClick={generarVoz}
+              disabled={estaGenerandoVoz || !textoParaLeer.trim()}
+              className="kitt-button"
+            >
+              {estaGenerandoVoz ? '🎙️ Generando...' : '🎙️ Leer'}
+            </button>
+          </div>
 
-      <button
-        onClick={() => setUsarAudioSistema(!usarAudioSistema)}
-        className="kitt-mode-button"
-      >
-        {usarAudioSistema ? '🎤 Audio Sistema' : '🎙️ Sintetizador'}
-      </button>
+          <button
+            onClick={() => setUsarAudioSistema(!usarAudioSistema)}
+            className="kitt-mode-button"
+          >
+            {usarAudioSistema ? '🎤 Audio Sistema' : '🎙️ Sintetizador'}
+          </button>
 
-      <button onClick={onClose} className="kitt-close-button">
-        ✕
-      </button>
+          <button onClick={onClose} className="kitt-close-button">
+            ✕
+          </button>
+        </>
+      )}
     </div>
   );
 };

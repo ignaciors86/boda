@@ -1,5 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import opus from "./opus.mp3";
+import peter from "./peter.wav";
+import KITT from "components/KITT/KITT";
 import "./Creditos.scss";
 import gsap from "gsap";
 import Prompt from "components/Prompt/Prompt";
@@ -107,6 +109,15 @@ const Creditos = () => {
   const invitadosMostrados = useRef([]);
   const ultimoInvitadoMostrado = useRef(0);
   const [animacionesActivas, setAnimacionesActivas] = useState(new Map());
+  const [secuenciaInicial, setSecuenciaInicial] = useState(false);
+  const [kittFadeOut, setKittFadeOut] = useState(false);
+  const [mostrarCreditos, setMostrarCreditos] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const [showReadyText, setShowReadyText] = useState(false);
+  const [shouldDekayKITT, setShouldDekayKITT] = useState(true);
+  const [mostrarGracias, setMostrarGracias] = useState(false);
+  const [fadeOutTodo, setFadeOutTodo] = useState(false);
+  const [barrasOcultas, setBarrasOcultas] = useState(false);
 
   const animationState = useRef({
     tiempoAnterior: 0,
@@ -138,10 +149,10 @@ const Creditos = () => {
 
   const calcularPosicionEsquina = (indice) => {
     const posiciones = [
-      { x: '18%', y: '24%' },
+      { x: '20%', y: '24%' },
       { x: '80%', y: '22%' },
       { x: '78%', y: '78%' },
-      { x: '21%', y: '75%' }
+      { x: '23%', y: '78%' }
     ];
     return posiciones[indice % 4];
   };
@@ -160,15 +171,37 @@ const Creditos = () => {
       const currentTime = audioElement.currentTime;
       if (!currentTime || !analyser || isPaused) return;
       
+      // Control del fade out en TIEMPO_PARON
+      if (currentTime >= TIEMPO_PARON && !barrasOcultas) {
+        setBarrasOcultas(true);
+        gsap.to([".invitado", ".invitado-nombre", ".nombre-mesa", ".gracias"], {
+          opacity: 0,
+          duration: .25,
+          ease: "power2.inOut",
+        });
+      }
+
+      // Control del fade in de las barras después de TIEMPO_PARON
+      if (currentTime >= TIEMPO_PARON + .5) {
+        setBarrasOcultas(false);
+      }
+
       if (currentTime >= TIEMPO_INICIO_INVITADOS) {
         const params = getAnimationParams(currentTime);
-        
         const tiempoDesdeUltimaAnimacion = currentTime - ultimoCambio.current;
+        
         if (tiempoDesdeUltimaAnimacion >= params.tiempoEntreInvitados && !invitadoActual) {
-          const siguienteIndice = invitadosEnEsquinas.length > 0 ? 
-            datosInvitados.findIndex(inv => inv.id === invitadosEnEsquinas[invitadosEnEsquinas.length - 1].id) + 1 : 0;
+          let siguienteIndice;
+          
+          if (invitadosEnEsquinas.length === 0) {
+            siguienteIndice = 0;
+          } else {
+            siguienteIndice = datosInvitados.findIndex(inv => 
+              inv.id === invitadosEnEsquinas[invitadosEnEsquinas.length - 1].id) + 1;
+          }
 
-          if (siguienteIndice >= datosInvitados.length || invitadosMostrados.current[siguienteIndice]) {
+          // Si hemos completado el ciclo
+          if (siguienteIndice >= datosInvitados.length) {
             const elementosVisibles = invitadosEnEsquinas.map(inv => ({
               elemento: document.querySelector(`[data-invitado-id="${inv.id}"]`),
               nombre: document.querySelector(`[data-invitado-nombre-id="${inv.id}"]`)
@@ -181,30 +214,29 @@ const Creditos = () => {
               timeline.to([elemento, nombre], {
                 opacity: 0,
                 scale: 0.8,
-                duration: 1.5,
+                duration: 2,
                 ease: "power2.inOut",
-                delay: index * 0.2, // Pequeño retraso entre cada invitado
-                onStart: () => {
-                  gsap.set([elemento, nombre], {
-                    zIndex: 800,
-                    pointerEvents: 'none'
-                  });
-                }
+                delay: index * 0.2
               }, 0);
             });
 
-            // Desvanecer el nombre de la mesa después de los invitados
+            // Desvanecer el nombre de la mesa y mostrar GRACIAS
             timeline.to('.nombre-mesa', {
               opacity: 0,
               scale: 0.8,
-              duration: 1,
+              duration: 1.5,
               ease: "power2.inOut",
-              delay: 1, // Esperar a que terminen los invitados
               onComplete: () => {
                 setInvitadosEnEsquinas([]);
                 setMesaActual(null);
-                ultimoIndiceEsquina.current = 0;
+                setMostrarGracias(true);
               }
+            }).to(".gracias", {
+              opacity: 0.8,
+              scale: 1,
+              duration: 2,
+              ease: "power2.out",
+              delay: 0.5
             });
 
             return;
@@ -262,7 +294,11 @@ const Creditos = () => {
     };
 
     const handlePlay = () => {
-      setIsPaused(false);
+      gsap.to(".ready, .kitt-loading", {opacity: 0, duration: 3, })
+      setTimeout(()=> {
+        setIsPaused(false);
+        
+      }, 5000)
     };
 
     const handlePause = () => {
@@ -282,7 +318,7 @@ const Creditos = () => {
       audioElement.removeEventListener("play", handlePlay);
       audioElement.removeEventListener("pause", handlePause);
     };
-  }, [datosInvitados, analyser, invitadoActual, invitadosEnEsquinas, isPaused]);
+  }, [datosInvitados, analyser, invitadoActual, invitadosEnEsquinas, isPaused, fadeOutTodo, barrasOcultas]);
 
   useEffect(() => {
     fetch(
@@ -330,30 +366,69 @@ const Creditos = () => {
       );
   }, []);
 
-useEffect(() => {
-  const handleResize = () => {
-    if (canvasBarsRef.current && canvasDotsRef.current) {
-      const resizeCanvas = (canvas) => {
-        const ctx = canvas.getContext("2d");
-        const { width, height } = canvas.getBoundingClientRect();
-        const dpr = window.devicePixelRatio || 1;
-        canvas.width = width * dpr;
-        canvas.height = height * dpr;
-        ctx.scale(dpr, dpr);
-      };
-      resizeCanvas(canvasBarsRef.current);
-      resizeCanvas(canvasDotsRef.current);
+  useEffect(() => {
+    const todasLasImagenesCargadas = imagenesCargadas.length > 0 && 
+      imagenesCargadas.every((loaded, index) => {
+        if (!datosInvitados[index]?.imagen) return true;
+        return loaded;
+      });
+
+    if (datosCargados && todasLasImagenesCargadas) {
+      console.log('Todo cargado, listo para comenzar');
+      // Añadimos la clase fast para la animación rápida
+      const segments = document.querySelectorAll('.kitt-segment');
+      segments.forEach(segment => segment.classList.add('fast'));
+
+      // Después de 2 segundos, iniciamos el fade out
+      setTimeout(() => {
+        const kittLoading = document.querySelector('.kitt-loading');
+        if (kittLoading) {
+          kittLoading.classList.add('fade-out');
+        }
+        
+        // Después de la transición de fade out, mostramos el texto de "ready"
+        setTimeout(() => {
+          setIsReady(true);
+          // Pequeño delay antes de mostrar el texto
+          setTimeout(() => {
+            setShowReadyText(true);
+          }, 100);
+        }, 500);
+      }, 2000);
     }
-  };
+  }, [datosCargados, imagenesCargadas, datosInvitados]);
 
-  handleResize();
+  useEffect(() => {
+    const handleResize = () => {
+      if (canvasBarsRef.current && canvasDotsRef.current && mostrarCreditos) {
+        const resizeCanvas = (canvas) => {
+          const ctx = canvas.getContext("2d");
+          const { width, height } = canvas.getBoundingClientRect();
+          const dpr = window.devicePixelRatio || 1;
+          canvas.width = width * dpr;
+          canvas.height = height * dpr;
+          ctx.scale(dpr, dpr);
+          console.log('Canvas resized:', canvas.width, canvas.height);
+        };
 
-  window.addEventListener('resize', handleResize);
+        requestAnimationFrame(() => {
+          resizeCanvas(canvasBarsRef.current);
+          resizeCanvas(canvasDotsRef.current);
+        });
+      }
+    };
 
-  return () => {
-    window.removeEventListener('resize', handleResize);
-  };
-}, [datosInvitados]);
+    // Ejecutar resize cuando mostrarCreditos cambia a true
+    if (mostrarCreditos) {
+      handleResize();
+    }
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [mostrarCreditos]);
 
   useEffect(() => {
     if (analyser && canvasBarsRef.current && canvasDotsRef.current) {
@@ -392,9 +467,9 @@ useEffect(() => {
           tiempoRestante / duracionContraccion : 1;
 
         if (tiempoAudio >= TIEMPO_INICIO_BARRITAS) {
-          animationState.current.direccionGiro = -1;
-        } else {
           animationState.current.direccionGiro = 1;
+        } else {
+          animationState.current.direccionGiro = -1;
         }
 
         const opacidadBolitas = (1 - progreso) * factorContraccion;
@@ -441,12 +516,12 @@ useEffect(() => {
           '#000000'
         ];
 
-        const modoKITT = tiempoAudio >= TIEMPO_PARON;
+        const modoKITT = tiempoAudio >= TIEMPO_PARON && !barrasOcultas;
 
         if (modoKITT) {
           const centerBar = Math.floor(numBars / 2);
-          const baseAmplitude = 0.4;
-          const maxAmplitude = 4.0;
+          const baseAmplitude = 0.2;
+          const maxAmplitude = 1.5;
           const barsPerColorAdjusted = Math.ceil(numBars / bearColors.length);
 
           for (let i = 0; i < numBars; i++) {
@@ -461,7 +536,7 @@ useEffect(() => {
 
             const distanceFromCenter = Math.abs(i - centerBar);
             const amplitudeFactor = Math.pow(1 - (distanceFromCenter / centerBar), 0.8);
-            const barHeight = scaledHeight * amplitudeFactor * barsHeight;
+            const barHeight = Math.min(scaledHeight * amplitudeFactor * barsHeight * 1, barsHeight * 1);
 
             const opacityThreshold = barsHeight * 0.05;
             let opacity = barHeight < opacityThreshold ? Math.max(0, barHeight / opacityThreshold) : 1;
@@ -484,18 +559,14 @@ useEffect(() => {
         } else {
           for (let i = 0; i < numBars; i++) {
             const rawHeight = dataArray[i] / 255;
-            // Solo mostrar altura si hay sonido significativo
             if (rawHeight > 0.05) {
-              const barHeight = rawHeight * barsHeight * 0.7; // Reducido al 70% de la altura máxima
-              const progress = i / numBars;
-              
               const baseAmplitude = 0.4;
-              const maxAmplitude = 1.5;
-              const normalizedHeight = barHeight / barsHeight;
+              const maxAmplitude = 1;
+              const normalizedHeight = rawHeight;
               const amplifiedHeight = Math.pow(normalizedHeight, 0.7);
-              const finalHeight = barsHeight * (baseAmplitude + (maxAmplitude - baseAmplitude) * amplifiedHeight);
+              const finalHeight = Math.min(barsHeight * (baseAmplitude + (maxAmplitude - baseAmplitude) * amplifiedHeight), barsHeight * 1);
               
-              const hue = (progress * 360 + tiempoAudio * 30) % 360;
+              const hue = (i / numBars * 360 + tiempoAudio * 30) % 360;
               const saturation = 70 + (intensidadNormalizadaActual * 30);
               const lightness = 50 + (intensidadNormalizadaActual * 20);
               
@@ -515,18 +586,18 @@ useEffect(() => {
         ctxBars.globalAlpha = 1;
 
         const velocidadMinima = 0.0000001;
-        const velocidadMaxima = 1.0;
+        const velocidadMaxima = 0.75;
         const velocidadGiroDeseada = velocidadMinima + (velocidadMaxima - velocidadMinima) * Math.pow(intensidadNormalizadaActual, 1.5);
         const velocidadGiroReducida = velocidadGiroDeseada * 0.35; // Reducido de 0.7 a 0.35 (la mitad)
 
         const suavizadoVelocidad = 0.005;
         animationState.current.velocidadGiroActual += (velocidadGiroReducida - animationState.current.velocidadGiroActual) * suavizadoVelocidad;
 
-        const escalaMinima = 0.4;
-        const escalaMaxima = 10;
-        const escalaDeseada = escalaMinima + (escalaMaxima - escalaMinima) * intensidadNormalizadaActual;
+        const escalaMinima = 0;
+        const escalaMaxima = 50.0;
+        const escalaDeseada = escalaMinima + (escalaMaxima - escalaMinima) * Math.pow(intensidadNormalizadaActual, 3);
 
-        const suavizadoEscala = 0.25;
+        const suavizadoEscala = 0.05;
         animationState.current.escalaActual += (escalaDeseada - animationState.current.escalaActual) * suavizadoEscala;
 
         const deltaTime = tiempoActual - animationState.current.tiempoAnterior;
@@ -726,14 +797,12 @@ useEffect(() => {
       if (elementoMesa) {
         const timeline = gsap.timeline();
         
-        // Desvanecer la mesa actual
         timeline.to(elementoMesa, {
           opacity: 0,
           scale: 0.8,
-          duration: 0.5,
+          duration: 0.3, // Reducido de 0.5 a 0.3
           ease: "power2.inOut"
         })
-        // Actualizar el texto y hacerlo aparecer
         .call(() => {
           setMesaActual(mesa);
           ultimaMesaMostrada.current = invitado.mesaId;
@@ -741,7 +810,7 @@ useEffect(() => {
         .to(elementoMesa, {
           opacity: 0.8,
           scale: 1 + (intensidadNormalizada * 0.9),
-          duration: 0.5,
+          duration: 0.3, // Reducido de 0.5 a 0.3
           ease: "power2.out"
         });
       } else {
@@ -772,18 +841,19 @@ useEffect(() => {
       const elementoNombre = document.querySelector(`[data-invitado-nombre-id="${invitado.id}"]`);
       
       if (elementoNuevo && elementoNombre) {
-        const escalaInicial = 0.5 + (intensidadNormalizadaActual * 0.3);
+        const escalaInicial = 0.1;
         
-        // Configuración inicial de los elementos
+        // Configuración inicial de los elementos - ambos exactamente en el mismo punto central
         gsap.set([elementoNombre, elementoNuevo], {
           left: '50%',
           top: '50%',
           opacity: 0,
           scale: escalaInicial,
-          transform: `translate(-50%, -50%)`,
+          transform: 'translate(-50%, -50%)',
           width: 'var(--ancho-invitado)',
           height: 'var(--ancho-invitado)',
-          boxSizing: 'border-box'
+          boxSizing: 'border-box',
+          zIndex: 1000 // Mismo z-index inicial para que aparezcan superpuestos
         });
 
         const timeline = gsap.timeline();
@@ -798,7 +868,7 @@ useEffect(() => {
             timeline.to([elementoSaliente, nombreSaliente], {
               opacity: 0,
               scale: 0.8,
-              duration: params.duracionAnimacion,
+              duration: params.duracionAnimacion * 2,
               ease: "power2.inOut",
               onStart: () => {
                 gsap.set([elementoSaliente, nombreSaliente], {
@@ -814,36 +884,43 @@ useEffect(() => {
         }
 
         const nuevaPosicion = calcularPosicionEsquina(ultimoIndiceEsquina.current);
-        const duracionEntrada = params.duracionAnimacion * (1 + intensidadNormalizadaActual * 0.5);
+        const duracionBase = params.duracionAnimacion * 2;
 
-        // Animación combinada de movimiento y separación
+        // Fase inicial: aparecer en el centro
         timeline.to([elementoNombre, elementoNuevo], {
-          opacity: 1,
-          scale: 1,
+          opacity: 0.3,
+          scale: escalaInicial * 1.5,
+          duration: duracionBase * 0.2,
+          ease: "power2.in"
+        });
+
+        // Fase principal: movimiento y crecimiento sincronizado
+        timeline.to([elementoNombre, elementoNuevo], {
           left: nuevaPosicion.x,
           top: nuevaPosicion.y,
-          duration: duracionEntrada,
-          ease: "power1.out",
+          duration: duracionBase * 0.8,
+          ease: "power2.inOut",
           onUpdate: () => {
             const progress = timeline.progress();
-            // Función que primero junta las bolas un 20% y luego las separa
-            let offsetActual;
-            if (progress < 0.3) {
-              // Primera fase: juntarse un 20%
-              offsetActual = (1 - (progress / 0.3) * 0.2) * offsetFinal;
-            } else {
-              // Segunda fase: separarse hasta la posición final
-              const remainingProgress = (progress - 0.3) / 0.7;
-              offsetActual = (0.8 + remainingProgress * 0.2) * offsetFinal;
-            }
+            
+            // Calcular offset - comienza en 0 y aumenta gradualmente
+            const offsetActual = Math.pow(progress, 2) * offsetFinal;
+            
+            // Calcular escala usando el mismo timing que el movimiento
+            const escalaProgreso = escalaInicial * 1.5 + (1 - escalaInicial * 1.5) * Math.pow(progress, 2);
+            
+            // Calcular opacidad - crece más rápido al principio
+            const opacidadProgreso = Math.min(1, 0.3 + progress * 0.7);
             
             gsap.set(elementoNuevo, {
               zIndex: 1000,
-              transform: `translate(calc(-50% - ${offsetActual}dvh), -50%)`
+              opacity: opacidadProgreso,
+              transform: `translate(calc(-50% - ${offsetActual}dvh), -50%) scale(${escalaProgreso})`
             });
             gsap.set(elementoNombre, {
               zIndex: 1001,
-              transform: `translate(calc(-50% + ${offsetActual}dvh), -50%)`
+              opacity: opacidadProgreso,
+              transform: `translate(calc(-50% + ${offsetActual}dvh), -50%) scale(${escalaProgreso})`
             });
           },
           onComplete: () => {
@@ -861,14 +938,14 @@ useEffect(() => {
         if (intensidadNormalizadaActual > 0.4) {
           timeline.to([elementoNuevo, elementoNombre], {
             scale: 1 + (intensidadNormalizadaActual * 0.5),
-            duration: 0.2,
+            duration: duracionBase * 0.2,
             yoyo: true,
             repeat: 1,
             ease: "power1.inOut"
           }, "+=0.1");
         }
       }
-    }, tiempoEspera);
+    }, 0); // Eliminamos el tiempo de espera para que la animación comience inmediatamente
   };
 
   const iniciarAudio = () => {
@@ -913,237 +990,324 @@ useEffect(() => {
     }
   };
 
-  return (
-    <div ref={containerRef} className="creditos" onClick={iniciarAudio}>
-      <canvas ref={canvasBarsRef} className="ecualizador-barras" />
-      <canvas ref={canvasDotsRef} className="ecualizador-bolitas" />
+  const handleKITTClose = () => {
+    setKittFadeOut(true);
+    setTimeout(() => {
+      setSecuenciaInicial(false);
+      setTimeout(() => {
+        setMostrarCreditos(true);
+        setTimeout(() => {
+          requestAnimationFrame(() => {
+            iniciarAudio();
+          });
+        }, 100);
+      }, 5000); // Esperar 5 segundos antes de mostrar los créditos
+    }, 1000);
+  };
+
+  const iniciarSecuencia = () => {
+    if (!isReady || secuenciaInicial || mostrarCreditos) return;
+    setSecuenciaInicial(true);
+  };
+
+  useEffect(() => {
+    if (secuenciaInicial) {
+      gsap.to(".kitt-loading, .creditos .ready", { opacity: 0, duration: 1, ease: "linear", });
+      // Esperar 5 segundos antes de reproducir el audio
+      const timer = setTimeout(() => {
+        setShouldDekayKITT(false);
+      }, 5000);
       
-      {mesaActual && (
-        <div
-          className="nombre-mesa"
-          style={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
-            color: 'white',
-            fontSize: '7dvh',
-            fontFamily: 'VCR',
-            fontWeight: 'bold',
-            textAlign: 'center',
-            padding: '2dvh',
-            zIndex: 950,
-            textShadow: '0 0 10px rgba(0,0,255,0.8), 0 0 20px rgba(0,0,255,0.6), 0 0 30px rgba(0,0,255,0.4)',
-            opacity: 0.8,
-            pointerEvents: 'none',
-            transform: `translate(-50%, -50%) scale(${1 + (intensidadNormalizada * 0.9)})`,
-            transition: 'transform 0.1s ease-out',
-            lineHeight: 1.2
-          }}
-        >
-          {mesaActual}
+      
+      return () => clearTimeout(timer);
+    }
+  }, [secuenciaInicial]);
+
+  useEffect(() => {
+    let cursorTimeout;
+    const cursor = containerRef.current?.querySelector('::after');
+
+    const handleMouseMove = (e) => {
+      if (containerRef.current) {
+        const x = e.clientX - 16;
+        const y = e.clientY - 16;
+        containerRef.current.style.setProperty('--mouse-x', `${x}px`);
+        containerRef.current.style.setProperty('--mouse-y', `${y}px`);
+
+        // Mostrar el cursor
+        containerRef.current.classList.remove('hide-cursor');
+
+        // Reiniciar el temporizador
+        clearTimeout(cursorTimeout);
+        cursorTimeout = setTimeout(() => {
+          containerRef.current?.classList.add('hide-cursor');
+        }, 2000);
+      }
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      clearTimeout(cursorTimeout);
+    };
+  }, []);
+
+  return (
+    <div 
+      ref={containerRef} 
+      className={`creditos ${!isReady ? 'loading' : (!secuenciaInicial && !mostrarCreditos ? 'ready' : '')}`} 
+      onClick={iniciarSecuencia}
+    >
+      {!mostrarCreditos && (
+        <div className={`kitt-loading ${isReady ? 'fast' : ''}`}>
+            {[...Array(8)].map((_, i) => (
+                <div key={i} className={`kitt-segment`} />
+            ))}
         </div>
       )}
-      
-      {invitadoActual && (
-        <>
-          <div
-            data-invitado-nombre-id={invitadoActual.id}
-            className="invitado-nombre"
-            style={{
-              position: 'absolute',
-              left: '50%',
-              top: '50%',
-              width: 'var(--ancho-invitado)',
-              height: 'var(--ancho-invitado)',
-              borderRadius: '50%',
-              backgroundColor: 'white',
-              color: 'black',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '4.5dvh',
-              fontFamily: 'VCR',
-              fontWeight: 'bold',
-              textAlign: 'center',
-              padding: '4dvh',
-              boxSizing: 'border-box',
-              zIndex: 1001,
-              transform: 'translate(-50%, -50%)',
-              opacity: 0,
-              pointerEvents: 'none',
-              lineHeight: 1.2,
-              boxShadow: `0 0 ${40 + intensidadNormalizada * 40}px rgba(0, 255, 255, 0.8), 0 0 ${80 + intensidadNormalizada * 80}px rgba(0, 128, 255, 0.6)`,
-              willChange: 'transform, box-shadow'
-            }}
-          >
-            {invitadoActual.nombre}
-          </div>
-          <div 
-            data-invitado-id={invitadoActual.id}
-            className="invitado"
-            style={{
-              position: 'absolute',
-              left: '50%',
-              top: '50%',
-              width: 'var(--ancho-invitado)',
-              height: 'var(--ancho-invitado)',
-              borderRadius: '50%',
-              overflow: 'hidden',
-              backgroundColor: !invitadoActual.imagen ? coloresInvitados[invitadoActual.id] : 'transparent',
-              boxSizing: 'border-box',
-              zIndex: 1000,
-              transform: 'translate(-50%, -50%)',
-              opacity: 0,
-              pointerEvents: 'none',
-              boxShadow: `0 0 ${40 + intensidadNormalizada * 40}px rgba(0, 255, 255, 0.8), 0 0 ${80 + intensidadNormalizada * 80}px rgba(0, 128, 255, 0.6)`,
-              willChange: 'transform, box-shadow'
-            }}
-          >
-            {invitadoActual.imagen ? (
-              <img 
-                src={invitadoActual.imagen} 
-                alt={invitadoActual.nombre}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  borderRadius: '50%',
-                  filter: `brightness(${1 + intensidadNormalizada * 0.8})`
-                }}
-              />
-            ) : (
-              <div style={{
-                width: '100%',
-                height: '100%',
-                borderRadius: '50%',
-                backgroundColor: coloresInvitados[invitadoActual.id]
-              }} />
-            )}
-          </div>
-        </>
+      {isReady && !mostrarCreditos && (
+        <div className="ready">
+            <div className={`ready-text ${showReadyText ? 'show' : ''}`}>
+                Click para comenzar
+            </div>
+        </div>
       )}
-
-      {invitadosEnEsquinas.map((invitado, index) => {
-        const offsetFinal = invitado.offsetFinal || 12;
-        
-        return (
-          <React.Fragment key={`container-${invitado.id}-${index}`}>
+      {secuenciaInicial && (
+        <KITT 
+          audioFile={peter} 
+          onClose={handleKITTClose}
+          className={`kitt-audio-only ${kittFadeOut ? 'fade-out' : ''}`}
+          delayPlay={shouldDekayKITT}
+        />
+      )}
+      {mostrarCreditos && (
+        <>
+          <canvas 
+            ref={canvasBarsRef} 
+            className={`ecualizador-barras ${barrasOcultas ? 'hidden' : ''}`} 
+          />
+          <canvas ref={canvasDotsRef} className="ecualizador-bolitas" />
+          <audio ref={audioRef} src={opus} className="audio-player" controls />
+          
+          {mostrarGracias && (
             <div
-              key={`nombre-${invitado.id}-${index}`}
-              data-invitado-nombre-id={invitado.id}
-              className="invitado-nombre"
+              className="gracias"
               style={{
                 position: 'absolute',
-                left: invitado.posicion.x,
-                top: invitado.posicion.y,
-                transform: `translate(calc(-50% + ${offsetFinal}dvh), -50%) scale(${1 + (intensidadNormalizada * 0.1)})`,
-                width: 'var(--ancho-invitado)',
-                height: 'var(--ancho-invitado)',
-                borderRadius: '50%',
-                backgroundColor: 'white',
-                color: 'black',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '4.5dvh',
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%) scale(0.8)',
+                color: 'white',
+                fontSize: '7dvh',
                 fontFamily: 'VCR',
                 fontWeight: 'bold',
                 textAlign: 'center',
-                padding: '4dvh',
-                boxSizing: 'border-box',
-                opacity: 1,
-                zIndex: 1001,
+                padding: '2dvh',
+                zIndex: 950,
+                textShadow: '0 0 10px rgba(0,0,255,0.8), 0 0 20px rgba(0,0,255,0.6), 0 0 30px rgba(0,0,255,0.4)',
+                opacity: 0,
                 pointerEvents: 'none',
                 lineHeight: 1.2,
-                boxShadow: `0 0 ${40 + intensidadNormalizada * 40}px rgba(0, 255, 255, 0.8), 0 0 ${80 + intensidadNormalizada * 80}px rgba(0, 128, 255, 0.6)`,
-                willChange: 'transform, box-shadow'
+                willChange: 'transform, opacity'
               }}
             >
-              {invitado.nombre}
+              Os queremos infinito... GRACIAS
             </div>
+          )}
+          
+          {mesaActual && (
             <div
-              key={`${invitado.id}-${index}`}
-              data-invitado-id={invitado.id}
-              className="invitado"
+              className="nombre-mesa"
               style={{
                 position: 'absolute',
-                left: invitado.posicion.x,
-                top: invitado.posicion.y,
-                transform: `translate(calc(-50% - ${offsetFinal}dvh), -50%) scale(${1 + (intensidadNormalizada * 0.1)})`,
-                width: 'var(--ancho-invitado)',
-                height: 'var(--ancho-invitado)',
-                borderRadius: '50%',
-                overflow: 'hidden',
-                backgroundColor: !invitado.imagen ? coloresInvitados[invitado.id] : 'transparent',
-                boxSizing: 'border-box',
-                opacity: 1,
-                zIndex: 1000,
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                color: 'white',
+                fontSize: '7dvh',
+                fontFamily: 'VCR',
+                fontWeight: 'bold',
+                textAlign: 'center',
+                padding: '2dvh',
+                zIndex: 950,
+                textShadow: '0 0 10px rgba(0,0,255,0.8), 0 0 20px rgba(0,0,255,0.6), 0 0 30px rgba(0,0,255,0.4)',
+                opacity: 0.8,
                 pointerEvents: 'none',
-                boxShadow: `0 0 ${40 + intensidadNormalizada * 40}px rgba(0, 255, 255, 0.8), 0 0 ${80 + intensidadNormalizada * 80}px rgba(0, 128, 255, 0.6)`,
-                willChange: 'transform, box-shadow'
+                transform: `translate(-50%, -50%) scale(${1 + (intensidadNormalizada * 0.9)})`,
+                transition: 'transform 0.1s ease-out',
+                lineHeight: 1.2
               }}
             >
-              {invitado.imagen ? (
-                <img 
-                  src={invitado.imagen} 
-                  alt={invitado.nombre}
-                  style={{
+              {mesaActual}
+            </div>
+          )}
+          
+          {invitadoActual && (
+            <>
+              <div
+                data-invitado-nombre-id={invitadoActual.id}
+                className="invitado-nombre"
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  width: 'var(--ancho-invitado)',
+                  height: 'var(--ancho-invitado)',
+                  borderRadius: '50%',
+                  backgroundColor: 'white',
+                  color: 'black',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '4.5dvh',
+                  fontFamily: 'VCR',
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                  padding: '4dvh',
+                  boxSizing: 'border-box',
+                  zIndex: 1001,
+                  transform: 'translate(-50%, -50%)',
+                  opacity: 0,
+                  pointerEvents: 'none',
+                  lineHeight: 1.2,
+                  boxShadow: `0 0 ${40 + intensidadNormalizada * 40}px rgba(0, 255, 255, 0.8), 0 0 ${80 + intensidadNormalizada * 80}px rgba(0, 128, 255, 0.6)`,
+                  willChange: 'transform, box-shadow'
+                }}
+              >
+                {invitadoActual.nombre}
+              </div>
+              <div 
+                data-invitado-id={invitadoActual.id}
+                className="invitado"
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  width: 'var(--ancho-invitado)',
+                  height: 'var(--ancho-invitado)',
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                  backgroundColor: !invitadoActual.imagen ? coloresInvitados[invitadoActual.id] : 'transparent',
+                  boxSizing: 'border-box',
+                  zIndex: 1000,
+                  transform: 'translate(-50%, -50%)',
+                  opacity: 0,
+                  pointerEvents: 'none',
+                  boxShadow: `0 0 ${40 + intensidadNormalizada * 40}px rgba(0, 255, 255, 0.8), 0 0 ${80 + intensidadNormalizada * 80}px rgba(0, 128, 255, 0.6)`,
+                  willChange: 'transform, box-shadow'
+                }}
+              >
+                {invitadoActual.imagen ? (
+                  <img 
+                    src={invitadoActual.imagen} 
+                    alt={invitadoActual.nombre}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      borderRadius: '50%',
+                      filter: `brightness(${1 + intensidadNormalizada * 0.8})`
+                    }}
+                  />
+                ) : (
+                  <div style={{
                     width: '100%',
                     height: '100%',
-                    objectFit: 'cover',
                     borderRadius: '50%',
-                    filter: `brightness(${1 + intensidadNormalizada * 0.8})`
+                    backgroundColor: coloresInvitados[invitadoActual.id]
+                  }} />
+                )}
+              </div>
+            </>
+          )}
+
+          {invitadosEnEsquinas.map((invitado, index) => {
+            const offsetFinal = invitado.offsetFinal || 12;
+            
+            return (
+              <React.Fragment key={`container-${invitado.id}-${index}`}>
+                <div
+                  key={`nombre-${invitado.id}-${index}`}
+                  data-invitado-nombre-id={invitado.id}
+                  className="invitado-nombre"
+                  style={{
+                    position: 'absolute',
+                    left: invitado.posicion.x,
+                    top: invitado.posicion.y,
+                    transform: `translate(calc(-50% + ${offsetFinal}dvh), -50%) scale(${1 + (intensidadNormalizada * 0.1)})`,
+                    width: 'var(--ancho-invitado)',
+                    height: 'var(--ancho-invitado)',
+                    borderRadius: '50%',
+                    backgroundColor: 'white',
+                    color: 'black',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '4.5dvh',
+                    fontFamily: 'VCR',
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    padding: '4dvh',
+                    boxSizing: 'border-box',
+                    opacity: 1,
+                    zIndex: 1001,
+                    pointerEvents: 'none',
+                    lineHeight: 1.2,
+                    boxShadow: `0 0 ${40 + intensidadNormalizada * 40}px rgba(0, 255, 255, 0.8), 0 0 ${80 + intensidadNormalizada * 80}px rgba(0, 128, 255, 0.6)`,
+                    willChange: 'transform, box-shadow'
                   }}
-                />
-              ) : (
-                <div style={{
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: '50%',
-                  backgroundColor: coloresInvitados[invitado.id]
-                }} />
-              )}
-            </div>
-          </React.Fragment>
-        );
-      })}
-
-      <style>
-        {`
-          @keyframes pulse {
-            0% { 
-              transform: translate(calc(-50% - 12dvh), -50%) scale(1);
-              box-shadow: 0 0 20px rgba(0, 255, 255, 0.5), 0 0 40px rgba(0, 128, 255, 0.3);
-            }
-            50% { 
-              transform: translate(calc(-50% - 12dvh), -50%) scale(${1 + (intensidadNormalizada * 0.1)});
-              box-shadow: 0 0 30px rgba(0, 255, 255, 0.7), 0 0 60px rgba(0, 128, 255, 0.5);
-            }
-            100% { 
-              transform: translate(calc(-50% - 12dvh), -50%) scale(1);
-              box-shadow: 0 0 20px rgba(0, 255, 255, 0.5), 0 0 40px rgba(0, 128, 255, 0.3);
-            }
-          }
-
-          @keyframes pulseNombre {
-            0% { 
-              transform: translate(calc(-50% + 12dvh), -50%) scale(1);
-              box-shadow: 0 0 20px rgba(0, 255, 255, 0.5), 0 0 40px rgba(0, 128, 255, 0.3);
-            }
-            50% { 
-              transform: translate(calc(-50% + 12dvh), -50%) scale(${1 + (intensidadNormalizada * 0.1)});
-              box-shadow: 0 0 30px rgba(0, 255, 255, 0.7), 0 0 60px rgba(0, 128, 255, 0.5);
-            }
-            100% { 
-              transform: translate(calc(-50% + 12dvh), -50%) scale(1);
-              box-shadow: 0 0 20px rgba(0, 255, 255, 0.5), 0 0 40px rgba(0, 128, 255, 0.3);
-            }
-          }
-        `}
-      </style>
-
-      <audio ref={audioRef} src={opus} className="audio-player" controls />
+                >
+                  {invitado.nombre}
+                </div>
+                <div
+                  key={`${invitado.id}-${index}`}
+                  data-invitado-id={invitado.id}
+                  className="invitado"
+                  style={{
+                    position: 'absolute',
+                    left: invitado.posicion.x,
+                    top: invitado.posicion.y,
+                    transform: `translate(calc(-50% - ${offsetFinal}dvh), -50%) scale(${1 + (intensidadNormalizada * 0.1)})`,
+                    width: 'var(--ancho-invitado)',
+                    height: 'var(--ancho-invitado)',
+                    borderRadius: '50%',
+                    overflow: 'hidden',
+                    backgroundColor: !invitado.imagen ? coloresInvitados[invitado.id] : 'transparent',
+                    boxSizing: 'border-box',
+                    opacity: 1,
+                    zIndex: 1000,
+                    pointerEvents: 'none',
+                    boxShadow: `0 0 ${40 + intensidadNormalizada * 40}px rgba(0, 255, 255, 0.8), 0 0 ${80 + intensidadNormalizada * 80}px rgba(0, 128, 255, 0.6)`,
+                    willChange: 'transform, box-shadow'
+                  }}
+                >
+                  {invitado.imagen ? (
+                    <img 
+                      src={invitado.imagen} 
+                      alt={invitado.nombre}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        borderRadius: '50%',
+                        filter: `brightness(${1 + intensidadNormalizada * 0.8})`
+                      }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: '50%',
+                      backgroundColor: coloresInvitados[invitado.id]
+                    }} />
+                  )}
+                </div>
+              </React.Fragment>
+            );
+          })}
+        </>
+      )}
     </div>
   );
 };
