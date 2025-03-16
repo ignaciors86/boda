@@ -1,0 +1,88 @@
+.textos {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100dvw;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+    z-index: 9999;
+
+    .bloque-texto {
+        text-align: center;
+        width: fit-content;
+        margin: 0 auto;
+        position: relative;
+        
+        .frase {
+            margin: 0.5em 0;
+            color: white;
+            font-size: 7dvh;
+            font-family: 'VCR';
+            font-weight: bold;
+            text-align: center;
+            padding: 2dvh;
+            text-shadow: 0 0 10px rgba(0,0,255,0.8), 
+                        0 0 20px rgba(0,0,255,0.6), 
+                        0 0 30px rgba(0,0,255,0.4);
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+            line-height: 1;
+            will-change: transform, opacity;
+            white-space: nowrap;
+            backface-visibility: hidden;
+            transform-style: preserve-3d;
+
+            &:not(:empty) {
+                opacity: 0.8;
+                transform: scale(1);
+            }
+        }
+    }
+
+    input[type="range"] {
+        width: 100%;
+        height: 20px;
+        -webkit-appearance: none;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        outline: none;
+        padding: 0;
+        margin: 0;
+
+        &::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+
+            &:hover {
+                background: #d4d4d4;
+                transform: scale(1.1);
+            }
+        }
+
+        &::-moz-range-thumb {
+            width: 25px;
+            height: 25px;
+            border: 0;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+
+            &:hover {
+                background: #d4d4d4;
+                transform: scale(1.1);
+            }
+        }
+    }
+} 

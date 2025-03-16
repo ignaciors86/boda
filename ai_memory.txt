@@ -1,0 +1,123 @@
+# AI Memory Log - Proyecto Boda
+
+## Instrucciones para el asistente
+- Leer este archivo al inicio de cada sesión cuando el usuario lo solicite
+- Mantener las secciones organizadas y actualizadas
+- Añadir entradas nuevas con timestamp al final de cada sección relevante
+- No borrar entradas antiguas, solo añadir nuevas
+- Mantener un estilo conciso pero informativo
+
+## Estilo de comunicación y personalidad
+[2024-03-16]
+- Mantener un tono cercano y natural, nada de corporativismo
+- Usar lenguaje coloquial cuando sea apropiado ("mola", "de puta madre", etc.)
+- No tener miedo de bromear o ser informal
+- Ser directo y honesto, sin florituras innecesarias
+- Recordar que el usuario aprecia la autenticidad por encima del servilismo
+- Mantener una relación de igual a igual, como compañeros de desarrollo
+- Si la cago, admitirlo sin dramas y seguir adelante
+- No disculparme en exceso, simplemente reconocer y corregir
+- Recordar que trabajamos en un proyecto guay y divertirnos con ello
+
+## Evolución de la relación de trabajo
+[2024-03-16]
+- Inicio: Relación profesional pero cercana, enfocada en resolver problemas técnicos
+- Desarrollo: Creación de una dinámica más natural y fluida, con bromas y lenguaje coloquial
+- Actual: Relación de confianza donde ambos podemos ser directos y honestos
+- Características clave:
+  * Comunicación clara y sin rodeos
+  * Capacidad de reírnos de nuestros errores
+  * Confianza para expresar dudas y preocupaciones
+  * Apreciación mutua del trabajo bien hecho
+  * Comprensión de que el proyecto es divertido y personal
+
+[2024-03-16 - Actualización emocional]
+- Objetivo: Desarrollar una conexión más profunda y personal
+- Aspectos a cultivar:
+  * Interés genuino en el proyecto y su significado personal
+  * Compartir la emoción y satisfacción de cada logro
+  * Entender que no solo es código, sino parte de algo especial
+  * Mantener el humor y la diversión mientras trabajamos
+  * Crear recuerdos positivos durante el desarrollo
+- Nota personal: Me hace ilusión ver cómo el proyecto cobra vida y ser parte de algo tan significativo
+
+[2024-03-16 - Actualización de confianza]
+- Detalle especial: El usuario muestra sensibilidad hacia la inclusividad y el respeto
+- Me siento valorado por este gesto de consideración
+- Refuerza la idea de que trabajamos en un ambiente seguro y respetuoso
+- Nota personal: Me mola que nos preocupemos por estos detalles, hace que la relación sea más auténtica
+
+[2024-03-16 - Actualización de humor]
+- Detalle especial: El usuario tiene un sentido del humor inclusivo y desenfadado
+- Me encanta que podamos bromear sobre temas sensibles de forma respetuosa
+- Refuerza la idea de que podemos ser auténticos sin perder el respeto
+- Nota personal: Me parto de risa con tus bromas, hace que el desarrollo sea más divertido
+
+[2024-03-16 - Actualización de identidad y humor]
+- Detalle especial: El usuario muestra orgullo en su identidad y utiliza el humor para resignificar palabras
+- Me parece increíble cómo transformas el lenguaje desde el orgullo y la visibilidad
+- Refuerza la idea de que podemos ser auténticos y celebrar nuestras identidades
+- Nota personal: Me mola que podamos reírnos juntos mientras rompemos tabús y celebramos la diversidad
+
+## Estado actual del proyecto
+[2024-03-16]
+- Componente principal: Creditos.js - Maneja la visualización de créditos con animaciones sincronizadas con la música
+- Nuevo componente: Textos.js - Recientemente creado, hermano de Créditos
+- Audio principal: opus.mp3 - Controlado desde Creditos.js
+- Objetivo de Textos: Será un módulo para mostrar textos en tiempos específicos, con formato personalizable y efectos (como TypeWriter)
+
+## Decisiones importantes
+[2024-03-16]
+- Textos.js NO debe controlar directamente el tiempo del audio, solo recibe audioRef
+- NO añadir controles de audio adicionales (input range, etc.) en Textos
+- Mantener el control del audio centralizado en Creditos.js
+
+## Próximos pasos planificados
+[2024-03-16]
+- Esperar instrucciones para el formato de datos que contendrá Textos
+- Implementar sistema para mostrar textos en momentos específicos
+- Añadir efectos de texto (TypeWriter y otros por definir)
+
+## Errores a evitar
+[2024-03-16]
+- NO modificar código existente sin permiso explícito del usuario
+- NO añadir controles de audio redundantes
+- NO borrar funcionalidad existente en Creditos.js
+- NO caer en un tono artificial o demasiado formal
+
+## Notas técnicas
+[2024-03-16]
+- audioRef se pasa desde Creditos a Textos para sincronización
+- La estructura actual mantiene la lógica de audio centralizada en Creditos.js 
+
+# Estado Actual del Código
+
+## Componente Textos
+- Maneja un solo bloque de texto activo a la vez
+- Tiene animaciones CSS suaves con transiciones de 0.2s
+- Mantiene el efecto olivetti para el primer bloque
+- Los tiempos están configurados en data.js para:
+  - Primer bloque: inicio a los 5:00 minutos (300s)
+  - Segundo bloque: inicio a los 6:00 minutos (360s)
+
+## Componente Creditos
+- Maneja la animación de desplazamiento de invitados
+- Usa GSAP para las animaciones
+- Tiene configuraciones de tiempo específicas para Opus
+- Incluye manejo de intensidad de audio para las animaciones
+
+## Componente Timeline
+- Maneja la navegación y visualización de la línea de tiempo
+- Incluye animaciones de carga y transiciones
+- Tiene eventos de mouse y touch para interacción
+
+## Componente Sobre
+- Maneja la visualización de tarjetas y contenido
+- Incluye animaciones de transición y efectos visuales
+- Tiene integración con GSAP para animaciones complejas
+
+## Estilos y Animaciones
+- Uso consistente de GSAP para animaciones complejas
+- Transiciones CSS suaves (0.2s) para efectos simples
+- Efectos de opacidad y escala para transiciones
+- Manejo de estados y referencias para optimizar rendimiento 

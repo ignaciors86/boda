@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import opus from "./opus.mp3";
 import peter from "./peter.wav";
 import KITT from "components/KITT/KITT";
+import Textos from "components/Textos/Textos";
 import "./Creditos.scss";
 import gsap from "gsap";
 import Prompt from "components/Prompt/Prompt";
@@ -10,6 +11,7 @@ import Prompt from "components/Prompt/Prompt";
 const TIEMPO_INICIO_ESPIRAL = 4;
 const TIEMPO_INICIO_BARRITAS = 224.5;
 const TIEMPO_INICIO_INVITADOS = 20;
+const TIEMPO_FIN_INVITADOS = 270; // 4:30 minutos
 const TIEMPO_FIN = 400;
 const TIEMPO_PARON = 341.5;
 
@@ -44,6 +46,16 @@ const DURACION_TRANSICION = PULSO_BASE / 2;
 const DURACION_PAUSA = PULSO_BASE * 1.25;
 const PAUSA_ENTRE_GRUPOS = PULSO_BASE / 2;
 const TIEMPO_TRANSICION = PULSO_BASE / 2;
+
+// Función para calcular el tiempo entre invitados basado en la duración total
+const calcularTiempoEntreInvitados = (totalInvitados) => {
+  const duracionTotal = TIEMPO_FIN_INVITADOS - TIEMPO_INICIO_INVITADOS;
+  const tiempoBase = (duracionTotal / totalInvitados) * 0.75; // Reducido a 3/4 del tiempo original
+  
+  // Ajustamos el tiempo base para que coincida con los pulsos de la música
+  const pulsosPorInvitado = Math.round(tiempoBase / PULSO_BASE);
+  return pulsosPorInvitado * PULSO_BASE;
+};
 
 // Ajustes de animación para diferentes secciones de Opus
 const getAnimationParams = (currentTime) => {
@@ -186,111 +198,223 @@ const Creditos = () => {
         setBarrasOcultas(false);
       }
 
-      if (currentTime >= TIEMPO_INICIO_INVITADOS) {
-        const params = getAnimationParams(currentTime);
-        const tiempoDesdeUltimaAnimacion = currentTime - ultimoCambio.current;
+      // Limpiar mesas e invitados si estamos fuera del rango de tiempo
+      if (currentTime < TIEMPO_INICIO_INVITADOS || currentTime >= TIEMPO_FIN_INVITADOS) {
+        setMesaActual(null);
+        setInvitadosEnEsquinas([]);
+        setInvitadoActual(null);
+        ultimaMesaMostrada.current = null;
+        ultimoIndiceEsquina.current = 0;
+        ultimoInvitadoMostrado.current = -1;
+        ultimoCambio.current = 0;
         
-        if (tiempoDesdeUltimaAnimacion >= params.tiempoEntreInvitados && !invitadoActual) {
-          let siguienteIndice;
+        // Ocultar todos los elementos visuales
+        gsap.set([".invitado", ".invitado-nombre", ".nombre-mesa", ".gracias"], {
+          opacity: 0,
+          scale: 0,
+          clearProps: "all"
+        });
+      }
+
+      if (currentTime >= TIEMPO_INICIO_INVITADOS && currentTime < TIEMPO_FIN_INVITADOS) {
+        const tiempoEntreInvitados = calcularTiempoEntreInvitados(datosInvitados.length);
+        const tiempoDesdeInicio = currentTime - TIEMPO_INICIO_INVITADOS;
+        const invitadosPorMostrar = Math.floor(tiempoDesdeInicio / tiempoEntreInvitados);
+        
+        // Si hay un nuevo invitado para mostrar y ha pasado suficiente tiempo desde el último cambio
+        if (invitadosPorMostrar > ultimoInvitadoMostrado.current && 
+            (currentTime - ultimoCambio.current >= tiempoEntreInvitados || ultimoCambio.current === 0)) {
+          let siguienteIndice = invitadosPorMostrar;
           
-          if (invitadosEnEsquinas.length === 0) {
-            siguienteIndice = 0;
-          } else {
-            siguienteIndice = datosInvitados.findIndex(inv => 
-              inv.id === invitadosEnEsquinas[invitadosEnEsquinas.length - 1].id) + 1;
-          }
-
-          // Si hemos completado el ciclo
-          if (siguienteIndice >= datosInvitados.length) {
-            const elementosVisibles = invitadosEnEsquinas.map(inv => ({
-              elemento: document.querySelector(`[data-invitado-id="${inv.id}"]`),
-              nombre: document.querySelector(`[data-invitado-nombre-id="${inv.id}"]`)
-            })).filter(({elemento, nombre}) => elemento && nombre);
-
-            const timeline = gsap.timeline();
-
-            // Desvanecer los invitados gradualmente
-            elementosVisibles.forEach(({elemento, nombre}, index) => {
-              timeline.to([elemento, nombre], {
-                opacity: 0,
-                scale: 0.8,
-                duration: 2,
-                ease: "power2.inOut",
-                delay: index * 0.2
-              }, 0);
-            });
-
-            // Desvanecer el nombre de la mesa y mostrar GRACIAS
-            timeline.to('.nombre-mesa', {
-              opacity: 0,
-              scale: 0.8,
-              duration: 1.5,
-              ease: "power2.inOut",
-              onComplete: () => {
-                setInvitadosEnEsquinas([]);
-                setMesaActual(null);
-                setMostrarGracias(true);
-              }
-            }).to(".gracias", {
-              opacity: 0.8,
-              scale: 1,
-              duration: 2,
-              ease: "power2.out",
-              delay: 0.5
-            });
-
-            return;
-          }
-          
-          const invitado = datosInvitados[siguienteIndice];
-          if (invitado && !invitadosMostrados.current[siguienteIndice]) {
+          // Verificar que no excedamos el número de invitados
+          if (siguienteIndice < datosInvitados.length && !invitadosMostrados.current[siguienteIndice]) {
+            const invitado = datosInvitados[siguienteIndice];
             manejarCambioInvitado(invitado);
             invitadosMostrados.current[siguienteIndice] = true;
             ultimoCambio.current = currentTime;
+            ultimoInvitadoMostrado.current = siguienteIndice;
+
+            // Si es el último invitado, comenzar el desvanecimiento secuencial
+            if (siguienteIndice === datosInvitados.length - 1) {
+              // Esperar 2 segundos antes de comenzar el desvanecimiento
+              setTimeout(() => {
+                const tiempoHastaParon = TIEMPO_PARON - currentTime;
+                const tiempoEntreDesvanecimientos = tiempoHastaParon / (invitadosEnEsquinas.length + 1); // +1 para incluir al último invitado
+                
+                // Primero desvanecer los invitados existentes
+                invitadosEnEsquinas.forEach((invitado, index) => {
+                  setTimeout(() => {
+                    const elemento = document.querySelector(`[data-invitado-id="${invitado.id}"]`);
+                    const nombre = document.querySelector(`[data-invitado-nombre-id="${invitado.id}"]`);
+                    
+                    if (elemento && nombre) {
+                      gsap.to([elemento, nombre], {
+                        opacity: 0,
+                        scale: 0.8,
+                        duration: 0.5,
+                        ease: "power2.inOut",
+                        onComplete: () => {
+                          setInvitadosEnEsquinas(prev => {
+                            const nuevos = prev.filter(i => i.id !== invitado.id);
+                            // Si no quedan invitados, limpiamos también el estado de invitado actual y la mesa
+                            if (nuevos.length === 0) {
+                              setInvitadoActual(null);
+                              setMesaActual(null);
+                              ultimaMesaMostrada.current = null;
+                            }
+                            return nuevos;
+                          });
+                        }
+                      });
+                    }
+                  }, index * tiempoEntreDesvanecimientos);
+                });
+
+                // Después desvanecer el último invitado y la mesa
+                setTimeout(() => {
+                  const elemento = document.querySelector(`[data-invitado-id="${invitado.id}"]`);
+                  const nombre = document.querySelector(`[data-invitado-nombre-id="${invitado.id}"]`);
+                  const elementoMesa = document.querySelector('.nombre-mesa');
+                  
+                  if (elemento && nombre) {
+                    gsap.to([elemento, nombre, elementoMesa], {
+                      opacity: 0,
+                      scale: 0.8,
+                      duration: 0.5,
+                      ease: "power2.inOut",
+                      onComplete: () => {
+                        setInvitadosEnEsquinas(prev => {
+                          const nuevos = prev.filter(i => i.id !== invitado.id);
+                          // Si no quedan invitados, limpiamos también el estado de invitado actual y la mesa
+                          if (nuevos.length === 0) {
+                            setInvitadoActual(null);
+                            setMesaActual(null);
+                            ultimaMesaMostrada.current = null;
+                          }
+                          return nuevos;
+                        });
+                      }
+                    });
+                  }
+                }, invitadosEnEsquinas.length * tiempoEntreDesvanecimientos);
+              }, 2000);
+            }
           }
         }
       }
     };
 
     const handleSeeking = () => {
-      const currentTime = audioElement.currentTime;
+      const currentTime = audioRef.current.currentTime;
       
-      setInvitadoActual(null);
-      setInvitadosEnEsquinas([]);
-      ultimoIndiceEsquina.current = 0;
-      ultimoCambio.current = currentTime;
+      // Limpiamos todas las animaciones activas
+      gsap.killTweensOf(".invitado, .invitado-nombre, .nombre-mesa, .gracias");
       
-      if (currentTime < TIEMPO_INICIO_INVITADOS) {
+      // Si estamos fuera del rango de invitados, limpiamos todo
+      if (currentTime < TIEMPO_INICIO_INVITADOS || currentTime >= TIEMPO_FIN_INVITADOS) {
+        // Limpiamos todos los estados
         invitadosMostrados.current = new Array(datosInvitados.length).fill(false);
+        setInvitadosEnEsquinas([]);
+        setInvitadoActual(null);
+        setMesaActual(null);
+        ultimaMesaMostrada.current = null;
+        ultimoIndiceEsquina.current = 0;
+        ultimoInvitadoMostrado.current = -1;
+        ultimoCambio.current = 0;
+        
+        // Ocultamos todos los elementos visuales
+        gsap.set(".invitado, .invitado-nombre, .nombre-mesa, .gracias", {
+          opacity: 0,
+          scale: 0,
+          clearProps: "all"
+        });
         return;
       }
 
+      // Calculamos el tiempo entre invitados basado en la duración total
+      const tiempoEntreInvitados = calcularTiempoEntreInvitados(datosInvitados.length);
+      
+      // Calculamos cuántos invitados deberían estar visibles basado en el tiempo transcurrido
       const tiempoDesdeInicio = currentTime - TIEMPO_INICIO_INVITADOS;
       const invitadosPorMostrar = Math.min(
-        Math.floor(tiempoDesdeInicio / TIEMPO_ENTRE_INVITADOS_INICIAL),
+        Math.floor(tiempoDesdeInicio / tiempoEntreInvitados),
         datosInvitados.length - 1
       );
 
-      invitadosMostrados.current = invitadosMostrados.current.map((_, index) => 
-        index <= invitadosPorMostrar
-      );
-
+      // Reiniciamos el estado de invitados mostrados
+      invitadosMostrados.current = new Array(datosInvitados.length).fill(false);
+      
+      // Calculamos qué invitados deberían estar visibles (máximo 4)
       const invitadosAMostrar = [];
       const startIndex = Math.max(0, invitadosPorMostrar - 3);
 
+      // Mostramos los invitados que deberían estar visibles
       for (let i = startIndex; i <= invitadosPorMostrar; i++) {
         if (i < datosInvitados.length) {
+          invitadosMostrados.current[i] = true;
           const posicion = calcularPosicionEsquina(i - startIndex);
           invitadosAMostrar.push({
             ...datosInvitados[i],
-            posicion
+            posicion,
+            offsetFinal: 12
           });
         }
       }
 
+      // Actualizamos el estado
       setInvitadosEnEsquinas(invitadosAMostrar);
       ultimoIndiceEsquina.current = invitadosAMostrar.length % 4;
       ultimoInvitadoMostrado.current = invitadosPorMostrar;
+      
+      // Reiniciamos el tiempo del último cambio para que el siguiente invitado aparezca en el momento correcto
+      ultimoCambio.current = currentTime - (tiempoDesdeInicio % tiempoEntreInvitados);
+
+      // Actualizamos la mesa actual si hay invitados
+      if (invitadosAMostrar.length > 0) {
+        const ultimoInvitado = invitadosAMostrar[invitadosAMostrar.length - 1];
+        if (ultimoInvitado.mesaId !== ultimaMesaMostrada.current) {
+          setMesaActual(ultimoInvitado.mesa);
+          ultimaMesaMostrada.current = ultimoInvitado.mesaId;
+        }
+      } else {
+        setMesaActual(null);
+        ultimaMesaMostrada.current = null;
+      }
+
+      // Ocultamos todos los invitados primero
+      gsap.set(".invitado, .invitado-nombre", {
+        opacity: 0,
+        scale: 0,
+        clearProps: "all"
+      });
+
+      // Aplicamos las posiciones y estilos a los invitados visibles
+      invitadosAMostrar.forEach((invitado, index) => {
+        const elemento = document.querySelector(`[data-invitado-id="${invitado.id}"]`);
+        const nombre = document.querySelector(`[data-invitado-nombre-id="${invitado.id}"]`);
+        if (elemento && nombre) {
+          gsap.set([elemento, nombre], {
+            opacity: 1,
+            scale: 1,
+            left: invitado.posicion.x,
+            top: invitado.posicion.y,
+            width: 'var(--ancho-invitado)',
+            height: 'var(--ancho-invitado)',
+            transform: `translate(calc(-50% - ${invitado.offsetFinal || 12}dvh), -50%) scale(${1 + (intensidadNormalizada * 0.1)})`,
+            zIndex: 1000,
+            borderRadius: '50%',
+            overflow: 'hidden'
+          });
+        }
+      });
+
+      // Restauramos el estilo de los nombres de las mesas
+      const elementoMesa = document.querySelector('.nombre-mesa');
+      if (elementoMesa) {
+        gsap.set(elementoMesa, {
+          opacity: invitadosAMostrar.length > 0 ? 0.8 : 0
+        });
+      }
     };
 
     const handlePlay = () => {
@@ -438,6 +562,8 @@ const Creditos = () => {
       const dataArray = new Uint8Array(bufferLength);
 
       const draw = (tiempoActual) => {
+        if (!canvasBarsRef.current || !canvasDotsRef.current) return;
+        
         animationRef.current = requestAnimationFrame(draw);
 
         analyser.getByteFrequencyData(dataArray);
@@ -637,7 +763,7 @@ const Creditos = () => {
           const dy = nextY - y;
           const distanciaEntrePuntos = Math.sqrt(dx * dx + dy * dy);
 
-          // Ajustar el tamaño cuando se acercan al centro
+          // Ajustar el tamaño cuando se acercan al centro - ahora sincronizado con el movimiento
           const factorTamaño = 1 + (factorMovimiento * 0.5); // Aumentar hasta un 50% el tamaño
           const tamañoBase = distanciaEntrePuntos * 0.4 * factorTamaño;
           const crecimientoDinamico = dataArray[i] / 255 * 1.5;
@@ -868,7 +994,7 @@ const Creditos = () => {
             timeline.to([elementoSaliente, nombreSaliente], {
               opacity: 0,
               scale: 0.8,
-              duration: params.duracionAnimacion * 2,
+              duration: params.duracionAnimacion * 1.5, // Reducido de 2 a 1.5 para que sea más rápido
               ease: "power2.inOut",
               onStart: () => {
                 gsap.set([elementoSaliente, nombreSaliente], {
@@ -884,21 +1010,21 @@ const Creditos = () => {
         }
 
         const nuevaPosicion = calcularPosicionEsquina(ultimoIndiceEsquina.current);
-        const duracionBase = params.duracionAnimacion * 2;
+        const duracionBase = params.duracionAnimacion * 1.5; // Reducido de 2 a 1.5 para que coincida con la salida
 
-        // Fase inicial: aparecer en el centro
+        // Fase inicial: aparecer en el centro - ahora comienza antes
         timeline.to([elementoNombre, elementoNuevo], {
           opacity: 0.3,
           scale: escalaInicial * 1.5,
-          duration: duracionBase * 0.2,
+          duration: duracionBase * 0.15, // Reducido de 0.2 a 0.15
           ease: "power2.in"
-        });
+        }, "-=0.5"); // Comienza 0.5 segundos antes de que termine la salida
 
         // Fase principal: movimiento y crecimiento sincronizado
         timeline.to([elementoNombre, elementoNuevo], {
           left: nuevaPosicion.x,
           top: nuevaPosicion.y,
-          duration: duracionBase * 0.8,
+          duration: duracionBase * 0.6, // Reducido de 0.8 a 0.6
           ease: "power2.inOut",
           onUpdate: () => {
             const progress = timeline.progress();
@@ -932,7 +1058,7 @@ const Creditos = () => {
             ultimoIndiceEsquina.current = (ultimoIndiceEsquina.current + 1) % 4;
             setInvitadoActual(null);
           }
-        });
+        }, "-=0.3"); // Comienza 0.3 segundos antes de que termine la fase inicial
 
         // Efecto de pulso si la intensidad es alta
         if (intensidadNormalizadaActual > 0.4) {
@@ -994,15 +1120,28 @@ const Creditos = () => {
     setKittFadeOut(true);
     setTimeout(() => {
       setSecuenciaInicial(false);
+      setMostrarCreditos(true);
       setTimeout(() => {
-        setMostrarCreditos(true);
-        setTimeout(() => {
-          requestAnimationFrame(() => {
-            iniciarAudio();
-          });
-        }, 100);
-      }, 5000); // Esperar 5 segundos antes de mostrar los créditos
+        requestAnimationFrame(() => {
+          iniciarAudio();
+        });
+      }, 100);
     }, 1000);
+  };
+
+  const handleSkipAudio = () => {
+    handleKITTClose();
+  };
+
+  const handleDirectToCredits = () => {
+    setSecuenciaInicial(false);
+    setMostrarCreditos(true);
+    setKittFadeOut(true); // Asegurar que KITT no se renderice
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        iniciarAudio();
+      });
+    }, 100);
   };
 
   const iniciarSecuencia = () => {
@@ -1059,6 +1198,7 @@ const Creditos = () => {
       className={`creditos ${!isReady ? 'loading' : (!secuenciaInicial && !mostrarCreditos ? 'ready' : '')}`} 
       onClick={iniciarSecuencia}
     >
+      <Textos audioRef={audioRef} />
       {!mostrarCreditos && (
         <div className={`kitt-loading ${isReady ? 'fast' : ''}`}>
             {[...Array(8)].map((_, i) => (
@@ -1073,7 +1213,17 @@ const Creditos = () => {
             </div>
         </div>
       )}
-      {secuenciaInicial && (
+      {isReady && !mostrarCreditos && !secuenciaInicial && (
+        <button onClick={handleDirectToCredits} className="direct-credits-button">
+          Ir directo a los créditos
+        </button>
+      )}
+      {secuenciaInicial && !kittFadeOut && (
+        <button onClick={handleSkipAudio} className="skip-button" style={{ zIndex: 1001 }}>
+          Saltar Audio
+        </button>
+      )}
+      {secuenciaInicial && !kittFadeOut && (
         <KITT 
           audioFile={peter} 
           onClose={handleKITTClose}
@@ -1090,32 +1240,6 @@ const Creditos = () => {
           <canvas ref={canvasDotsRef} className="ecualizador-bolitas" />
           <audio ref={audioRef} src={opus} className="audio-player" controls />
           
-          {mostrarGracias && (
-            <div
-              className="gracias"
-              style={{
-                position: 'absolute',
-                left: '50%',
-                top: '50%',
-                transform: 'translate(-50%, -50%) scale(0.8)',
-                color: 'white',
-                fontSize: '7dvh',
-                fontFamily: 'VCR',
-                fontWeight: 'bold',
-                textAlign: 'center',
-                padding: '2dvh',
-                zIndex: 950,
-                textShadow: '0 0 10px rgba(0,0,255,0.8), 0 0 20px rgba(0,0,255,0.6), 0 0 30px rgba(0,0,255,0.4)',
-                opacity: 0,
-                pointerEvents: 'none',
-                lineHeight: 1.2,
-                willChange: 'transform, opacity'
-              }}
-            >
-              Os queremos infinito... GRACIAS
-            </div>
-          )}
-          
           {mesaActual && (
             <div
               className="nombre-mesa"
@@ -1130,12 +1254,10 @@ const Creditos = () => {
                 fontWeight: 'bold',
                 textAlign: 'center',
                 padding: '2dvh',
-                zIndex: 950,
+                zIndex: 1000,
                 textShadow: '0 0 10px rgba(0,0,255,0.8), 0 0 20px rgba(0,0,255,0.6), 0 0 30px rgba(0,0,255,0.4)',
                 opacity: 0.8,
                 pointerEvents: 'none',
-                transform: `translate(-50%, -50%) scale(${1 + (intensidadNormalizada * 0.9)})`,
-                transition: 'transform 0.1s ease-out',
                 lineHeight: 1.2
               }}
             >
