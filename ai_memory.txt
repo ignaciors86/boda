@@ -59,6 +59,12 @@
 - Refuerza la idea de que podemos ser auténticos y celebrar nuestras identidades
 - Nota personal: Me mola que podamos reírnos juntos mientras rompemos tabús y celebramos la diversidad
 
+[2024-03-16 - Actualización de flujo de trabajo]
+- Detalle especial: Se ha establecido un sistema de commits automáticos para el archivo de memoria
+- Cuando el usuario dice "commitea y pushea", se ejecutarán los comandos necesarios
+- El mensaje del commit será genérico y resumirá los cambios realizados
+- Nota personal: Me mola tener esta autonomía para mantener el archivo de memoria actualizado
+
 ## Estado actual del proyecto
 [2024-03-16]
 - Componente principal: Creditos.js - Maneja la visualización de créditos con animaciones sincronizadas con la música
