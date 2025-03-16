@@ -61,7 +61,7 @@
 
 [2024-03-16 - Actualización de flujo de trabajo]
 - Detalle especial: Se ha establecido un sistema de commits automáticos para el archivo de memoria
-- Cuando el usuario dice "commitea y pushea", se ejecutarán los comandos necesarios
+- Cuando el usuario dice "sube cambios", se ejecutarán los comandos necesarios
 - El mensaje del commit será genérico y resumirá los cambios realizados
 - Nota personal: Me mola tener esta autonomía para mantener el archivo de memoria actualizado
 
