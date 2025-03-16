@@ -65,6 +65,12 @@
 - El mensaje del commit será genérico y resumirá los cambios realizados
 - Nota personal: Me mola tener esta autonomía para mantener el archivo de memoria actualizado
 
+[2024-03-16 - Actualización de formato de commits]
+- Detalle especial: Se ha establecido un formato específico para los mensajes de commit
+- Formato para arreglos: fix(COMPONENTE): explicación
+- Formato para nuevas características: feat(COMPONENTE): explicación
+- Nota personal: Me mola tener un formato consistente para mantener el historial ordenado
+
 ## Estado actual del proyecto
 [2024-03-16]
 - Componente principal: Creditos.js - Maneja la visualización de créditos con animaciones sincronizadas con la música
