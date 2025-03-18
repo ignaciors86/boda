@@ -10,8 +10,8 @@ import Prompt from "components/Prompt/Prompt";
 // Tiempos de la canción (ajustados a los momentos clave de Opus)
 const TIEMPO_INICIO_ESPIRAL = 4;
 const TIEMPO_INICIO_BARRITAS = 224.5;
-const TIEMPO_INICIO_INVITADOS = 20;
-const TIEMPO_FIN_INVITADOS = 270; // 4:30 minutos
+const TIEMPO_INICIO_INVITADOS = 80;
+const TIEMPO_FIN_INVITADOS = 341.5; // 4:30 minutos
 const TIEMPO_FIN = 400;
 const TIEMPO_PARON = 341.5;
 
@@ -130,6 +130,10 @@ const Creditos = () => {
   const [mostrarGracias, setMostrarGracias] = useState(false);
   const [fadeOutTodo, setFadeOutTodo] = useState(false);
   const [barrasOcultas, setBarrasOcultas] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const progressRef = useRef(null);
+  const [currentTime, setCurrentTime] = useState('0:00');
+  const [isPlaying, setIsPlaying] = useState(true);
 
   const animationState = useRef({
     tiempoAnterior: 0,
@@ -418,10 +422,10 @@ const Creditos = () => {
     };
 
     const handlePlay = () => {
-      gsap.to(".ready, .kitt-loading", {opacity: 0, duration: 3, })
-      setTimeout(()=> {
+      gsap.to(".ready, .kitt-loading", { opacity: 0, duration: 3, })
+      setTimeout(() => {
         setIsPaused(false);
-        
+
       }, 5000)
     };
 
@@ -1163,34 +1167,66 @@ const Creditos = () => {
   }, [secuenciaInicial]);
 
   useEffect(() => {
-    let cursorTimeout;
-    const cursor = containerRef.current?.querySelector('::after');
-
     const handleMouseMove = (e) => {
-      if (containerRef.current) {
-        const x = e.clientX - 16;
-        const y = e.clientY - 16;
-        containerRef.current.style.setProperty('--mouse-x', `${x}px`);
-        containerRef.current.style.setProperty('--mouse-y', `${y}px`);
-
-        // Mostrar el cursor
-        containerRef.current.classList.remove('hide-cursor');
-
-        // Reiniciar el temporizador
-        clearTimeout(cursorTimeout);
-        cursorTimeout = setTimeout(() => {
-          containerRef.current?.classList.add('hide-cursor');
-        }, 2000);
-      }
+      // const cursor = document.querySelector('.cursor');
+      // if (cursor) {
+      //   cursor.style.left = e.clientX + 'px';
+      //   cursor.style.top = e.clientY + 'px';
+      // }
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      clearTimeout(cursorTimeout);
-    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
+
+  useEffect(() => {
+    const audioElement = audioRef.current;
+    if (!audioElement) return;
+
+    const handleTimeUpdate = () => {
+      const currentTime = audioElement.currentTime;
+      const duration = audioElement.duration;
+      if (duration) {
+        const progressValue = (currentTime / duration) * 100;
+        setProgress(progressValue);
+        if (progressRef.current) {
+          progressRef.current.style.setProperty('--progress', `${progressValue}%`);
+        }
+      }
+      // ... rest of existing handleTimeUpdate code ...
+    };
+
+    const handlePlayPause = () => {
+      if (audioElement.paused) {
+        audioElement.play();
+      } else {
+        audioElement.pause();
+      }
+      setIsPlaying(!audioElement.paused);
+    };
+
+    const formatTime = (time) => {
+      const minutes = Math.floor(time / 60);
+      const seconds = Math.floor(time % 60);
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    };
+
+    const updateTimeDisplay = () => {
+      setCurrentTime(formatTime(audioElement.currentTime));
+    };
+
+    audioElement.addEventListener("timeupdate", handleTimeUpdate);
+    audioElement.addEventListener("timeupdate", updateTimeDisplay);
+    audioElement.addEventListener("play", () => setIsPlaying(true));
+    audioElement.addEventListener("pause", () => setIsPlaying(false));
+    
+    return () => {
+      audioElement.removeEventListener("timeupdate", handleTimeUpdate);
+      audioElement.removeEventListener("timeupdate", updateTimeDisplay);
+      audioElement.removeEventListener("play", () => setIsPlaying(true));
+      audioElement.removeEventListener("pause", () => setIsPlaying(false));
+    };
+  }, [audioRef.current]);
 
   return (
     <div 
@@ -1198,7 +1234,7 @@ const Creditos = () => {
       className={`creditos ${!isReady ? 'loading' : (!secuenciaInicial && !mostrarCreditos ? 'ready' : '')}`} 
       onClick={iniciarSecuencia}
     >
-      <Textos audioRef={audioRef} />
+      <Textos audioRef={audioRef} analyser={analyser} />
       {!mostrarCreditos && (
         <div className={`kitt-loading ${isReady ? 'fast' : ''}`}>
             {[...Array(8)].map((_, i) => (
@@ -1428,6 +1464,39 @@ const Creditos = () => {
               </React.Fragment>
             );
           })}
+
+          <div className="audio-progress-container">
+            <div className="progress-wrapper">
+              <input
+                type="range"
+                ref={progressRef}
+                className="audio-progress"
+                min="0"
+                max="100"
+                value={progress}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setProgress(value);
+                  if (audioRef.current) {
+                    audioRef.current.currentTime = (value / 100) * audioRef.current.duration;
+                  }
+                }}
+              />
+              <div className="time-display">{currentTime}</div>
+              <button 
+                className={`pause-button ${isPlaying ? 'playing' : ''}`}
+                onClick={() => {
+                  if (audioRef.current) {
+                    if (audioRef.current.paused) {
+                      audioRef.current.play();
+                    } else {
+                      audioRef.current.pause();
+                    }
+                  }
+                }}
+              />
+            </div>
+          </div>
         </>
       )}
     </div>

@@ -1,22 +1,32 @@
 .textos {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100dvw;
-    height: 100dvh;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 100;
+    width: 100%;
+    height: 100%;
     display: flex;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
     pointer-events: none;
-    z-index: 9999;
+    overflow: hidden;
 
     .bloque-texto {
         text-align: center;
-        width: fit-content;
+        width: 100%;
         margin: 0 auto;
         position: relative;
-        
+        padding: 5dvh;
+        box-sizing: border-box;
+        opacity: 0;
+        transition: opacity 0.5s ease-out;
+        will-change: opacity, transform;
+
+        &.visible {
+            opacity: 1;
+        }
+
         .frase {
             margin: 0.5em 0;
             color: white;
@@ -33,13 +43,53 @@
             transition: opacity 0.2s ease-out, transform 0.2s ease-out;
             line-height: 1;
             will-change: transform, opacity;
-            white-space: nowrap;
             backface-visibility: hidden;
             transform-style: preserve-3d;
 
             &:not(:empty) {
                 opacity: 0.8;
                 transform: scale(1);
+            }
+        }
+        
+        &.starwars {
+            perspective: 400px;
+            transform-style: preserve-3d;
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%) rotateX(25deg) translateY(100%);
+            animation: none;
+            opacity: 0;
+            
+            .frase {
+                margin: 0;
+                padding: 1rem 0;
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            &.visible {
+                animation: scroll-up 60s linear;
+            }
+
+            &.fade-out {
+                animation: scroll-up-and-fade 60s linear;
+            }
+        }
+
+        &.parpadeo {
+            .frase {
+                margin: 1rem 0;
+                animation: blink 2.4s infinite;
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        &.default, &.olivetti {
+            .frase {
+                margin: 1rem 0;
             }
         }
     }
@@ -84,5 +134,52 @@
                 transform: scale(1.1);
             }
         }
+    }
+}
+
+@keyframes scroll-up {
+    0% {
+        transform: translateX(-50%) rotateX(25deg) translateY(100%);
+        opacity: 0;
+    }
+    5% {
+        transform: translateX(-50%) rotateX(25deg) translateY(100%);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(-50%) rotateX(25deg) translateY(-200%);
+        opacity: 1;
+    }
+}
+
+@keyframes scroll-up-and-fade {
+    0% {
+        transform: translateX(-50%) rotateX(25deg) translateY(100%);
+        opacity: 0;
+    }
+    5% {
+        transform: translateX(-50%) rotateX(25deg) translateY(100%);
+        opacity: 1;
+    }
+    45% {
+        transform: translateX(-50%) rotateX(25deg) translateY(-50%);
+        opacity: 1;
+    }
+    55% {
+        transform: translateX(-50%) rotateX(25deg) translateY(-75%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(-50%) rotateX(25deg) translateY(-200%);
+        opacity: 0;
+    }
+}
+
+@keyframes blink {
+    0%, 49% {
+        opacity: 0.8;
+    }
+    50%, 100% {
+        opacity: 0;
     }
 } 
