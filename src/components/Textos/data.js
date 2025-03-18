@@ -5,7 +5,7 @@ export const BLOQUES_TEXTO = [
         duracionEntreFrases: 4,
         frases: [
             "Esta boda está inspirada en los propios",
-            "invitados y ellos son en realidad su principal protagonista.",
+            "invitados y ellos son en realidad sus principales protagonistas.",
             "Los nombres, personajes y situaciones relatados previamente han sido",
             "extraídos del Libro Secreto de los osos",
             "siento totalmente verídicos",
@@ -22,7 +22,7 @@ export const BLOQUES_TEXTO = [
     {
         id: "bienvenida-2",
         tiempoInicio: 40, // 0:00 minutos
-        duracionEntreFrases: 8,
+        duracionEntreFrases: 4,
         frases: [
             "Pero lo importante hoy no es lo que un oso hace",
             "si no de quienes se rodea...",
@@ -33,12 +33,11 @@ export const BLOQUES_TEXTO = [
     },
     {
         id: "gracias",
-        tiempoInicio: 341.5, // 5:41.5 minutos
+        tiempoInicio: 375, // 5:41.5 minutos
         duracionEntreFrases: 6,
         frases: [
             "Gracias por compartir este momento con nosotros"
         ],
-        tipo: "olivetti",
         velocidadOlivetti: 1 // Un carácter por pulso
     },
     {

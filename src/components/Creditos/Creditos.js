@@ -5,95 +5,6 @@ import KITT from "components/KITT/KITT";
 import Textos from "components/Textos/Textos";
 import "./Creditos.scss";
 import gsap from "gsap";
-import Prompt from "components/Prompt/Prompt";
-
-// Tiempos de la canción (ajustados a los momentos clave de Opus)
-const TIEMPO_INICIO_ESPIRAL = 4;
-const TIEMPO_INICIO_BARRITAS = 224.5;
-const TIEMPO_INICIO_INVITADOS = 80;
-const TIEMPO_FIN_INVITADOS = 341.5; // 4:30 minutos
-const TIEMPO_FIN = 400;
-const TIEMPO_PARON = 341.5;
-
-// Ajustes específicos para Opus y sus diferentes secciones
-const TIEMPO_INICIO_ACELERACION = 75;
-const TIEMPO_MAXIMA_VELOCIDAD = 112;
-const TIEMPO_INICIO_DESACELERACION = 175;
-
-// Configuración de la animación base (ajustada al BPM de Opus)
-const BPM_OPUS = 128;
-const PULSO_BASE = 60 / BPM_OPUS;
-const DURACION_ANIMACION_BASE = PULSO_BASE * 1.25;
-const DURACION_ANIMACION_RAPIDA = PULSO_BASE / 2;
-const MIN_DURACION_ANIMACION = PULSO_BASE / 8;
-
-// Tiempos entre invitados (basados en el BPM)
-const TIEMPO_ENTRE_INVITADOS_INICIAL = PULSO_BASE * 2.5;
-const TIEMPO_ENTRE_INVITADOS_RAPIDO = PULSO_BASE * 0.75;
-const MIN_TIEMPO_ENTRE_INVITADOS = PULSO_BASE / 4;
-
-// Umbrales de detección de ritmo
-const UMBRAL_INTENSIDAD = 0.5;
-const MIN_TIEMPO_ENTRE_PICOS = PULSO_BASE / 16;
-const UMBRAL_INTENSIDAD_CAMBIO = 0.35;
-const UMBRAL_INTENSIDAD_TIEMPO = 0.6;
-
-// Configuración de invitados y transiciones
-const MAX_INVITADOS_POR_GRUPO = 1;
-const GOLPES_POR_CAMBIO = 1;
-const TIEMPO_POR_INVITADO = PULSO_BASE * 1.25;
-const DURACION_TRANSICION = PULSO_BASE / 2;
-const DURACION_PAUSA = PULSO_BASE * 1.25;
-const PAUSA_ENTRE_GRUPOS = PULSO_BASE / 2;
-const TIEMPO_TRANSICION = PULSO_BASE / 2;
-
-// Función para calcular el tiempo entre invitados basado en la duración total
-const calcularTiempoEntreInvitados = (totalInvitados) => {
-  const duracionTotal = TIEMPO_FIN_INVITADOS - TIEMPO_INICIO_INVITADOS;
-  const tiempoBase = (duracionTotal / totalInvitados) * 0.75; // Reducido a 3/4 del tiempo original
-  
-  // Ajustamos el tiempo base para que coincida con los pulsos de la música
-  const pulsosPorInvitado = Math.round(tiempoBase / PULSO_BASE);
-  return pulsosPorInvitado * PULSO_BASE;
-};
-
-// Ajustes de animación para diferentes secciones de Opus
-const getAnimationParams = (currentTime) => {
-  // Sección inicial (0:20 - 2:00)
-  if (currentTime < TIEMPO_INICIO_ACELERACION) {
-    return {
-      duracionAnimacion: DURACION_ANIMACION_BASE,
-      tiempoEntreInvitados: TIEMPO_ENTRE_INVITADOS_INICIAL,
-      umbralIntensidad: UMBRAL_INTENSIDAD
-    };
-  }
-  // Sección de aceleración (2:00 - 3:00)
-  else if (currentTime < TIEMPO_MAXIMA_VELOCIDAD) {
-    const progress = (currentTime - TIEMPO_INICIO_ACELERACION) / (TIEMPO_MAXIMA_VELOCIDAD - TIEMPO_INICIO_ACELERACION);
-    return {
-      duracionAnimacion: DURACION_ANIMACION_BASE - (progress * (DURACION_ANIMACION_BASE - DURACION_ANIMACION_RAPIDA)),
-      tiempoEntreInvitados: TIEMPO_ENTRE_INVITADOS_INICIAL - (progress * (TIEMPO_ENTRE_INVITADOS_INICIAL - TIEMPO_ENTRE_INVITADOS_RAPIDO)),
-      umbralIntensidad: UMBRAL_INTENSIDAD - (progress * 0.1)
-    };
-  }
-  // Sección rápida (3:00 - 4:40)
-  else if (currentTime < TIEMPO_INICIO_DESACELERACION) {
-    return {
-      duracionAnimacion: DURACION_ANIMACION_RAPIDA,
-      tiempoEntreInvitados: TIEMPO_ENTRE_INVITADOS_RAPIDO,
-      umbralIntensidad: UMBRAL_INTENSIDAD - 0.1
-    };
-  }
-  // Sección final (4:40+)
-  else {
-    const progress = Math.min((currentTime - TIEMPO_INICIO_DESACELERACION) / (TIEMPO_PARON - TIEMPO_INICIO_DESACELERACION), 1);
-    return {
-      duracionAnimacion: DURACION_ANIMACION_RAPIDA + (progress * (DURACION_ANIMACION_BASE - DURACION_ANIMACION_RAPIDA)),
-      tiempoEntreInvitados: TIEMPO_ENTRE_INVITADOS_RAPIDO + (progress * (TIEMPO_ENTRE_INVITADOS_INICIAL - TIEMPO_ENTRE_INVITADOS_RAPIDO)),
-      umbralIntensidad: (UMBRAL_INTENSIDAD - 0.1) + (progress * 0.1)
-    };
-  }
-};
 
 const Creditos = () => {
   const audioRef = useRef(null);
@@ -109,9 +20,7 @@ const Creditos = () => {
   const [intensidadNormalizada, setIntensidadNormalizada] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const imagenesRef = useRef([]);
-  const indexInvitado = useRef(0);
   const animationRef = useRef(null);
-  const [invitadosFlotando, setInvitadosFlotando] = useState(new Set());
   const ultimoCambio = useRef(0);
   const [coloresInvitados, setColoresInvitados] = useState({});
   const [invitadoActual, setInvitadoActual] = useState(null);
@@ -127,13 +36,48 @@ const Creditos = () => {
   const [isReady, setIsReady] = useState(false);
   const [showReadyText, setShowReadyText] = useState(false);
   const [shouldDekayKITT, setShouldDekayKITT] = useState(true);
-  const [mostrarGracias, setMostrarGracias] = useState(false);
   const [fadeOutTodo, setFadeOutTodo] = useState(false);
   const [barrasOcultas, setBarrasOcultas] = useState(false);
   const [progress, setProgress] = useState(0);
   const progressRef = useRef(null);
   const [currentTime, setCurrentTime] = useState('0:00');
   const [isPlaying, setIsPlaying] = useState(true);
+
+  // Tiempos de la canción (ajustados a los momentos clave de Opus)
+  const TIEMPO_INICIO_ESPIRAL = 4;
+  const TIEMPO_CAMBIO_VELOCIDAD = 224.5;
+  const TIEMPO_INICIO_INVITADOS = 50;
+  const TIEMPO_FIN_INVITADOS = TIEMPO_CAMBIO_VELOCIDAD; // 4:30 minutos
+  const TIEMPO_PARON = 341.5;
+
+  // Configuración de la animación base (ajustada al BPM de Opus)
+  const BPM_OPUS = 128;
+  const PULSO_BASE = 1;
+  const DURACION_ANIMACION_BASE = (TIEMPO_FIN_INVITADOS - TIEMPO_INICIO_INVITADOS) / datosInvitados.length;
+
+  // Tiempos entre invitados (basados en el BPM)
+  const TIEMPO_ENTRE_INVITADOS_INICIAL = PULSO_BASE;
+
+  // Umbrales de detección de ritmo
+  const UMBRAL_INTENSIDAD = 0.5;
+  // Función para calcular el tiempo entre invitados basado en la duración total
+  const calcularTiempoEntreInvitados = (totalInvitados) => {
+    const duracionTotal = TIEMPO_FIN_INVITADOS - TIEMPO_INICIO_INVITADOS;
+    const tiempoBase = (duracionTotal / totalInvitados) * 1; // Reducido a 3/4 del tiempo original
+
+    // Ajustamos el tiempo base para que coincida con los pulsos de la música
+    const pulsosPorInvitado = Math.round(tiempoBase / PULSO_BASE);
+    return pulsosPorInvitado * PULSO_BASE;
+  };
+
+  // Ajustes de animación para diferentes secciones de Opus
+  const getAnimationParams = () => {
+    return {
+      duracionAnimacion: DURACION_ANIMACION_BASE,
+      umbralIntensidad: UMBRAL_INTENSIDAD
+    };
+
+  };
 
   const animationState = useRef({
     tiempoAnterior: 0,
@@ -186,7 +130,7 @@ const Creditos = () => {
     const handleTimeUpdate = () => {
       const currentTime = audioElement.currentTime;
       if (!currentTime || !analyser || isPaused) return;
-      
+
       // Control del fade out en TIEMPO_PARON
       if (currentTime >= TIEMPO_PARON && !barrasOcultas) {
         setBarrasOcultas(true);
@@ -203,7 +147,7 @@ const Creditos = () => {
       }
 
       // Limpiar mesas e invitados si estamos fuera del rango de tiempo
-      if (currentTime < TIEMPO_INICIO_INVITADOS || currentTime >= TIEMPO_FIN_INVITADOS) {
+      if (currentTime < TIEMPO_INICIO_INVITADOS || currentTime >= (TIEMPO_FIN_INVITADOS + DURACION_ANIMACION_BASE)) {
         setMesaActual(null);
         setInvitadosEnEsquinas([]);
         setInvitadoActual(null);
@@ -211,25 +155,26 @@ const Creditos = () => {
         ultimoIndiceEsquina.current = 0;
         ultimoInvitadoMostrado.current = -1;
         ultimoCambio.current = 0;
-        
+
         // Ocultar todos los elementos visuales
-        gsap.set([".invitado", ".invitado-nombre", ".nombre-mesa", ".gracias"], {
+        gsap.to([".invitado", ".invitado-nombre", ".nombre-mesa", ".gracias"], {
           opacity: 0,
+          duration: DURACION_ANIMACION_BASE,
+          delay: DURACION_ANIMACION_BASE,
           scale: 0,
           clearProps: "all"
         });
       }
 
       if (currentTime >= TIEMPO_INICIO_INVITADOS && currentTime < TIEMPO_FIN_INVITADOS) {
-        const tiempoEntreInvitados = calcularTiempoEntreInvitados(datosInvitados.length);
         const tiempoDesdeInicio = currentTime - TIEMPO_INICIO_INVITADOS;
-        const invitadosPorMostrar = Math.floor(tiempoDesdeInicio / tiempoEntreInvitados);
-        
+        const invitadosPorMostrar = Math.floor(tiempoDesdeInicio / DURACION_ANIMACION_BASE);
+
         // Si hay un nuevo invitado para mostrar y ha pasado suficiente tiempo desde el último cambio
-        if (invitadosPorMostrar > ultimoInvitadoMostrado.current && 
-            (currentTime - ultimoCambio.current >= tiempoEntreInvitados || ultimoCambio.current === 0)) {
+        if (invitadosPorMostrar > ultimoInvitadoMostrado.current &&
+          (currentTime - ultimoCambio.current >= DURACION_ANIMACION_BASE || ultimoCambio.current === 0)) {
           let siguienteIndice = invitadosPorMostrar;
-          
+
           // Verificar que no excedamos el número de invitados
           if (siguienteIndice < datosInvitados.length && !invitadosMostrados.current[siguienteIndice]) {
             const invitado = datosInvitados[siguienteIndice];
@@ -239,52 +184,22 @@ const Creditos = () => {
             ultimoInvitadoMostrado.current = siguienteIndice;
 
             // Si es el último invitado, comenzar el desvanecimiento secuencial
-            if (siguienteIndice === datosInvitados.length - 1) {
-              // Esperar 2 segundos antes de comenzar el desvanecimiento
-              setTimeout(() => {
-                const tiempoHastaParon = TIEMPO_PARON - currentTime;
-                const tiempoEntreDesvanecimientos = tiempoHastaParon / (invitadosEnEsquinas.length + 1); // +1 para incluir al último invitado
-                
-                // Primero desvanecer los invitados existentes
-                invitadosEnEsquinas.forEach((invitado, index) => {
-                  setTimeout(() => {
-                    const elemento = document.querySelector(`[data-invitado-id="${invitado.id}"]`);
-                    const nombre = document.querySelector(`[data-invitado-nombre-id="${invitado.id}"]`);
-                    
-                    if (elemento && nombre) {
-                      gsap.to([elemento, nombre], {
-                        opacity: 0,
-                        scale: 0.8,
-                        duration: 0.5,
-                        ease: "power2.inOut",
-                        onComplete: () => {
-                          setInvitadosEnEsquinas(prev => {
-                            const nuevos = prev.filter(i => i.id !== invitado.id);
-                            // Si no quedan invitados, limpiamos también el estado de invitado actual y la mesa
-                            if (nuevos.length === 0) {
-                              setInvitadoActual(null);
-                              setMesaActual(null);
-                              ultimaMesaMostrada.current = null;
-                            }
-                            return nuevos;
-                          });
-                        }
-                      });
-                    }
-                  }, index * tiempoEntreDesvanecimientos);
-                });
+            if (siguienteIndice === datosInvitados.length) {
+              const params = getAnimationParams();
+              const tiempoEntreDesvanecimientos = params.duracionAnimacion; // +1 para incluir al último invitado Esperar 2 segundos antes de comenzar el desvanecimiento
 
-                // Después desvanecer el último invitado y la mesa
+              // Primero desvanecer los invitados existentes
+              invitadosEnEsquinas.forEach((invitado, index) => {
                 setTimeout(() => {
                   const elemento = document.querySelector(`[data-invitado-id="${invitado.id}"]`);
                   const nombre = document.querySelector(`[data-invitado-nombre-id="${invitado.id}"]`);
-                  const elementoMesa = document.querySelector('.nombre-mesa');
-                  
+
                   if (elemento && nombre) {
-                    gsap.to([elemento, nombre, elementoMesa], {
+                    gsap.to([elemento, nombre], {
                       opacity: 0,
                       scale: 0.8,
                       duration: 0.5,
+                      delay: DURACION_ANIMACION_BASE,
                       ease: "power2.inOut",
                       onComplete: () => {
                         setInvitadosEnEsquinas(prev => {
@@ -300,8 +215,37 @@ const Creditos = () => {
                       }
                     });
                   }
-                }, invitadosEnEsquinas.length * tiempoEntreDesvanecimientos);
-              }, 2000);
+                }, index * tiempoEntreDesvanecimientos);
+              });
+
+              // Después desvanecer el último invitado y la mesa
+              setTimeout(() => {
+                const elemento = document.querySelector(`[data-invitado-id="${invitado.id}"]`);
+                const nombre = document.querySelector(`[data-invitado-nombre-id="${invitado.id}"]`);
+                const elementoMesa = document.querySelector('.nombre-mesa');
+                const params = getAnimationParams();
+                if (elemento && nombre) {
+                  gsap.to([elemento, nombre, elementoMesa], {
+                    opacity: 0,
+                    scale: 0.8,
+                    duration: params.duracionAnimacion/4,
+                    ease: "power2.inOut",
+                    onComplete: () => {
+                      setInvitadosEnEsquinas(prev => {
+                        const nuevos = prev.filter(i => i.id !== invitado.id);
+                        // Si no quedan invitados, limpiamos también el estado de invitado actual y la mesa
+                        if (nuevos.length === 0) {
+                          setInvitadoActual(null);
+                          setMesaActual(null);
+                          ultimaMesaMostrada.current = null;
+                        }
+                        return nuevos;
+                      });
+                    }
+                  });
+                }
+              }, invitadosEnEsquinas.length * tiempoEntreDesvanecimientos);
+
             }
           }
         }
@@ -310,12 +254,12 @@ const Creditos = () => {
 
     const handleSeeking = () => {
       const currentTime = audioRef.current.currentTime;
-      
+
       // Limpiamos todas las animaciones activas
       gsap.killTweensOf(".invitado, .invitado-nombre, .nombre-mesa, .gracias");
-      
+
       // Si estamos fuera del rango de invitados, limpiamos todo
-      if (currentTime < TIEMPO_INICIO_INVITADOS || currentTime >= TIEMPO_FIN_INVITADOS) {
+      if (currentTime < TIEMPO_INICIO_INVITADOS || currentTime >= (TIEMPO_FIN_INVITADOS + DURACION_ANIMACION_BASE)) {
         // Limpiamos todos los estados
         invitadosMostrados.current = new Array(datosInvitados.length).fill(false);
         setInvitadosEnEsquinas([]);
@@ -325,29 +269,27 @@ const Creditos = () => {
         ultimoIndiceEsquina.current = 0;
         ultimoInvitadoMostrado.current = -1;
         ultimoCambio.current = 0;
-        
+
         // Ocultamos todos los elementos visuales
-        gsap.set(".invitado, .invitado-nombre, .nombre-mesa, .gracias", {
+        gsap.to([".invitado", ".invitado-nombre", ".nombre-mesa", ".gracias"], {
           opacity: 0,
+          duration: DURACION_ANIMACION_BASE,
           scale: 0,
           clearProps: "all"
         });
         return;
       }
 
-      // Calculamos el tiempo entre invitados basado en la duración total
-      const tiempoEntreInvitados = calcularTiempoEntreInvitados(datosInvitados.length);
-      
       // Calculamos cuántos invitados deberían estar visibles basado en el tiempo transcurrido
       const tiempoDesdeInicio = currentTime - TIEMPO_INICIO_INVITADOS;
       const invitadosPorMostrar = Math.min(
-        Math.floor(tiempoDesdeInicio / tiempoEntreInvitados),
+        Math.floor(tiempoDesdeInicio / DURACION_ANIMACION_BASE),
         datosInvitados.length - 1
       );
 
       // Reiniciamos el estado de invitados mostrados
       invitadosMostrados.current = new Array(datosInvitados.length).fill(false);
-      
+
       // Calculamos qué invitados deberían estar visibles (máximo 4)
       const invitadosAMostrar = [];
       const startIndex = Math.max(0, invitadosPorMostrar - 3);
@@ -369,9 +311,9 @@ const Creditos = () => {
       setInvitadosEnEsquinas(invitadosAMostrar);
       ultimoIndiceEsquina.current = invitadosAMostrar.length % 4;
       ultimoInvitadoMostrado.current = invitadosPorMostrar;
-      
+
       // Reiniciamos el tiempo del último cambio para que el siguiente invitado aparezca en el momento correcto
-      ultimoCambio.current = currentTime - (tiempoDesdeInicio % tiempoEntreInvitados);
+      ultimoCambio.current = currentTime - (tiempoDesdeInicio % DURACION_ANIMACION_BASE);
 
       // Actualizamos la mesa actual si hay invitados
       if (invitadosAMostrar.length > 0) {
@@ -438,7 +380,7 @@ const Creditos = () => {
     audioElement.addEventListener("seeked", handleSeeking);
     audioElement.addEventListener("play", handlePlay);
     audioElement.addEventListener("pause", handlePause);
-    
+
     return () => {
       audioElement.removeEventListener("timeupdate", handleTimeUpdate);
       audioElement.removeEventListener("seeking", handleSeeking);
@@ -466,7 +408,7 @@ const Creditos = () => {
           }))
           .sort((a, b) => a.mesaId - b.mesaId);
         console.log('Datos de invitados cargados:', invitadosData);
-        
+
         const colores = {};
         invitadosData.forEach(invitado => {
           if (!invitado.imagen) {
@@ -477,7 +419,7 @@ const Creditos = () => {
           }
         });
         setColoresInvitados(colores);
-        
+
         setDatosInvitados(invitadosData);
         setDatosCargados(true);
 
@@ -495,7 +437,7 @@ const Creditos = () => {
   }, []);
 
   useEffect(() => {
-    const todasLasImagenesCargadas = imagenesCargadas.length > 0 && 
+    const todasLasImagenesCargadas = imagenesCargadas.length > 0 &&
       imagenesCargadas.every((loaded, index) => {
         if (!datosInvitados[index]?.imagen) return true;
         return loaded;
@@ -513,7 +455,7 @@ const Creditos = () => {
         if (kittLoading) {
           kittLoading.classList.add('fade-out');
         }
-        
+
         // Después de la transición de fade out, mostramos el texto de "ready"
         setTimeout(() => {
           setIsReady(true);
@@ -567,7 +509,7 @@ const Creditos = () => {
 
       const draw = (tiempoActual) => {
         if (!canvasBarsRef.current || !canvasDotsRef.current) return;
-        
+
         animationRef.current = requestAnimationFrame(draw);
 
         analyser.getByteFrequencyData(dataArray);
@@ -593,10 +535,10 @@ const Creditos = () => {
 
         const tiempoRestante = duracionTotal - tiempoAudio;
         const duracionContraccion = 20;
-        const factorContraccion = tiempoRestante <= duracionContraccion ? 
+        const factorContraccion = tiempoRestante <= duracionContraccion ?
           tiempoRestante / duracionContraccion : 1;
 
-        if (tiempoAudio >= TIEMPO_INICIO_BARRITAS) {
+        if (tiempoAudio >= TIEMPO_CAMBIO_VELOCIDAD) {
           animationState.current.direccionGiro = 1;
         } else {
           animationState.current.direccionGiro = -1;
@@ -621,7 +563,7 @@ const Creditos = () => {
         const availableWidth = barsWidth;
         const barSpacing = 2;
         const barWidth = Math.floor((availableWidth - (barSpacing * (numBars - 1))) / numBars);
-        
+
         // Calcular el ancho total de las barras
         const totalWidth = (barWidth + barSpacing) * numBars - barSpacing;
         // Calcular el punto de inicio para centrar
@@ -671,19 +613,19 @@ const Creditos = () => {
             const opacityThreshold = barsHeight * 0.05;
             let opacity = barHeight < opacityThreshold ? Math.max(0, barHeight / opacityThreshold) : 1;
             opacity *= opacidadBase;
-            
+
             const intensityOpacity = Math.max(0.3, Math.min(0.8, intensidadNormalizadaActual));
             opacity *= intensityOpacity;
 
             const colorIndex = Math.floor(i / barsPerColorAdjusted);
             const color = bearColors[Math.min(colorIndex, bearColors.length - 1)];
-            
+
             ctxBars.fillStyle = color;
             ctxBars.globalAlpha = opacity;
-            
+
             const y = (barsHeight / 2) - (barHeight / 2);
             ctxBars.fillRect(x, y, barWidth, barHeight);
-            
+
             x += barWidth + barSpacing;
           }
         } else {
@@ -695,21 +637,21 @@ const Creditos = () => {
               const normalizedHeight = rawHeight;
               const amplifiedHeight = Math.pow(normalizedHeight, 0.7);
               const finalHeight = Math.min(barsHeight * (baseAmplitude + (maxAmplitude - baseAmplitude) * amplifiedHeight), barsHeight * 1);
-              
+
               const hue = (i / numBars * 360 + tiempoAudio * 30) % 360;
               const saturation = 70 + (intensidadNormalizadaActual * 30);
               const lightness = 50 + (intensidadNormalizadaActual * 20);
-              
+
               const opacityBase = Math.max(0.3, Math.min(0.8, intensidadNormalizadaActual));
               const opacity = opacityBase * opacidadBase;
-              
+
               ctxBars.fillStyle = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
               ctxBars.globalAlpha = opacity;
-              
+
               const y = (barsHeight / 2) - (finalHeight / 2);
               ctxBars.fillRect(x, y, barWidth, finalHeight);
             }
-            
+
             x += barWidth + barSpacing;
           }
         }
@@ -745,12 +687,12 @@ const Creditos = () => {
           const progress = i / totalBolitas;
           const angle = progress * Math.PI * 10;
           const baseRadius = progress * maxRadius;
-          
+
           // Calcular el movimiento hacia el centro basado en la intensidad
-          const umbralIntensidad = 0.3; // Umbral para considerar la música "lenta"
+          const { umbralIntensidad } = getAnimationParams(); // Umbral para considerar la música "lenta"
           const factorMovimiento = Math.max(0, umbralIntensidad - intensidadNormalizadaActual) / umbralIntensidad;
           const radius = baseRadius * (1 - factorMovimiento * 0.8); // Reducir hasta un 80% el radio
-          
+
           const x = centerX + Math.cos(angle) * radius;
           const y = centerY + Math.sin(angle) * radius;
 
@@ -788,25 +730,25 @@ const Creditos = () => {
             const opacidadImagen = opacidadBolitas * progreso;
 
             if (invitadoMostrado && img && img.complete && img.naturalWidth !== 0) {
-                ctxDots.save();
-                ctxDots.translate(x, y);
-                ctxDots.beginPath();
-                ctxDots.arc(0, 0, tamañoFinal, 0, Math.PI * 2);
-                ctxDots.clip();
-              
+              ctxDots.save();
+              ctxDots.translate(x, y);
+              ctxDots.beginPath();
+              ctxDots.arc(0, 0, tamañoFinal, 0, Math.PI * 2);
+              ctxDots.clip();
+
               // Aplicar brillo a la imagen basado en la intensidad
               const brillo = Math.max(0, 1 - opacidadColor);
               ctxDots.filter = `brightness(${1 + brillo * 0.5})`;
-              
-                ctxDots.drawImage(
-                  img,
-                  -tamañoFinal,
-                  -tamañoFinal,
-                  tamañoFinal * 2,
-                  tamañoFinal * 2
-                );
-                ctxDots.restore();
-              }
+
+              ctxDots.drawImage(
+                img,
+                -tamañoFinal,
+                -tamañoFinal,
+                tamañoFinal * 2,
+                tamañoFinal * 2
+              );
+              ctxDots.restore();
+            }
 
             // Dibujar el color solo si hay opacidad
             if (opacidadColor > 0) {
@@ -824,19 +766,19 @@ const Creditos = () => {
         ctxDots.restore();
 
         const kamehamehaSizeBase = maxRadius * 0.75;
-        const factorTamañoPost = tiempoAudio > TIEMPO_PARON ? 
+        const factorTamañoPost = tiempoAudio > TIEMPO_PARON ?
           1 + (intensidadNormalizadaActual * 0.3) : 1;
         const kamehamehaSize = kamehamehaSizeBase * (1 + intensidadNormalizadaActual * 2) * factorContraccion * factorTamañoPost;
         const kamehamehaRotation = animationState.current.rotacionAcumulativa * animationState.current.direccionGiro;
-        
+
         // Calcular la opacidad base del kamehameha basada en la intensidad de la música
         const opacidadKamehameha = Math.max(0, Math.min(1, intensidadNormalizadaActual * 2));
-        
+
         const gradient = ctxDots.createRadialGradient(
           centerX, centerY, 0,
           centerX, centerY, kamehamehaSize
         );
-        
+
         gradient.addColorStop(0, `rgba(255, 255, 255, ${(0.9 + intensidadNormalizadaActual * 0.8) * factorContraccion * opacidadKamehameha})`);
         gradient.addColorStop(0.2, `rgba(0, 255, 255, ${(0.9 + intensidadNormalizadaActual * 0.3) * factorContraccion * opacidadKamehameha})`);
         gradient.addColorStop(0.4, `rgba(0, 128, 255, ${(.5 + intensidadNormalizadaActual * 0.9) * factorContraccion * opacidadKamehameha})`);
@@ -872,10 +814,10 @@ const Creditos = () => {
         animationState.current.velocidadGiroActual = 0.01;
         animationState.current.escalaActual = 1.0;
         animationState.current.direccionGiro = 1;
-        
+
         const ctxBars = canvasBarsRef.current.getContext("2d");
         const ctxDots = canvasDotsRef.current.getContext("2d");
-        
+
         if (ctxBars && ctxDots && canvasBarsRef.current.width && canvasDotsRef.current.width) {
           ctxBars.clearRect(0, 0, canvasBarsRef.current.width, canvasBarsRef.current.height);
           ctxDots.clearRect(0, 0, canvasDotsRef.current.width, canvasDotsRef.current.height);
@@ -914,35 +856,34 @@ const Creditos = () => {
   }, []);
 
   const manejarCambioInvitado = (invitado) => {
-    const params = getAnimationParams(audioRef.current.currentTime);
-    const currentTime = audioRef.current.currentTime;
-    
+    const params = getAnimationParams();
+
     setInvitadoActual(invitado);
-    
+
     // Actualizar la mesa actual con animación
     if (invitado.mesaId !== ultimaMesaMostrada.current) {
       const mesa = invitado.mesa;
       const elementoMesa = document.querySelector('.nombre-mesa');
-      
+
       if (elementoMesa) {
         const timeline = gsap.timeline();
-        
+
         timeline.to(elementoMesa, {
           opacity: 0,
           scale: 0.8,
           duration: 0.3, // Reducido de 0.5 a 0.3
           ease: "power2.inOut"
         })
-        .call(() => {
-          setMesaActual(mesa);
-          ultimaMesaMostrada.current = invitado.mesaId;
-        })
-        .to(elementoMesa, {
-          opacity: 0.8,
-          scale: 1 + (intensidadNormalizada * 0.9),
-          duration: 0.3, // Reducido de 0.5 a 0.3
-          ease: "power2.out"
-        });
+          .call(() => {
+            setMesaActual(mesa);
+            ultimaMesaMostrada.current = invitado.mesaId;
+          })
+          .to(elementoMesa, {
+            opacity: 0.8,
+            scale: 1 + (intensidadNormalizada * 0.9),
+            duration: 0.3, // Reducido de 0.5 a 0.3
+            ease: "power2.out"
+          });
       } else {
         setMesaActual(mesa);
         ultimaMesaMostrada.current = invitado.mesaId;
@@ -955,24 +896,19 @@ const Creditos = () => {
     analyser.getByteFrequencyData(dataArray);
     const intensidadMusica = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
     const intensidadNormalizadaActual = intensidadMusica / 255;
-    
+
     // Calcular la separación final basada en la intensidad capturada
     const offsetBase = 15; // Aumentado de 12 a 15 para más separación
     const offsetAdicional = intensidadNormalizadaActual * 4; // Aumentado de 3 a 4 para más variación
     const offsetFinal = (offsetBase + offsetAdicional) * 0.8; // Reducido un 20% para que acaben más juntas
 
-    // Calculamos el tiempo de espera de forma inversa a la intensidad
-    const tiempoEsperaBase = 50;
-    const tiempoEsperaMaximo = 100;
-    const tiempoEspera = tiempoEsperaBase + (tiempoEsperaMaximo - tiempoEsperaBase) * (1 - intensidadNormalizadaActual);
-
     setTimeout(() => {
       const elementoNuevo = document.querySelector(`[data-invitado-id="${invitado.id}"]`);
       const elementoNombre = document.querySelector(`[data-invitado-nombre-id="${invitado.id}"]`);
-      
+
       if (elementoNuevo && elementoNombre) {
         const escalaInicial = 0.1;
-        
+
         // Configuración inicial de los elementos - ambos exactamente en el mismo punto central
         gsap.set([elementoNombre, elementoNuevo], {
           left: '50%',
@@ -998,7 +934,7 @@ const Creditos = () => {
             timeline.to([elementoSaliente, nombreSaliente], {
               opacity: 0,
               scale: 0.8,
-              duration: params.duracionAnimacion * 1.5, // Reducido de 2 a 1.5 para que sea más rápido
+              duration: params.duracionAnimacion * .5, // Reducido de 2 a 1.5 para que sea más rápido
               ease: "power2.inOut",
               onStart: () => {
                 gsap.set([elementoSaliente, nombreSaliente], {
@@ -1014,7 +950,7 @@ const Creditos = () => {
         }
 
         const nuevaPosicion = calcularPosicionEsquina(ultimoIndiceEsquina.current);
-        const duracionBase = params.duracionAnimacion * 1.5; // Reducido de 2 a 1.5 para que coincida con la salida
+        const duracionBase = params.duracionAnimacion; // Reducido de 2 a 1.5 para que coincida con la salida
 
         // Fase inicial: aparecer en el centro - ahora comienza antes
         timeline.to([elementoNombre, elementoNuevo], {
@@ -1022,7 +958,7 @@ const Creditos = () => {
           scale: escalaInicial * 1.5,
           duration: duracionBase * 0.15, // Reducido de 0.2 a 0.15
           ease: "power2.in"
-        }, "-=0.5"); // Comienza 0.5 segundos antes de que termine la salida
+        }, "<"); // Comienza 0.5 segundos antes de que termine la salida
 
         // Fase principal: movimiento y crecimiento sincronizado
         timeline.to([elementoNombre, elementoNuevo], {
@@ -1032,16 +968,16 @@ const Creditos = () => {
           ease: "power2.inOut",
           onUpdate: () => {
             const progress = timeline.progress();
-            
+
             // Calcular offset - comienza en 0 y aumenta gradualmente
             const offsetActual = Math.pow(progress, 2) * offsetFinal;
-            
+
             // Calcular escala usando el mismo timing que el movimiento
             const escalaProgreso = escalaInicial * 1.5 + (1 - escalaInicial * 1.5) * Math.pow(progress, 2);
-            
+
             // Calcular opacidad - crece más rápido al principio
             const opacidadProgreso = Math.min(1, 0.3 + progress * 0.7);
-            
+
             gsap.set(elementoNuevo, {
               zIndex: 1000,
               opacity: opacidadProgreso,
@@ -1062,25 +998,14 @@ const Creditos = () => {
             ultimoIndiceEsquina.current = (ultimoIndiceEsquina.current + 1) % 4;
             setInvitadoActual(null);
           }
-        }, "-=0.3"); // Comienza 0.3 segundos antes de que termine la fase inicial
-
-        // Efecto de pulso si la intensidad es alta
-        if (intensidadNormalizadaActual > 0.4) {
-          timeline.to([elementoNuevo, elementoNombre], {
-            scale: 1 + (intensidadNormalizadaActual * 0.5),
-            duration: duracionBase * 0.2,
-            yoyo: true,
-            repeat: 1,
-            ease: "power1.inOut"
-          }, "+=0.1");
-        }
+        }, "<"); // Comienza 0.3 segundos antes de que termine la fase inicial
       }
     }, 0); // Eliminamos el tiempo de espera para que la animación comience inmediatamente
   };
 
   const iniciarAudio = () => {
     if (!datosCargados) return;
-    
+
     // Evitar múltiples llamadas en rápida sucesión
     if (audioRef.current.playPromise) {
       return;
@@ -1160,8 +1085,8 @@ const Creditos = () => {
       const timer = setTimeout(() => {
         setShouldDekayKITT(false);
       }, 5000);
-      
-      
+
+
       return () => clearTimeout(timer);
     }
   }, [secuenciaInicial]);
@@ -1219,7 +1144,7 @@ const Creditos = () => {
     audioElement.addEventListener("timeupdate", updateTimeDisplay);
     audioElement.addEventListener("play", () => setIsPlaying(true));
     audioElement.addEventListener("pause", () => setIsPlaying(false));
-    
+
     return () => {
       audioElement.removeEventListener("timeupdate", handleTimeUpdate);
       audioElement.removeEventListener("timeupdate", updateTimeDisplay);
@@ -1229,24 +1154,24 @@ const Creditos = () => {
   }, [audioRef.current]);
 
   return (
-    <div 
-      ref={containerRef} 
-      className={`creditos ${!isReady ? 'loading' : (!secuenciaInicial && !mostrarCreditos ? 'ready' : '')}`} 
+    <div
+      ref={containerRef}
+      className={`creditos ${!isReady ? 'loading' : (!secuenciaInicial && !mostrarCreditos ? 'ready' : '')}`}
       onClick={iniciarSecuencia}
     >
       <Textos audioRef={audioRef} analyser={analyser} />
       {!mostrarCreditos && (
         <div className={`kitt-loading ${isReady ? 'fast' : ''}`}>
-            {[...Array(8)].map((_, i) => (
-                <div key={i} className={`kitt-segment`} />
-            ))}
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className={`kitt-segment`} />
+          ))}
         </div>
       )}
       {isReady && !mostrarCreditos && (
         <div className="ready">
-            <div className={`ready-text ${showReadyText ? 'show' : ''}`}>
-                Click para comenzar
-            </div>
+          <div className={`ready-text ${showReadyText ? 'show' : ''}`}>
+            Click para comenzar
+          </div>
         </div>
       )}
       {isReady && !mostrarCreditos && !secuenciaInicial && (
@@ -1260,8 +1185,8 @@ const Creditos = () => {
         </button>
       )}
       {secuenciaInicial && !kittFadeOut && (
-        <KITT 
-          audioFile={peter} 
+        <KITT
+          audioFile={peter}
           onClose={handleKITTClose}
           className={`kitt-audio-only ${kittFadeOut ? 'fade-out' : ''}`}
           delayPlay={shouldDekayKITT}
@@ -1269,13 +1194,13 @@ const Creditos = () => {
       )}
       {mostrarCreditos && (
         <>
-          <canvas 
-            ref={canvasBarsRef} 
-            className={`ecualizador-barras ${barrasOcultas ? 'hidden' : ''}`} 
+          <canvas
+            ref={canvasBarsRef}
+            className={`ecualizador-barras ${barrasOcultas ? 'hidden' : ''}`}
           />
           <canvas ref={canvasDotsRef} className="ecualizador-bolitas" />
           <audio ref={audioRef} src={opus} className="audio-player" controls />
-          
+
           {mesaActual && (
             <div
               className="nombre-mesa"
@@ -1300,7 +1225,7 @@ const Creditos = () => {
               {mesaActual}
             </div>
           )}
-          
+
           {invitadoActual && (
             <>
               <div
@@ -1335,7 +1260,7 @@ const Creditos = () => {
               >
                 {invitadoActual.nombre}
               </div>
-              <div 
+              <div
                 data-invitado-id={invitadoActual.id}
                 className="invitado"
                 style={{
@@ -1357,8 +1282,8 @@ const Creditos = () => {
                 }}
               >
                 {invitadoActual.imagen ? (
-                  <img 
-                    src={invitadoActual.imagen} 
+                  <img
+                    src={invitadoActual.imagen}
                     alt={invitadoActual.nombre}
                     style={{
                       width: '100%',
@@ -1382,7 +1307,7 @@ const Creditos = () => {
 
           {invitadosEnEsquinas.map((invitado, index) => {
             const offsetFinal = invitado.offsetFinal || 12;
-            
+
             return (
               <React.Fragment key={`container-${invitado.id}-${index}`}>
                 <div
@@ -1441,8 +1366,8 @@ const Creditos = () => {
                   }}
                 >
                   {invitado.imagen ? (
-                    <img 
-                      src={invitado.imagen} 
+                    <img
+                      src={invitado.imagen}
                       alt={invitado.nombre}
                       style={{
                         width: '100%',
@@ -1483,7 +1408,7 @@ const Creditos = () => {
                 }}
               />
               <div className="time-display">{currentTime}</div>
-              <button 
+              <button
                 className={`pause-button ${isPlaying ? 'playing' : ''}`}
                 onClick={() => {
                   if (audioRef.current) {

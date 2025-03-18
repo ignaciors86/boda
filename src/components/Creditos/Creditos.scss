@@ -241,10 +241,10 @@
             width: 100%;
             margin: 3dvh 0 0;
             gap: 0;
-
+            height: 5dvh;
             .audio-progress {
                 flex: 1;
-                height: 5dvh;
+                height: 100%;
                 background: rgba(255, 255, 255, 0.1);
                 border-radius: 2px;
                 cursor: pointer;
@@ -286,7 +286,7 @@
                 color: white;
                 font-family: 'VCR', monospace;
                 font-size: 2dvh;
-                margin-left: 1rem;
+                margin: 0 .5rem;
                 text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
                 pointer-events: none;
                 width: 5dvh;
@@ -303,7 +303,6 @@
                 margin-left: 0.5rem;
                 position: relative;
                 transition: background-color 0.3s ease;
-                transform: rotate(90deg);
 
                 &:hover {
                     background: rgba(0, 255, 255, 0.2);
@@ -330,6 +329,7 @@
                 }
 
                 &.playing {
+                    transform: rotate(-90deg);
                     &::before, &::after {
                         width: 2px;
                         height: 2dvh;
@@ -365,7 +365,6 @@
         text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
         box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
         opacity: 0;
-        pointer-events: none;
 
         &:hover {
             background: rgba(0, 255, 255, 0.2);
@@ -384,13 +383,11 @@
     .direct-credits-button {
         top: 2rem;
         right: 2rem;
-        z-index: 10000;
     }
 
     .skip-button {
         top: 2rem;
         left: 2rem;
-        z-index: 10000;
     }
 
     @keyframes pulse {
