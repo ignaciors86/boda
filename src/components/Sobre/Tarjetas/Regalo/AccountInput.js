@@ -3,7 +3,7 @@ import "./AccountInput.scss"; // Archivo CSS opcional para estilos
 import gsap from "gsap";
 
 const AccountInput = ({ }) => {
-    const accountNumber = "ES31 0182 5322 2702 0407 2984"; // 
+    const accountNumber = "ES51 0182 5322 2300 0113 3882"; // 
     const [copied, setCopied] = useState(false);
 
     const handleCopy = () => {
