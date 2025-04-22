@@ -22,6 +22,7 @@ import { CustomEase } from 'gsap/all';
 import MobileDetect from "mobile-detect";
 import CartaInvitado from './Tarjetas/CartaInvitado';
 import QEQ from 'components/Timeline/QEQ';
+import ClubSecreto from './Tarjetas/ClubSecreto';
 
 const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) => {
 
@@ -217,7 +218,7 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
   const pasoPrevio = () => {
     const bola4 = document.querySelector(".bola-3");
 
-invitado && animateOpacity();
+    invitado && animateOpacity();
     if (bola4) {
       // Eliminar animaciones CSS aplicadas
       const tlBolita = gsap.timeline({ repeat: false, });
@@ -466,14 +467,17 @@ invitado && animateOpacity();
               </Card>
               <Card seccion="horarios" onClick={() => handleClick("horarios")} trasera={
                 invitado ? <QEQ weedding={weedding} mesas={mesas} invitado={invitado} /> : <Timeline weedding={weedding} />
-                }>
+              }>
                 <h2>{invitado ? "Quién Es Quién" : "Agenda"}</h2>
               </Card>
-              <Card seccion="regalo" onClick={() => handleClick("regalo")} trasera={<Regalo />}>
-                <h2>Regalo</h2>
+              <Card seccion="regalo" onClick={() => handleClick("regalo")} trasera={
+                invitado ? <ClubSecreto invitado={invitado} /> : <Regalo />}>
+                <h2>{invitado ? "Grassjika" : "Regalo"}</h2>
               </Card>
-              <Card seccion="ubicaciones" onClick={() => handleClick("ubicaciones")} trasera={<Lugar weedding={weedding} hosteado={hosteado} />}>                <h2>Lugar</h2>
-              </Card>
+              { !invitado && <Card seccion="ubicaciones" onClick={() => handleClick("ubicaciones")} trasera={
+                <Lugar weedding={weedding} hosteado={hosteado} />}>                
+                <h2>{invitado ? "Lugar" : "Lugar"}</h2>
+              </Card> }
               <Card className={"asistencia"}
                 seccion={casandonos ? "invitado" : "asistencia"}
                 onClick={() => handleClick(casandonos ? "invitado" : "asistencia")}

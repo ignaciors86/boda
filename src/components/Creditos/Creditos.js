@@ -103,7 +103,13 @@ const Creditos = () => {
     };
     img.onerror = () => {
       console.error(`Error al cargar imagen ${index}: ${url}`);
-      setTimeout(() => cargarImagen(url, index), 2000);
+      // En lugar de reintentar, marcamos como cargada pero sin imagen
+      setImagenesCargadas((prev) => {
+        const nuevasImagenesCargadas = [...prev];
+        nuevasImagenesCargadas[index] = true;
+        return nuevasImagenesCargadas;
+      });
+      imagenesRef.current[index] = null;
     };
   };
 
@@ -396,7 +402,7 @@ const Creditos = () => {
     )
       .then((response) => response.json())
       .then((data) => {
-        const invitadosData = data.data
+        const invitadosData = data?.data
           .map((invitado) => ({
             id: invitado.id,
             nombre: invitado?.nombre,
@@ -736,7 +742,7 @@ const Creditos = () => {
               ctxDots.arc(0, 0, tamañoFinal, 0, Math.PI * 2);
               ctxDots.clip();
 
-              // Aplicar brillo a la imagen basado en la intensidad
+              // Aplicar brillo a la imagen basada en la intensidad
               const brillo = Math.max(0, 1 - opacidadColor);
               ctxDots.filter = `brightness(${1 + brillo * 0.5})`;
 
