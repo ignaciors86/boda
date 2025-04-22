@@ -13,6 +13,7 @@ const Rasca = ({ url, resultado }) => {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [showUpload, setShowUpload] = useState(false);
   const [hasNewImage, setHasNewImage] = useState(false);
+  const [isRevealed, setIsRevealed] = useState(false);
 
   // Controla el grosor del pincel (en dvh)
   const brushSizeInDvh = 8;
@@ -90,7 +91,8 @@ const Rasca = ({ url, resultado }) => {
     const percentage = (clearedPixels / totalPixels) * 100;
     setRevealPercentage(percentage);
 
-    if (percentage >= 30) {
+    if (percentage >= 30 && !isRevealed) {
+      setIsRevealed(true);
       autoReveal(); // Simula el borrado completo si llega al 70%
       animateContenido(); // Inicia la animación del contenido
       setShowUpload(true);
@@ -123,12 +125,10 @@ const Rasca = ({ url, resultado }) => {
 
   const animateContenido = () => {
     if (contenidoRef.current) {
-      // Establecemos z-index antes de la animación
       gsap.set(contenidoRef.current, { zIndex: 1 });
-      // Animamos la opacidad
       gsap.to(contenidoRef.current, {
         opacity: 1,
-        duration: 1.5, // Duración de la animación
+        duration: 1.5,
         delay: 0.5,
         ease: "power2.out"
       });
@@ -138,7 +138,15 @@ const Rasca = ({ url, resultado }) => {
         height: "90%", 
         duration: 1.5, 
         delay: 0.5, 
-        ease: "power2.out" 
+        ease: "power2.out",
+        onComplete: () => {
+          setShowUpload(true);
+          gsap.to(".rasca__upload-container", {
+            opacity: 1,
+            duration: 0.3,
+            ease: "power2.out"
+          });
+        }
       });
     }
   };
@@ -178,17 +186,32 @@ const Rasca = ({ url, resultado }) => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      gsap.to(".rasca__upload-container", {
+        opacity: 0,
+        duration: 0.3,
+        onComplete: () => setShowUpload(false)
+      });
+
       setIsUploading(true);
       const reader = new FileReader();
       
       reader.onload = (event) => {
-        setUploadedImage(event.target.result);
-        setIsUploading(false);
-        setHasNewImage(true);
-        
         const timeline = gsap.timeline();
         
         timeline
+          .to(".rasca__original-image", {
+            scale: 1,
+            x: 0,
+            y: 0,
+            duration: 0.3,
+            ease: "power2.inOut",
+            transformOrigin: "center center"
+          })
+          .call(() => {
+            setUploadedImage(event.target.result);
+            setIsUploading(false);
+            setHasNewImage(true);
+          })
           .set(".rasca__uploaded-image", { visibility: "visible" })
           .to(".rasca__uploaded-image", {
             opacity: 1,
@@ -197,12 +220,18 @@ const Rasca = ({ url, resultado }) => {
           })
           .to(".rasca__original-image", {
             scale: 0.2,
-            x: "40%",
-            y: "-40%",
+            x: "36%",
+            y: "-5%",
             duration: 0.5,
             ease: "power2.out",
             transformOrigin: "center center"
-          }, "-=0.25");
+          }, "-=0.25")
+          .call(() => setShowUpload(true))
+          .to(".rasca__upload-container", {
+            opacity: 1,
+            duration: 0.3,
+            ease: "power2.out"
+          });
       };
       
       reader.readAsDataURL(file);
@@ -247,7 +276,7 @@ const Rasca = ({ url, resultado }) => {
             id="upload-input"
           />
           <label htmlFor="upload-input" className="rasca__upload-button">
-            Subir foto
+            <h2>Sube tu foto real</h2>
           </label>
           {isUploading && (
             <div className="rasca__upload-message">
