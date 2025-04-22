@@ -2,12 +2,17 @@ import React, { useRef, useEffect, useState } from 'react';
 import { gsap } from 'gsap'; // Importamos GSAP
 import './Rasca.scss';
 import Typewriter from "typewriter-effect";
+
 const Rasca = ({ url, resultado }) => {
   const canvasRef = useRef(null);
   const contenidoRef = useRef(null); // Referencia al elemento .cartaInvitado__contenido
   const [isDrawing, setIsDrawing] = useState(false);
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 0, height: 0 });
   const [revealPercentage, setRevealPercentage] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedImage, setUploadedImage] = useState(null);
+  const [showUpload, setShowUpload] = useState(false);
+  const [hasNewImage, setHasNewImage] = useState(false);
 
   // Controla el grosor del pincel (en dvh)
   const brushSizeInDvh = 8;
@@ -85,9 +90,10 @@ const Rasca = ({ url, resultado }) => {
     const percentage = (clearedPixels / totalPixels) * 100;
     setRevealPercentage(percentage);
 
-    if (percentage >= 50) {
+    if (percentage >= 30) {
       autoReveal(); // Simula el borrado completo si llega al 70%
       animateContenido(); // Inicia la animación del contenido
+      setShowUpload(true);
     }
   };
 
@@ -95,9 +101,9 @@ const Rasca = ({ url, resultado }) => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     let remaining = 100 - revealPercentage;
-    const squareSize = Math.min(canvas.width, canvas.height) / 10; // Tamaño de los cuadritos
+    const squareSize = Math.min(canvas.width, canvas.height) / 15; // Tamaño de los cuadritos
     const interval = setInterval(() => {
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 5; i++) {
         const x = Math.random() * canvas.width;
         const y = Math.random() * canvas.height;
 
@@ -106,12 +112,13 @@ const Rasca = ({ url, resultado }) => {
         ctx.fillRect(x, y, squareSize, squareSize); // Revelar un cuadrito
       }
 
-      remaining -= 5;
+      remaining -= 2;
       if (remaining <= 0) {
         clearInterval(interval);
         ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpia todo al final
+        gsap.to(canvas, { opacity: 0, duration: 0.5 });
       }
-    }, 100); // Intervalo de 50ms para simular rapidez
+    }, 50); // Intervalo de 50ms para simular rapidez
   };
 
   const animateContenido = () => {
@@ -121,15 +128,18 @@ const Rasca = ({ url, resultado }) => {
       // Animamos la opacidad
       gsap.to(contenidoRef.current, {
         opacity: 1,
-        duration: 1, // Duración de la animación
-        delay: 1,
+        duration: 1.5, // Duración de la animación
+        delay: 0.5,
+        ease: "power2.out"
       });
-      gsap.to(".rasca", { borderRadius: 0, 
+      gsap.to(".rasca", { 
+        borderRadius: 0, 
         width: "90%", 
         height: "90%", 
-        duration: 1, 
-        delay: 0, 
-        ease: "linear", });
+        duration: 1.5, 
+        delay: 0.5, 
+        ease: "power2.out" 
+      });
     }
   };
 
@@ -165,14 +175,56 @@ const Rasca = ({ url, resultado }) => {
     ctx.fill();
   };
 
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setIsUploading(true);
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        setUploadedImage(event.target.result);
+        setIsUploading(false);
+        setHasNewImage(true);
+        
+        const timeline = gsap.timeline();
+        
+        timeline
+          .set(".rasca__uploaded-image", { visibility: "visible" })
+          .to(".rasca__uploaded-image", {
+            opacity: 1,
+            duration: 0.5,
+            ease: "power2.out"
+          })
+          .to(".rasca__original-image", {
+            scale: 0.2,
+            x: "40%",
+            y: "-40%",
+            duration: 0.5,
+            ease: "power2.out",
+            transformOrigin: "center center"
+          }, "-=0.25");
+      };
+      
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <>
       <div className="rasca">
         {/* Imagen de fondo */}
         <img
+          className="rasca__original-image"
           src={url}
           alt="Premio oculto"
         />
+        
+        <img
+          className={`rasca__uploaded-image ${hasNewImage ? '' : 'rasca__uploaded-image--hidden'}`}
+          src={uploadedImage || url}
+          alt="Imagen subida"
+        />
+        
         {/* Capa gris interactiva */}
         <canvas
           ref={canvasRef}
@@ -185,23 +237,39 @@ const Rasca = ({ url, resultado }) => {
           onTouchEnd={handleTouchEnd} // Terminar el toque
           onTouchCancel={handleTouchEnd} // Cancelar el toque
         ></canvas>
+        
+        <div className={`rasca__upload-container ${showUpload ? 'rasca__upload-container--visible' : ''}`}>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="rasca__upload-input"
+            id="upload-input"
+          />
+          <label htmlFor="upload-input" className="rasca__upload-button">
+            Subir foto
+          </label>
+          {isUploading && (
+            <div className="rasca__upload-message">
+              Subiendo foto...
+            </div>
+          )}
+        </div>
+        
         <div className='explicacion'>
-        <Typewriter
+          <Typewriter
             onInit={(typewriter) => {
-                typewriter
-                    .typeString(
-                        "  Rasca para descubrir tu personaje"
-                    )
-                    .start();
+              typewriter
+                .typeString("Rasca para descubrir tu personaje")
+                .start();
             }}
             options={{
-                autoStart: true,
-                loop: false, // No repetir la animación
-                delay: 25, // Velocidad de escritura
-                // cursor: "", // Elimina el cursor al finalizar
+              autoStart: true,
+              loop: false, // No repetir la animación
+              delay: 25, // Velocidad de escritura
+              // cursor: "", // Elimina el cursor al finalizar
             }}
-        />
-          
+          />
         </div>
       </div>
 

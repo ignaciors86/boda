@@ -1,4 +1,4 @@
-.asistencia {
+.asistencia:not(.invitado) {
     &.seccion {
         overflow: initial;
         background: cadetblue;
