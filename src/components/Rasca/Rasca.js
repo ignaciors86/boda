@@ -31,7 +31,7 @@ const Rasca = ({ url, resultado, invitadoId }) => {
           documentId: invitadoId
         });
 
-        const response = await fetch(`${urlstrapi}/api/invitados?filters[documentId][$eq]=${invitadoId}`, {
+        const response = await fetch(`${urlstrapi}/api/invitados/${invitadoId}`, {
           headers: {
             'Authorization': `Bearer ${STRAPI_TOKEN}`
           }
@@ -44,16 +44,14 @@ const Rasca = ({ url, resultado, invitadoId }) => {
         const data = await response.json();
         console.log('DEBUG_INFO', {
           message: 'Datos del invitado cargados',
-          data: data.data[0]
+          data: data.data
         });
 
-        if (data.data && data.data[0] && data.data[0].attributes && data.data[0].attributes.imagen) {
-          const imagenId = data.data[0].attributes.imagen.data.id;
-          const imagenUrl = `${urlstrapi}/api/upload/files/${imagenId}`;
+        if (data.data && data.data.attributes && data.data.attributes.imagen) {
+          const imagenUrl = `${urlstrapi}${data.data.attributes.imagen.data.attributes.url}`;
           
           console.log('DEBUG_INFO', {
             message: 'Imagen encontrada',
-            imagenId,
             imagenUrl
           });
 
@@ -294,18 +292,18 @@ const Rasca = ({ url, resultado, invitadoId }) => {
         });
 
         // Buscamos el invitado por su documentId
-        const findResponse = await fetch(`${urlstrapi}/api/invitados?filters[documentId][$eq]=${invitadoId}`, {
+        const findResponse = await fetch(`${urlstrapi}/api/invitados/${invitadoId}`, {
           headers: {
             'Authorization': `Bearer ${STRAPI_TOKEN}`
           }
         });
         const findResult = await findResponse.json();
 
-        if (!findResult.data || findResult.data.length === 0) {
+        if (!findResult.data) {
           throw new Error(`No se encontró el invitado con documentId: ${invitadoId}`);
         }
 
-        const invitadoData = findResult.data[0];
+        const invitadoData = findResult.data;
         console.log('✅ [3/4] Invitado encontrado', {
           documentId: invitadoId,
           attributes: invitadoData.attributes
@@ -318,7 +316,6 @@ const Rasca = ({ url, resultado, invitadoId }) => {
           }
         };
 
-        // Usamos el documentId directamente en la URL
         const updateEndpoint = `${urlstrapi}/api/invitados/${invitadoId}`;
         
         console.log('🔄 [4/4] Intentando actualizar invitado', {
@@ -406,7 +403,12 @@ const Rasca = ({ url, resultado, invitadoId }) => {
           stack: error.stack
         });
         setIsUploading(false);
-        setShowUpload(true);
+        setShowUpload(true); // Volvemos a mostrar el input en caso de error
+        gsap.to(".rasca__upload-container", {
+          opacity: 1,
+          duration: 0.3,
+          ease: "power2.out"
+        });
       }
     }
   };
