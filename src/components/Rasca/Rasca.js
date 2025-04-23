@@ -314,22 +314,22 @@ const Rasca = ({ url, resultado, invitadoId }) => {
         // Actualizamos el invitado con la nueva imagen
         const updateData = {
           data: {
-            imagen: {
-              connect: [uploadResult[0].id]
-            }
+            imagen: uploadResult[0].id
           }
         };
 
-        // Usamos el endpoint con documentId para la actualización
-        const updateEndpoint = `${urlstrapi}/api/invitados?filters[documentId][$eq]=${invitadoId}`;
+        // Usamos el documentId directamente en la URL
+        const updateEndpoint = `${urlstrapi}/api/invitados/${invitadoId}`;
         
         console.log('🔄 [4/4] Intentando actualizar invitado', {
           endpoint: updateEndpoint,
-          updateData: JSON.stringify(updateData, null, 2)
+          updateData: JSON.stringify(updateData, null, 2),
+          imagenId: uploadResult[0].id,
+          documentId: invitadoId
         });
 
         const updateResponse = await fetch(updateEndpoint, {
-          method: 'POST',
+          method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${STRAPI_TOKEN}`
@@ -343,7 +343,8 @@ const Rasca = ({ url, resultado, invitadoId }) => {
             status: updateResponse.status,
             error: errorData,
             endpoint: updateEndpoint,
-            updateData: JSON.stringify(updateData, null, 2)
+            updateData: JSON.stringify(updateData, null, 2),
+            documentId: invitadoId
           });
           throw new Error('Error al actualizar el invitado');
         }
@@ -351,7 +352,8 @@ const Rasca = ({ url, resultado, invitadoId }) => {
         const updateResult = await updateResponse.json();
         console.log('✅ Invitado actualizado correctamente', {
           updateResult,
-          imageId: uploadResult[0].id
+          imagenId: uploadResult[0].id,
+          documentId: invitadoId
         });
 
         // Continuamos con la animación y visualización local
