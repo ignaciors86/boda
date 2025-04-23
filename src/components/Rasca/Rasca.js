@@ -3,7 +3,10 @@ import { gsap } from 'gsap'; // Importamos GSAP
 import './Rasca.scss';
 import Typewriter from "typewriter-effect";
 
-const Rasca = ({ url, resultado }) => {
+const urlstrapi = "https://boda-strapi-production.up.railway.app";
+const STRAPI_TOKEN = "40f652de7eb40915bf1bf58a58144c1c9c55de06e2941007ff28a54d236179c4bd24147d27a985afba0e5027535da5b3577db7b850c72507e112e75d6bf4a41711b67e904d1c4e192252070f10d8a7efd72bec1e071c8ca50e5035347935f7ea6e760d727c0695285392a75bcb5e93d44bd395e0cd83fe748350f69e49aa24ca";
+
+const Rasca = ({ url, resultado, invitadoId }) => {
   const canvasRef = useRef(null);
   const contenidoRef = useRef(null); // Referencia al elemento .cartaInvitado__contenido
   const [isDrawing, setIsDrawing] = useState(false);
@@ -18,6 +21,64 @@ const Rasca = ({ url, resultado }) => {
   // Controla el grosor del pincel (en dvh)
   const brushSizeInDvh = 8;
   const brushSize = () => canvasDimensions.height * (brushSizeInDvh / 100);
+
+  // Cargar la imagen existente al montar el componente
+  useEffect(() => {
+    const loadExistingImage = async () => {
+      try {
+        console.log('DEBUG_INFO', {
+          message: 'Cargando imagen existente',
+          documentId: invitadoId
+        });
+
+        const response = await fetch(`${urlstrapi}/api/invitados?filters[documentId][$eq]=${invitadoId}`, {
+          headers: {
+            'Authorization': `Bearer ${STRAPI_TOKEN}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al cargar el invitado');
+        }
+
+        const data = await response.json();
+        console.log('DEBUG_INFO', {
+          message: 'Datos del invitado cargados',
+          data: data.data[0]
+        });
+
+        if (data.data && data.data[0] && data.data[0].attributes && data.data[0].attributes.imagen) {
+          const imagenId = data.data[0].attributes.imagen.data.id;
+          const imagenUrl = `${urlstrapi}/api/upload/files/${imagenId}`;
+          
+          console.log('DEBUG_INFO', {
+            message: 'Imagen encontrada',
+            imagenId,
+            imagenUrl
+          });
+
+          setUploadedImage(imagenUrl);
+          setHasNewImage(true);
+          setIsRevealed(true);
+          setShowUpload(true);
+          
+          // Animar la imagen cargada
+          gsap.to(".rasca__uploaded-image", {
+            opacity: 1,
+            duration: 0.5,
+            ease: "power2.out"
+          });
+        }
+      } catch (error) {
+        console.log('DEBUG_ERROR', {
+          message: 'Error al cargar la imagen existente',
+          error: error.toString()
+        });
+      }
+    };
+
+    loadExistingImage();
+  }, [invitadoId]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -183,9 +244,17 @@ const Rasca = ({ url, resultado }) => {
     ctx.fill();
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
+      console.log('DEBUG_INFO', {
+        message: 'Iniciando subida de imagen',
+        invitadoId,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type
+      });
+
       gsap.to(".rasca__upload-container", {
         opacity: 0,
         duration: 0.3,
@@ -193,48 +262,150 @@ const Rasca = ({ url, resultado }) => {
       });
 
       setIsUploading(true);
-      const reader = new FileReader();
-      
-      reader.onload = (event) => {
-        const timeline = gsap.timeline();
+
+      try {
+        // Primero subimos la imagen a Strapi
+        const formData = new FormData();
+        formData.append('files', file);
         
-        timeline
-          .to(".rasca__original-image", {
-            scale: 1,
-            x: 0,
-            y: 0,
-            duration: 0.3,
-            ease: "power2.inOut",
-            transformOrigin: "center center"
-          })
-          .call(() => {
-            setUploadedImage(event.target.result);
-            setIsUploading(false);
-            setHasNewImage(true);
-          })
-          .set(".rasca__uploaded-image", { visibility: "visible" })
-          .to(".rasca__uploaded-image", {
-            opacity: 1,
-            duration: 0.5,
-            ease: "power2.out"
-          })
-          .to(".rasca__original-image", {
-            scale: 0.2,
-            x: "36%",
-            y: "-5%",
-            duration: 0.5,
-            ease: "power2.out",
-            transformOrigin: "center center"
-          }, "-=0.25")
-          .call(() => setShowUpload(true))
-          .to(".rasca__upload-container", {
-            opacity: 1,
-            duration: 0.3,
-            ease: "power2.out"
+        console.log('🖼️ [1/4] Subiendo imagen', {
+          endpoint: `${urlstrapi}/api/upload`,
+          fileName: file.name
+        });
+
+        const uploadResponse = await fetch(`${urlstrapi}/api/upload`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${STRAPI_TOKEN}`
+          },
+          body: formData,
+          mode: 'cors',
+          credentials: 'include'
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Error al subir la imagen');
+        }
+
+        const uploadResult = await uploadResponse.json();
+        console.log('✅ [2/4] Imagen subida correctamente', {
+          imageId: uploadResult[0].id,
+          imageUrl: uploadResult[0].url
+        });
+
+        // Buscamos el invitado por su documentId
+        const findResponse = await fetch(`${urlstrapi}/api/invitados?filters[documentId][$eq]=${invitadoId}`, {
+          headers: {
+            'Authorization': `Bearer ${STRAPI_TOKEN}`
+          }
+        });
+        const findResult = await findResponse.json();
+
+        if (!findResult.data || findResult.data.length === 0) {
+          throw new Error(`No se encontró el invitado con documentId: ${invitadoId}`);
+        }
+
+        const invitadoData = findResult.data[0];
+        console.log('✅ [3/4] Invitado encontrado', {
+          documentId: invitadoId,
+          attributes: invitadoData.attributes
+        });
+
+        // Actualizamos el invitado con la nueva imagen
+        const updateData = {
+          data: {
+            imagen: {
+              connect: [uploadResult[0].id]
+            }
+          }
+        };
+
+        // Usamos el endpoint con documentId para la actualización
+        const updateEndpoint = `${urlstrapi}/api/invitados?filters[documentId][$eq]=${invitadoId}`;
+        
+        console.log('🔄 [4/4] Intentando actualizar invitado', {
+          endpoint: updateEndpoint,
+          updateData: JSON.stringify(updateData, null, 2)
+        });
+
+        const updateResponse = await fetch(updateEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${STRAPI_TOKEN}`
+          },
+          body: JSON.stringify(updateData)
+        });
+
+        if (!updateResponse.ok) {
+          const errorData = await updateResponse.json();
+          console.error('❌ Error al actualizar invitado', {
+            status: updateResponse.status,
+            error: errorData,
+            endpoint: updateEndpoint,
+            updateData: JSON.stringify(updateData, null, 2)
           });
-      };
-      
-      reader.readAsDataURL(file);
+          throw new Error('Error al actualizar el invitado');
+        }
+
+        const updateResult = await updateResponse.json();
+        console.log('✅ Invitado actualizado correctamente', {
+          updateResult,
+          imageId: uploadResult[0].id
+        });
+
+        // Continuamos con la animación y visualización local
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const timeline = gsap.timeline();
+          
+          timeline
+            .to(".rasca__original-image", {
+              scale: 1,
+              x: 0,
+              y: 0,
+              duration: 0.3,
+              ease: "power2.inOut",
+              transformOrigin: "center center"
+            })
+            .call(() => {
+              setUploadedImage(event.target.result);
+              setIsUploading(false);
+              setHasNewImage(true);
+            })
+            .set(".rasca__uploaded-image", { visibility: "visible" })
+            .to(".rasca__uploaded-image", {
+              opacity: 1,
+              duration: 0.5,
+              ease: "power2.out"
+            })
+            .to(".rasca__original-image", {
+              scale: 0.2,
+              x: "36%",
+              y: "-5%",
+              duration: 0.5,
+              ease: "power2.out",
+              transformOrigin: "center center"
+            }, "-=0.25")
+            .call(() => setShowUpload(true))
+            .to(".rasca__upload-container", {
+              opacity: 1,
+              duration: 0.3,
+              ease: "power2.out"
+            });
+        };
+        
+        reader.readAsDataURL(file);
+
+      } catch (error) {
+        console.log('DEBUG_ERROR', {
+          message: 'Error en el proceso de subida/actualización',
+          error: error.toString(),
+          stack: error.stack
+        });
+        setIsUploading(false);
+        setShowUpload(true);
+      }
     }
   };
 

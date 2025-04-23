@@ -1,12 +1,19 @@
-
+import React from "react";
 import "./CartaInvitado.scss";
 import { useDragContext } from "../../DragContext";
 import Rasca from "components/Rasca/Rasca";
 import Loading from "components/Timeline/Loading";
+
 const urlstrapi = "https://boda-strapi-production.up.railway.app";
+
 const CartaInvitado = ({ weedding, invitado }) => {
     const { activeCard, setActiveCard } = useDragContext();
-    console.log({ invitado })
+    console.log('DEBUG_INFO', {
+        message: 'Datos del invitado en CartaInvitado',
+        invitadoId: invitado?.id,
+        documentId: invitado?.documentId,
+        invitadoData: invitado
+    });
 
     const resultado = <>
         <h1>Detalle de Invitado</h1>
@@ -19,10 +26,12 @@ const CartaInvitado = ({ weedding, invitado }) => {
 
     return (
         activeCard === "invitado" ? <><div className="cartaInvitado seccion">
-
-            {/* Agrega más detalles según los datos disponibles */}
-            <Rasca url={urlstrapi + invitado?.personaje?.imagen?.url} alt={invitado?.personaje?.imagen?.alt} resultado={resultado} />
-
+            <Rasca 
+                url={urlstrapi + invitado?.personaje?.imagen?.url} 
+                alt={invitado?.personaje?.imagen?.alt} 
+                resultado={resultado}
+                invitadoId={invitado?.documentId} 
+            />
         </div><button className="back orange" onClick={() => setActiveCard("sobre")} /></> : <Loading />
     );
 };
