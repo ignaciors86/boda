@@ -6,7 +6,7 @@ import Typewriter from "typewriter-effect";
 const urlstrapi = "https://boda-strapi-production.up.railway.app";
 const STRAPI_TOKEN = "40f652de7eb40915bf1bf58a58144c1c9c55de06e2941007ff28a54d236179c4bd24147d27a985afba0e5027535da5b3577db7b850c72507e112e75d6bf4a41711b67e904d1c4e192252070f10d8a7efd72bec1e071c8ca50e5035347935f7ea6e760d727c0695285392a75bcb5e93d44bd395e0cd83fe748350f69e49aa24ca";
 
-const Rasca = ({ url, resultado, invitadoId }) => {
+const Rasca = ({ url, url2, resultado, invitadoId }) => {
   const canvasRef = useRef(null);
   const contenidoRef = useRef(null); // Referencia al elemento .cartaInvitado__contenido
   const [isDrawing, setIsDrawing] = useState(false);
@@ -425,7 +425,7 @@ const Rasca = ({ url, resultado, invitadoId }) => {
         
         <img
           className={`rasca__uploaded-image ${hasNewImage ? '' : 'rasca__uploaded-image--hidden'}`}
-          src={uploadedImage || url}
+          src={uploadedImage ? uploadedImage : (url2 || url)}
           alt="Imagen subida"
         />
         

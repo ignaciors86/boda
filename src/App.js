@@ -73,7 +73,7 @@ const App = () => {
       if (!documentId || localInvitado) return;
 
       setIsLoading(true);
-      fetch('https://boda-strapi-production.up.railway.app/api/invitados?populate[personaje][populate]=imagen&populate[mesa][populate]=*')
+      fetch('https://boda-strapi-production.up.railway.app/api/invitados?populate[personaje][populate]=imagen&populate[mesa][populate]=*&populate=imagen')
         .then((response) => response.json())
         .then((data) => {
           // console.log('Datos de invitados:', data); // Verifica los datos recibidos
@@ -105,6 +105,12 @@ const App = () => {
           const invitadoConcreto = data.data.find((invitado) => invitado.documentId === documentId);
           // console.log('documentId buscado:', documentId); // Verifica el valor del documentId
           if (invitadoConcreto) {
+            console.log('DEBUG_INVITADO_ENCONTRADO', {
+              invitadoCompleto: invitadoConcreto,
+              attributes: invitadoConcreto.attributes,
+              imagen: invitadoConcreto.attributes?.imagen,
+              personaje: invitadoConcreto.attributes?.personaje
+            });
             setLocalInvitado(invitadoConcreto);
             // console.log('Invitado encontrado:', invitadoConcreto);
           } else {
