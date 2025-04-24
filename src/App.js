@@ -10,6 +10,8 @@ import { items } from './components/Timeline/items'; // Asegúrate de importar c
 import Creditos from 'components/Creditos/Creditos';
 import KITT from 'components/KITT/KITT';
 import { InvitadoImageProvider } from './contexts/InvitadoImageContext';
+import DrumHero from 'components/DrumHero/DrumHero';
+import Kudos from './components/GaticosYMonetes/Kudos';
 
 const App = () => {
   const tlApp = gsap.timeline();
@@ -61,7 +63,6 @@ const App = () => {
     });
   }, []);
 
-  // Ruta que obtiene el documentId y carga los datos de invitado
   // Ruta que obtiene el documentId y carga los datos de invitado
   const LoadInvitado = () => {
     const { documentId } = useParams(); // Obtener el parámetro de la URL
@@ -128,8 +129,12 @@ const App = () => {
 
     // Renderizar mientras se cargan los datos
     if (isLoading) {
-      return;
-      // return <div>Cargando invitado...</div>;
+      return null;
+    }
+
+    // Si no hay invitado, redirigir a la página principal
+    if (!localInvitado) {
+      return <Sobre />;
     }
 
     // Renderizar el componente <Sobre> una vez que los datos están disponibles
@@ -176,6 +181,8 @@ const App = () => {
             />
             <Route path="/fondos-baile" element={<FondosBaile />} />
             <Route path="/kitt" element={<KITT />} />
+            <Route path="/gaticos-y-monetes" element={<DrumHero />} />
+            <Route path="/gaticos-y-monetes/kudos" element={<Kudos />} />
             <Route path="/:documentId" element={<LoadInvitado />} />
           </Routes>
         </DragProvider>
