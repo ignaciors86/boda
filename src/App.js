@@ -9,6 +9,7 @@ import { renderItems } from 'components/Timeline/items';
 import { items } from './components/Timeline/items'; // Asegúrate de importar correctamente
 import Creditos from 'components/Creditos/Creditos';
 import KITT from 'components/KITT/KITT';
+import { InvitadoImageProvider } from './contexts/InvitadoImageContext';
 
 const App = () => {
   const tlApp = gsap.timeline();
@@ -137,47 +138,49 @@ const App = () => {
 
 
   return (
-    <Router>
-      <DragProvider>
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <>
-                <Sobre />
-              </>
-            }
-          />
-          <Route
-            path="/weedding"
-            element={
-              <>
-                <Sobre weedding={true} uri="weedding" />
-              </>
-            }
-          />
-          <Route
-            path="/weedding-house"
-            element={
-              <>
-                <Sobre weedding={true} hosteado={true} uri="weedding-house" />
-              </>
-            }
-          />
-          <Route
-            path="/creditos-finales"
-            element={
-              <>
-                <Creditos />
-              </>
-            }
-          />
-          <Route path="/fondos-baile" element={<FondosBaile />} />
-          <Route path="/kitt" element={<KITT />} />
-          <Route path="/:documentId" element={<LoadInvitado />} />
-        </Routes>
-      </DragProvider>
-    </Router>
+    <InvitadoImageProvider>
+      <Router>
+        <DragProvider>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <>
+                  <Sobre />
+                </>
+              }
+            />
+            <Route
+              path="/weedding"
+              element={
+                <>
+                  <Sobre weedding={true} uri="weedding" />
+                </>
+              }
+            />
+            <Route
+              path="/weedding-house"
+              element={
+                <>
+                  <Sobre weedding={true} hosteado={true} uri="weedding-house" />
+                </>
+              }
+            />
+            <Route
+              path="/creditos-finales"
+              element={
+                <>
+                  <Creditos />
+                </>
+              }
+            />
+            <Route path="/fondos-baile" element={<FondosBaile />} />
+            <Route path="/kitt" element={<KITT />} />
+            <Route path="/:documentId" element={<LoadInvitado />} />
+          </Routes>
+        </DragProvider>
+      </Router>
+    </InvitadoImageProvider>
   );
 };
 

@@ -27,6 +27,30 @@
 
   &__original-image {
     z-index: 1;
+
+    &.loading {
+      filter: grayscale(100%);
+      position: relative;
+      overflow: hidden;
+
+      &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: repeating-linear-gradient(
+          0deg,
+          rgba(0, 0, 0, 0.15),
+          rgba(0, 0, 0, 0.15) 1px,
+          transparent 1px,
+          transparent 2px
+        );
+        animation: noise 0.2s infinite;
+        pointer-events: none;
+      }
+    }
   }
 
   &__uploaded-image {
@@ -129,8 +153,61 @@
       font-size: 0.9rem;
     }
   }
+
+  &__loading-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 1.5rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    
+    &.visible {
+      opacity: 1;
+    }
+  }
 }
 
 .cartaInvitado__contenido {
   z-index: 5 !important;
+}
+
+@keyframes noise {
+  0% {
+    transform: translate(0, 0);
+  }
+  10% {
+    transform: translate(-5%, -5%);
+  }
+  20% {
+    transform: translate(-10%, 5%);
+  }
+  30% {
+    transform: translate(5%, -10%);
+  }
+  40% {
+    transform: translate(-5%, 15%);
+  }
+  50% {
+    transform: translate(-10%, 5%);
+  }
+  60% {
+    transform: translate(15%, 0);
+  }
+  70% {
+    transform: translate(0, 10%);
+  }
+  80% {
+    transform: translate(-15%, 0);
+  }
+  90% {
+    transform: translate(10%, 10%);
+  }
+  100% {
+    transform: translate(5%, 5%);
+  }
 }

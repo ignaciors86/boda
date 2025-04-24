@@ -6,14 +6,16 @@ import Loading from "components/Timeline/Loading";
 
 const urlstrapi = "https://boda-strapi-production.up.railway.app";
 
-const CartaInvitado = ({ weedding, invitado }) => {
+const CartaInvitado = ({ weedding, invitado, currentImageUrl, setCurrentImageUrl }) => {
     const { activeCard, setActiveCard } = useDragContext();
+
     console.log('DEBUG_INFO_CARTA', {
         message: 'Datos del invitado en CartaInvitado',
         invitadoId: invitado?.id,
         documentId: invitado?.documentId,
         imagen: invitado?.imagen,
-        personaje: invitado?.personaje
+        personaje: invitado?.personaje,
+        currentImageUrl
     });
 
     const resultado = <>
@@ -29,8 +31,8 @@ const CartaInvitado = ({ weedding, invitado }) => {
         activeCard === "invitado" ? <><div className="cartaInvitado seccion">
             <Rasca 
                 url={urlstrapi + (invitado?.personaje?.imagen?.url || '')} 
-                url2={urlstrapi + (invitado?.imagen?.url || '')} 
-                alt={invitado?.personaje?.imagen?.alt || 'Imagen no disponible'} 
+                url2={currentImageUrl || urlstrapi + (invitado?.imagen?.url || '')}
+                setCurrentImageUrl={setCurrentImageUrl}
                 resultado={resultado}
                 invitadoId={invitado?.documentId} 
             />

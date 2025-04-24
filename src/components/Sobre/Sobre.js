@@ -45,6 +45,10 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
   const escala = 1.1;
   const md = new MobileDetect(window.navigator.userAgent);
   const [animationKey, setAnimationKey] = useState(1);
+  const [currentImageUrl, setCurrentImageUrl] = useState(() => {
+    const savedUrl = localStorage.getItem('invitadoImageUrl');
+    return savedUrl || null;
+  });
 
   const toggle = () => {
     const cards = document.querySelectorAll('.card');
@@ -422,6 +426,11 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
     toggleFullScreen();
   }, [fullScreen]);
 
+  const handleImageUpdate = (url) => {
+    setCurrentImageUrl(url);
+    localStorage.setItem('invitadoImageUrl', url);
+  };
+
   return (
     <>
       <Bubbles />
@@ -483,7 +492,12 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
                 onClick={() => handleClick(casandonos ? "invitado" : "asistencia")}
                 trasera={
                   invitado ?
-                    <CartaInvitado invitado={invitado} weedding={weedding} /> :
+                    <CartaInvitado 
+                      weedding={weedding} 
+                      invitado={invitado} 
+                      currentImageUrl={currentImageUrl}
+                      setCurrentImageUrl={handleImageUpdate}
+                    /> :
                     <Asistencia weedding={weedding} />
                 }>
                 <h2>{casandonos ? "Tu personaje" : "Confirmar Asistencia"}</h2>
