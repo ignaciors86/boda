@@ -17,6 +17,7 @@ const Rasca = ({ url, url2, resultado, invitadoId }) => {
   const [showUpload, setShowUpload] = useState(false);
   const [hasNewImage, setHasNewImage] = useState(false);
   const [isRevealed, setIsRevealed] = useState(false);
+  const [invitadoImageUrl, setInvitadoImageUrl] = useState(null);
 
   // Controla el grosor del pincel (en dvh)
   const brushSizeInDvh = 8;
@@ -55,6 +56,7 @@ const Rasca = ({ url, url2, resultado, invitadoId }) => {
             imagenUrl
           });
 
+          setInvitadoImageUrl(imagenUrl);
           setUploadedImage(imagenUrl);
           setHasNewImage(true);
           setIsRevealed(true);
@@ -177,7 +179,29 @@ const Rasca = ({ url, url2, resultado, invitadoId }) => {
       if (remaining <= 0) {
         clearInterval(interval);
         ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpia todo al final
-        gsap.to(canvas, { opacity: 0, duration: 0.5 });
+        
+        const timeline = gsap.timeline();
+        
+        timeline
+          .to(canvas, { opacity: 0, duration: 0.5 })
+          .set(".rasca__uploaded-image", { 
+            visibility: "visible",
+            opacity: 1,
+            zIndex: 0
+          })
+          .to(".rasca__original-image", {
+            scale: 0.3,
+            x: "36%",
+            y: "-5%",
+            duration: 0.5,
+            ease: "power2.out",
+            transformOrigin: "center center"
+          })
+          .to(".rasca__upload-container", {
+            opacity: 1,
+            duration: 0.3,
+            ease: "power2.out"
+          });
       }
     }, 50); // Intervalo de 50ms para simular rapidez
   };
@@ -413,6 +437,54 @@ const Rasca = ({ url, url2, resultado, invitadoId }) => {
     }
   };
 
+  const handleImageClick = (e) => {
+    const timeline = gsap.timeline();
+    const clickedImage = e.currentTarget;
+    const isOriginal = clickedImage.classList.contains('rasca__original-image');
+    
+    if (isOriginal) {
+      timeline
+        .to(".rasca__original-image", {
+          scale: 1,
+          x: 0,
+          y: 0,
+          duration: 0.5,
+          ease: "power2.out",
+          transformOrigin: "center center"
+        })
+        .to(".rasca__uploaded-image", {
+          scale: 0.3,
+          x: "36%",
+          y: "-5%",
+          duration: 0.5,
+          ease: "power2.out",
+          transformOrigin: "center center"
+        }, "-=0.5")
+        .set(".rasca__original-image", { zIndex: 1 })
+        .set(".rasca__uploaded-image", { zIndex: 0 });
+    } else {
+      timeline
+        .to(".rasca__uploaded-image", {
+          scale: 1,
+          x: 0,
+          y: 0,
+          duration: 0.5,
+          ease: "power2.out",
+          transformOrigin: "center center"
+        })
+        .to(".rasca__original-image", {
+          scale: 0.3,
+          x: "36%",
+          y: "-5%",
+          duration: 0.5,
+          ease: "power2.out",
+          transformOrigin: "center center"
+        }, "-=0.5")
+        .set(".rasca__uploaded-image", { zIndex: 1 })
+        .set(".rasca__original-image", { zIndex: 0 });
+    }
+  };
+
   return (
     <>
       <div className="rasca">
@@ -421,12 +493,19 @@ const Rasca = ({ url, url2, resultado, invitadoId }) => {
           className="rasca__original-image"
           src={url}
           alt="Premio oculto"
+          onClick={handleImageClick}
         />
         
         <img
-          className={`rasca__uploaded-image ${hasNewImage ? '' : 'rasca__uploaded-image--hidden'}`}
-          src={uploadedImage ? uploadedImage : (url2 || url)}
+          className="rasca__uploaded-image"
+          src={uploadedImage || url2 || url}
           alt="Imagen subida"
+          onClick={handleImageClick}
+          style={{ 
+            visibility: (uploadedImage || hasNewImage) ? 'visible' : 'hidden',
+            opacity: (uploadedImage || hasNewImage) ? 1 : 0,
+            zIndex: 0
+          }}
         />
         
         {/* Capa gris interactiva */}
