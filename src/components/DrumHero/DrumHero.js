@@ -476,7 +476,7 @@ const DrumHero = () => {
 
       <div className="qr-container henar">
         <QRCodeSVG 
-          value={`${window.location.protocol}//${window.location.hostname === 'localhost' ? (localIp || 'localhost') : window.location.hostname}${window.location.hostname === 'localhost' ? ':3000' : ''}/controles`}
+          value={`${window.location.protocol}//${window.location.hostname === 'localhost' ? (localIp || 'localhost') : window.location.hostname}${window.location.hostname === 'localhost' ? ':3000' : ''}/gaticos-y-monetes/controles`}
           size={Math.min(window.innerWidth * 0.1, 100)}
           level="H"
           includeMargin={true}
