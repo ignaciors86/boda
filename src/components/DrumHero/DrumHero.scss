@@ -29,7 +29,9 @@
       transform-style: preserve-3d;
       transform-origin: center;
       border-radius: 0;
-      transition: border-radius 0.5s ease;
+      transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+      clip-path: var(--clip-path);
+      background-color: var(--color);
 
       &.rotating {
         animation: rotate 20s infinite linear;
@@ -40,7 +42,7 @@
       }
 
       &.transforming {
-        animation: transform 0.5s ease;
+        animation: transform 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
       }
     }
 
@@ -145,13 +147,16 @@
 
 @keyframes transform {
   0% {
-    border-radius: 0;
+    clip-path: var(--clip-path-inicial);
+    background-color: var(--color-inicial);
   }
   50% {
-    border-radius: 50%;
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+    background-color: var(--color-intermedia);
   }
   100% {
-    border-radius: var(--border-radius, 0);
+    clip-path: var(--clip-path-final);
+    background-color: var(--color-final);
   }
 }
 

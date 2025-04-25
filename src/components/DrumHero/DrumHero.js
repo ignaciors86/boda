@@ -155,37 +155,58 @@ const DrumHero = () => {
     const bufferLength = analyserRef.current.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     let lastChangeTime = 0;
-    const minChangeInterval = 50;
+    let lastPulseTime = 0;
+    let lastTransformTime = 0;
+    let lastKudoUpdateTime = 0;
     let lastIntensity = 0;
     let beatCount = 0;
+    let lastBeatTime = 0;
+    const BEAT_THRESHOLD = 1.2; // Umbral para detectar un beat
+    const MIN_BEAT_INTERVAL = 100; // Intervalo mínimo entre beats en ms
 
     const analyzeAudio = () => {
       analyserRef.current.getByteFrequencyData(dataArray);
       
+      const currentTime = Date.now();
       const intensidad = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
       
-      const currentTime = Date.now();
-      
-      if (intensidad > 10 && intensidad > lastIntensity * 1.1) {
-        handlePulse();
+      // Detección de beat
+      if (intensidad > lastIntensity * BEAT_THRESHOLD && 
+          currentTime - lastBeatTime > MIN_BEAT_INTERVAL) {
+        lastBeatTime = currentTime;
         beatCount++;
-
-        // Actualizar los kudos activos con el ritmo
-        setActiveKudos(prev => prev.map(kudo => ({
-          ...kudo,
-          scale: kudo.scale * (1 + (intensidad / 100)),
-          rotation: kudo.rotation + (Math.random() * 20 - 10)
-        })));
-
-        if (beatCount % 4 === 0) {
-          setBackgroundColor(generateRandomBackgroundColor());
+        
+        // Actualizar kudos con el beat
+        if (currentTime - lastKudoUpdateTime > 50) {
+          setActiveKudos(prev => prev.map(kudo => ({
+            ...kudo,
+            scale: kudo.scale * (1 + (intensidad / 150)),
+            rotation: kudo.rotation + (Math.random() * 20 - 10)
+          })));
+          lastKudoUpdateTime = currentTime;
         }
 
-        handleTransform();
-
-        if ((currentTime - lastChangeTime) > minChangeInterval) {
+        // Cambiar imagen con el beat
+        if (currentTime - lastChangeTime > 100) {
           setCurrentImageIndex(prev => (prev + 1) % petImages.length);
           lastChangeTime = currentTime;
+        }
+
+        // Pulso con el beat
+        if (currentTime - lastPulseTime > 200) {
+          handlePulse();
+          lastPulseTime = currentTime;
+        }
+
+        // Transformación de polígono cada 4 beats
+        if (beatCount % 4 === 0 && currentTime - lastTransformTime > 1000) {
+          handleTransform();
+          lastTransformTime = currentTime;
+        }
+
+        // Cambiar color de fondo cada 8 beats
+        if (beatCount % 8 === 0) {
+          setBackgroundColor(generateRandomBackgroundColor());
         }
       }
 
@@ -223,19 +244,35 @@ const DrumHero = () => {
 
   const getPolygonStyle = () => {
     const { sides, color, rotation, direction, borderRadius } = currentPolygon;
-    const points = Array.from({ length: sides }, (_, i) => {
+    
+    // Generar puntos para el polígono inicial
+    const pointsInicial = Array.from({ length: sides }, (_, i) => {
       const angle = (i * 2 * Math.PI) / sides;
       const x = 50 + 50 * Math.cos(angle);
       const y = 50 + 50 * Math.sin(angle);
       return `${x}% ${y}%`;
     }).join(', ');
 
+    // Generar puntos para el polígono final
+    const sidesFinal = Math.floor(Math.random() * 5) + 3;
+    const pointsFinal = Array.from({ length: sidesFinal }, (_, i) => {
+      const angle = (i * 2 * Math.PI) / sidesFinal;
+      const x = 50 + 50 * Math.cos(angle);
+      const y = 50 + 50 * Math.sin(angle);
+      return `${x}% ${y}%`;
+    }).join(', ');
+
+    // Generar color intermedio
+    const colorIntermedia = generateRandomColor();
+
     return {
-      clipPath: `polygon(${points})`,
-      backgroundColor: color,
+      '--clip-path-inicial': `polygon(${pointsInicial})`,
+      '--clip-path-final': `polygon(${pointsFinal})`,
+      '--color-inicial': color,
+      '--color-final': generateRandomColor(),
+      '--color-intermedia': colorIntermedia,
       '--initial-rotation': `${rotation}deg`,
-      '--rotation-direction': direction,
-      '--border-radius': `${borderRadius}%`
+      '--rotation-direction': direction
     };
   };
 
@@ -265,10 +302,30 @@ const DrumHero = () => {
 
   useEffect(() => {
     if (!socketRef.current) {
-      socketRef.current = io('http://localhost:1337');
+      // Detectar si estamos en localhost basado en la URL
+      const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const socketUrl = isDevelopment 
+        ? 'http://localhost:1337' 
+        : 'https://boda-strapi-production.up.railway.app';
+      
+      console.log('DrumHero: Inicializando socket en:', socketUrl);
+      
+      socketRef.current = io(socketUrl, {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        withCredentials: false,
+        forceNew: true,
+        timeout: 20000
+      });
       
       socketRef.current.on('connect', () => {
         console.log('DrumHero: Socket conectado');
+      });
+
+      socketRef.current.on('connect_error', (error) => {
+        console.error('DrumHero: Error de conexión Socket.IO:', error);
       });
 
       socketRef.current.on('kudo', (data) => {
@@ -296,7 +353,7 @@ const DrumHero = () => {
             console.error('DrumHero: Colección no encontrada o sin imágenes:', nuevaColeccion);
           }
         } else {
-          // Si no es un emoji de colección, mostrar el kudo normal con posicionamiento aleatorio
+          // Si no es un emoji de colección, mostrar el kudo normal
           if (!kudosRef.current.has(data.id)) {
             kudosRef.current.add(data.id);
             
@@ -305,8 +362,8 @@ const DrumHero = () => {
             
             const newKudo = {
               ...data,
-              scale: Math.random() * 0.5 + 0.5, // Entre 0.5 y 1
-              rotation: Math.random() * 360, // Rotación aleatoria
+              scale: Math.random() * 0.5 + 0.5,
+              rotation: Math.random() * 360,
               x: x,
               y: y,
               opacity: 1,
