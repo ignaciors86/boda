@@ -19,6 +19,7 @@ const DrumHero = () => {
   const [backgroundColor, setBackgroundColor] = useState('#000000');
   const [receivedKudos, setReceivedKudos] = useState([]);
   const [activeKudos, setActiveKudos] = useState([]);
+  const [localIp, setLocalIp] = useState(null);
   const kudosRef = useRef(new Set());
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
@@ -249,6 +250,30 @@ const DrumHero = () => {
   };
 
   useEffect(() => {
+    // Obtener la IP local
+    const getLocalIp = async () => {
+      try {
+        const response = await fetch('https://api.ipify.org?format=json');
+        const data = await response.json();
+        setLocalIp(data.ip);
+      } catch (error) {
+        console.error('Error al obtener la IP local:', error);
+        // Si falla, intentamos obtener la IP de la red local
+        try {
+          const response = await fetch('http://localhost:3000/api/ip');
+          const data = await response.json();
+          setLocalIp(data.ip);
+        } catch (error) {
+          console.error('Error al obtener la IP local alternativa:', error);
+          setLocalIp('localhost');
+        }
+      }
+    };
+
+    getLocalIp();
+  }, []);
+
+  useEffect(() => {
     // Inicializar Socket.IO
     const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     const socketUrl = isDevelopment 
@@ -313,7 +338,7 @@ const DrumHero = () => {
     <div className="drum-hero" style={{ backgroundColor }}>
       <div className="qr-container">
         <QRCodeSVG 
-          value="http://boda-umber.vercel.app/gaticos-y-monetes/kudos"
+          value={`${window.location.protocol}//${window.location.hostname === 'localhost' ? (localIp || 'localhost') : window.location.hostname}${window.location.hostname === 'localhost' ? ':3000' : ''}/gaticos-y-monetes/kudos`}
           size={150}
           level="H"
           includeMargin={true}
