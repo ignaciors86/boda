@@ -13,6 +13,7 @@ import { InvitadoImageProvider } from './contexts/InvitadoImageContext';
 import DrumHero from 'components/DrumHero/DrumHero';
 import Kudos from './components/GaticosYMonetes/Kudos';
 import Controles from './components/GaticosYMonetes/Controles';
+import { AudioStreamProvider } from './contexts/AudioStreamContext';
 
 const App = () => {
   const tlApp = gsap.timeline();
@@ -145,50 +146,25 @@ const App = () => {
 
   return (
     <InvitadoImageProvider>
-      <Router>
-        <DragProvider>
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <>
-                  <Sobre />
-                </>
-              }
-            />
-            <Route
-              path="/weedding"
-              element={
-                <>
-                  <Sobre weedding={true} uri="weedding" />
-                </>
-              }
-            />
-            <Route
-              path="/weedding-house"
-              element={
-                <>
-                  <Sobre weedding={true} hosteado={true} uri="weedding-house" />
-                </>
-              }
-            />
-            <Route
-              path="/creditos-finales"
-              element={
-                <>
-                  <Creditos />
-                </>
-              }
-            />
-            <Route path="/fondos-baile" element={<FondosBaile />} />
-            <Route path="/kitt" element={<KITT />} />
-            <Route path="/gaticos-y-monetes" element={<DrumHero />} />
-            <Route path="/gaticos-y-monetes/kudos" element={<Kudos />} />
-            <Route path="/gaticos-y-monetes/controles" element={<Controles />} />
-            <Route path="/:documentId" element={<LoadInvitado />} />
-          </Routes>
-        </DragProvider>
-      </Router>
+      <AudioStreamProvider>
+        <Router>
+          <DragProvider>
+            <Routes>
+              <Route path="/" element={<Sobre />} />
+              <Route path="/weedding" element={<Sobre weedding={true} uri="weedding" />} />
+              <Route path="/weedding-house" element={<Sobre weedding={true} hosteado={true} uri="weedding-house" />} />
+              <Route path="/creditos-finales" element={<Creditos />} />
+              <Route path="/fondos-baile" element={<FondosBaile />} />
+              <Route path="/kitt" element={<KITT />} />
+              <Route path="/gaticos-y-monetes" element={<DrumHero />} />
+              <Route path="/gaticos-y-monetes/enar" element={<DrumHero />} />
+              <Route path="/gaticos-y-monetes/kudos" element={<Kudos />} />
+              <Route path="/gaticos-y-monetes/controles" element={<Controles />} />
+              <Route path="/:documentId" element={<LoadInvitado />} />
+            </Routes>
+          </DragProvider>
+        </Router>
+      </AudioStreamProvider>
     </InvitadoImageProvider>
   );
 };
