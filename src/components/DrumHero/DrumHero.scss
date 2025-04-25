@@ -190,6 +190,45 @@
       }
     }
   }
+
+  .fullscreen-button {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.2);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0.01;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(2px);
+    z-index: 100;
+    padding: 8px;
+
+    svg {
+      width: 24px;
+      height: 24px;
+      color: white;
+      opacity: 0.01;
+      transition: all 0.3s ease;
+      filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
+    }
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.6);
+      transform: scale(1.1);
+      opacity: 1;
+
+      svg {
+        opacity: 1;
+      }
+    }
+  }
 }
 
 @keyframes rotate {
