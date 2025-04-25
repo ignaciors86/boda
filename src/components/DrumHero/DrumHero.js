@@ -3,13 +3,8 @@ import "./DrumHero.scss";
 import { QRCodeSVG } from 'qrcode.react';
 import { io } from 'socket.io-client';
 import { colecciones } from '../../data/GaticosYMonetes';
-import { useLocation } from 'react-router-dom';
-import { useAudioStream } from '../../contexts/AudioStreamContext';
 
 const DrumHero = () => {
-  const location = useLocation();
-  const isEnarMode = location.pathname === '/gaticos-y-monetes/enar';
-  const { audioStream, isStreaming, startStreaming, stopStreaming, socket } = useAudioStream();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
   const [buttonVisible, setButtonVisible] = useState(true);
@@ -147,24 +142,16 @@ const DrumHero = () => {
         mediaStreamSourceRef.current = newAudioContext.createMediaStreamSource(stream);
         mediaStreamSourceRef.current.connect(newAnalyser);
 
-        // Si no estamos en modo Enar, iniciamos la transmisión
-        if (!isEnarMode) {
-          await startStreaming(stream);
-        }
-
         stream.getAudioTracks()[0].onended = () => {
           console.log('Compartir audio detenido por el usuario');
           setIsPlaying(false);
           setButtonVisible(true);
-          if (!isEnarMode) {
-            stopStreaming();
-          }
         };
 
         audioContextRef.current = newAudioContext;
         analyserRef.current = newAnalyser;
         setIsPlaying(true);
-        setTimeout(() => setButtonVisible(false), 100);
+        setTimeout(() => setButtonVisible(false), 100); // Desvanecer el botón después de un breve retraso
 
       } catch (error) {
         console.error('Error al acceder al audio del sistema:', error);
@@ -537,27 +524,6 @@ const DrumHero = () => {
     }
   };
 
-  // Efecto para escuchar el audio transmitido
-  useEffect(() => {
-    if (!isEnarMode && !isPlaying) {
-      socket.on('audioData', (audioData) => {
-        // Reproducir el audio recibido
-        const audioContext = new AudioContext();
-        const buffer = audioContext.createBuffer(1, audioData.length, audioContext.sampleRate);
-        buffer.copyToChannel(new Float32Array(audioData), 0);
-        
-        const source = audioContext.createBufferSource();
-        source.buffer = buffer;
-        source.connect(audioContext.destination);
-        source.start();
-      });
-    }
-
-    return () => {
-      socket.off('audioData');
-    };
-  }, [isEnarMode, isPlaying, socket]);
-
   return (
     <div className="drum-hero" style={{ backgroundColor }}>
       <button 
@@ -586,23 +552,21 @@ const DrumHero = () => {
         <p className="qr-text" style={{ color: qrColor, transition: 'color 0.5s ease-out' }}>Escanea para enviar likes</p>
       </div>
 
-      {isEnarMode && (
-        <div className="qr-container henar">
-          <QRCodeSVG 
-            value={`${window.location.protocol}//${window.location.hostname === 'localhost' ? (localIp || 'localhost') : window.location.hostname}${window.location.hostname === 'localhost' ? ':3000' : ''}/gaticos-y-monetes/controles`}
-            size={Math.min(window.innerWidth * 0.1, 100)}
-            level="H"
-            includeMargin={true}
-            bgColor="transparent"
-            fgColor={qrColor}
-            style={{
-              filter: 'drop-shadow(0 0 5px currentColor)',
-              transition: 'color 0.5s ease-out'
-            }}
-          />
-          <p className="qr-text" style={{ color: qrColor, transition: 'color 0.5s ease-out' }}>SOLO PARA ENAR</p>
-        </div>
-      )}
+      <div className="qr-container henar">
+        <QRCodeSVG 
+          value={`${window.location.protocol}//${window.location.hostname === 'localhost' ? (localIp || 'localhost') : window.location.hostname}${window.location.hostname === 'localhost' ? ':3000' : ''}/gaticos-y-monetes/controles`}
+          size={Math.min(window.innerWidth * 0.1, 100)}
+          level="H"
+          includeMargin={true}
+          bgColor="transparent"
+          fgColor={qrColor}
+          style={{
+            filter: 'drop-shadow(0 0 5px currentColor)',
+            transition: 'color 0.5s ease-out'
+          }}
+        />
+        <p className="qr-text" style={{ color: qrColor, transition: 'color 0.5s ease-out' }}>SOLO PARA ENAR</p>
+      </div>
 
       <div className="image-container">
         <div 
