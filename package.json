@@ -7,6 +7,7 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "@use-gesture/react": "^10.3.1",
+    "express": "^4.21.2",
     "firebase": "^11.6.1",
     "gsap": "npm:@gsap/shockingly@^3.12.5",
     "jquery": "^3.7.1",
@@ -23,14 +24,20 @@
     "react-spring": "^9.7.4",
     "sass": "^1.77.8",
     "serve": "^14.2.4",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "typewriter-effect": "^2.21.0",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "ws": "^8.18.1"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "server": "node src/server/websocket.js",
+    "dev": "concurrently \"npm run start\" \"npm run server\"",
+    "start:prod": "npm run build && serve -s build"
   },
   "eslintConfig": {
     "extends": [
@@ -49,5 +56,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }

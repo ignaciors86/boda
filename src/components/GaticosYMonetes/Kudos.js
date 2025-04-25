@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { io } from 'socket.io-client';
 import './Kudos.scss';
 
 const Kudos = () => {
   const [isAnimating, setIsAnimating] = useState(false);
+  const socketRef = useRef(null);
   const bubblesRef = useRef({});
 
   // Emojis organizados por niveles
@@ -11,6 +13,38 @@ const Kudos = () => {
     middle: ['💃', '🕺', '👰', '🤵', '🥂', '🎭', '🎪'],
     outer: ['🎊', '✨', '🎵', '🎶', '🌟', '🎉', '🎼']
   };
+
+  useEffect(() => {
+    // Inicializar Socket.IO
+    const socketUrl = process.env.NODE_ENV === 'development' 
+      ? 'http://localhost:1337' 
+      : 'https://boda-strapi-production.up.railway.app';
+    
+    socketRef.current = io(socketUrl, {
+      transports: ['websocket'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
+    });
+    
+    socketRef.current.on('connect', () => {
+      console.log('Conectado al servidor Socket.IO');
+    });
+
+    socketRef.current.on('kudo', (data) => {
+      console.log('Nuevo kudo recibido:', data);
+    });
+
+    socketRef.current.on('disconnect', () => {
+      console.log('Desconectado del servidor Socket.IO');
+    });
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     // Generar las posiciones iniciales una sola vez
@@ -48,9 +82,16 @@ const Kudos = () => {
       y: Math.random() * 100,
       scale: Math.random() * 0.8 + 0.4,
       rotation: Math.random() * 360,
-      emoji: emoji
+      emoji: emoji,
+      timestamp: Date.now()
     };
-    localStorage.setItem('newLike', JSON.stringify(like));
+    
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('kudo', like);
+    } else {
+      console.error('Socket.IO no está conectado');
+    }
+    
     setTimeout(() => setIsAnimating(false), 1000);
   };
 

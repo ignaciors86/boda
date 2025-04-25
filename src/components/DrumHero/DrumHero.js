@@ -1,8 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import "./DrumHero.scss";
 import { QRCodeSVG } from 'qrcode.react';
-import { ref, onChildAdded } from 'firebase/database';
-import { database } from '../../firebase';
+import { io } from 'socket.io-client';
 
 const DrumHero = () => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -18,14 +17,14 @@ const DrumHero = () => {
   const [isTransforming, setIsTransforming] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
   const [backgroundColor, setBackgroundColor] = useState('#000000');
-  const [likes, setLikes] = useState([]);
-  const [totalLikes, setTotalLikes] = useState(0);
+  const [receivedKudos, setReceivedKudos] = useState([]);
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const mediaStreamSourceRef = useRef(null);
   const animationFrameRef = useRef(null);
   const lastTransformTime = useRef(0);
   const lastPulseTime = useRef(0);
+  const socketRef = useRef(null);
 
   // Imágenes de mascotas con fondo transparente
   const petImages = [
@@ -241,46 +240,43 @@ const DrumHero = () => {
     };
   };
 
-  const generateRandomHeart = () => {
-    const colors = [
-      '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD',
-      '#D4A5A5', '#9B59B6', '#3498DB', '#E74C3C', '#2ECC71',
-      '#F1C40F', '#E67E22', '#1ABC9C', '#34495E', '#16A085',
-      '#F39C12', '#D35400', '#8E44AD', '#2C3E50', '#27AE60'
-    ];
-
-    return {
-      id: Date.now(),
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      scale: Math.random() * 0.8 + 0.4,
-      rotation: Math.random() * 360,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      size: Math.random() * 2 + 3,
-      danceSpeed: Math.random() * 2 + 1,
-      danceStyle: Math.random() > 0.5 ? 'dance' : 'dance2',
-      floatDirection: Math.random() > 0.5 ? 'left' : 'right'
-    };
-  };
-
   useEffect(() => {
-    const handleStorageChange = () => {
-      const newLike = localStorage.getItem('newLike');
-      if (newLike) {
-        const likeData = JSON.parse(newLike);
-        const heart = {
-          ...generateRandomHeart(),
-          emoji: likeData.emoji || '❤️'
-        };
-        setLikes(prev => [...prev, heart]);
-        setTimeout(() => {
-          setLikes(prev => prev.filter(l => l.id !== heart.id));
-        }, 3000);
+    // Inicializar Socket.IO
+    const socketUrl = process.env.NODE_ENV === 'development' 
+      ? 'http://localhost:1337' 
+      : 'https://boda-strapi-production.up.railway.app';
+    
+    socketRef.current = io(socketUrl, {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      withCredentials: false,
+      forceNew: true,
+      timeout: 20000
+    });
+
+    socketRef.current.on('connect', () => {
+      console.log('Conectado al servidor Socket.IO');
+    });
+
+    socketRef.current.on('connect_error', (error) => {
+      console.error('Error de conexión Socket.IO:', error);
+    });
+
+    socketRef.current.on('kudo', (kudo) => {
+      console.log('Nuevo kudo recibido:', kudo);
+      setReceivedKudos(prev => [...prev, kudo]);
+      setTimeout(() => {
+        setReceivedKudos(prev => prev.filter(k => k.id !== kudo.id));
+      }, 5000);
+    });
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
       }
     };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   return (
@@ -293,25 +289,6 @@ const DrumHero = () => {
           includeMargin={true}
         />
         <p className="qr-text">Escanea para enviar likes</p>
-      </div>
-
-      <div className="likes-overlay">
-        {likes.map(like => (
-          <div
-            key={like.id}
-            className="heart"
-            style={{
-              left: `${like.x}%`,
-              top: `${like.y}%`,
-              transform: `scale(${like.scale}) rotate(${like.rotation}deg)`,
-              color: like.color,
-              fontSize: `${like.size}rem`,
-              animation: `float-up-${like.floatDirection} 3s ease-out forwards, ${like.danceStyle} ${like.danceSpeed}s infinite`
-            }}
-          >
-            {like.emoji}
-          </div>
-        ))}
       </div>
 
       <div className="image-container">
@@ -332,6 +309,20 @@ const DrumHero = () => {
       >
         {isPlaying ? 'Detener' : 'Capturar Audio'}
       </button>
+
+      {receivedKudos.map(kudo => (
+        <div
+          key={kudo.id}
+          className="floating-kudo"
+          style={{
+            left: `${Math.random() * 80 + 10}%`,
+            top: '80%',
+            transform: `scale(${Math.random() * 0.5 + 0.5}) rotate(${Math.random() * 360}deg)`
+          }}
+        >
+          {kudo.emoji}
+        </div>
+      ))}
     </div>
   );
 };
