@@ -7,16 +7,14 @@ import { colecciones } from '../../data/GaticosYMonetes';
 const DrumHero = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
-  const [currentPolygon, setCurrentPolygon] = useState({ 
+  const [polygonState, setPolygonState] = useState({ 
     sides: 3, 
     color: '#ff3366', 
     rotation: 0,
-    direction: 1,
-    borderRadius: 0
+    scale: 1,
+    opacity: 0.8
   });
   const [isPulsing, setIsPulsing] = useState(false);
-  const [isTransforming, setIsTransforming] = useState(false);
-  const [isRotating, setIsRotating] = useState(false);
   const [backgroundColor, setBackgroundColor] = useState('#000000');
   const [receivedKudos, setReceivedKudos] = useState([]);
   const [activeKudos, setActiveKudos] = useState([]);
@@ -30,15 +28,11 @@ const DrumHero = () => {
   const mediaStreamSourceRef = useRef(null);
   const animationFrameRef = useRef(null);
   const lastTransformTime = useRef(0);
-  const lastPulseTime = useRef(0);
   const socketRef = useRef(null);
 
   const generateRandomColor = () => {
-    const colors = [
-      '#ff3366', '#33ff66', '#3366ff', '#ff33ff', '#33ffff',
-      '#ff6633', '#66ff33', '#6633ff', '#ff66ff', '#66ffff'
-    ];
-    return colors[Math.floor(Math.random() * colors.length)];
+    const hue = Math.floor(Math.random() * 360);
+    return `hsl(${hue}, 70%, 50%)`;
   };
 
   const generateRandomBackgroundColor = () => {
@@ -46,33 +40,31 @@ const DrumHero = () => {
     return `hsl(${hue}, 70%, 10%)`;
   };
 
-  const generateRandomPolygon = () => {
-    const sides = Math.floor(Math.random() * 5) + 3;
-    const color = generateRandomColor();
-    const rotation = Math.random() * 360;
-    const direction = Math.random() > 0.5 ? 1 : -1;
-    const borderRadius = Math.random() * 50;
-    return { sides, color, rotation, direction, borderRadius };
+  const updatePolygon = (intensidad) => {
+    const currentTime = Date.now();
+    if (currentTime - lastTransformTime.current > 50) { // Actualizar cada 50ms
+      const newSides = Math.floor(Math.random() * 5) + 3;
+      const newRotation = polygonState.rotation + (Math.random() * 20 - 10);
+      const newScale = 1 + (intensidad / 200);
+      const newOpacity = 0.6 + (intensidad / 500);
+      
+      setPolygonState({
+        sides: newSides,
+        color: generateRandomColor(),
+        rotation: newRotation,
+        scale: newScale,
+        opacity: Math.min(newOpacity, 0.9)
+      });
+      
+      lastTransformTime.current = currentTime;
+    }
   };
 
   const handlePulse = () => {
     const currentTime = Date.now();
-    if (currentTime - lastPulseTime.current > 300) {
+    if (currentTime - lastTransformTime.current > 300) {
       setIsPulsing(true);
       setTimeout(() => setIsPulsing(false), 300);
-      lastPulseTime.current = currentTime;
-    }
-  };
-
-  const handleTransform = () => {
-    const currentTime = Date.now();
-    if (currentTime - lastTransformTime.current > 2000) {
-      setIsTransforming(true);
-      setCurrentPolygon(generateRandomPolygon());
-      setTimeout(() => {
-        setIsTransforming(false);
-        setIsRotating(true);
-      }, 500);
       lastTransformTime.current = currentTime;
     }
   };
@@ -137,7 +129,6 @@ const DrumHero = () => {
         audioContextRef.current = newAudioContext;
         analyserRef.current = newAnalyser;
         setIsPlaying(true);
-        setIsRotating(true);
 
       } catch (error) {
         console.error('Error al acceder al audio del sistema:', error);
@@ -154,60 +145,16 @@ const DrumHero = () => {
 
     const bufferLength = analyserRef.current.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
-    let lastChangeTime = 0;
-    let lastPulseTime = 0;
-    let lastTransformTime = 0;
-    let lastKudoUpdateTime = 0;
     let lastIntensity = 0;
-    let beatCount = 0;
-    let lastBeatTime = 0;
-    const BEAT_THRESHOLD = 1.2; // Umbral para detectar un beat
-    const MIN_BEAT_INTERVAL = 100; // Intervalo mínimo entre beats en ms
 
     const analyzeAudio = () => {
       analyserRef.current.getByteFrequencyData(dataArray);
-      
-      const currentTime = Date.now();
       const intensidad = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
       
-      // Detección de beat
-      if (intensidad > lastIntensity * BEAT_THRESHOLD && 
-          currentTime - lastBeatTime > MIN_BEAT_INTERVAL) {
-        lastBeatTime = currentTime;
-        beatCount++;
-        
-        // Actualizar kudos con el beat
-        if (currentTime - lastKudoUpdateTime > 50) {
-          setActiveKudos(prev => prev.map(kudo => ({
-            ...kudo,
-            scale: kudo.scale * (1 + (intensidad / 150)),
-            rotation: kudo.rotation + (Math.random() * 20 - 10)
-          })));
-          lastKudoUpdateTime = currentTime;
-        }
-
-        // Cambiar imagen con el beat
-        if (currentTime - lastChangeTime > 100) {
-          setCurrentImageIndex(prev => (prev + 1) % petImages.length);
-          lastChangeTime = currentTime;
-        }
-
-        // Pulso con el beat
-        if (currentTime - lastPulseTime > 200) {
-          handlePulse();
-          lastPulseTime = currentTime;
-        }
-
-        // Transformación de polígono cada 4 beats
-        if (beatCount % 4 === 0 && currentTime - lastTransformTime > 1000) {
-          handleTransform();
-          lastTransformTime = currentTime;
-        }
-
-        // Cambiar color de fondo cada 8 beats
-        if (beatCount % 8 === 0) {
-          setBackgroundColor(generateRandomBackgroundColor());
-        }
+      if (intensidad > lastIntensity * 1.1) {
+        updatePolygon(intensidad);
+        handlePulse();
+        setCurrentImageIndex(prev => (prev + 1) % petImages.length);
       }
 
       lastIntensity = intensidad;
@@ -227,7 +174,6 @@ const DrumHero = () => {
     if (isPlaying) {
       await desconectarAudio();
       setIsPlaying(false);
-      setIsRotating(false);
     } else {
       await iniciarAudioSistema();
     }
@@ -243,36 +189,20 @@ const DrumHero = () => {
   }, []);
 
   const getPolygonStyle = () => {
-    const { sides, color, rotation, direction, borderRadius } = currentPolygon;
-    
-    // Generar puntos para el polígono inicial
-    const pointsInicial = Array.from({ length: sides }, (_, i) => {
+    const { sides, color, rotation, scale, opacity } = polygonState;
+    const points = Array.from({ length: sides }, (_, i) => {
       const angle = (i * 2 * Math.PI) / sides;
       const x = 50 + 50 * Math.cos(angle);
       const y = 50 + 50 * Math.sin(angle);
       return `${x}% ${y}%`;
     }).join(', ');
 
-    // Generar puntos para el polígono final
-    const sidesFinal = Math.floor(Math.random() * 5) + 3;
-    const pointsFinal = Array.from({ length: sidesFinal }, (_, i) => {
-      const angle = (i * 2 * Math.PI) / sidesFinal;
-      const x = 50 + 50 * Math.cos(angle);
-      const y = 50 + 50 * Math.sin(angle);
-      return `${x}% ${y}%`;
-    }).join(', ');
-
-    // Generar color intermedio
-    const colorIntermedia = generateRandomColor();
-
     return {
-      '--clip-path-inicial': `polygon(${pointsInicial})`,
-      '--clip-path-final': `polygon(${pointsFinal})`,
-      '--color-inicial': color,
-      '--color-final': generateRandomColor(),
-      '--color-intermedia': colorIntermedia,
-      '--initial-rotation': `${rotation}deg`,
-      '--rotation-direction': direction
+      clipPath: `polygon(${points})`,
+      backgroundColor: color,
+      transform: `rotate(${rotation}deg) scale(${scale})`,
+      opacity: opacity,
+      transition: 'all 0.1s ease-out'
     };
   };
 
@@ -410,8 +340,8 @@ const DrumHero = () => {
 
       <div className="image-container">
         <div 
-          className={`polygon ${isRotating ? 'rotating' : ''} ${isPulsing ? 'pulsing' : ''} ${isTransforming ? 'transforming' : ''}`} 
-          style={getPolygonStyle()} 
+          className="polygon"
+          style={getPolygonStyle()}
         />
         <div className="image-wrapper">
           {petImages.length > 0 && (
@@ -419,10 +349,6 @@ const DrumHero = () => {
               src={petImages[currentImageIndex]}
               alt={`Pet ${currentImageIndex + 1}`}
               className={`pet-image ${isPulsing ? 'pulsing' : ''}`}
-              onError={(e) => {
-                console.error('Error cargando imagen:', petImages[currentImageIndex]);
-                setCurrentImageIndex(prev => (prev + 1) % petImages.length);
-              }}
             />
           )}
         </div>

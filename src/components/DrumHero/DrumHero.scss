@@ -25,25 +25,11 @@
       position: absolute;
       width: 100%;
       height: 100%;
-      opacity: 0.8;
       transform-style: preserve-3d;
       transform-origin: center;
-      border-radius: 0;
-      transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
-      clip-path: var(--clip-path);
-      background-color: var(--color);
-
-      &.rotating {
-        animation: rotate 20s infinite linear;
-      }
-
-      &.pulsing {
-        animation: pulse 0.3s ease;
-      }
-
-      &.transforming {
-        animation: transform 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-      }
+      will-change: transform, clip-path, background-color, opacity;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
     }
 
     .image-wrapper {
