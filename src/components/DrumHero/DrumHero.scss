@@ -16,8 +16,8 @@
 
   .image-container {
     position: relative;
-    width: 70%;
-    height: 70%;
+    width: 90%;
+    height: 90%;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -36,14 +36,14 @@
 
     .image-wrapper {
       position: absolute;
-      width: 60%;
-      height: 60%;
+      width: 80%;
+      height: 80%;
       overflow: hidden;
       z-index: 2;
       transform-style: preserve-3d;
       transform-origin: center;
       will-change: transform, clip-path;
-      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.15s ease-out, transform 2s linear;
       filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.4));
     }
 
