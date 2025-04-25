@@ -16,12 +16,10 @@ const Kudos = () => {
 
   useEffect(() => {
     // Inicializar Socket.IO
-    const isDevelopment = true; // Cambiar a true para desarrollo local
+    const isDevelopment = false; // Cambiar a true para desarrollo local
     const socketUrl = isDevelopment 
       ? 'http://localhost:1337' 
       : 'https://boda-strapi-production.up.railway.app';
-    
-    console.log('Iniciando conexión Socket.IO a:', socketUrl);
     
     socketRef.current = io(socketUrl, {
       transports: ['websocket', 'polling'],
@@ -88,11 +86,8 @@ const Kudos = () => {
       timestamp: Date.now()
     };
     
-    console.log('Intentando enviar kudo:', kudo);
-    
     if (socketRef.current && socketRef.current.connected) {
       socketRef.current.emit('kudo', kudo);
-      console.log('Kudo enviado correctamente');
     } else {
       console.error('Socket.IO no está conectado');
     }

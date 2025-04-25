@@ -247,8 +247,6 @@ const DrumHero = () => {
       ? 'http://localhost:1337' 
       : 'https://boda-strapi-production.up.railway.app';
     
-    console.log('Iniciando conexión Socket.IO a:', socketUrl);
-    
     socketRef.current = io(socketUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,
