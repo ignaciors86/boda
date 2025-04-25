@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import "./DrumHero.scss";
 import { QRCodeSVG } from 'qrcode.react';
 import { io } from 'socket.io-client';
+import { colecciones } from '../../data/GaticosYMonetes';
 
 const DrumHero = () => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -20,6 +21,9 @@ const DrumHero = () => {
   const [receivedKudos, setReceivedKudos] = useState([]);
   const [activeKudos, setActiveKudos] = useState([]);
   const [localIp, setLocalIp] = useState(null);
+  const [coleccionActual, setColeccionActual] = useState('gatos');
+  const [petImages, setPetImages] = useState(colecciones.gatos.imagenes);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const kudosRef = useRef(new Set());
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
@@ -28,20 +32,6 @@ const DrumHero = () => {
   const lastTransformTime = useRef(0);
   const lastPulseTime = useRef(0);
   const socketRef = useRef(null);
-
-  // Imágenes de mascotas con fondo transparente
-  const petImages = [
-    "https://cdn-icons-png.flaticon.com/512/1076/1076984.png", // Gato 1
-    "https://cdn-icons-png.flaticon.com/512/1076/1076985.png", // Gato 2
-    "https://cdn-icons-png.flaticon.com/512/1076/1076986.png", // Gato 3
-    "https://cdn-icons-png.flaticon.com/512/1076/1076987.png", // Gato 4
-    "https://cdn-icons-png.flaticon.com/512/1076/1076988.png", // Gato 5
-    "https://cdn-icons-png.flaticon.com/512/1076/1076989.png", // Perro 1
-    "https://cdn-icons-png.flaticon.com/512/1076/1076990.png", // Perro 2
-    "https://cdn-icons-png.flaticon.com/512/1076/1076991.png", // Perro 3
-    "https://cdn-icons-png.flaticon.com/512/1076/1076992.png", // Perro 4
-    "https://cdn-icons-png.flaticon.com/512/1076/1076993.png"  // Perro 5
-  ];
 
   const generateRandomColor = () => {
     const colors = [
@@ -194,7 +184,7 @@ const DrumHero = () => {
         handleTransform();
 
         if ((currentTime - lastChangeTime) > minChangeInterval) {
-          setCurrentImage(prev => (prev + 1) % petImages.length);
+          setCurrentImageIndex(prev => (prev + 1) % petImages.length);
           lastChangeTime = currentTime;
         }
       }
@@ -274,11 +264,12 @@ const DrumHero = () => {
   }, []);
 
   useEffect(() => {
-    // Inicializar Socket.IO
     const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     const socketUrl = isDevelopment 
       ? 'http://localhost:1337' 
       : 'https://boda-strapi-production.up.railway.app';
+    
+    console.log('DrumHero: Inicializando socket en:', socketUrl);
     
     socketRef.current = io(socketUrl, {
       transports: ['websocket', 'polling'],
@@ -291,40 +282,77 @@ const DrumHero = () => {
     });
 
     socketRef.current.on('connect', () => {
-      console.log('Conectado al servidor Socket.IO');
+      console.log('DrumHero: Conectado al servidor Socket.IO');
     });
 
     socketRef.current.on('connect_error', (error) => {
-      console.error('Error de conexión Socket.IO:', error);
+      console.error('DrumHero: Error de conexión Socket.IO:', error);
+    });
+
+    socketRef.current.on('disconnect', () => {
+      console.log('DrumHero: Desconectado del servidor Socket.IO');
     });
 
     socketRef.current.on('kudo', (kudo) => {
-      // Verificar si el kudo ya está activo
-      if (!kudosRef.current.has(kudo.id)) {
-        kudosRef.current.add(kudo.id);
-        
-        // Generar posición aleatoria en la pantalla
-        const x = Math.random() * 80 + 10; // Entre 10% y 90% del ancho
-        const y = Math.random() * 80 + 10; // Entre 10% y 90% del alto
-        
-        const newKudo = {
-          ...kudo,
-          scale: Math.random() * 0.5 + 0.5, // Entre 0.5 y 1.0
-          rotation: Math.random() * 360, // Rotación aleatoria
-          x: x,
-          y: y,
-          opacity: 1,
-          startTime: Date.now()
-        };
+      console.log('DrumHero: Recibido kudo:', kudo);
+      
+      // Si el emoji es 🐱 o 🐶, cambiar la colección
+      if (kudo.emoji === '🐱' || kudo.emoji === '🐶') {
+        if (kudo.emoji === '🐱') {
+          console.log('DrumHero: Cambiando a colección de gatos');
+          setPetImages(colecciones.gatos.imagenes);
+          setColeccionActual('gatos');
+        } else {
+          console.log('DrumHero: Cambiando a colección de perros');
+          setPetImages(colecciones.perros.imagenes);
+          setColeccionActual('perros');
+        }
+        setCurrentImageIndex(0);
+      } else {
+        // Manejo normal de kudos
+        if (!kudosRef.current.has(kudo.id)) {
+          kudosRef.current.add(kudo.id);
+          
+          const x = Math.random() * 80 + 10;
+          const y = Math.random() * 80 + 10;
+          
+          const newKudo = {
+            ...kudo,
+            scale: Math.random() * 0.5 + 0.5,
+            rotation: Math.random() * 360,
+            x: x,
+            y: y,
+            opacity: 1,
+            startTime: Date.now()
+          };
 
-        setActiveKudos(prev => [...prev, newKudo]);
+          setActiveKudos(prev => [...prev, newKudo]);
 
-        // Eliminar el kudo después de 5 segundos
-        setTimeout(() => {
-          kudosRef.current.delete(kudo.id);
-          setActiveKudos(prev => prev.filter(k => k.id !== kudo.id));
-        }, 5000);
+          setTimeout(() => {
+            kudosRef.current.delete(kudo.id);
+            setActiveKudos(prev => prev.filter(k => k.id !== kudo.id));
+          }, 5000);
+        }
       }
+    });
+
+    socketRef.current.on('cambiar-coleccion', (data) => {
+      console.log('DrumHero: Recibido evento cambiar-coleccion:', data);
+      const { coleccion } = data;
+      console.log('DrumHero: Colección recibida:', coleccion);
+      
+      if (coleccion === 'gatos') {
+        console.log('DrumHero: Cambiando a colección de gatos');
+        setPetImages(colecciones.gatos.imagenes);
+      } else if (coleccion === 'perros') {
+        console.log('DrumHero: Cambiando a colección de perros');
+        setPetImages(colecciones.perros.imagenes);
+      }
+      
+      setColeccionActual(coleccion);
+      setCurrentImageIndex(0);
+      console.log('DrumHero: Colección actualizada a:', coleccion);
+      console.log('DrumHero: Imágenes actualizadas:', petImages);
     });
 
     return () => {
@@ -333,6 +361,12 @@ const DrumHero = () => {
       }
     };
   }, []);
+
+  // Efecto para depuración
+  useEffect(() => {
+    console.log('DrumHero: Estado actualizado - coleccionActual:', coleccionActual);
+    console.log('DrumHero: Estado actualizado - petImages:', petImages);
+  }, [coleccionActual, petImages]);
 
   return (
     <div className="drum-hero" style={{ backgroundColor }}>
@@ -352,9 +386,10 @@ const DrumHero = () => {
           style={getPolygonStyle()} 
         />
         <img 
-          src={petImages[currentImage]} 
-          alt={`Pet ${currentImage + 1}`}
+          src={petImages[currentImageIndex]} 
+          alt={`Pet ${currentImageIndex + 1}`}
           className={`pet-image ${isPulsing ? 'pulsing' : ''}`}
+          key={petImages[currentImageIndex]}
         />
       </div>
 

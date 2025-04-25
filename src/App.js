@@ -12,6 +12,7 @@ import KITT from 'components/KITT/KITT';
 import { InvitadoImageProvider } from './contexts/InvitadoImageContext';
 import DrumHero from 'components/DrumHero/DrumHero';
 import Kudos from './components/GaticosYMonetes/Kudos';
+import Controles from './components/GaticosYMonetes/Controles';
 
 const App = () => {
   const tlApp = gsap.timeline();
@@ -183,6 +184,7 @@ const App = () => {
             <Route path="/kitt" element={<KITT />} />
             <Route path="/gaticos-y-monetes" element={<DrumHero />} />
             <Route path="/gaticos-y-monetes/kudos" element={<Kudos />} />
+            <Route path="/gaticos-y-monetes/controles" element={<Controles />} />
             <Route path="/:documentId" element={<LoadInvitado />} />
           </Routes>
         </DragProvider>
