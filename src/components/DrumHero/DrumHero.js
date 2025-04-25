@@ -7,6 +7,7 @@ import { colecciones } from '../../data/GaticosYMonetes';
 const DrumHero = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
+  const [buttonVisible, setButtonVisible] = useState(true);
   const [elementOpacities, setElementOpacities] = useState({
     polygon: 1,
     image: 1,
@@ -43,7 +44,10 @@ const DrumHero = () => {
     opacity: 1,
     rotationDirection: 1
   });
-  const rotationSpeedRef = useRef(0.2);
+  const rotationSpeedRef = useRef(0.15);
+  const MAX_ROTATION = 25; // Máximo ángulo de rotación permitido
+  const [isPulsingPolygon, setIsPulsingPolygon] = useState(false);
+  const [isPulsingImage, setIsPulsingImage] = useState(false);
 
   const generateRandomColor = () => {
     const hue = Math.floor(Math.random() * 360);
@@ -61,26 +65,15 @@ const DrumHero = () => {
       const newSides = Math.floor(Math.random() * 5) + 3;
       const newRotation = polygonState.rotation + (Math.random() * 20 - 10);
       const newScale = 1 + (intensidad / 200);
-      const newOpacity = 0.6 + (intensidad / 500);
+      const newOpacity = Math.max(0.1, Math.min(0.9, intensidad / 255));
       
       setPolygonState({
         sides: newSides,
         color: generateRandomColor(),
         rotation: newRotation,
         scale: newScale,
-        opacity: Math.min(newOpacity, 0.9)
+        opacity: newOpacity
       });
-
-      // Actualizar el polígono de la imagen con un ligero retraso y variación
-      setTimeout(() => {
-        setImagePolygonState({
-          sides: newSides,
-          color: generateRandomColor(),
-          rotation: -newRotation * 0.5, // Rotación inversa pero más suave
-          scale: 1 + (intensidad / 400), // Escala más sutil
-          opacity: 1
-        });
-      }, 100);
       
       lastTransformTime.current = currentTime;
     }
@@ -89,8 +82,10 @@ const DrumHero = () => {
   const handlePulse = () => {
     const currentTime = Date.now();
     if (currentTime - lastTransformTime.current > 300) {
-      setIsPulsing(true);
-      setTimeout(() => setIsPulsing(false), 300);
+      setIsPulsingPolygon(true);
+      setIsPulsingImage(true);
+      setTimeout(() => setIsPulsingPolygon(false), 500);
+      setTimeout(() => setIsPulsingImage(false), 500);
       lastTransformTime.current = currentTime;
     }
   };
@@ -150,65 +145,53 @@ const DrumHero = () => {
         stream.getAudioTracks()[0].onended = () => {
           console.log('Compartir audio detenido por el usuario');
           setIsPlaying(false);
+          setButtonVisible(true);
         };
 
         audioContextRef.current = newAudioContext;
         analyserRef.current = newAnalyser;
         setIsPlaying(true);
+        setTimeout(() => setButtonVisible(false), 100); // Desvanecer el botón después de un breve retraso
 
       } catch (error) {
         console.error('Error al acceder al audio del sistema:', error);
         setIsPlaying(false);
+        setButtonVisible(true);
       }
     } catch (error) {
       console.error('Error al iniciar audio del sistema:', error);
       setIsPlaying(false);
+      setButtonVisible(true);
     }
   };
 
   const updateElementOpacities = (intensidad) => {
     const umbralBajo = 30;
-    const tiempoDesvanecimiento = 8000; // Aumentamos a 8 segundos
+    const tiempoDesvanecimiento = 8000;
     
-    // Función de interpolación cúbica para un desvanecimiento más suave
     const smoothFade = (value) => {
-      // Normalizamos el valor entre 0 y 1
       const t = Math.max(0, Math.min(1, (value - umbralBajo/2) / (umbralBajo/2)));
-      // Función de interpolación cúbica para una transición más suave
       return t * t * (3 - 2 * t);
     };
     
     if (intensidad < umbralBajo) {
       const opacidad = smoothFade(intensidad);
       
-      // Actualizar opacidades con retardo independiente y transiciones más suaves
-      setTimeout(() => {
-        setElementOpacities(prev => ({
-          ...prev,
-          polygon: prev.polygon + (opacidad - prev.polygon) * 0.1
-        }));
-      }, 0);
-      
-      setTimeout(() => {
-        setElementOpacities(prev => ({
-          ...prev,
-          image: prev.image + (opacidad - prev.image) * 0.1
-        }));
-      }, 1000);
-      
-      setTimeout(() => {
-        setElementOpacities(prev => ({
-          ...prev,
-          button: prev.button + (opacidad - prev.button) * 0.1
-        }));
-      }, 2000);
+      setElementOpacities(prev => ({
+        polygon: Math.max(0.1, prev.polygon + (opacidad - prev.polygon) * 0.1),
+        image: Math.max(0.1, prev.image + (opacidad - prev.image) * 0.1),
+        button: Math.max(0.1, prev.button + (opacidad - prev.button) * 0.1)
+      }));
+
+      updatePolygon(intensidad);
     } else {
-      // Restaurar opacidades gradualmente cuando el volumen vuelve a ser alto
       setElementOpacities(prev => ({
         polygon: prev.polygon + (1 - prev.polygon) * 0.1,
         image: prev.image + (1 - prev.image) * 0.1,
         button: prev.button + (1 - prev.button) * 0.1
       }));
+
+      updatePolygon(intensidad);
     }
   };
 
@@ -297,21 +280,32 @@ const DrumHero = () => {
       // Actualizar rotación suavemente
       setImagePolygonState(prev => {
         const now = Date.now();
-        // Cambiar dirección cada 5-8 segundos
-        if (now - lastDirectionChange > (5000 + Math.random() * 3000)) {
+        const currentRotation = prev.rotation % 360; // Normalizar a 360 grados
+        let newRotation = currentRotation;
+        let newDirection = prev.rotationDirection;
+
+        // Cambiar dirección si alcanza el límite o si es tiempo de cambiar
+        if (Math.abs(currentRotation) >= MAX_ROTATION || 
+            (now - lastDirectionChange > 5000 + Math.random() * 3000)) {
           lastDirectionChange = now;
-          return {
-            ...prev,
-            rotationDirection: prev.rotationDirection * -1,
-            rotation: prev.rotation // Mantener la rotación actual
-          };
+          newDirection = -prev.rotationDirection;
+          
+          // Si estamos en el límite, empezar a volver suavemente
+          if (Math.abs(currentRotation) >= MAX_ROTATION) {
+            newRotation = currentRotation > 0 ? MAX_ROTATION : -MAX_ROTATION;
+          }
         }
 
-        // Calcular nueva rotación
-        const newRotation = prev.rotation + (rotationSpeedRef.current * prev.rotationDirection);
+        // Calcular nueva rotación con la velocidad actual
+        newRotation += rotationSpeedRef.current * newDirection;
+
+        // Asegurar que no exceda los límites
+        newRotation = Math.max(-MAX_ROTATION, Math.min(MAX_ROTATION, newRotation));
+
         return {
           ...prev,
-          rotation: newRotation
+          rotation: newRotation,
+          rotationDirection: newDirection
         };
       });
 
@@ -320,7 +314,6 @@ const DrumHero = () => {
         handlePulse();
         setCurrentImageIndex(prev => (prev + 1) % petImages.length);
         
-        // Actualizar solo la forma y escala, no la rotación
         const newSides = Math.floor(Math.random() * 5) + 3;
         setImagePolygonState(prev => ({
           ...prev,
@@ -380,7 +373,7 @@ const DrumHero = () => {
       clipPath: `polygon(${points})`,
       backgroundColor: color,
       transform: `rotate(${rotation}deg) scale(${scale})`,
-      opacity: opacity,
+      opacity: opacity * elementOpacities.polygon,
       transition: 'all 0.1s ease-out'
     };
   };
@@ -557,18 +550,18 @@ const DrumHero = () => {
 
       <div className="image-container">
         <div 
-          className="polygon"
+          className={`polygon ${isPulsingPolygon ? 'pulsing' : ''}`}
           style={getPolygonStyle()}
         />
         <div 
-          className="image-wrapper" 
+          className={`image-wrapper ${isPulsingImage ? 'pulsing' : ''}`}
           style={{...getImagePolygonStyle(), opacity: elementOpacities.image}}
         >
           {petImages.length > 0 && (
             <img
               src={petImages[currentImageIndex]}
               alt={`Pet ${currentImageIndex + 1}`}
-              className={`pet-image ${isPulsing ? 'pulsing' : ''}`}
+              className="pet-image"
             />
           )}
         </div>
@@ -576,8 +569,12 @@ const DrumHero = () => {
 
       <button 
         onClick={togglePlay} 
-        className="play-button"
-        style={{ opacity: elementOpacities.button }}
+        className={`play-button ${!buttonVisible ? 'hidden' : ''}`}
+        style={{ 
+          opacity: buttonVisible ? elementOpacities.button : 0,
+          pointerEvents: buttonVisible ? 'auto' : 'none',
+          transform: `translateX(-50%) scale(${buttonVisible ? 1 : 0.8})`
+        }}
       >
         {isPlaying ? 'Detener' : 'Capturar Audio'}
       </button>

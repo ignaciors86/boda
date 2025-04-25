@@ -29,9 +29,13 @@
       height: 100%;
       transform-style: preserve-3d;
       transform-origin: center;
-      will-change: transform, clip-path, background-color, opacity;
+      will-change: transform, clip-path, background-color, opacity, filter;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+
+      &.pulsing {
+        animation: polygonPulse 0.5s ease-out;
+      }
     }
 
     .image-wrapper {
@@ -42,9 +46,31 @@
       z-index: 2;
       transform-style: preserve-3d;
       transform-origin: center;
-      will-change: transform, clip-path;
+      will-change: transform, clip-path, filter;
       transition: all 0.15s ease-out, transform 2s linear;
       filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.4));
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%);
+        background-size: 200% 200%;
+        z-index: 3;
+        mix-blend-mode: overlay;
+        pointer-events: none;
+      }
+
+      &.pulsing {
+        animation: imagePulse 0.5s ease-out;
+
+        &::before {
+          animation: shimmer 1s ease-out;
+        }
+      }
     }
 
     .pet-image {
@@ -55,10 +81,6 @@
       z-index: 2;
       filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
       transition: all 0.15s ease-out;
-
-      &.pulsing {
-        animation: pulse 0.3s ease 0.15s;
-      }
     }
   }
 
@@ -76,12 +98,18 @@
     font-size: 18px;
     font-weight: bold;
     z-index: 2;
-    transition: all 0.3s ease;
+    transition: all 0.5s ease;
     margin: 0;
 
     &:hover {
       background-color: #ff6699;
       transform: translateX(-50%) scale(1.1);
+    }
+
+    &.hidden {
+      opacity: 0 !important;
+      transform: translateX(-50%) scale(0.8) !important;
+      pointer-events: none;
     }
   }
 
@@ -286,5 +314,43 @@
   }
   100% {
     transform: translateX(0) rotate(0deg) scale(1);
+  }
+}
+
+@keyframes polygonPulse {
+  0% {
+    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 40px rgba(255, 255, 255, 0.6)) brightness(1.3);
+  }
+  100% {
+    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+  }
+}
+
+@keyframes imagePulse {
+  0% {
+    filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.7)) brightness(1.2);
+  }
+  100% {
+    filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.4));
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    background-position: -200% 0;
+    opacity: 0;
   }
 } 
