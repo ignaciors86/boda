@@ -242,9 +242,12 @@ const DrumHero = () => {
 
   useEffect(() => {
     // Inicializar Socket.IO
-    const socketUrl = process.env.NODE_ENV === 'development' 
+    const isDevelopment = false; // Cambiar a true para desarrollo local
+    const socketUrl = isDevelopment 
       ? 'http://localhost:1337' 
       : 'https://boda-strapi-production.up.railway.app';
+    
+    console.log('Iniciando conexión Socket.IO a:', socketUrl);
     
     socketRef.current = io(socketUrl, {
       transports: ['websocket', 'polling'],

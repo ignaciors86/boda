@@ -16,23 +16,29 @@ const Kudos = () => {
 
   useEffect(() => {
     // Inicializar Socket.IO
-    const socketUrl = process.env.NODE_ENV === 'development' 
+    const isDevelopment = true; // Cambiar a true para desarrollo local
+    const socketUrl = isDevelopment 
       ? 'http://localhost:1337' 
       : 'https://boda-strapi-production.up.railway.app';
     
+    console.log('Iniciando conexión Socket.IO a:', socketUrl);
+    
     socketRef.current = io(socketUrl, {
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 5,
-      reconnectionDelay: 1000
+      reconnectionDelay: 1000,
+      withCredentials: false,
+      forceNew: true,
+      timeout: 20000
     });
     
     socketRef.current.on('connect', () => {
       console.log('Conectado al servidor Socket.IO');
     });
 
-    socketRef.current.on('kudo', (data) => {
-      console.log('Nuevo kudo recibido:', data);
+    socketRef.current.on('connect_error', (error) => {
+      console.error('Error de conexión Socket.IO:', error);
     });
 
     socketRef.current.on('disconnect', () => {
@@ -76,18 +82,17 @@ const Kudos = () => {
 
   const handleEmojiClick = (emoji) => {
     setIsAnimating(true);
-    const like = {
+    const kudo = {
       id: Date.now(),
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      scale: Math.random() * 0.8 + 0.4,
-      rotation: Math.random() * 360,
       emoji: emoji,
       timestamp: Date.now()
     };
     
+    console.log('Intentando enviar kudo:', kudo);
+    
     if (socketRef.current && socketRef.current.connected) {
-      socketRef.current.emit('kudo', like);
+      socketRef.current.emit('kudo', kudo);
+      console.log('Kudo enviado correctamente');
     } else {
       console.error('Socket.IO no está conectado');
     }
