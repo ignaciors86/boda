@@ -15,8 +15,8 @@ const Kudos = () => {
   };
 
   useEffect(() => {
-    // Inicializar Socket.IO
-    const isDevelopment = false; // Cambiar a true para desarrollo local
+    // Detectar si estamos en localhost basado en la URL
+    const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     const socketUrl = isDevelopment 
       ? 'http://localhost:1337' 
       : 'https://boda-strapi-production.up.railway.app';

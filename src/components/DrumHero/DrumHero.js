@@ -18,6 +18,8 @@ const DrumHero = () => {
   const [isRotating, setIsRotating] = useState(false);
   const [backgroundColor, setBackgroundColor] = useState('#000000');
   const [receivedKudos, setReceivedKudos] = useState([]);
+  const [activeKudos, setActiveKudos] = useState([]);
+  const kudosRef = useRef(new Set());
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const mediaStreamSourceRef = useRef(null);
@@ -173,10 +175,16 @@ const DrumHero = () => {
       
       const currentTime = Date.now();
       
-      if (intensidad > 10 &&
-          intensidad > lastIntensity * 1.1) {
+      if (intensidad > 10 && intensidad > lastIntensity * 1.1) {
         handlePulse();
         beatCount++;
+
+        // Actualizar los kudos activos con el ritmo
+        setActiveKudos(prev => prev.map(kudo => ({
+          ...kudo,
+          scale: kudo.scale * (1 + (intensidad / 100)),
+          rotation: kudo.rotation + (Math.random() * 20 - 10)
+        })));
 
         if (beatCount % 4 === 0) {
           setBackgroundColor(generateRandomBackgroundColor());
@@ -242,7 +250,7 @@ const DrumHero = () => {
 
   useEffect(() => {
     // Inicializar Socket.IO
-    const isDevelopment = false; // Cambiar a true para desarrollo local
+    const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     const socketUrl = isDevelopment 
       ? 'http://localhost:1337' 
       : 'https://boda-strapi-production.up.railway.app';
@@ -266,11 +274,32 @@ const DrumHero = () => {
     });
 
     socketRef.current.on('kudo', (kudo) => {
-      console.log('Nuevo kudo recibido:', kudo);
-      setReceivedKudos(prev => [...prev, kudo]);
-      setTimeout(() => {
-        setReceivedKudos(prev => prev.filter(k => k.id !== kudo.id));
-      }, 5000);
+      // Verificar si el kudo ya está activo
+      if (!kudosRef.current.has(kudo.id)) {
+        kudosRef.current.add(kudo.id);
+        
+        // Generar posición aleatoria en la pantalla
+        const x = Math.random() * 80 + 10; // Entre 10% y 90% del ancho
+        const y = Math.random() * 80 + 10; // Entre 10% y 90% del alto
+        
+        const newKudo = {
+          ...kudo,
+          scale: Math.random() * 0.5 + 0.5, // Entre 0.5 y 1.0
+          rotation: Math.random() * 360, // Rotación aleatoria
+          x: x,
+          y: y,
+          opacity: 1,
+          startTime: Date.now()
+        };
+
+        setActiveKudos(prev => [...prev, newKudo]);
+
+        // Eliminar el kudo después de 5 segundos
+        setTimeout(() => {
+          kudosRef.current.delete(kudo.id);
+          setActiveKudos(prev => prev.filter(k => k.id !== kudo.id));
+        }, 5000);
+      }
     });
 
     return () => {
@@ -311,14 +340,15 @@ const DrumHero = () => {
         {isPlaying ? 'Detener' : 'Capturar Audio'}
       </button>
 
-      {receivedKudos.map(kudo => (
+      {activeKudos.map(kudo => (
         <div
           key={kudo.id}
           className="floating-kudo"
           style={{
-            left: `${Math.random() * 80 + 10}%`,
-            top: '80%',
-            transform: `scale(${Math.random() * 0.5 + 0.5}) rotate(${Math.random() * 360}deg)`
+            left: `${kudo.x}%`,
+            top: `${kudo.y}%`,
+            transform: `scale(${kudo.scale}) rotate(${kudo.rotation}deg)`,
+            opacity: kudo.opacity
           }}
         >
           {kudo.emoji}

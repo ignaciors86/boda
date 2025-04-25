@@ -93,11 +93,12 @@
   .floating-kudo {
     position: absolute;
     font-size: 2.5rem;
-    animation: float-up 5s ease-out forwards;
+    animation: float-up 5s ease-out forwards, dance 2s infinite;
     z-index: 5;
     filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
-    will-change: transform;
+    will-change: transform, opacity;
     pointer-events: none;
+    transition: transform 0.1s ease-out, opacity 0.3s ease-out;
   }
 
   h1 {
@@ -153,6 +154,24 @@
   100% {
     transform: translateY(-100vh) scale(0.5);
     opacity: 0;
+  }
+}
+
+@keyframes dance {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(10deg) scale(1.1);
+  }
+  50% {
+    transform: rotate(-10deg) scale(0.9);
+  }
+  75% {
+    transform: rotate(5deg) scale(1.05);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
   }
 }
 
@@ -219,24 +238,6 @@
   100% {
     transform: translate(100%, -100%) scale(1);
     opacity: 0;
-  }
-}
-
-@keyframes dance {
-  0% {
-    transform: rotate(0deg) scale(1);
-  }
-  25% {
-    transform: rotate(10deg) scale(1.1);
-  }
-  50% {
-    transform: rotate(-10deg) scale(0.9);
-  }
-  75% {
-    transform: rotate(5deg) scale(1.05);
-  }
-  100% {
-    transform: rotate(0deg) scale(1);
   }
 }
 
