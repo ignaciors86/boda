@@ -474,6 +474,22 @@ const DrumHero = () => {
         <p className="qr-text" style={{ color: qrColor, transition: 'color 0.5s ease-out' }}>Escanea para enviar likes</p>
       </div>
 
+      <div className="qr-container henar">
+        <QRCodeSVG 
+          value={`${window.location.protocol}//${window.location.hostname === 'localhost' ? (localIp || 'localhost') : window.location.hostname}${window.location.hostname === 'localhost' ? ':3000' : ''}/controles`}
+          size={Math.min(window.innerWidth * 0.1, 100)}
+          level="H"
+          includeMargin={true}
+          bgColor="transparent"
+          fgColor={qrColor}
+          style={{
+            filter: 'drop-shadow(0 0 5px currentColor)',
+            transition: 'color 0.5s ease-out'
+          }}
+        />
+        <p className="qr-text" style={{ color: qrColor, transition: 'color 0.5s ease-out' }}>SOLO PARA ENAR</p>
+      </div>
+
       <div className="image-container">
         <div 
           className="polygon"

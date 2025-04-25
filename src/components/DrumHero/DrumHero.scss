@@ -130,6 +130,18 @@
       text-align: center;
       text-shadow: 0 0 5px currentColor;
     }
+
+    &.henar {
+      left: 20px;
+      right: auto;
+      
+      .qr-text {
+        font-size: 14px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+    }
   }
 }
 
