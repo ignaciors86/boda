@@ -7,6 +7,11 @@ import { colecciones } from '../../data/GaticosYMonetes';
 const DrumHero = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
+  const [elementOpacities, setElementOpacities] = useState({
+    polygon: 1,
+    image: 1,
+    button: 1
+  });
   const [polygonState, setPolygonState] = useState({ 
     sides: 3, 
     color: '#ff3366', 
@@ -140,6 +145,52 @@ const DrumHero = () => {
     }
   };
 
+  const updateElementOpacities = (intensidad) => {
+    const umbralBajo = 30;
+    const tiempoDesvanecimiento = 8000; // Aumentamos a 8 segundos
+    
+    // Función de interpolación cúbica para un desvanecimiento más suave
+    const smoothFade = (value) => {
+      // Normalizamos el valor entre 0 y 1
+      const t = Math.max(0, Math.min(1, (value - umbralBajo/2) / (umbralBajo/2)));
+      // Función de interpolación cúbica para una transición más suave
+      return t * t * (3 - 2 * t);
+    };
+    
+    if (intensidad < umbralBajo) {
+      const opacidad = smoothFade(intensidad);
+      
+      // Actualizar opacidades con retardo independiente y transiciones más suaves
+      setTimeout(() => {
+        setElementOpacities(prev => ({
+          ...prev,
+          polygon: prev.polygon + (opacidad - prev.polygon) * 0.1
+        }));
+      }, 0);
+      
+      setTimeout(() => {
+        setElementOpacities(prev => ({
+          ...prev,
+          image: prev.image + (opacidad - prev.image) * 0.1
+        }));
+      }, 1000);
+      
+      setTimeout(() => {
+        setElementOpacities(prev => ({
+          ...prev,
+          button: prev.button + (opacidad - prev.button) * 0.1
+        }));
+      }, 2000);
+    } else {
+      // Restaurar opacidades gradualmente cuando el volumen vuelve a ser alto
+      setElementOpacities(prev => ({
+        polygon: prev.polygon + (1 - prev.polygon) * 0.1,
+        image: prev.image + (1 - prev.image) * 0.1,
+        button: prev.button + (1 - prev.button) * 0.1
+      }));
+    }
+  };
+
   useEffect(() => {
     if (!isPlaying || !analyserRef.current) return;
 
@@ -157,6 +208,7 @@ const DrumHero = () => {
         setCurrentImageIndex(prev => (prev + 1) % petImages.length);
       }
 
+      updateElementOpacities(intensidad);
       lastIntensity = intensidad;
       animationFrameRef.current = requestAnimationFrame(analyzeAudio);
     };
@@ -341,9 +393,9 @@ const DrumHero = () => {
       <div className="image-container">
         <div 
           className="polygon"
-          style={getPolygonStyle()}
+          style={{...getPolygonStyle(), opacity: elementOpacities.polygon}}
         />
-        <div className="image-wrapper">
+        <div className="image-wrapper" style={{ opacity: elementOpacities.image }}>
           {petImages.length > 0 && (
             <img
               src={petImages[currentImageIndex]}
@@ -357,6 +409,7 @@ const DrumHero = () => {
       <button 
         onClick={togglePlay} 
         className="play-button"
+        style={{ opacity: elementOpacities.button }}
       >
         {isPlaying ? 'Detener' : 'Capturar Audio'}
       </button>
