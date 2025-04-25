@@ -34,6 +34,7 @@ const DrumHero = () => {
   const animationFrameRef = useRef(null);
   const lastTransformTime = useRef(0);
   const socketRef = useRef(null);
+  const [qrColor, setQrColor] = useState('#00ff00'); // Color inicial neon verde
 
   const generateRandomColor = () => {
     const hue = Math.floor(Math.random() * 360);
@@ -191,12 +192,82 @@ const DrumHero = () => {
     }
   };
 
+  const calculateContrastingColor = (bgColor) => {
+    // Convertir el color de fondo a HSL
+    const temp = document.createElement('div');
+    temp.style.color = bgColor;
+    document.body.appendChild(temp);
+    const computed = window.getComputedStyle(temp);
+    const rgb = computed.color.match(/\d+/g);
+    document.body.removeChild(temp);
+
+    // Convertir RGB a HSL
+    let r = rgb[0] / 255;
+    let g = rgb[1] / 255;
+    let b = rgb[2] / 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h, s, l = (max + min) / 2;
+
+    if (max === min) {
+      h = s = 0;
+    } else {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+        case g: h = (b - r) / d + 2; break;
+        case b: h = (r - g) / d + 4; break;
+      }
+      h /= 6;
+    }
+
+    // Calcular color complementario
+    h = (h + 0.5) % 1;
+    s = 1; // Saturación máxima para efecto neon
+    l = 0.5; // Luminosidad media
+
+    // Convertir HSL a RGB
+    const hue2rgb = (p, q, t) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    };
+
+    let r2, g2, b2;
+    if (s === 0) {
+      r2 = g2 = b2 = l;
+    } else {
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      r2 = hue2rgb(p, q, h + 1/3);
+      g2 = hue2rgb(p, q, h);
+      b2 = hue2rgb(p, q, h - 1/3);
+    }
+
+    return `rgb(${Math.round(r2 * 255)}, ${Math.round(g2 * 255)}, ${Math.round(b2 * 255)})`;
+  };
+
+  const updateQrColor = (intensidad) => {
+    // Usar una función seno para un cambio más suave
+    const hue = Math.sin(Date.now() / 5000) * 60 + 120; // Oscila entre 60 y 180 grados
+    const saturation = 100;
+    const lightness = 50 + (Math.sin(Date.now() / 3000) * 10); // Oscila suavemente entre 40 y 60
+    
+    const newColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    setQrColor(newColor);
+  };
+
   useEffect(() => {
     if (!isPlaying || !analyserRef.current) return;
 
     const bufferLength = analyserRef.current.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     let lastIntensity = 0;
+    let lastColorUpdate = 0;
 
     const analyzeAudio = () => {
       analyserRef.current.getByteFrequencyData(dataArray);
@@ -206,6 +277,13 @@ const DrumHero = () => {
         updatePolygon(intensidad);
         handlePulse();
         setCurrentImageIndex(prev => (prev + 1) % petImages.length);
+      }
+
+      // Actualizar el color solo cada 50ms para hacerlo más suave
+      const now = Date.now();
+      if (now - lastColorUpdate > 50) {
+        updateQrColor(intensidad);
+        lastColorUpdate = now;
       }
 
       updateElementOpacities(intensidad);
@@ -383,11 +461,17 @@ const DrumHero = () => {
       <div className="qr-container">
         <QRCodeSVG 
           value={`${window.location.protocol}//${window.location.hostname === 'localhost' ? (localIp || 'localhost') : window.location.hostname}${window.location.hostname === 'localhost' ? ':3000' : ''}/gaticos-y-monetes/kudos`}
-          size={150}
+          size={Math.min(window.innerWidth * 0.1, 100)}
           level="H"
           includeMargin={true}
+          bgColor="transparent"
+          fgColor={qrColor}
+          style={{
+            filter: 'drop-shadow(0 0 5px currentColor)',
+            transition: 'color 0.5s ease-out'
+          }}
         />
-        <p className="qr-text">Escanea para enviar likes</p>
+        <p className="qr-text" style={{ color: qrColor, transition: 'color 0.5s ease-out' }}>Escanea para enviar likes</p>
       </div>
 
       <div className="image-container">
