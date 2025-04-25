@@ -264,100 +264,70 @@ const DrumHero = () => {
   }, []);
 
   useEffect(() => {
-    const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const socketUrl = isDevelopment 
-      ? 'http://localhost:1337' 
-      : 'https://boda-strapi-production.up.railway.app';
-    
-    console.log('DrumHero: Inicializando socket en:', socketUrl);
-    
-    socketRef.current = io(socketUrl, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      withCredentials: false,
-      forceNew: true,
-      timeout: 20000
-    });
-
-    socketRef.current.on('connect', () => {
-      console.log('DrumHero: Conectado al servidor Socket.IO');
-    });
-
-    socketRef.current.on('connect_error', (error) => {
-      console.error('DrumHero: Error de conexión Socket.IO:', error);
-    });
-
-    socketRef.current.on('disconnect', () => {
-      console.log('DrumHero: Desconectado del servidor Socket.IO');
-    });
-
-    socketRef.current.on('kudo', (kudo) => {
-      console.log('DrumHero: Recibido kudo:', kudo);
+    if (!socketRef.current) {
+      socketRef.current = io('http://localhost:1337');
       
-      // Si el emoji es 🐱 o 🐶, cambiar la colección
-      if (kudo.emoji === '🐱' || kudo.emoji === '🐶') {
-        if (kudo.emoji === '🐱') {
-          console.log('DrumHero: Cambiando a colección de gatos');
-          setPetImages(colecciones.gatos.imagenes);
-          setColeccionActual('gatos');
+      socketRef.current.on('connect', () => {
+        console.log('DrumHero: Socket conectado');
+      });
+
+      socketRef.current.on('kudo', (data) => {
+        console.log('DrumHero: Recibido kudo:', data);
+        
+        // Mapeo de emojis a colecciones
+        const coleccionMap = {
+          '🐱': 'gatos',
+          '🐶': 'perros',
+          '🦫': 'capibaras',
+          '🦦': 'nutrias'
+        };
+        
+        const nuevaColeccion = coleccionMap[data.emoji];
+        
+        if (nuevaColeccion) {
+          console.log('DrumHero: Cambiando a colección:', nuevaColeccion);
+          if (colecciones[nuevaColeccion] && colecciones[nuevaColeccion].imagenes) {
+            const nuevasImagenes = colecciones[nuevaColeccion].imagenes;
+            console.log('DrumHero: Número de imágenes en la nueva colección:', nuevasImagenes.length);
+            setPetImages(nuevasImagenes);
+            setColeccionActual(nuevaColeccion);
+            setCurrentImageIndex(0);
+          } else {
+            console.error('DrumHero: Colección no encontrada o sin imágenes:', nuevaColeccion);
+          }
         } else {
-          console.log('DrumHero: Cambiando a colección de perros');
-          setPetImages(colecciones.perros.imagenes);
-          setColeccionActual('perros');
+          // Si no es un emoji de colección, mostrar el kudo normal con posicionamiento aleatorio
+          if (!kudosRef.current.has(data.id)) {
+            kudosRef.current.add(data.id);
+            
+            const x = Math.random() * 80 + 10; // Entre 10% y 90%
+            const y = Math.random() * 80 + 10; // Entre 10% y 90%
+            
+            const newKudo = {
+              ...data,
+              scale: Math.random() * 0.5 + 0.5, // Entre 0.5 y 1
+              rotation: Math.random() * 360, // Rotación aleatoria
+              x: x,
+              y: y,
+              opacity: 1,
+              startTime: Date.now()
+            };
+
+            setActiveKudos(prev => [...prev, newKudo]);
+
+            setTimeout(() => {
+              kudosRef.current.delete(data.id);
+              setActiveKudos(prev => prev.filter(k => k.id !== data.id));
+            }, 5000);
+          }
         }
-        setCurrentImageIndex(0);
-      } else {
-        // Manejo normal de kudos
-        if (!kudosRef.current.has(kudo.id)) {
-          kudosRef.current.add(kudo.id);
-          
-          const x = Math.random() * 80 + 10;
-          const y = Math.random() * 80 + 10;
-          
-          const newKudo = {
-            ...kudo,
-            scale: Math.random() * 0.5 + 0.5,
-            rotation: Math.random() * 360,
-            x: x,
-            y: y,
-            opacity: 1,
-            startTime: Date.now()
-          };
-
-          setActiveKudos(prev => [...prev, newKudo]);
-
-          setTimeout(() => {
-            kudosRef.current.delete(kudo.id);
-            setActiveKudos(prev => prev.filter(k => k.id !== kudo.id));
-          }, 5000);
-        }
-      }
-    });
-
-    socketRef.current.on('cambiar-coleccion', (data) => {
-      console.log('DrumHero: Recibido evento cambiar-coleccion:', data);
-      const { coleccion } = data;
-      console.log('DrumHero: Colección recibida:', coleccion);
-      
-      if (coleccion === 'gatos') {
-        console.log('DrumHero: Cambiando a colección de gatos');
-        setPetImages(colecciones.gatos.imagenes);
-      } else if (coleccion === 'perros') {
-        console.log('DrumHero: Cambiando a colección de perros');
-        setPetImages(colecciones.perros.imagenes);
-      }
-      
-      setColeccionActual(coleccion);
-      setCurrentImageIndex(0);
-      console.log('DrumHero: Colección actualizada a:', coleccion);
-      console.log('DrumHero: Imágenes actualizadas:', petImages);
-    });
+      });
+    }
 
     return () => {
       if (socketRef.current) {
         socketRef.current.disconnect();
+        socketRef.current = null;
       }
     };
   }, []);
@@ -366,7 +336,8 @@ const DrumHero = () => {
   useEffect(() => {
     console.log('DrumHero: Estado actualizado - coleccionActual:', coleccionActual);
     console.log('DrumHero: Estado actualizado - petImages:', petImages);
-  }, [coleccionActual, petImages]);
+    console.log('DrumHero: Estado actualizado - currentImageIndex:', currentImageIndex);
+  }, [coleccionActual, petImages, currentImageIndex]);
 
   return (
     <div className="drum-hero" style={{ backgroundColor }}>
@@ -385,12 +356,19 @@ const DrumHero = () => {
           className={`polygon ${isRotating ? 'rotating' : ''} ${isPulsing ? 'pulsing' : ''} ${isTransforming ? 'transforming' : ''}`} 
           style={getPolygonStyle()} 
         />
-        <img 
-          src={petImages[currentImageIndex]} 
-          alt={`Pet ${currentImageIndex + 1}`}
-          className={`pet-image ${isPulsing ? 'pulsing' : ''}`}
-          key={petImages[currentImageIndex]}
-        />
+        <div className="image-wrapper">
+          {petImages.length > 0 && (
+            <img
+              src={petImages[currentImageIndex]}
+              alt={`Pet ${currentImageIndex + 1}`}
+              className={`pet-image ${isPulsing ? 'pulsing' : ''}`}
+              onError={(e) => {
+                console.error('Error cargando imagen:', petImages[currentImageIndex]);
+                setCurrentImageIndex(prev => (prev + 1) % petImages.length);
+              }}
+            />
+          )}
+        </div>
       </div>
 
       <button 

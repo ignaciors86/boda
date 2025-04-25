@@ -47,10 +47,19 @@ const Controles = () => {
     
     if (socketRef.current && socketRef.current.connected) {
       console.log('Controles: Socket conectado, emitiendo evento kudo de prueba');
-      // Emitir un kudo de prueba en lugar de cambiar-coleccion
+      // Mapeo de colecciones a emojis
+      const emojiMap = {
+        'gatos': '🐱',
+        'perros': '🐶',
+        'capibaras': '🦫',
+        'nutrias': '🦦'
+      };
+      
+      const emoji = emojiMap[id] || '🐱'; // Por defecto gato si no se encuentra
+      
       socketRef.current.emit('kudo', {
         id: Date.now(),
-        emoji: id === 'gatos' ? '🐱' : '🐶',
+        emoji: emoji,
         timestamp: Date.now()
       });
     } else {
