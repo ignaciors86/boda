@@ -35,6 +35,15 @@ const DrumHero = () => {
   const lastTransformTime = useRef(0);
   const socketRef = useRef(null);
   const [qrColor, setQrColor] = useState('#00ff00'); // Color inicial neon verde
+  const [imagePolygonState, setImagePolygonState] = useState({ 
+    sides: 4, 
+    color: '#ff3366', 
+    rotation: 0,
+    scale: 1,
+    opacity: 1,
+    rotationDirection: 1
+  });
+  const rotationSpeedRef = useRef(0.2);
 
   const generateRandomColor = () => {
     const hue = Math.floor(Math.random() * 360);
@@ -48,7 +57,7 @@ const DrumHero = () => {
 
   const updatePolygon = (intensidad) => {
     const currentTime = Date.now();
-    if (currentTime - lastTransformTime.current > 50) { // Actualizar cada 50ms
+    if (currentTime - lastTransformTime.current > 50) {
       const newSides = Math.floor(Math.random() * 5) + 3;
       const newRotation = polygonState.rotation + (Math.random() * 20 - 10);
       const newScale = 1 + (intensidad / 200);
@@ -61,6 +70,17 @@ const DrumHero = () => {
         scale: newScale,
         opacity: Math.min(newOpacity, 0.9)
       });
+
+      // Actualizar el polígono de la imagen con un ligero retraso y variación
+      setTimeout(() => {
+        setImagePolygonState({
+          sides: newSides,
+          color: generateRandomColor(),
+          rotation: -newRotation * 0.5, // Rotación inversa pero más suave
+          scale: 1 + (intensidad / 400), // Escala más sutil
+          opacity: 1
+        });
+      }, 100);
       
       lastTransformTime.current = currentTime;
     }
@@ -268,18 +288,47 @@ const DrumHero = () => {
     const dataArray = new Uint8Array(bufferLength);
     let lastIntensity = 0;
     let lastColorUpdate = 0;
+    let lastDirectionChange = Date.now();
 
     const analyzeAudio = () => {
       analyserRef.current.getByteFrequencyData(dataArray);
       const intensidad = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
       
+      // Actualizar rotación suavemente
+      setImagePolygonState(prev => {
+        const now = Date.now();
+        // Cambiar dirección cada 5-8 segundos
+        if (now - lastDirectionChange > (5000 + Math.random() * 3000)) {
+          lastDirectionChange = now;
+          return {
+            ...prev,
+            rotationDirection: prev.rotationDirection * -1,
+            rotation: prev.rotation // Mantener la rotación actual
+          };
+        }
+
+        // Calcular nueva rotación
+        const newRotation = prev.rotation + (rotationSpeedRef.current * prev.rotationDirection);
+        return {
+          ...prev,
+          rotation: newRotation
+        };
+      });
+
       if (intensidad > lastIntensity * 1.1) {
         updatePolygon(intensidad);
         handlePulse();
         setCurrentImageIndex(prev => (prev + 1) % petImages.length);
+        
+        // Actualizar solo la forma y escala, no la rotación
+        const newSides = Math.floor(Math.random() * 5) + 3;
+        setImagePolygonState(prev => ({
+          ...prev,
+          sides: newSides,
+          scale: 1 + (intensidad / 300)
+        }));
       }
 
-      // Actualizar el color solo cada 50ms para hacerlo más suave
       const now = Date.now();
       if (now - lastColorUpdate > 50) {
         updateQrColor(intensidad);
@@ -333,6 +382,22 @@ const DrumHero = () => {
       transform: `rotate(${rotation}deg) scale(${scale})`,
       opacity: opacity,
       transition: 'all 0.1s ease-out'
+    };
+  };
+
+  const getImagePolygonStyle = () => {
+    const { sides, rotation, scale } = imagePolygonState;
+    const points = Array.from({ length: sides }, (_, i) => {
+      const angle = (i * 2 * Math.PI) / sides;
+      const x = 50 + 45 * Math.cos(angle);
+      const y = 50 + 45 * Math.sin(angle);
+      return `${x}% ${y}%`;
+    }).join(', ');
+
+    return {
+      clipPath: `polygon(${points})`,
+      transform: `rotate(${rotation}deg) scale(${scale})`,
+      transition: 'all 0.15s ease-out, transform 2s linear'
     };
   };
 
@@ -493,9 +558,12 @@ const DrumHero = () => {
       <div className="image-container">
         <div 
           className="polygon"
-          style={{...getPolygonStyle(), opacity: elementOpacities.polygon}}
+          style={getPolygonStyle()}
         />
-        <div className="image-wrapper" style={{ opacity: elementOpacities.image }}>
+        <div 
+          className="image-wrapper" 
+          style={{...getImagePolygonStyle(), opacity: elementOpacities.image}}
+        >
           {petImages.length > 0 && (
             <img
               src={petImages[currentImageIndex]}

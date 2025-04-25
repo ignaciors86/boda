@@ -22,8 +22,6 @@
     justify-content: center;
     align-items: center;
     perspective: 1000px;
-    margin: 0;
-    padding: 0;
 
     .polygon {
       position: absolute;
@@ -34,19 +32,19 @@
       will-change: transform, clip-path, background-color, opacity;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
-      margin: 0;
-      padding: 0;
     }
 
     .image-wrapper {
       position: absolute;
       width: 60%;
       height: 60%;
-      border-radius: 50%;
       overflow: hidden;
       z-index: 2;
-      margin: 0;
-      padding: 0;
+      transform-style: preserve-3d;
+      transform-origin: center;
+      will-change: transform, clip-path;
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.4));
     }
 
     .pet-image {
@@ -56,8 +54,7 @@
       object-fit: cover;
       z-index: 2;
       filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
-      margin: 0;
-      padding: 0;
+      transition: all 0.15s ease-out;
 
       &.pulsing {
         animation: pulse 0.3s ease 0.15s;
