@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "../boda-strapi"
+		},
+		{
+			"path": "../boda-radio"
 		}
 	],
 	"settings": {
