@@ -132,7 +132,8 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
           { urls: 'stun:stun.l.google.com:19302' },
           { urls: 'stun:stun1.l.google.com:19302' },
           { urls: 'stun:stun2.l.google.com:19302' }
-        ]
+        ],
+        iceCandidatePoolSize: 10
       });
 
       if (isOfferer) {
@@ -150,6 +151,8 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
             isEmitter: isEmitting,
             receiverId: isEmitting ? receiverId : receiverIdRef.current
           });
+        } else {
+          console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] No hay más ICE candidates`);
         }
       };
 
@@ -164,7 +167,24 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
           setIsConnected(true);
           setStatus('Conexión establecida');
           console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] Conexión ICE establecida`);
+        } else if (peer.iceConnectionState === 'disconnected') {
+          console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] Conexión ICE desconectada, intentando reconectar...`);
+          // Intentar reconectar solo si no hay tracks ya añadidos
+          if (isEmitting && localStreamRef.current && peer.getSenders().length === 0) {
+            const tracks = localStreamRef.current.getAudioTracks();
+            tracks.forEach(track => {
+              peer.addTrack(track, localStreamRef.current);
+            });
+          }
         }
+      };
+
+      peer.onconnectionstatechange = () => {
+        console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] Connection state:`, peer.connectionState);
+      };
+
+      peer.onsignalingstatechange = () => {
+        console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] Signaling state:`, peer.signalingState);
       };
 
       if (!isEmitting) {
@@ -480,21 +500,41 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
 
   return (
     <div className="simple-webrtc-test">
-      <h2 style={{ fontFamily: 'VCR', color: '#fff' }}>{isEmitting ? 'Emitiendo audio del sistema' : 'Recibiendo audio remoto'}</h2>
-      <p style={{ fontFamily: 'VCR', color: '#fff' }}>{status}</p>
-      <canvas ref={canvasRef} width={350} height={60} style={{ display: 'block', margin: '16px auto', background: '#222', borderRadius: 8 }} />
-      {buttonVisible && (
-        <button onClick={handlePlay} style={{margin: '16px auto', display: 'block', padding: '12px 32px', fontSize: '1.2em', borderRadius: 8, border: 'none', background: '#222', color: '#fff', cursor: 'pointer', fontFamily: 'VCR'}}>
-          {isEmitting ? 'Capturar y emitir audio' : 'Escuchar audio remoto'}
-        </button>
-      )}
-      {isPlaying && (
-        <button onClick={handleStop} style={{margin: '16px auto', display: 'block', padding: '12px 32px', fontSize: '1.2em', borderRadius: 8, border: 'none', background: '#a00', color: '#fff', cursor: 'pointer', fontFamily: 'VCR'}}>
-          Parar
-        </button>
-      )}
-      {!isEmitting && <audio ref={remoteAudioRef} autoPlay controls playsInline style={{ width: '100%' }} />}
-      {isEmitting && <p style={{ fontFamily: 'VCR', color: '#fff' }}>El audio del sistema se está emitiendo a la otra pestaña/dispositivo.</p>}
+      <div className="container">
+        <h2>{isEmitting ? 'Emitiendo audio del sistema' : 'Recibiendo audio remoto'}</h2>
+        <p>{status}</p>
+        <canvas 
+          ref={canvasRef} 
+          width={350} 
+          height={60} 
+          className="canvas"
+        />
+        <div className="buttons-container">
+          {buttonVisible && (
+            <button onClick={handlePlay} className="play">
+              {isEmitting ? 'Capturar y emitir audio' : 'Escuchar audio remoto'}
+            </button>
+          )}
+          {isPlaying && (
+            <button onClick={handleStop} className="stop">
+              Parar
+            </button>
+          )}
+        </div>
+        {!isEmitting && (
+          <audio 
+            ref={remoteAudioRef} 
+            autoPlay 
+            controls 
+            playsInline 
+          />
+        )}
+        {isEmitting && (
+          <p>
+            El audio del sistema se está emitiendo a la otra pestaña/dispositivo.
+          </p>
+        )}
+      </div>
     </div>
   );
 };
