@@ -35,121 +35,6 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
     };
   }, []);
 
-  // Dibuja el ecualizador en el canvas (solo logs en receptor)
-  const drawEq = (analyser, label = '') => {
-    if (!canvasRef.current || !analyser) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    analyser.getByteFrequencyData(dataArray);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const barWidth = (canvas.width / bufferLength) * 1.2;
-    let x = 0;
-    let max = 0;
-    for (let i = 0; i < bufferLength; i++) {
-      let barHeight = (dataArray[i] / 255) * canvas.height * 0.85;
-      barHeight = Math.max(2, barHeight);
-      max = Math.max(max, barHeight);
-      const hue = 120 - Math.round((barHeight / canvas.height) * 120);
-      ctx.fillStyle = `hsl(${hue}, 90%, 50%)`;
-      ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-      x += barWidth + 1;
-    }
-    // Solo log en receptor y solo si hay señal
-    if (label === 'RECEPTOR' && max > 2) {
-      console.log(`[RECEPTOR][EQ] Máx barra: ${Math.round(max)} | Primeros valores:`, dataArray.slice(0, 8));
-    }
-  };
-
-  // Loop de animación del ecualizador
-  const animateEq = (label) => {
-    if (analyserRef.current) {
-      drawEq(analyserRef.current, label);
-      animationRef.current = requestAnimationFrame(() => animateEq(label));
-    }
-  };
-
-  // Inicializa el ecualizador para el emisor
-  const setupLocalAnalyser = (stream) => {
-    if (audioContextRef.current) {
-      try {
-        if (audioContextRef.current.state !== 'closed') {
-          audioContextRef.current.close();
-        }
-      } catch (e) {
-        console.warn('Error al cerrar AudioContext anterior:', e);
-      }
-    }
-    
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 64;
-    const source = audioCtx.createMediaStreamSource(stream);
-    source.connect(analyser);
-    analyserRef.current = analyser;
-    audioContextRef.current = audioCtx;
-    animateEq('EMISOR');
-  };
-
-  // Inicializa el ecualizador para el receptor
-  const setupRemoteAnalyser = (audioElem) => {
-    if (audioContextRef.current) {
-      try {
-        if (audioContextRef.current.state !== 'closed') {
-          audioContextRef.current.close();
-        }
-      } catch (e) {
-        console.warn('Error al cerrar AudioContext anterior:', e);
-      }
-    }
-    
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 64;
-    const source = audioCtx.createMediaElementSource(audioElem);
-    source.connect(analyser);
-    analyser.connect(audioCtx.destination);
-    analyserRef.current = analyser;
-    audioContextRef.current = audioCtx;
-    animateEq('RECEPTOR');
-    
-    // Log de depuración útil
-    setTimeout(() => {
-      try {
-        const tracks = audioElem.srcObject ? audioElem.srcObject.getAudioTracks() : [];
-        if (tracks.length > 0) {
-          console.log('[RECEPTOR] El elemento <audio> tiene tracks:', tracks.map(t => t.label));
-        } else {
-          console.warn('[RECEPTOR] El elemento <audio> NO tiene tracks de audio.');
-        }
-      } catch (e) {
-        console.warn('[RECEPTOR] No se pudo acceder a tracks del elemento <audio>.', e);
-      }
-    }, 1000);
-
-    // Asegurar que el audio se reproduzca en iOS
-    const playAudio = async () => {
-      try {
-        await audioElem.play();
-        console.log('[RECEPTOR] Audio empezó a reproducirse');
-      } catch (error) {
-        console.error('[RECEPTOR] Error al reproducir audio:', error);
-        if (error.name === 'NotAllowedError') {
-          setStatus('Por favor, toca la pantalla para reproducir el audio');
-        }
-      }
-    };
-
-    // Detectar si es un dispositivo iOS
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    
-    if (isIOS) {
-      // En iOS, esperamos a una interacción del usuario
-      document.addEventListener('touchstart', playAudio, { once: true });
-    }
-  };
-
   const sendSignal = (data) => {
     wsRef.current && wsRef.current.readyState === 1 && wsRef.current.send(JSON.stringify(data));
   };
@@ -227,24 +112,6 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
       wsRef.current = null;
     }
     
-    // Limpiar animación
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
-    }
-    
-    // Limpiar AudioContext
-    if (audioContextRef.current) {
-      try {
-        if (audioContextRef.current.state !== 'closed') {
-          audioContextRef.current.close();
-        }
-      } catch (e) {
-        console.warn('Error al cerrar AudioContext:', e);
-      }
-      audioContextRef.current = null;
-    }
-    
     // Limpiar streams
     if (isEmitting && localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(track => track.stop());
@@ -316,19 +183,24 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
             // Manejo especial para iOS
             if (isIOS.current) {
               setStatus('Toca la pantalla para reproducir el audio');
-              document.addEventListener('touchstart', () => {
-                remoteAudioRef.current.play().then(() => {
-                  console.log('[RECEPTOR] Audio empezó a reproducirse en iOS');
-                  setupRemoteAnalyser(remoteAudioRef.current);
-                  setIsConnected(true);
-                  setStatus('Conexión establecida. Reproduciendo audio...');
-                }).catch(error => {
-                  console.error('[RECEPTOR] Error al reproducir audio en iOS:', error);
-                  setStatus('Error al reproducir audio. Intenta de nuevo.');
-                });
-              }, { once: true });
+              const playAudio = () => {
+                remoteAudioRef.current.play()
+                  .then(() => {
+                    console.log('[RECEPTOR] Audio empezó a reproducirse en iOS');
+                    setupRemoteAnalyser(remoteAudioRef.current);
+                    setIsConnected(true);
+                    setStatus('Conexión establecida. Reproduciendo audio...');
+                  })
+                  .catch(error => {
+                    console.error('[RECEPTOR] Error al reproducir audio en iOS:', error);
+                    setStatus('Error al reproducir audio. Intenta de nuevo.');
+                  });
+              };
+              
+              // Añadimos múltiples eventos de toque para mayor fiabilidad
+              document.addEventListener('touchstart', playAudio, { once: true });
+              document.addEventListener('click', playAudio, { once: true });
             } else {
-              // Comportamiento normal para otros dispositivos
               remoteAudioRef.current.play().catch(error => {
                 console.error('[RECEPTOR] Error al reproducir audio:', error);
               });
@@ -510,6 +382,100 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         handleStop();
       }
     }
+  };
+
+  // Dibuja el ecualizador en el canvas (solo logs en receptor)
+  const drawEq = (analyser, label = '') => {
+    if (!canvasRef.current || !analyser) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    analyser.getByteFrequencyData(dataArray);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const barWidth = (canvas.width / bufferLength) * 1.2;
+    let x = 0;
+    let max = 0;
+    for (let i = 0; i < bufferLength; i++) {
+      let barHeight = (dataArray[i] / 255) * canvas.height * 0.85;
+      barHeight = Math.max(2, barHeight);
+      max = Math.max(max, barHeight);
+      const hue = 120 - Math.round((barHeight / canvas.height) * 120);
+      ctx.fillStyle = `hsl(${hue}, 90%, 50%)`;
+      ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+      x += barWidth + 1;
+    }
+    // Solo log en receptor y solo si hay señal
+    if (label === 'RECEPTOR' && max > 2) {
+      console.log(`[RECEPTOR][EQ] Máx barra: ${Math.round(max)} | Primeros valores:`, dataArray.slice(0, 8));
+    }
+  };
+
+  // Loop de animación del ecualizador
+  const animateEq = (label) => {
+    if (analyserRef.current) {
+      drawEq(analyserRef.current, label);
+      animationRef.current = requestAnimationFrame(() => animateEq(label));
+    }
+  };
+
+  // Inicializa el ecualizador para el emisor
+  const setupLocalAnalyser = (stream) => {
+    if (audioContextRef.current) {
+      try {
+        if (audioContextRef.current.state !== 'closed') {
+          audioContextRef.current.close();
+        }
+      } catch (e) {
+        console.warn('Error al cerrar AudioContext anterior:', e);
+      }
+    }
+    
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 64;
+    const source = audioCtx.createMediaStreamSource(stream);
+    source.connect(analyser);
+    analyserRef.current = analyser;
+    audioContextRef.current = audioCtx;
+    animateEq('EMISOR');
+  };
+
+  // Inicializa el ecualizador para el receptor
+  const setupRemoteAnalyser = (audioElem) => {
+    if (audioContextRef.current) {
+      try {
+        if (audioContextRef.current.state !== 'closed') {
+          audioContextRef.current.close();
+        }
+      } catch (e) {
+        console.warn('Error al cerrar AudioContext anterior:', e);
+      }
+    }
+    
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 64;
+    const source = audioCtx.createMediaElementSource(audioElem);
+    source.connect(analyser);
+    analyser.connect(audioCtx.destination);
+    analyserRef.current = analyser;
+    audioContextRef.current = audioCtx;
+    animateEq('RECEPTOR');
+    
+    // Log de depuración útil
+    setTimeout(() => {
+      try {
+        const tracks = audioElem.srcObject ? audioElem.srcObject.getAudioTracks() : [];
+        if (tracks.length > 0) {
+          console.log('[RECEPTOR] El elemento <audio> tiene tracks:', tracks.map(t => t.label));
+        } else {
+          console.warn('[RECEPTOR] El elemento <audio> NO tiene tracks de audio.');
+        }
+      } catch (e) {
+        console.warn('[RECEPTOR] No se pudo acceder a tracks del elemento <audio>.', e);
+      }
+    }, 1000);
   };
 
   return (
