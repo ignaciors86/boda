@@ -27,6 +27,7 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
   const animationRef = useRef(null);
   const receiverIdRef = useRef(null);
   const peersRef = useRef(new Map());
+  const isIOS = useRef(/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream);
 
   useEffect(() => {
     return () => {
@@ -170,16 +171,19 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
             sampleRate: 44100
           }
         });
+        
         stream.getVideoTracks().forEach(track => {
           track.stop();
           stream.removeTrack(track);
         });
+        
         if (stream.getAudioTracks().length === 0) {
           setStatus('No se detectó audio del sistema.');
           setButtonVisible(true);
           setIsPlaying(false);
           return;
         }
+        
         localStreamRef.current = stream;
         setStatus('Audio del sistema capturado. Conectando señalización...');
         setupLocalAnalyser(stream);
@@ -190,6 +194,9 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         setIsPlaying(false);
       }
     } else {
+      if (isIOS.current) {
+        setStatus('Preparando para recibir audio...');
+      }
       startWebRTC();
     }
   };
@@ -269,7 +276,7 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
 
       peer.onicecandidate = (event) => {
         if (event.candidate) {
-          console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] ICE candidate encontrado`);
+          console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] ICE candidate encontrado:`, event.candidate);
           sendSignal({ 
             type: 'candidate', 
             candidate: event.candidate,
@@ -289,6 +296,7 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         } else if (peer.iceConnectionState === 'connected') {
           setIsConnected(true);
           setStatus('Conexión establecida');
+          console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] Conexión ICE establecida`);
         }
       };
 
@@ -305,23 +313,32 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
             const tracks = stream.getAudioTracks();
             console.log(`[RECEPTOR] Tracks de audio recibidos:`, tracks.length);
             
-            // Asegurarse de que el audio se reproduzca
-            remoteAudioRef.current.play().catch(error => {
-              console.error('[RECEPTOR] Error al reproducir audio:', error);
-            });
-            
-            // Configurar el ecualizador cuando el audio empiece a reproducirse
-            remoteAudioRef.current.onplay = () => {
-              console.log('[RECEPTOR] Audio empezó a reproducirse');
-              setupRemoteAnalyser(remoteAudioRef.current);
-              setIsConnected(true);
-              setStatus('Conexión establecida. Reproduciendo audio...');
-            };
-            
-            // Si el audio ya está reproduciéndose, configurar el ecualizador inmediatamente
-            if (!remoteAudioRef.current.paused) {
-              console.log('[RECEPTOR] Audio ya está reproduciéndose, configurando ecualizador...');
-              setupRemoteAnalyser(remoteAudioRef.current);
+            // Manejo especial para iOS
+            if (isIOS.current) {
+              setStatus('Toca la pantalla para reproducir el audio');
+              document.addEventListener('touchstart', () => {
+                remoteAudioRef.current.play().then(() => {
+                  console.log('[RECEPTOR] Audio empezó a reproducirse en iOS');
+                  setupRemoteAnalyser(remoteAudioRef.current);
+                  setIsConnected(true);
+                  setStatus('Conexión establecida. Reproduciendo audio...');
+                }).catch(error => {
+                  console.error('[RECEPTOR] Error al reproducir audio en iOS:', error);
+                  setStatus('Error al reproducir audio. Intenta de nuevo.');
+                });
+              }, { once: true });
+            } else {
+              // Comportamiento normal para otros dispositivos
+              remoteAudioRef.current.play().catch(error => {
+                console.error('[RECEPTOR] Error al reproducir audio:', error);
+              });
+              
+              remoteAudioRef.current.onplay = () => {
+                console.log('[RECEPTOR] Audio empezó a reproducirse');
+                setupRemoteAnalyser(remoteAudioRef.current);
+                setIsConnected(true);
+                setStatus('Conexión establecida. Reproduciendo audio...');
+              };
             }
           }
         };
@@ -332,6 +349,7 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         console.log('[EMISOR] Añadiendo tracks locales:', tracks.length);
         tracks.forEach(track => {
           peer.addTrack(track, localStreamRef.current);
+          console.log('[EMISOR] Track añadido:', track.label);
         });
 
         const offer = await peer.createOffer({
@@ -340,7 +358,7 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         });
         
         await peer.setLocalDescription(offer);
-        console.log('[EMISOR] Oferta creada y guardada');
+        console.log('[EMISOR] Oferta creada y guardada:', offer);
       }
 
       return peer;
