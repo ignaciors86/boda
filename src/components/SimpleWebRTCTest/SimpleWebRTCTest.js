@@ -299,6 +299,13 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
       peer.onicecandidate = (event) => {
         if (event.candidate) {
           console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] ICE candidate encontrado:`, event.candidate.type, event.candidate.protocol, event.candidate.address);
+          // Filtrar candidatos locales
+          if (event.candidate.type === 'host' && 
+              (event.candidate.address.includes('.local') || 
+               event.candidate.address === '127.0.0.1')) {
+            console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] Ignorando candidato local`);
+            return;
+          }
           sendSignal({ 
             type: 'candidate', 
             candidate: event.candidate,
@@ -412,8 +419,18 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
           offerToReceiveVideo: false
         });
         
-        await peer.setLocalDescription(offer);
-        console.log('[EMISOR] Oferta creada y guardada:', offer.sdp);
+        // Modificar la oferta para usar la dirección IP pública
+        const modifiedSdp = offer.sdp
+          .replace(/o=- \d+ \d+ IN IP4 127\.0\.0\.1/, `o=- ${Math.floor(Math.random() * 1000000000)} 2 IN IP4 31.4.242.103`)
+          .replace(/c=IN IP4 0\.0\.0\.0/, 'c=IN IP4 31.4.242.103');
+        
+        const modifiedOffer = new window.RTCSessionDescription({
+          type: offer.type,
+          sdp: modifiedSdp
+        });
+        
+        await peer.setLocalDescription(modifiedOffer);
+        console.log('[EMISOR] Oferta creada y guardada:', modifiedOffer.sdp);
       }
 
       return peer;
