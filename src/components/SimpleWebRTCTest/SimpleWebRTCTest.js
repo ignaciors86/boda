@@ -112,6 +112,7 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
     analyserRef.current = analyser;
     audioContextRef.current = audioCtx;
     animateEq('RECEPTOR');
+    
     // Log de depuración útil
     setTimeout(() => {
       try {
@@ -125,6 +126,27 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         console.warn('[RECEPTOR] No se pudo acceder a tracks del elemento <audio>.', e);
       }
     }, 1000);
+
+    // Asegurar que el audio se reproduzca en iOS
+    const playAudio = async () => {
+      try {
+        await audioElem.play();
+        console.log('[RECEPTOR] Audio empezó a reproducirse');
+      } catch (error) {
+        console.error('[RECEPTOR] Error al reproducir audio:', error);
+        if (error.name === 'NotAllowedError') {
+          setStatus('Por favor, toca la pantalla para reproducir el audio');
+        }
+      }
+    };
+
+    // Detectar si es un dispositivo iOS
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    
+    if (isIOS) {
+      // En iOS, esperamos a una interacción del usuario
+      document.addEventListener('touchstart', playAudio, { once: true });
+    }
   };
 
   const sendSignal = (data) => {
@@ -487,7 +509,7 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
           Parar
         </button>
       )}
-      {!isEmitting && <audio ref={remoteAudioRef} autoPlay controls style={{ width: '100%' }} />}
+      {!isEmitting && <audio ref={remoteAudioRef} autoPlay controls playsInline style={{ width: '100%' }} />}
       {isEmitting && <p style={{ fontFamily: 'VCR', color: '#fff' }}>El audio del sistema se está emitiendo a la otra pestaña/dispositivo.</p>}
     </div>
   );
