@@ -133,9 +133,7 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
           { urls: 'stun:stun1.l.google.com:19302' },
           { urls: 'stun:stun2.l.google.com:19302' }
         ],
-        iceCandidatePoolSize: 10,
-        bundlePolicy: 'max-bundle',
-        rtcpMuxPolicy: 'require'
+        iceCandidatePoolSize: 10
       });
 
       if (isOfferer) {
@@ -183,12 +181,6 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
 
       peer.onconnectionstatechange = () => {
         console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] Connection state:`, peer.connectionState);
-        if (peer.connectionState === 'failed') {
-          console.error('Conexión fallida');
-          if (!isEmitting) {
-            handleStop();
-          }
-        }
       };
 
       peer.onsignalingstatechange = () => {
@@ -517,18 +509,16 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
           height={60} 
           className="canvas"
         />
-        <div className="buttons-container">
-          {buttonVisible && (
-            <button onClick={handlePlay} className="play">
-              {isEmitting ? 'Capturar y emitir audio' : 'Escuchar audio remoto'}
-            </button>
-          )}
-          {isPlaying && (
-            <button onClick={handleStop} className="stop">
-              Parar
-            </button>
-          )}
-        </div>
+        {buttonVisible && (
+          <button onClick={handlePlay}>
+            {isEmitting ? 'Capturar y emitir audio' : 'Escuchar audio remoto'}
+          </button>
+        )}
+        {isPlaying && (
+          <button onClick={handleStop} className="stop">
+            Parar
+          </button>
+        )}
         {!isEmitting && (
           <audio 
             ref={remoteAudioRef} 
