@@ -45,7 +45,7 @@
   & button {
     position: relative;
     margin: 0;
-    padding: 12px 48px 12px 32px;
+    padding: 12px 32px;
     font-size: 1.2em;
     border-radius: 8px;
     border: none;
@@ -56,35 +56,38 @@
     min-width: 200px;
     transition: opacity 0.2s ease;
     background-color: #222;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
 
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>');
-      mask-size: 24px;
-      mask-position: calc(100% - 12px) center;
-      mask-repeat: no-repeat;
+    .icon {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      margin-left: 12px;
       background-color: currentColor;
+      mask-size: contain;
+      mask-repeat: no-repeat;
+      mask-position: center;
+      flex-shrink: 0;
     }
-
-    &:hover {
-      opacity: 0.9;
+    &:before{
+      mask-image: none;
+      background: transparent !important;
     }
-
-    &.play {
-      background-color: #222;
-    }
-
+    &.play{
+      
+      
+      .icon {
+        mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>');
+      }
+    } 
     &.stop {
       background-color: #a00;
-
-      &::before {
-        mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>');
-      }
+    }
+    &.stop .icon {
+      mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>');
     }
   }
 
