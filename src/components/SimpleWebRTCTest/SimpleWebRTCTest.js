@@ -131,12 +131,7 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
           { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun2.l.google.com:19302' },
-          {
-            urls: 'turn:openrelay.metered.ca:80',
-            username: 'openrelayproject',
-            credential: 'openrelayproject'
-          }
+          { urls: 'stun:stun2.l.google.com:19302' }
         ],
         iceCandidatePoolSize: 10,
         bundlePolicy: 'max-bundle',
@@ -264,7 +259,6 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         
         await peer.setLocalDescription(offer);
         console.log('[EMISOR] Oferta creada y guardada:', offer);
-        console.log('[EMISOR][SDP] Oferta SDP:', offer.sdp);
       }
 
       return peer;
@@ -284,7 +278,6 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         await createPeer(false);
       }
       console.log('[RECEPTOR] Oferta recibida:', offer);
-      console.log('[RECEPTOR][SDP] Oferta SDP recibida:', offer.sdp);
       await peerRef.current.setRemoteDescription(new window.RTCSessionDescription(offer));
       const answer = await peerRef.current.createAnswer();
       await peerRef.current.setLocalDescription(answer);
@@ -295,7 +288,6 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
       });
       setStatus('Conexión establecida. Reproduciendo audio...');
       console.log('[RECEPTOR] Respuesta enviada:', answer);
-      console.log('[RECEPTOR][SDP] Respuesta SDP:', answer.sdp);
     } catch (error) {
       console.error('Error en handleOffer:', error);
       handleStop();
@@ -312,7 +304,6 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
       await peer.setRemoteDescription(new window.RTCSessionDescription(answer));
       setStatus('Conexión establecida. Emitiendo audio...');
       console.log('[EMISOR] Respuesta recibida:', answer);
-      console.log('[EMISOR][SDP] Respuesta SDP recibida:', answer.sdp);
     } catch (error) {
       console.error('Error en handleAnswer:', error);
     }
