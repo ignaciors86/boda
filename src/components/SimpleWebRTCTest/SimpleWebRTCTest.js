@@ -93,6 +93,7 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
 
   // Inicializa el ecualizador para el receptor
   const setupRemoteAnalyser = (audioElem) => {
+    // Limpiar recursos existentes
     if (audioContextRef.current) {
       try {
         if (audioContextRef.current.state !== 'closed') {
@@ -103,12 +104,19 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
       }
     }
     
+    // Crear nuevo AudioContext
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const analyser = audioCtx.createAnalyser();
     analyser.fftSize = 64;
-    const source = audioCtx.createMediaElementSource(audioElem);
-    source.connect(analyser);
-    analyser.connect(audioCtx.destination);
+    
+    // Verificar si el elemento de audio ya está conectado
+    if (!audioElem._connectedToAudioContext) {
+      const source = audioCtx.createMediaElementSource(audioElem);
+      source.connect(analyser);
+      analyser.connect(audioCtx.destination);
+      audioElem._connectedToAudioContext = true;
+    }
+    
     analyserRef.current = analyser;
     audioContextRef.current = audioCtx;
     animateEq('RECEPTOR');
@@ -202,8 +210,11 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
     // Limpiar WebRTC
     if (isEmitting) {
       // Si es emisor, limpiar todas las conexiones
-      peersRef.current.forEach(peer => {
-        if (peer) peer.close();
+      peersRef.current.forEach((peer, receiverId) => {
+        if (peer) {
+          console.log(`[EMISOR] Cerrando conexión con receptor ${receiverId}`);
+          peer.close();
+        }
       });
       peersRef.current.clear();
     } else {
@@ -281,9 +292,15 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
 
       peer.oniceconnectionstatechange = () => {
         console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] ICE connection state:`, peer.iceConnectionState);
-        if (peer.iceConnectionState === 'failed') {
-          console.error('Conexión ICE fallida');
-          if (!isEmitting) {
+        if (peer.iceConnectionState === 'failed' || peer.iceConnectionState === 'disconnected') {
+          console.error(`Conexión ICE ${peer.iceConnectionState} con receptor ${receiverId}`);
+          if (isEmitting) {
+            // Si es emisor, solo cerrar esta conexión específica
+            if (peersRef.current.has(receiverId)) {
+              peersRef.current.get(receiverId).close();
+              peersRef.current.delete(receiverId);
+            }
+          } else {
             handleStop();
           }
         } else if (peer.iceConnectionState === 'connected') {
@@ -301,16 +318,30 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
             console.log('[RECEPTOR] Stream recibido:', stream);
             console.log('[RECEPTOR] Tracks en el stream:', stream.getTracks().map(t => t.kind));
             
+            // Asegurarse de que el stream se asigna correctamente
             remoteAudioRef.current.srcObject = stream;
             const tracks = stream.getAudioTracks();
             console.log(`[RECEPTOR] Tracks de audio recibidos:`, tracks.length);
             
-            // Asegurarse de que el audio se reproduzca
-            remoteAudioRef.current.play().catch(error => {
-              console.error('[RECEPTOR] Error al reproducir audio:', error);
-            });
+            // Configurar eventos del elemento de audio
+            remoteAudioRef.current.onloadedmetadata = () => {
+              console.log('[RECEPTOR] Metadata del audio cargada');
+            };
             
-            // Configurar el ecualizador cuando el audio empiece a reproducirse
+            remoteAudioRef.current.oncanplay = () => {
+              console.log('[RECEPTOR] Audio listo para reproducir');
+              // Intentar reproducir automáticamente
+              const playPromise = remoteAudioRef.current.play();
+              if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                  console.error('[RECEPTOR] Error al reproducir audio:', error);
+                  if (error.name === 'NotAllowedError') {
+                    setStatus('Por favor, toca la pantalla para reproducir el audio');
+                  }
+                });
+              }
+            };
+            
             remoteAudioRef.current.onplay = () => {
               console.log('[RECEPTOR] Audio empezó a reproducirse');
               setupRemoteAnalyser(remoteAudioRef.current);
@@ -318,11 +349,25 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
               setStatus('Conexión establecida. Reproduciendo audio...');
             };
             
-            // Si el audio ya está reproduciéndose, configurar el ecualizador inmediatamente
-            if (!remoteAudioRef.current.paused) {
-              console.log('[RECEPTOR] Audio ya está reproduciéndose, configurando ecualizador...');
-              setupRemoteAnalyser(remoteAudioRef.current);
-            }
+            remoteAudioRef.current.onerror = (error) => {
+              console.error('[RECEPTOR] Error en el elemento de audio:', error);
+            };
+            
+            // Verificar el estado del stream periódicamente
+            const checkStreamInterval = setInterval(() => {
+              if (remoteAudioRef.current && remoteAudioRef.current.srcObject) {
+                const activeTracks = remoteAudioRef.current.srcObject.getAudioTracks().filter(t => t.readyState === 'live');
+                console.log(`[RECEPTOR] Tracks activos: ${activeTracks.length}`);
+                if (activeTracks.length === 0) {
+                  console.warn('[RECEPTOR] No hay tracks de audio activos');
+                }
+              }
+            }, 5000);
+            
+            // Limpiar el intervalo cuando se detenga
+            remoteAudioRef.current.onended = () => {
+              clearInterval(checkStreamInterval);
+            };
           }
         };
       }
