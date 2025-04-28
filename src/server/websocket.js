@@ -22,8 +22,20 @@ const MAX_RECEIVERS = 100; // Límite máximo de receptores
 
 // Inicialización del servidor HTTP y WebSocket
 const server = http.createServer();
+
+// Middleware para verificar la ruta /ws
+server.on('upgrade', (request, socket, head) => {
+  if (request.url === '/ws') {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  } else {
+    socket.destroy();
+  }
+});
+
 const wss = new WebSocket.Server({ 
-  server,
+  noServer: true,
   clientTracking: true,
   perMessageDeflate: {
     zlibDeflateOptions: {
