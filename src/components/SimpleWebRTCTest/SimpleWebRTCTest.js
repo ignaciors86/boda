@@ -9,8 +9,8 @@ const STRAPI_URL =
 
 const SIGNAL_SERVER_URL =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'ws://localhost:8080'
-    : 'wss://boda-strapi-production.up.railway.app/ws';
+    ? 'ws://localhost:8080/ws'
+    : `wss://${window.location.hostname}/ws`;
 
 const SimpleWebRTCTest = ({ isEmitting }) => {
   const localStreamRef = useRef(null);
