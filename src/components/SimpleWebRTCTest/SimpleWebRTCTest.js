@@ -521,13 +521,11 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
           {buttonVisible && (
             <button onClick={handlePlay} className="play">
               {isEmitting ? 'Capturar y emitir audio' : 'Escuchar audio remoto'}
-              <span className="icon"></span>
             </button>
           )}
           {isPlaying && (
             <button onClick={handleStop} className="stop">
               Parar
-              <span className="icon"></span>
             </button>
           )}
         </div>
