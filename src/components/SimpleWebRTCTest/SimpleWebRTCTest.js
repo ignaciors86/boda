@@ -268,9 +268,27 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
           { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun2.l.google.com:19302' }
-        ]
+          { urls: 'stun:stun2.l.google.com:19302' },
+          { urls: 'stun:stun3.l.google.com:19302' },
+          { urls: 'stun:stun4.l.google.com:19302' }
+        ],
+        iceCandidatePoolSize: 10,
+        bundlePolicy: 'max-bundle',
+        rtcpMuxPolicy: 'require',
+        iceTransportPolicy: 'all'
       });
+
+      // Configurar timeouts y reintentos
+      peer.iceConnectionTimeout = 30000; // 30 segundos
+      
+      // Añadir más logs para diagnóstico ICE
+      peer.onicegatheringstatechange = () => {
+        console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] ICE gathering state:`, peer.iceGatheringState);
+      };
+
+      peer.onsignalingstatechange = () => {
+        console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] Signaling state:`, peer.signalingState);
+      };
 
       if (isOfferer) {
         peersRef.current.set(receiverId, peer);
@@ -280,13 +298,15 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
 
       peer.onicecandidate = (event) => {
         if (event.candidate) {
-          console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] ICE candidate encontrado`);
+          console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] ICE candidate encontrado:`, event.candidate.type);
           sendSignal({ 
             type: 'candidate', 
             candidate: event.candidate,
             isEmitter: isEmitting,
             receiverId: isEmitting ? receiverId : receiverIdRef.current
           });
+        } else {
+          console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] No hay más ICE candidates`);
         }
       };
 
@@ -295,10 +315,17 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         if (peer.iceConnectionState === 'failed' || peer.iceConnectionState === 'disconnected') {
           console.error(`Conexión ICE ${peer.iceConnectionState} con receptor ${receiverId}`);
           if (isEmitting) {
-            // Si es emisor, solo cerrar esta conexión específica
+            // Si es emisor, intentar reconectar
             if (peersRef.current.has(receiverId)) {
-              peersRef.current.get(receiverId).close();
+              const failedPeer = peersRef.current.get(receiverId);
               peersRef.current.delete(receiverId);
+              failedPeer.close();
+              
+              // Intentar reconectar después de un breve retraso
+              setTimeout(() => {
+                console.log(`[EMISOR] Intentando reconectar con receptor ${receiverId}`);
+                createPeer(true, receiverId);
+              }, 2000);
             }
           } else {
             handleStop();
