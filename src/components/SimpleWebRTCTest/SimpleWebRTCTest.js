@@ -131,9 +131,16 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
           { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun2.l.google.com:19302' }
+          { urls: 'stun:stun2.l.google.com:19302' },
+          {
+            urls: 'turn:openrelay.metered.ca:80',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          }
         ],
-        iceCandidatePoolSize: 10
+        iceCandidatePoolSize: 10,
+        bundlePolicy: 'max-bundle',
+        rtcpMuxPolicy: 'require'
       });
 
       if (isOfferer) {
@@ -499,99 +506,38 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
   };
 
   return (
-    <div className="simple-webrtc-test" style={{
-      position: 'absolute',
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      width: '100%',
-      maxWidth: '600px',
-      padding: '20px',
-      boxSizing: 'border-box'
-    }}>
-      <div style={{
-        width: '100%',
-        textAlign: 'center'
-      }}>
-        <h2 style={{ fontFamily: 'VCR', color: '#fff', marginBottom: '16px' }}>
-          {isEmitting ? 'Emitiendo audio del sistema' : 'Recibiendo audio remoto'}
-        </h2>
-        <p style={{ fontFamily: 'VCR', color: '#fff', marginBottom: '16px' }}>{status}</p>
+    <div className="simple-webrtc-test">
+      <div className="container">
+        <h2>{isEmitting ? 'Emitiendo audio del sistema' : 'Recibiendo audio remoto'}</h2>
+        <p>{status}</p>
         <canvas 
           ref={canvasRef} 
           width={350} 
           height={60} 
-          style={{ 
-            display: 'block', 
-            margin: '16px auto', 
-            background: '#222', 
-            borderRadius: 8,
-            width: '100%',
-            maxWidth: '350px'
-          }} 
+          className="canvas"
         />
-        {buttonVisible && (
-          <button 
-            onClick={handlePlay} 
-            style={{
-              margin: '16px auto',
-              display: 'block',
-              padding: '12px 32px',
-              fontSize: '1.2em',
-              borderRadius: 8,
-              border: 'none',
-              background: '#222',
-              color: '#fff',
-              cursor: 'pointer',
-              fontFamily: 'VCR',
-              width: '100%',
-              maxWidth: '300px'
-            }}
-          >
-            {isEmitting ? 'Capturar y emitir audio' : 'Escuchar audio remoto'}
-          </button>
-        )}
-        {isPlaying && (
-          <button 
-            onClick={handleStop} 
-            style={{
-              margin: '16px auto',
-              display: 'block',
-              padding: '12px 32px',
-              fontSize: '1.2em',
-              borderRadius: 8,
-              border: 'none',
-              background: '#a00',
-              color: '#fff',
-              cursor: 'pointer',
-              fontFamily: 'VCR',
-              width: '100%',
-              maxWidth: '300px'
-            }}
-          >
-            Parar
-          </button>
-        )}
+        <div className="buttons-container">
+          {buttonVisible && (
+            <button onClick={handlePlay} className="play">
+              {isEmitting ? 'Capturar y emitir audio' : 'Escuchar audio remoto'}
+            </button>
+          )}
+          {isPlaying && (
+            <button onClick={handleStop} className="stop">
+              Parar
+            </button>
+          )}
+        </div>
         {!isEmitting && (
           <audio 
             ref={remoteAudioRef} 
             autoPlay 
             controls 
             playsInline 
-            style={{ 
-              width: '100%',
-              maxWidth: '300px',
-              margin: '16px auto',
-              display: 'block'
-            }} 
           />
         )}
         {isEmitting && (
-          <p style={{ 
-            fontFamily: 'VCR', 
-            color: '#fff',
-            marginTop: '16px'
-          }}>
+          <p>
             El audio del sistema se está emitiendo a la otra pestaña/dispositivo.
           </p>
         )}
