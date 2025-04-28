@@ -389,10 +389,7 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         wsRef.current = null;
       }
       
-      const wsUrl = SIGNAL_SERVER_URL;
-      console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] Intentando conectar a:`, wsUrl);
-      
-      wsRef.current = new window.WebSocket(wsUrl);
+      wsRef.current = new window.WebSocket(SIGNAL_SERVER_URL);
       
       wsRef.current.onopen = () => {
         setStatus('Conectado al servidor de señalización');
@@ -411,24 +408,18 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
 
       wsRef.current.onerror = (error) => {
         console.error('Error en WebSocket:', error);
-        setStatus('Error en la conexión de señalización. Intentando reconectar...');
-        // Intentar reconectar después de 5 segundos
-        setTimeout(() => {
-          if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-            startWebRTC();
-          }
-        }, 5000);
+        setStatus('Error en la conexión de señalización');
+        if (!isEmitting) {
+          handleStop();
+        }
       };
 
-      wsRef.current.onclose = (event) => {
-        console.log('WebSocket cerrado:', event.code, event.reason);
-        setStatus('Desconectado del servidor de señalización. Intentando reconectar...');
-        // Intentar reconectar después de 5 segundos
-        setTimeout(() => {
-          if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-            startWebRTC();
-          }
-        }, 5000);
+      wsRef.current.onclose = () => {
+        console.log('WebSocket cerrado');
+        setStatus('Desconectado del servidor de señalización');
+        if (!isEmitting) {
+          handleStop();
+        }
       };
 
       wsRef.current.onmessage = async (msg) => {
