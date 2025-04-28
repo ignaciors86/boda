@@ -37,7 +37,7 @@
     "eject": "react-scripts eject",
     "server": "node src/server/websocket.js",
     "dev": "concurrently \"npm run start\" \"npm run server\"",
-    "start:prod": "npm run build && serve -s build"
+    "start:prod": "npm run build && concurrently \"serve -s build\" \"node src/server/websocket.js\""
   },
   "eslintConfig": {
     "extends": [

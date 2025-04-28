@@ -1,0 +1,21 @@
+.simple-webrtc-test {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 32px;
+  background: #181818;
+  color: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.2);
+  max-width: 500px;
+  margin: 40px auto;
+}
+
+.simple-webrtc-test h2 {
+  margin-bottom: 16px;
+}
+
+.simple-webrtc-test audio {
+  width: 100%;
+  margin-top: 16px;
+} 
