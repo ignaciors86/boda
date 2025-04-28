@@ -298,7 +298,7 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
 
       peer.onicecandidate = (event) => {
         if (event.candidate) {
-          console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] ICE candidate encontrado:`, event.candidate.type);
+          console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] ICE candidate encontrado:`, event.candidate.type, event.candidate.protocol, event.candidate.address);
           sendSignal({ 
             type: 'candidate', 
             candidate: event.candidate,
@@ -403,6 +403,7 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         const tracks = localStreamRef.current.getAudioTracks();
         console.log('[EMISOR] Añadiendo tracks locales:', tracks.length);
         tracks.forEach(track => {
+          console.log('[EMISOR] Track local:', track.kind, track.readyState);
           peer.addTrack(track, localStreamRef.current);
         });
 
@@ -412,7 +413,7 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         });
         
         await peer.setLocalDescription(offer);
-        console.log('[EMISOR] Oferta creada y guardada');
+        console.log('[EMISOR] Oferta creada y guardada:', offer.sdp);
       }
 
       return peer;
