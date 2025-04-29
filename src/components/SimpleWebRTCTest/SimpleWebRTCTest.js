@@ -38,28 +38,80 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
   // Dibuja el ecualizador en el canvas (solo logs en receptor)
   const drawEq = (analyser, label = '') => {
     if (!canvasRef.current || !analyser) return;
+    
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
+    
+    // Dimensiones fijas del canvas
+    canvas.width = 350;
+    canvas.height = 60;
+    
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
-    analyser.getByteFrequencyData(dataArray);
+    
+    try {
+      analyser.getByteTimeDomainData(dataArray);
+    } catch (error) {
+      return;
+    }
+    
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const barWidth = (canvas.width / bufferLength) * 1.2;
+    
+    // Estilo de la línea principal
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#00ff00';
+    ctx.beginPath();
+    
+    const sliceWidth = canvas.width / bufferLength;
     let x = 0;
-    let max = 0;
+    
+    // Factor de amplificación para hacer la onda más visible
+    const amplificationFactor = 2.5;
+    
+    // Dibujar la forma de onda
     for (let i = 0; i < bufferLength; i++) {
-      let barHeight = (dataArray[i] / 255) * canvas.height * 0.85;
-      barHeight = Math.max(2, barHeight);
-      max = Math.max(max, barHeight);
-      const hue = 120 - Math.round((barHeight / canvas.height) * 120);
-      ctx.fillStyle = `hsl(${hue}, 90%, 50%)`;
-      ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-      x += barWidth + 1;
+      // Normalizar y amplificar el valor
+      const normalizedValue = (dataArray[i] / 128.0) - 1; // Convertir a rango -1 a 1
+      const amplifiedValue = normalizedValue * amplificationFactor;
+      // Limitar el valor amplificado al rango -1 a 1
+      const clampedValue = Math.max(-1, Math.min(1, amplifiedValue));
+      
+      // Calcular la posición Y con más rango de movimiento
+      const y = (clampedValue * canvas.height / 2.5) + (canvas.height / 2);
+      
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        // Usar curvas bezier para suavizar la línea
+        const prevX = x - sliceWidth;
+        const prevY = i > 0 ? (((dataArray[i-1] / 128.0) - 1) * amplificationFactor * canvas.height / 2.5) + (canvas.height / 2) : y;
+        const cpX = prevX + (x - prevX) / 2;
+        ctx.quadraticCurveTo(cpX, prevY, x, y);
+      }
+      
+      x += sliceWidth;
     }
-    // Solo log en receptor y solo si hay señal
-    if (label === 'RECEPTOR' && max > 2) {
-      console.log(`[RECEPTOR][EQ] Máx barra: ${Math.round(max)} | Primeros valores:`, dataArray.slice(0, 8));
-    }
+    
+    // Cerrar el path y dibujarlo
+    ctx.lineTo(canvas.width, canvas.height / 2);
+    ctx.stroke();
+    
+    // Efecto de brillo más pronunciado
+    ctx.strokeStyle = 'rgba(0, 255, 0, 0.15)';
+    ctx.lineWidth = 6;
+    ctx.stroke();
+    
+    ctx.strokeStyle = 'rgba(0, 255, 0, 0.1)';
+    ctx.lineWidth = 8;
+    ctx.stroke();
+    
+    // Línea central de referencia
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(0, 255, 0, 0.1)';
+    ctx.lineWidth = 1;
+    ctx.moveTo(0, canvas.height / 2);
+    ctx.lineTo(canvas.width, canvas.height / 2);
+    ctx.stroke();
   };
 
   // Loop de animación del ecualizador
@@ -67,6 +119,8 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
     if (analyserRef.current) {
       drawEq(analyserRef.current, label);
       animationRef.current = requestAnimationFrame(() => animateEq(label));
+    } else {
+      console.log(`[${label}] No se puede animar: analyser no disponible`);
     }
   };
 
@@ -93,82 +147,34 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
   };
 
   // Inicializa el ecualizador para el receptor
-  const setupRemoteAnalyser = (audioElem) => {
-    // Limpiar recursos existentes
+  const setupRemoteAnalyser = async (audioElem) => {
     if (audioContextRef.current) {
       try {
         if (audioContextRef.current.state !== 'closed') {
-          audioContextRef.current.close();
+          await audioContextRef.current.close();
         }
       } catch (e) {
         console.warn('Error al cerrar AudioContext anterior:', e);
       }
     }
     
-    // Crear nuevo AudioContext
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 64;
     
-    // Verificar si el elemento de audio ya está conectado
-    if (!audioElem._connectedToAudioContext) {
-      const source = audioCtx.createMediaElementSource(audioElem);
-      source.connect(analyser);
-      analyser.connect(audioCtx.destination);
-      audioElem._connectedToAudioContext = true;
-    }
+    // Configuración ajustada para mayor sensibilidad
+    analyser.fftSize = 512; // Aumentado para más detalle
+    analyser.smoothingTimeConstant = 0.6; // Aumentado para más suavidad
+    analyser.minDecibels = -90;
+    analyser.maxDecibels = -10;
+    
+    const source = audioCtx.createMediaElementSource(audioElem);
+    source.connect(analyser);
+    analyser.connect(audioCtx.destination);
     
     analyserRef.current = analyser;
     audioContextRef.current = audioCtx;
+    
     animateEq('RECEPTOR');
-    
-    // Log de depuración útil
-    setTimeout(() => {
-      try {
-        const tracks = audioElem.srcObject ? audioElem.srcObject.getAudioTracks() : [];
-        if (tracks.length > 0) {
-          console.log('[RECEPTOR] El elemento <audio> tiene tracks:', tracks.map(t => t.label));
-        } else {
-          console.warn('[RECEPTOR] El elemento <audio> NO tiene tracks de audio.');
-        }
-      } catch (e) {
-        console.warn('[RECEPTOR] No se pudo acceder a tracks del elemento <audio>.', e);
-      }
-    }, 1000);
-
-    // Asegurar que el audio se reproduzca en diferentes navegadores
-    const playAudio = async () => {
-      try {
-        // Resumir el contexto de audio si está suspendido
-        if (audioCtx.state === 'suspended') {
-          await audioCtx.resume();
-        }
-        
-        // Intentar reproducir el audio
-        const playPromise = audioElem.play();
-        if (playPromise !== undefined) {
-          await playPromise;
-          console.log('[RECEPTOR] Audio empezó a reproducirse');
-        }
-      } catch (error) {
-        console.error('[RECEPTOR] Error al reproducir audio:', error);
-        if (error.name === 'NotAllowedError') {
-          setStatus('Por favor, toca la pantalla para reproducir el audio');
-        }
-      }
-    };
-
-    // Detectar si es un dispositivo móvil o iOS
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    
-    if (isMobile || isIOS) {
-      // En dispositivos móviles, esperamos a una interacción del usuario
-      document.addEventListener('touchstart', playAudio, { once: true });
-    } else {
-      // En desktop, intentar reproducir automáticamente
-      playAudio();
-    }
   };
 
   const sendSignal = (data) => {
