@@ -137,12 +137,14 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
   // Dibuja el ecualizador en el canvas (solo logs en receptor)
   const drawEq = (analyser, label = '') => {
     if (!canvasRef.current || !analyser) return;
+    if (audioContextRef.current) {
+      console.log(`[EQ][${label}] audioCtx.state:`, audioContextRef.current.state);
+    }
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     analyser.getByteFrequencyData(dataArray);
-    // Log para depuración: ¿hay datos distintos de cero?
     const maxValue = Math.max(...dataArray);
     if (label === 'RECEPTOR') {
       console.log(`[EQ][${label}] Max value:`, maxValue, 'Data:', dataArray.slice(0, 8));
@@ -160,7 +162,6 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
       ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
       x += barWidth + 1;
     }
-    // Solo log en receptor y solo si hay señal
     if (label === 'RECEPTOR' && max > 2) {
       console.log(`[RECEPTOR][EQ] Máx barra: ${Math.round(max)} | Primeros valores:`, dataArray.slice(0, 8));
     }
@@ -198,7 +199,6 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
 
   // Inicializa el ecualizador para el receptor
   const setupRemoteAnalyser = async (audioElem) => {
-    // Limpiar recursos existentes
     if (audioContextRef.current) {
       try {
         if (audioContextRef.current.state !== 'closed') {
@@ -208,13 +208,9 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         console.warn('Error al cerrar AudioContext anterior:', e);
       }
     }
-    
-    // Crear nuevo AudioContext
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const analyser = audioCtx.createAnalyser();
     analyser.fftSize = 64;
-    
-    // Resume el contexto si está suspendido
     if (audioCtx.state === 'suspended') {
       try {
         await audioCtx.resume();
@@ -223,54 +219,24 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         console.warn('[RECEPTOR] Error al resumir AudioContext:', e);
       }
     }
-    
     try {
       const source = audioCtx.createMediaElementSource(audioElem);
       source.connect(analyser);
-      analyser.connect(audioCtx.destination);
       audioElem._connectedToAudioContext = true;
       console.log('[RECEPTOR] Nuevo MediaElementSource creado para <audio>');
     } catch (e) {
       console.warn('[RECEPTOR] Error creando MediaElementSource:', e);
     }
-    
     analyserRef.current = analyser;
     audioContextRef.current = audioCtx;
     animateEq('RECEPTOR');
-    
-    // Log de depuración útil
-    setTimeout(() => {
-      try {
-        const tracks = audioElem.srcObject ? audioElem.srcObject.getAudioTracks() : [];
-        if (tracks.length > 0) {
-          console.log('[RECEPTOR] El elemento <audio> tiene tracks:', tracks.map(t => t.label));
-        } else {
-          console.warn('[RECEPTOR] El elemento <audio> NO tiene tracks de audio.');
+    if (!window._receptorAudioTrackInterval) {
+      window._receptorAudioTrackInterval = setInterval(() => {
+        if (audioElem && audioElem.srcObject) {
+          const tracks = audioElem.srcObject.getAudioTracks();
+          console.log('[RECEPTOR][AUDIO] Estado de tracks:', tracks.map(t => ({id: t.id, label: t.label, enabled: t.enabled, readyState: t.readyState})));
         }
-      } catch (e) {
-        console.warn('[RECEPTOR] No se pudo acceder a tracks del elemento <audio>.', e);
-      }
-    }, 1000);
-
-    // Asegurar que el audio se reproduzca en iOS
-    const playAudio = async () => {
-      try {
-        await audioElem.play();
-        console.log('[RECEPTOR] Audio empezó a reproducirse');
-      } catch (error) {
-        console.error('[RECEPTOR] Error al reproducir audio:', error);
-        if (error.name === 'NotAllowedError') {
-          setStatus('Por favor, toca la pantalla para reproducir el audio');
-        }
-      }
-    };
-
-    // Detectar si es un dispositivo iOS
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    
-    if (isIOS) {
-      // En iOS, esperamos a una interacción del usuario
-      document.addEventListener('touchstart', playAudio, { once: true });
+      }, 1000);
     }
   };
 
@@ -410,7 +376,12 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
           { urls: 'stun:stun1.l.google.com:19302' },
           { urls: 'stun:stun2.l.google.com:19302' },
           { urls: 'stun:stun3.l.google.com:19302' },
-          { urls: 'stun:stun4.l.google.com:19302' }
+          { urls: 'stun:stun4.l.google.com:19302' },
+          {
+            urls: 'turn:openrelay.metered.ca:80',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          }
         ],
         iceCandidatePoolSize: 10,
         bundlePolicy: 'max-bundle',
@@ -811,7 +782,7 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         )}
       </div>
 
-      {!isEmitting && showAudio && <audio key={audioKey} ref={remoteAudioRef} autoPlay controls playsInline />}
+      {!isEmitting && showAudio && <audio key={audioKey} ref={remoteAudioRef} autoPlay controls playsInline crossOrigin="anonymous" />}
 
       <div className="logs">
         {logs.map((log, index) => (
