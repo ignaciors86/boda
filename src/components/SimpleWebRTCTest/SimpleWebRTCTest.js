@@ -142,6 +142,11 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     analyser.getByteFrequencyData(dataArray);
+    // Log para depuración: ¿hay datos distintos de cero?
+    const maxValue = Math.max(...dataArray);
+    if (label === 'RECEPTOR') {
+      console.log(`[EQ][${label}] Max value:`, maxValue, 'Data:', dataArray.slice(0, 8));
+    }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const barWidth = (canvas.width / bufferLength) * 1.2;
     let x = 0;
@@ -192,7 +197,7 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
   };
 
   // Inicializa el ecualizador para el receptor
-  const setupRemoteAnalyser = (audioElem) => {
+  const setupRemoteAnalyser = async (audioElem) => {
     // Limpiar recursos existentes
     if (audioContextRef.current) {
       try {
@@ -209,7 +214,16 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
     const analyser = audioCtx.createAnalyser();
     analyser.fftSize = 64;
     
-    // Siempre crear un nuevo MediaElementSource
+    // Resume el contexto si está suspendido
+    if (audioCtx.state === 'suspended') {
+      try {
+        await audioCtx.resume();
+        console.log('[RECEPTOR] AudioContext resumido');
+      } catch (e) {
+        console.warn('[RECEPTOR] Error al resumir AudioContext:', e);
+      }
+    }
+    
     try {
       const source = audioCtx.createMediaElementSource(audioElem);
       source.connect(analyser);
