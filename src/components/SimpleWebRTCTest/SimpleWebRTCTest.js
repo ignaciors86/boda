@@ -306,6 +306,13 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
             console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] Ignorando candidato local`);
             return;
           }
+          // Añadir más información de diagnóstico
+          console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] Enviando candidato ICE:`, {
+            type: event.candidate.type,
+            protocol: event.candidate.protocol,
+            address: event.candidate.address,
+            port: event.candidate.port
+          });
           sendSignal({ 
             type: 'candidate', 
             candidate: event.candidate,
@@ -319,8 +326,8 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
 
       peer.oniceconnectionstatechange = () => {
         console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] ICE connection state:`, peer.iceConnectionState);
-        if (peer.iceConnectionState === 'failed' || peer.iceConnectionState === 'disconnected') {
-          console.error(`Conexión ICE ${peer.iceConnectionState} con receptor ${receiverId}`);
+        if (peer.iceConnectionState === 'failed') {
+          console.error(`Conexión ICE fallida con receptor ${receiverId}`);
           if (isEmitting) {
             // Si es emisor, intentar reconectar
             if (peersRef.current.has(receiverId)) {
@@ -328,15 +335,36 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
               peersRef.current.delete(receiverId);
               failedPeer.close();
               
-              // Intentar reconectar después de un breve retraso
+              // Aumentar el tiempo de espera para reconexión
               setTimeout(() => {
                 console.log(`[EMISOR] Intentando reconectar con receptor ${receiverId}`);
                 createPeer(true, receiverId);
-              }, 2000);
+              }, 5000); // Aumentado a 5 segundos
             }
           } else {
             handleStop();
           }
+        } else if (peer.iceConnectionState === 'disconnected') {
+          console.warn(`Conexión ICE desconectada con receptor ${receiverId}`);
+          // Esperar un poco antes de considerar la desconexión como fallida
+          setTimeout(() => {
+            if (peer.iceConnectionState === 'disconnected') {
+              console.error(`Conexión ICE permanece desconectada con receptor ${receiverId}`);
+              if (isEmitting) {
+                if (peersRef.current.has(receiverId)) {
+                  const failedPeer = peersRef.current.get(receiverId);
+                  peersRef.current.delete(receiverId);
+                  failedPeer.close();
+                  setTimeout(() => {
+                    console.log(`[EMISOR] Intentando reconectar con receptor ${receiverId}`);
+                    createPeer(true, receiverId);
+                  }, 5000);
+                }
+              } else {
+                handleStop();
+              }
+            }
+          }, 10000); // Esperar 10 segundos antes de considerar la desconexión como fallida
         } else if (peer.iceConnectionState === 'connected') {
           setIsConnected(true);
           setStatus('Conexión establecida');
