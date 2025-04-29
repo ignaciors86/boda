@@ -9,7 +9,8 @@ const STRAPI_URL =
 
 const SIGNAL_SERVER_URL =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'ws://localhost:8080'
+    // ? 'ws://localhost:8080'
+    ? 'wss://boda-radio-production.up.railway.app'
     : 'wss://boda-radio-production.up.railway.app';
 
 const SimpleWebRTCTest = ({ isEmitting }) => {
@@ -135,11 +136,20 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
       }
     }, 1000);
 
-    // Asegurar que el audio se reproduzca en iOS
+    // Asegurar que el audio se reproduzca en diferentes navegadores
     const playAudio = async () => {
       try {
-        await audioElem.play();
-        console.log('[RECEPTOR] Audio empezó a reproducirse');
+        // Resumir el contexto de audio si está suspendido
+        if (audioCtx.state === 'suspended') {
+          await audioCtx.resume();
+        }
+        
+        // Intentar reproducir el audio
+        const playPromise = audioElem.play();
+        if (playPromise !== undefined) {
+          await playPromise;
+          console.log('[RECEPTOR] Audio empezó a reproducirse');
+        }
       } catch (error) {
         console.error('[RECEPTOR] Error al reproducir audio:', error);
         if (error.name === 'NotAllowedError') {
@@ -148,12 +158,16 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
       }
     };
 
-    // Detectar si es un dispositivo iOS
+    // Detectar si es un dispositivo móvil o iOS
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     
-    if (isIOS) {
-      // En iOS, esperamos a una interacción del usuario
+    if (isMobile || isIOS) {
+      // En dispositivos móviles, esperamos a una interacción del usuario
       document.addEventListener('touchstart', playAudio, { once: true });
+    } else {
+      // En desktop, intentar reproducir automáticamente
+      playAudio();
     }
   };
 
@@ -270,12 +284,14 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
           { urls: 'stun:stun1.l.google.com:19302' },
           { urls: 'stun:stun2.l.google.com:19302' },
           { urls: 'stun:stun3.l.google.com:19302' },
-          { urls: 'stun:stun4.l.google.com:19302' }
+          { urls: 'stun:stun4.l.google.com:19302' },
+          { urls: 'stun:stun.stunprotocol.org:3478' }
         ],
         iceCandidatePoolSize: 10,
         bundlePolicy: 'max-bundle',
         rtcpMuxPolicy: 'require',
-        iceTransportPolicy: 'all'
+        iceTransportPolicy: 'all',
+        sdpSemantics: 'unified-plan'
       });
 
       // Configurar timeouts y reintentos
@@ -388,31 +404,44 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
             // Configurar eventos del elemento de audio
             remoteAudioRef.current.onloadedmetadata = () => {
               console.log('[RECEPTOR] Metadata del audio cargada');
+              // Intentar reproducir automáticamente en desktop
+              if (!/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                const playPromise = remoteAudioRef.current.play();
+                if (playPromise !== undefined) {
+                  playPromise.catch(error => {
+                    console.error('[RECEPTOR] Error al reproducir audio:', error);
+                    if (error.name === 'NotAllowedError') {
+                      setStatus('Por favor, toca la pantalla para reproducir el audio');
+                    }
+                  });
+                }
+              }
             };
             
             remoteAudioRef.current.oncanplay = () => {
               console.log('[RECEPTOR] Audio listo para reproducir');
-              // Intentar reproducir automáticamente
-              const playPromise = remoteAudioRef.current.play();
-              if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                  console.error('[RECEPTOR] Error al reproducir audio:', error);
-                  if (error.name === 'NotAllowedError') {
-                    setStatus('Por favor, toca la pantalla para reproducir el audio');
-                  }
-                });
+              // Verificar si hay tracks activos
+              const activeTracks = stream.getAudioTracks().filter(t => t.readyState === 'live');
+              if (activeTracks.length === 0) {
+                console.warn('[RECEPTOR] No hay tracks de audio activos');
+                setStatus('No se detecta audio activo');
+              } else {
+                console.log(`[RECEPTOR] Tracks activos: ${activeTracks.length}`);
+                setupRemoteAnalyser(remoteAudioRef.current);
+                setIsConnected(true);
+                setStatus('Conexión establecida. Reproduciendo audio...');
               }
             };
             
             remoteAudioRef.current.onplay = () => {
               console.log('[RECEPTOR] Audio empezó a reproducirse');
-              setupRemoteAnalyser(remoteAudioRef.current);
               setIsConnected(true);
               setStatus('Conexión establecida. Reproduciendo audio...');
             };
             
             remoteAudioRef.current.onerror = (error) => {
               console.error('[RECEPTOR] Error en el elemento de audio:', error);
+              setStatus('Error al reproducir audio');
             };
             
             // Verificar el estado del stream periódicamente
@@ -422,6 +451,7 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
                 console.log(`[RECEPTOR] Tracks activos: ${activeTracks.length}`);
                 if (activeTracks.length === 0) {
                   console.warn('[RECEPTOR] No hay tracks de audio activos');
+                  setStatus('No se detecta audio activo');
                 }
               }
             }, 5000);
