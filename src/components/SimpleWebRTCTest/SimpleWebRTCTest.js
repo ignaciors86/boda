@@ -9,9 +9,45 @@ const STRAPI_URL =
 
 const SIGNAL_SERVER_URL =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    // ? 'ws://localhost:8080'
-    ? 'wss://boda-radio-production.up.railway.app'
+    ? 'ws://localhost:8080'
+    // ? 'wss://boda-radio-production.up.railway.app'
     : 'wss://boda-radio-production.up.railway.app';
+
+// Configuración de Metered
+const METERED_DOMAIN = 'boda-mariachi.metered.live';
+const METERED_SECRET_KEY = 'B-jRz4SJ16FAK2w0-z9ib1JKauBeKOZ3nyDLPK0VSJl4MMjw';
+
+// Función para obtener credenciales TURN
+const getTurnCredentials = async () => {
+  try {
+    const response = await fetch(
+      `https://${METERED_DOMAIN}/api/v1/turn/credential?secretKey=${METERED_SECRET_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          expiryInSeconds: 86400, // 24 horas
+          label: 'boda-radio'
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Error al obtener credenciales TURN');
+    }
+
+    const data = await response.json();
+    return {
+      username: data.username,
+      credential: data.password
+    };
+  } catch (error) {
+    console.error('Error obteniendo credenciales TURN:', error);
+    return null;
+  }
+};
 
 const SimpleWebRTCTest = ({ isEmitting }) => {
   const localStreamRef = useRef(null);
@@ -284,14 +320,36 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
 
   const createPeer = async (isOfferer, receiverId = null) => {
     try {
+      // Obtener credenciales TURN frescas
+      const turnCredentials = await getTurnCredentials();
+      
+      if (!turnCredentials) {
+        console.error('No se pudieron obtener las credenciales TURN');
+        // Usar configuración básica sin TURN como fallback
+        const peer = new window.RTCPeerConnection({
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' }
+          ]
+        });
+        return peer;
+      }
+      
       const peer = new window.RTCPeerConnection({
         iceServers: [
+          // STUN servers
           { urls: 'stun:stun.l.google.com:19302' },
           { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun2.l.google.com:19302' },
-          { urls: 'stun:stun3.l.google.com:19302' },
-          { urls: 'stun:stun4.l.google.com:19302' },
-          { urls: 'stun:stun.stunprotocol.org:3478' }
+          // Metered TURN servers
+          {
+            urls: [
+              'turn:a.relay.metered.ca:80',
+              'turn:a.relay.metered.ca:80?transport=tcp',
+              'turn:a.relay.metered.ca:443',
+              'turn:a.relay.metered.ca:443?transport=tcp'
+            ],
+            ...turnCredentials
+          }
         ],
         iceCandidatePoolSize: 10,
         bundlePolicy: 'max-bundle',
@@ -300,12 +358,15 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         sdpSemantics: 'unified-plan'
       });
 
-      // Configurar timeouts y reintentos
-      peer.iceConnectionTimeout = 30000; // 30 segundos
+      // Aumentar el timeout de conexión ICE
+      peer.iceConnectionTimeout = 60000; // 60 segundos
       
-      // Añadir más logs para diagnóstico ICE
+      // Mejorar la detección de problemas de conexión
       peer.onicegatheringstatechange = () => {
         console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] ICE gathering state:`, peer.iceGatheringState);
+        if (peer.iceGatheringState === 'complete') {
+          console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] Todos los candidatos ICE recopilados`);
+        }
       };
 
       peer.onsignalingstatechange = () => {
