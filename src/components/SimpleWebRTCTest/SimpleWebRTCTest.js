@@ -69,6 +69,7 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
   });
   const [logs, setLogs] = useState([]);
   const [audioKey, setAudioKey] = useState(Date.now());
+  const [showAudio, setShowAudio] = useState(true);
 
   // Función para añadir logs
   const addLog = (message, type = 'info') => {
@@ -284,14 +285,8 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
       }
       receiverIdRef.current = null;
       setAudioKey(Date.now()); // Fuerza remount del <audio>
-      if (remoteAudioRef.current) {
-        try {
-          delete remoteAudioRef.current._connectedToAudioContext;
-          console.log('[RECEPTOR] Limpio _connectedToAudioContext del <audio>');
-        } catch (e) {
-          console.warn('[RECEPTOR] No se pudo limpiar _connectedToAudioContext:', e);
-        }
-      }
+      setShowAudio(false); // Elimina el <audio> del DOM
+      setTimeout(() => setShowAudio(true), 100); // Lo vuelve a mostrar tras 100ms
     }
 
     // Limpiar WebSocket
@@ -353,7 +348,9 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
     setIsPlaying(true);
     setStatus('Conectando...');
     addLog('Iniciando conexión...', 'info');
-
+    if (!isEmitting) {
+      setShowAudio(true); // Asegura que el <audio> esté en el DOM
+    }
     if (isEmitting) {
       try {
         const stream = await navigator.mediaDevices.getDisplayMedia({
@@ -363,22 +360,21 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
             autoGainControl: false,
             echoCancellation: false,
             noiseSuppression: false,
-            sampleRate: 44100
+            sampleRate: 48000
           }
         });
-        
         stream.getVideoTracks().forEach(track => {
           track.stop();
           stream.removeTrack(track);
         });
-        
         if (stream.getAudioTracks().length === 0) {
           setStatus('No se detectó audio del sistema.');
           setIsPlaying(false);
           addLog('No se detectó audio del sistema', 'error');
           return;
         }
-        
+        // Log de tracks en el emisor
+        console.log('[EMISOR] Tracks de audio en el stream:', stream.getAudioTracks().map(t => ({id: t.id, label: t.label, enabled: t.enabled, readyState: t.readyState})));
         localStreamRef.current = stream;
         setupLocalAnalyser(stream);
         startWebRTC();
@@ -480,12 +476,17 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
             console.log('[RECEPTOR] Configurando stream de audio...');
             const stream = event.streams[0];
             console.log('[RECEPTOR] Stream recibido:', stream);
-            console.log('[RECEPTOR] Tracks en el stream:', stream.getTracks().map(t => t.kind));
-            
+            const tracks = stream.getAudioTracks();
+            console.log(`[RECEPTOR] Tracks de audio recibidos:`, tracks.length, tracks.map(t => ({id: t.id, label: t.label, enabled: t.enabled, readyState: t.readyState})));
+            // Log de estado de los tracks cada segundo
+            if (!window._receptorTrackInterval) {
+              window._receptorTrackInterval = setInterval(() => {
+                const currentTracks = remoteAudioRef.current && remoteAudioRef.current.srcObject ? remoteAudioRef.current.srcObject.getAudioTracks() : [];
+                console.log('[RECEPTOR] Estado actual de tracks:', currentTracks.map(t => ({id: t.id, label: t.label, enabled: t.enabled, readyState: t.readyState})));
+              }, 1000);
+            }
             // Asegurarse de que el stream se asigna correctamente
             remoteAudioRef.current.srcObject = stream;
-            const tracks = stream.getAudioTracks();
-            console.log(`[RECEPTOR] Tracks de audio recibidos:`, tracks.length);
             
             // Configurar eventos del elemento de audio
             remoteAudioRef.current.onloadedmetadata = () => {
@@ -796,7 +797,7 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         )}
       </div>
 
-      {!isEmitting && <audio key={audioKey} ref={remoteAudioRef} autoPlay controls playsInline />}
+      {!isEmitting && showAudio && <audio key={audioKey} ref={remoteAudioRef} autoPlay controls playsInline />}
 
       <div className="logs">
         {logs.map((log, index) => (
