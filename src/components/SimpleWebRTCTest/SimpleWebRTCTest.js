@@ -208,12 +208,15 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
     const analyser = audioCtx.createAnalyser();
     analyser.fftSize = 64;
     
-    // Verificar si el elemento de audio ya está conectado
-    if (!audioElem._connectedToAudioContext) {
+    // Siempre crear un nuevo MediaElementSource
+    try {
       const source = audioCtx.createMediaElementSource(audioElem);
       source.connect(analyser);
       analyser.connect(audioCtx.destination);
       audioElem._connectedToAudioContext = true;
+      console.log('[RECEPTOR] Nuevo MediaElementSource creado para <audio>');
+    } catch (e) {
+      console.warn('[RECEPTOR] Error creando MediaElementSource:', e);
     }
     
     analyserRef.current = analyser;
@@ -281,6 +284,14 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
       }
       receiverIdRef.current = null;
       setAudioKey(Date.now()); // Fuerza remount del <audio>
+      if (remoteAudioRef.current) {
+        try {
+          delete remoteAudioRef.current._connectedToAudioContext;
+          console.log('[RECEPTOR] Limpio _connectedToAudioContext del <audio>');
+        } catch (e) {
+          console.warn('[RECEPTOR] No se pudo limpiar _connectedToAudioContext:', e);
+        }
+      }
     }
 
     // Limpiar WebSocket
