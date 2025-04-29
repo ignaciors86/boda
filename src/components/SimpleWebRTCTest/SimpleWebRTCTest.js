@@ -12,34 +12,6 @@ const SIGNAL_SERVER_URL =
     ? 'ws://localhost:8080'
     : 'wss://boda-radio-production.up.railway.app';
 
-// Presets de calidad de audio
-const AUDIO_QUALITY_PRESETS = {
-  high: {
-    sampleRate: 48000,
-    bitrate: 128000,
-    channelCount: 2,
-    echoCancellation: true,
-    noiseSuppression: true,
-    autoGainControl: true
-  },
-  medium: {
-    sampleRate: 44100,
-    bitrate: 64000,
-    channelCount: 1,
-    echoCancellation: true,
-    noiseSuppression: true,
-    autoGainControl: true
-  },
-  low: {
-    sampleRate: 22050,
-    bitrate: 32000,
-    channelCount: 1,
-    echoCancellation: false,
-    noiseSuppression: false,
-    autoGainControl: false
-  }
-};
-
 const SimpleWebRTCTest = ({ isEmitting }) => {
   const localStreamRef = useRef(null);
   const remoteAudioRef = useRef(null);
@@ -55,80 +27,8 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
   const animationRef = useRef(null);
   const receiverIdRef = useRef(null);
   const peersRef = useRef(new Map());
-  const reconnectAttemptsRef = useRef(0);
-  const statsIntervalRef = useRef(null);
-  const qualityCheckIntervalRef = useRef(null);
-  const [networkType, setNetworkType] = useState('Desconocido');
-  const [connectionQuality, setConnectionQuality] = useState('high');
-  const [audioQuality, setAudioQuality] = useState('high');
-  const [showQualityControls, setShowQualityControls] = useState(false);
-  const [connectionStats, setConnectionStats] = useState({
-    bitrate: 0,
-    packetLoss: 0,
-    latency: 0
-  });
-  const [logs, setLogs] = useState([]);
-  const [audioKey, setAudioKey] = useState(Date.now());
-  const [showAudio, setShowAudio] = useState(true);
-
-  // Función para añadir logs
-  const addLog = (message, type = 'info') => {
-    setLogs(prev => [...prev, { message, type, timestamp: new Date().toISOString() }]);
-  };
-
-  // Monitorear estadísticas de conexión
-  const monitorConnectionStats = async () => {
-    if (!peerRef.current) return;
-
-    try {
-      const stats = await peerRef.current.getStats();
-      let bitrate = 0;
-      let packetLoss = 0;
-      let latency = 0;
-
-      stats.forEach(report => {
-        if (report.type === 'inbound-rtp' && report.kind === 'audio') {
-          bitrate = report.bytesReceived * 8 / 1000; // kbps
-          packetLoss = report.packetsLost / report.packetsReceived * 100;
-        }
-        if (report.type === 'candidate-pair' && report.state === 'succeeded') {
-          latency = report.currentRoundTripTime * 1000; // ms
-        }
-      });
-
-      setConnectionStats({ bitrate, packetLoss, latency });
-      adjustQualityBasedOnStats(bitrate, packetLoss, latency);
-    } catch (error) {
-      addLog(`Error al obtener estadísticas: ${error.message}`, 'error');
-    }
-  };
-
-  // Ajustar calidad basado en estadísticas
-  const adjustQualityBasedOnStats = (bitrate, packetLoss, latency) => {
-    if (packetLoss > 10 || latency > 500) {
-      setAudioQuality('low');
-      setConnectionQuality('low');
-    } else if (packetLoss > 5 || latency > 300) {
-      setAudioQuality('medium');
-      setConnectionQuality('medium');
-    } else {
-      setAudioQuality('high');
-      setConnectionQuality('high');
-    }
-  };
-
-  // Detectar tipo de red
-  const detectNetworkType = () => {
-    if (navigator.connection) {
-      setNetworkType(navigator.connection.type);
-      navigator.connection.addEventListener('change', () => {
-        setNetworkType(navigator.connection.type);
-      });
-    }
-  };
 
   useEffect(() => {
-    detectNetworkType();
     return () => {
       handleStop();
     };
@@ -137,18 +37,11 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
   // Dibuja el ecualizador en el canvas (solo logs en receptor)
   const drawEq = (analyser, label = '') => {
     if (!canvasRef.current || !analyser) return;
-    if (audioContextRef.current) {
-      console.log(`[EQ][${label}] audioCtx.state:`, audioContextRef.current.state);
-    }
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     analyser.getByteFrequencyData(dataArray);
-    const maxValue = Math.max(...dataArray);
-    if (label === 'RECEPTOR') {
-      console.log(`[EQ][${label}] Max value:`, maxValue, 'Data:', dataArray.slice(0, 8));
-    }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const barWidth = (canvas.width / bufferLength) * 1.2;
     let x = 0;
@@ -162,6 +55,7 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
       ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
       x += barWidth + 1;
     }
+    // Solo log en receptor y solo si hay señal
     if (label === 'RECEPTOR' && max > 2) {
       console.log(`[RECEPTOR][EQ] Máx barra: ${Math.round(max)} | Primeros valores:`, dataArray.slice(0, 8));
     }
@@ -198,7 +92,8 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
   };
 
   // Inicializa el ecualizador para el receptor
-  const setupRemoteAnalyser = async (audioElem) => {
+  const setupRemoteAnalyser = (audioElem) => {
+    // Limpiar recursos existentes
     if (audioContextRef.current) {
       try {
         if (audioContextRef.current.state !== 'closed') {
@@ -208,35 +103,57 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         console.warn('Error al cerrar AudioContext anterior:', e);
       }
     }
+    
+    // Crear nuevo AudioContext
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const analyser = audioCtx.createAnalyser();
     analyser.fftSize = 64;
-    if (audioCtx.state === 'suspended') {
-      try {
-        await audioCtx.resume();
-        console.log('[RECEPTOR] AudioContext resumido');
-      } catch (e) {
-        console.warn('[RECEPTOR] Error al resumir AudioContext:', e);
-      }
-    }
-    try {
+    
+    // Verificar si el elemento de audio ya está conectado
+    if (!audioElem._connectedToAudioContext) {
       const source = audioCtx.createMediaElementSource(audioElem);
       source.connect(analyser);
+      analyser.connect(audioCtx.destination);
       audioElem._connectedToAudioContext = true;
-      console.log('[RECEPTOR] Nuevo MediaElementSource creado para <audio>');
-    } catch (e) {
-      console.warn('[RECEPTOR] Error creando MediaElementSource:', e);
     }
+    
     analyserRef.current = analyser;
     audioContextRef.current = audioCtx;
     animateEq('RECEPTOR');
-    if (!window._receptorAudioTrackInterval) {
-      window._receptorAudioTrackInterval = setInterval(() => {
-        if (audioElem && audioElem.srcObject) {
-          const tracks = audioElem.srcObject.getAudioTracks();
-          console.log('[RECEPTOR][AUDIO] Estado de tracks:', tracks.map(t => ({id: t.id, label: t.label, enabled: t.enabled, readyState: t.readyState})));
+    
+    // Log de depuración útil
+    setTimeout(() => {
+      try {
+        const tracks = audioElem.srcObject ? audioElem.srcObject.getAudioTracks() : [];
+        if (tracks.length > 0) {
+          console.log('[RECEPTOR] El elemento <audio> tiene tracks:', tracks.map(t => t.label));
+        } else {
+          console.warn('[RECEPTOR] El elemento <audio> NO tiene tracks de audio.');
         }
-      }, 1000);
+      } catch (e) {
+        console.warn('[RECEPTOR] No se pudo acceder a tracks del elemento <audio>.', e);
+      }
+    }, 1000);
+
+    // Asegurar que el audio se reproduzca en iOS
+    const playAudio = async () => {
+      try {
+        await audioElem.play();
+        console.log('[RECEPTOR] Audio empezó a reproducirse');
+      } catch (error) {
+        console.error('[RECEPTOR] Error al reproducir audio:', error);
+        if (error.name === 'NotAllowedError') {
+          setStatus('Por favor, toca la pantalla para reproducir el audio');
+        }
+      }
+    };
+
+    // Detectar si es un dispositivo iOS
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    
+    if (isIOS) {
+      // En iOS, esperamos a una interacción del usuario
+      document.addEventListener('touchstart', playAudio, { once: true });
     }
   };
 
@@ -244,47 +161,82 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
     wsRef.current && wsRef.current.readyState === 1 && wsRef.current.send(JSON.stringify(data));
   };
 
+  // Solo para el emisor: primero pide el stream, luego conecta señalización y crea la oferta
+  const handlePlay = async () => {
+    setButtonVisible(false);
+    setIsPlaying(true);
+    if (isEmitting) {
+      setStatus('Esperando permiso para capturar audio del sistema...');
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+          audio: {
+            suppressLocalAudioPlayback: false,
+            autoGainControl: false,
+            echoCancellation: false,
+            noiseSuppression: false,
+            sampleRate: 44100
+          }
+        });
+        stream.getVideoTracks().forEach(track => {
+          track.stop();
+          stream.removeTrack(track);
+        });
+        if (stream.getAudioTracks().length === 0) {
+          setStatus('No se detectó audio del sistema.');
+          setButtonVisible(true);
+          setIsPlaying(false);
+          return;
+        }
+        localStreamRef.current = stream;
+        setStatus('Audio del sistema capturado. Conectando señalización...');
+        setupLocalAnalyser(stream);
+        startWebRTC();
+      } catch (err) {
+        setStatus('Error al capturar el audio del sistema: ' + err.message);
+        setButtonVisible(true);
+        setIsPlaying(false);
+      }
+    } else {
+      startWebRTC();
+    }
+  };
+
   const handleStop = () => {
+    setButtonVisible(true);
     setIsPlaying(false);
     setIsConnected(false);
-    setStatus('Desconectado');
-    addLog('Conexión detenida', 'info');
-
+    
     // Limpiar WebRTC
     if (isEmitting) {
+      // Si es emisor, limpiar todas las conexiones
       peersRef.current.forEach((peer, receiverId) => {
         if (peer) {
+          console.log(`[EMISOR] Cerrando conexión con receptor ${receiverId}`);
           peer.close();
         }
       });
       peersRef.current.clear();
     } else {
+      // Si es receptor, limpiar solo su conexión
       if (peerRef.current) {
         peerRef.current.close();
         peerRef.current = null;
       }
-      receiverIdRef.current = null;
-      setAudioKey(Date.now()); // Fuerza remount del <audio>
-      setShowAudio(false); // Elimina el <audio> del DOM
-      setTimeout(() => setShowAudio(true), 100); // Lo vuelve a mostrar tras 100ms
     }
-
+    
     // Limpiar WebSocket
     if (wsRef.current) {
-      wsRef.current.onopen = null;
-      wsRef.current.onclose = null;
-      wsRef.current.onerror = null;
-      wsRef.current.onmessage = null;
       wsRef.current.close();
       wsRef.current = null;
     }
-
+    
     // Limpiar animación
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
       animationRef.current = null;
     }
-
+    
     // Limpiar AudioContext
     if (audioContextRef.current) {
       try {
@@ -296,371 +248,29 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
       }
       audioContextRef.current = null;
     }
-
+    
     // Limpiar streams
     if (isEmitting && localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(track => track.stop());
       localStreamRef.current = null;
     }
-
+    
     if (!isEmitting && remoteAudioRef.current) {
       remoteAudioRef.current.srcObject = null;
-      remoteAudioRef.current.pause();
-      remoteAudioRef.current.load && remoteAudioRef.current.load();
     }
-
-    // Limpiar intervalos
-    if (statsIntervalRef.current) {
-      clearInterval(statsIntervalRef.current);
-      statsIntervalRef.current = null;
-    }
-
-    if (qualityCheckIntervalRef.current) {
-      clearInterval(qualityCheckIntervalRef.current);
-      qualityCheckIntervalRef.current = null;
-    }
-
-    // Limpiar logs si quieres (opcional)
-    // setLogs([]);
-  };
-
-  const handlePlay = async () => {
-    setIsPlaying(true);
-    setStatus('Conectando...');
-    addLog('Iniciando conexión...', 'info');
-    if (!isEmitting) {
-      setShowAudio(true); // Asegura que el <audio> esté en el DOM
-    }
-    if (isEmitting) {
-      try {
-        const stream = await navigator.mediaDevices.getDisplayMedia({
-          video: true,
-          audio: {
-            suppressLocalAudioPlayback: false,
-            autoGainControl: false,
-            echoCancellation: false,
-            noiseSuppression: false,
-            sampleRate: 48000
-          }
-        });
-        stream.getVideoTracks().forEach(track => {
-          track.stop();
-          stream.removeTrack(track);
-        });
-        if (stream.getAudioTracks().length === 0) {
-          setStatus('No se detectó audio del sistema.');
-          setIsPlaying(false);
-          addLog('No se detectó audio del sistema', 'error');
-          return;
-        }
-        // Log de tracks en el emisor
-        console.log('[EMISOR] Tracks de audio en el stream:', stream.getAudioTracks().map(t => ({id: t.id, label: t.label, enabled: t.enabled, readyState: t.readyState})));
-        localStreamRef.current = stream;
-        setupLocalAnalyser(stream);
-        startWebRTC();
-      } catch (err) {
-        setStatus('Error al capturar el audio del sistema: ' + err.message);
-        setIsPlaying(false);
-        addLog(`Error al capturar audio: ${err.message}`, 'error');
-      }
-    } else {
-      startWebRTC();
-    }
+    
+    setStatus('Desconectado');
   };
 
   const createPeer = async (isOfferer, receiverId = null) => {
     try {
       const peer = new window.RTCPeerConnection({
         iceServers: [
-          // STUN servers
           { urls: 'stun:stun.l.google.com:19302' },
           { urls: 'stun:stun1.l.google.com:19302' },
           { urls: 'stun:stun2.l.google.com:19302' },
           { urls: 'stun:stun3.l.google.com:19302' },
-          { urls: 'stun:stun4.l.google.com:19302' },
-          { urls: 'stun:stun.ekiga.net' },
-          { urls: 'stun:stun.ideasip.com' },
-          { urls: 'stun:stun.rixtelecom.se' },
-          { urls: 'stun:stun.schlund.de' },
-          { urls: 'stun:stun.stunprotocol.org:3478' },
-          { urls: 'stun:stun.voiparound.com' },
-          { urls: 'stun:stun.voipbuster.com' },
-          { urls: 'stun:stun.voipstunt.com' },
-          { urls: 'stun:stun.voxgratia.org' },
-          { urls: 'stun:23.21.150.121:3478' },
-          { urls: 'stun:iphone-stun.strato-iphone.de:3478' },
-          { urls: 'stun:numb.viagenie.ca:3478' },
-          { urls: 'stun:s1.taraba.net:3478' },
-          { urls: 'stun:s2.taraba.net:3478' },
-          { urls: 'stun:stun.12connect.com:3478' },
-          { urls: 'stun:stun.12voip.com:3478' },
-          { urls: 'stun:stun.1und1.de:3478' },
-          { urls: 'stun:stun.2talk.co.nz:3478' },
-          { urls: 'stun:stun.2talk.com:3478' },
-          { urls: 'stun:stun.3clogic.com:3478' },
-          { urls: 'stun:stun.3cx.com:3478' },
-          { urls: 'stun:stun.a-mm.tv:3478' },
-          { urls: 'stun:stun.aa.net.uk:3478' },
-          { urls: 'stun:stun.acrobits.cz:3478' },
-          { urls: 'stun:stun.actionvoip.com:3478' },
-          { urls: 'stun:stun.advfn.com:3478' },
-          { urls: 'stun:stun.aeta-audio.com:3478' },
-          { urls: 'stun:stun.aeta.com:3478' },
-          { urls: 'stun:stun.alltel.com.au:3478' },
-          { urls: 'stun:stun.altar.com.pl:3478' },
-          { urls: 'stun:stun.annatel.net:3478' },
-          { urls: 'stun:stun.antisip.com:3478' },
-          { urls: 'stun:stun.arbuz.ru:3478' },
-          { urls: 'stun:stun.avigora.com:3478' },
-          { urls: 'stun:stun.avigora.fr:3478' },
-          { urls: 'stun:stun.awa-shima.com:3478' },
-          { urls: 'stun:stun.awt.be:3478' },
-          { urls: 'stun:stun.b2b2c.ca:3478' },
-          { urls: 'stun:stun.bahnhof.net:3478' },
-          { urls: 'stun:stun.barracuda.com:3478' },
-          { urls: 'stun:stun.bluesip.net:3478' },
-          { urls: 'stun:stun.bmwgs.cz:3478' },
-          { urls: 'stun:stun.botonakis.com:3478' },
-          { urls: 'stun:stun.budgetphone.nl:3478' },
-          { urls: 'stun:stun.budgetsip.com:3478' },
-          { urls: 'stun:stun.cablenet-as.net:3478' },
-          { urls: 'stun:stun.callromania.ro:3478' },
-          { urls: 'stun:stun.callwithus.com:3478' },
-          { urls: 'stun:stun.cbsys.net:3478' },
-          { urls: 'stun:stun.chathelp.ru:3478' },
-          { urls: 'stun:stun.cheapvoip.com:3478' },
-          { urls: 'stun:stun.ciktel.com:3478' },
-          { urls: 'stun:stun.cloopen.com:3478' },
-          { urls: 'stun:stun.colouredlines.com.au:3478' },
-          { urls: 'stun:stun.comfi.com:3478' },
-          { urls: 'stun:stun.commpeak.com:3478' },
-          { urls: 'stun:stun.comtube.com:3478' },
-          { urls: 'stun:stun.comtube.ru:3478' },
-          { urls: 'stun:stun.cope.es:3478' },
-          { urls: 'stun:stun.counterpath.com:3478' },
-          { urls: 'stun:stun.counterpath.net:3478' },
-          { urls: 'stun:stun.cryptonit.net:3478' },
-          { urls: 'stun:stun.darioflaccovio.it:3478' },
-          { urls: 'stun:stun.datamanagement.it:3478' },
-          { urls: 'stun:stun.dcalling.de:3478' },
-          { urls: 'stun:stun.decanet.fr:3478' },
-          { urls: 'stun:stun.demos.ru:3478' },
-          { urls: 'stun:stun.develz.org:3478' },
-          { urls: 'stun:stun.dingaling.ca:3478' },
-          { urls: 'stun:stun.doublerobotics.com:3478' },
-          { urls: 'stun:stun.drogon.net:3478' },
-          { urls: 'stun:stun.duocom.es:3478' },
-          { urls: 'stun:stun.dus.net:3478' },
-          { urls: 'stun:stun.e-fon.ch:3478' },
-          { urls: 'stun:stun.easybell.de:3478' },
-          { urls: 'stun:stun.easycall.pl:3478' },
-          { urls: 'stun:stun.easyvoip.com:3478' },
-          { urls: 'stun:stun.efficace-factory.com:3478' },
-          { urls: 'stun:stun.einsundeins.com:3478' },
-          { urls: 'stun:stun.einsundeins.de:3478' },
-          { urls: 'stun:stun.ekiga.net:3478' },
-          { urls: 'stun:stun.epygi.com:3478' },
-          { urls: 'stun:stun.etoilediese.fr:3478' },
-          { urls: 'stun:stun.eyeball.com:3478' },
-          { urls: 'stun:stun.faktortel.com.au:3478' },
-          { urls: 'stun:stun.freecall.com:3478' },
-          { urls: 'stun:stun.freeswitch.org:3478' },
-          { urls: 'stun:stun.freevoipdeal.com:3478' },
-          { urls: 'stun:stun.fuzemeeting.com:3478' },
-          { urls: 'stun:stun.gmx.de:3478' },
-          { urls: 'stun:stun.gmx.net:3478' },
-          { urls: 'stun:stun.gradwell.com:3478' },
-          { urls: 'stun:stun.halonet.pl:3478' },
-          { urls: 'stun:stun.hellonanu.com:3478' },
-          { urls: 'stun:stun.hoiio.com:3478' },
-          { urls: 'stun:stun.hosteurope.de:3478' },
-          { urls: 'stun:stun.ideasip.com:3478' },
-          { urls: 'stun:stun.imesh.com:3478' },
-          { urls: 'stun:stun.infra.net:3478' },
-          { urls: 'stun:stun.internetcalls.com:3478' },
-          { urls: 'stun:stun.intervoip.com:3478' },
-          { urls: 'stun:stun.ipcomms.net:3478' },
-          { urls: 'stun:stun.ipfire.org:3478' },
-          { urls: 'stun:stun.ippi.fr:3478' },
-          { urls: 'stun:stun.ipshka.com:3478' },
-          { urls: 'stun:stun.iptel.org:3478' },
-          { urls: 'stun:stun.irian.at:3478' },
-          { urls: 'stun:stun.it1.hr:3478' },
-          { urls: 'stun:stun.ivao.aero:3478' },
-          { urls: 'stun:stun.jappix.com:3478' },
-          { urls: 'stun:stun.jumblo.com:3478' },
-          { urls: 'stun:stun.justvoip.com:3478' },
-          { urls: 'stun:stun.kanet.ru:3478' },
-          { urls: 'stun:stun.kiwilink.co.nz:3478' },
-          { urls: 'stun:stun.kundenserver.de:3478' },
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun.linea7.net:3478' },
-          { urls: 'stun:stun.linphone.org:3478' },
-          { urls: 'stun:stun.liveo.fr:3478' },
-          { urls: 'stun:stun.lowratevoip.com:3478' },
-          { urls: 'stun:stun.lugosoft.com:3478' },
-          { urls: 'stun:stun.lundimatin.fr:3478' },
-          { urls: 'stun:stun.magnet.ie:3478' },
-          { urls: 'stun:stun.manle.com:3478' },
-          { urls: 'stun:stun.mgn.ru:3478' },
-          { urls: 'stun:stun.mit.de:3478' },
-          { urls: 'stun:stun.mitake.com.tw:3478' },
-          { urls: 'stun:stun.miwifi.com:3478' },
-          { urls: 'stun:stun.modulus.gr:3478' },
-          { urls: 'stun:stun.mozcom.com:3478' },
-          { urls: 'stun:stun.myvoiptraffic.com:3478' },
-          { urls: 'stun:stun.mywatson.it:3478' },
-          { urls: 'stun:stun.nas.net:3478' },
-          { urls: 'stun:stun.neotel.co.za:3478' },
-          { urls: 'stun:stun.netappel.com:3478' },
-          { urls: 'stun:stun.netappel.fr:3478' },
-          { urls: 'stun:stun.netgsm.com.tr:3478' },
-          { urls: 'stun:stun.nfon.net:3478' },
-          { urls: 'stun:stun.noblogs.org:3478' },
-          { urls: 'stun:stun.noc.ams-ix.net:3478' },
-          { urls: 'stun:stun.node4.co.uk:3478' },
-          { urls: 'stun:stun.nonoh.net:3478' },
-          { urls: 'stun:stun.nottingham.ac.uk:3478' },
-          { urls: 'stun:stun.nova.is:3478' },
-          { urls: 'stun:stun.nventure.com:3478' },
-          { urls: 'stun:stun.on.net.mk:3478' },
-          { urls: 'stun:stun.ooma.com:3478' },
-          { urls: 'stun:stun.ooonet.ru:3478' },
-          { urls: 'stun:stun.oriontelekom.rs:3478' },
-          { urls: 'stun:stun.outland-net.de:3478' },
-          { urls: 'stun:stun.ozekiphone.com:3478' },
-          { urls: 'stun:stun.patlive.com:3478' },
-          { urls: 'stun:stun.personal-voip.de:3478' },
-          { urls: 'stun:stun.petcube.com:3478' },
-          { urls: 'stun:stun.phone.com:3478' },
-          { urls: 'stun:stun.phoneserve.com:3478' },
-          { urls: 'stun:stun.pjsip.org:3478' },
-          { urls: 'stun:stun.poivy.com:3478' },
-          { urls: 'stun:stun.powerpbx.org:3478' },
-          { urls: 'stun:stun.powervoip.com:3478' },
-          { urls: 'stun:stun.ppdi.com:3478' },
-          { urls: 'stun:stun.prizee.com:3478' },
-          { urls: 'stun:stun.qq.com:3478' },
-          { urls: 'stun:stun.qvod.com:3478' },
-          { urls: 'stun:stun.rackco.com:3478' },
-          { urls: 'stun:stun.rapidnet.de:3478' },
-          { urls: 'stun:stun.rb-net.com:3478' },
-          { urls: 'stun:stun.refint.net:3478' },
-          { urls: 'stun:stun.remote-learner.net:3478' },
-          { urls: 'stun:stun.rixtelecom.se:3478' },
-          { urls: 'stun:stun.rockenstein.de:3478' },
-          { urls: 'stun:stun.rolmail.net:3478' },
-          { urls: 'stun:stun.rounds.com:3478' },
-          { urls: 'stun:stun.rynga.com:3478' },
-          { urls: 'stun:stun.samsungsmartcam.com:3478' },
-          { urls: 'stun:stun.schlund.de:3478' },
-          { urls: 'stun:stun.services.mozilla.com:3478' },
-          { urls: 'stun:stun.sigmavoip.com:3478' },
-          { urls: 'stun:stun.sip.us:3478' },
-          { urls: 'stun:stun.sipdiscount.com:3478' },
-          { urls: 'stun:stun.sipgate.net:10000' },
-          { urls: 'stun:stun.sipgate.net:3478' },
-          { urls: 'stun:stun.siplogin.de:3478' },
-          { urls: 'stun:stun.sipnet.net:3478' },
-          { urls: 'stun:stun.sipnet.ru:3478' },
-          { urls: 'stun:stun.siportal.it:3478' },
-          { urls: 'stun:stun.sippeer.dk:3478' },
-          { urls: 'stun:stun.siptraffic.com:3478' },
-          { urls: 'stun:stun.skylink.ru:3478' },
-          { urls: 'stun:stun.sma.de:3478' },
-          { urls: 'stun:stun.smartvoip.com:3478' },
-          { urls: 'stun:stun.smsdiscount.com:3478' },
-          { urls: 'stun:stun.snafu.de:3478' },
-          { urls: 'stun:stun.softjoys.com:3478' },
-          { urls: 'stun:stun.solcon.nl:3478' },
-          { urls: 'stun:stun.solnet.ch:3478' },
-          { urls: 'stun:stun.sonetel.com:3478' },
-          { urls: 'stun:stun.sonetel.net:3478' },
-          { urls: 'stun:stun.sovtest.ru:3478' },
-          { urls: 'stun:stun.speedy.com.ar:3478' },
-          { urls: 'stun:stun.spokn.com:3478' },
-          { urls: 'stun:stun.srce.hr:3478' },
-          { urls: 'stun:stun.ssl7.net:3478' },
-          { urls: 'stun:stun.stunprotocol.org:3478' },
-          { urls: 'stun:stun.symform.com:3478' },
-          { urls: 'stun:stun.symplicity.com:3478' },
-          { urls: 'stun:stun.sysadminman.net:3478' },
-          { urls: 'stun:stun.t-online.de:3478' },
-          { urls: 'stun:stun.tagan.ru:3478' },
-          { urls: 'stun:stun.tatneft.ru:3478' },
-          { urls: 'stun:stun.teachercreated.com:3478' },
-          { urls: 'stun:stun.tel.lu:3478' },
-          { urls: 'stun:stun.telbo.com:3478' },
-          { urls: 'stun:stun.telefacil.com:3478' },
-          { urls: 'stun:stun.tis-dialog.ru:3478' },
-          { urls: 'stun:stun.tng.de:3478' },
-          { urls: 'stun:stun.twt.it:3478' },
-          { urls: 'stun:stun.u-blox.com:3478' },
-          { urls: 'stun:stun.ucallweconn.net:3478' },
-          { urls: 'stun:stun.ucsb.edu:3478' },
-          { urls: 'stun:stun.ucw.cz:3478' },
-          { urls: 'stun:stun.uls.co.za:3478' },
-          { urls: 'stun:stun.unseen.is:3478' },
-          { urls: 'stun:stun.usfamily.net:3478' },
-          { urls: 'stun:stun.veoh.com:3478' },
-          { urls: 'stun:stun.vidyo.com:3478' },
-          { urls: 'stun:stun.vipgroup.net:3478' },
-          { urls: 'stun:stun.virtual-call.com:3478' },
-          { urls: 'stun:stun.viva.gr:3478' },
-          { urls: 'stun:stun.vivox.com:3478' },
-          { urls: 'stun:stun.vline.com:3478' },
-          { urls: 'stun:stun.vo.lu:3478' },
-          { urls: 'stun:stun.vodafone.ro:3478' },
-          { urls: 'stun:stun.voicetrading.com:3478' },
-          { urls: 'stun:stun.voip.aebc.com:3478' },
-          { urls: 'stun:stun.voip.blackberry.com:3478' },
-          { urls: 'stun:stun.voip.eutelia.it:3478' },
-          { urls: 'stun:stun.voiparound.com:3478' },
-          { urls: 'stun:stun.voipblast.com:3478' },
-          { urls: 'stun:stun.voipbuster.com:3478' },
-          { urls: 'stun:stun.voipbusterpro.com:3478' },
-          { urls: 'stun:stun.voipcheap.co.uk:3478' },
-          { urls: 'stun:stun.voipcheap.com:3478' },
-          { urls: 'stun:stun.voipfibre.com:3478' },
-          { urls: 'stun:stun.voipgain.com:3478' },
-          { urls: 'stun:stun.voipgate.com:3478' },
-          { urls: 'stun:stun.voipinfocenter.com:3478' },
-          { urls: 'stun:stun.voipplanet.nl:3478' },
-          { urls: 'stun:stun.voippro.com:3478' },
-          { urls: 'stun:stun.voipraider.com:3478' },
-          { urls: 'stun:stun.voipstunt.com:3478' },
-          { urls: 'stun:stun.voipwise.com:3478' },
-          { urls: 'stun:stun.voipzoom.com:3478' },
-          { urls: 'stun:stun.vopium.com:3478' },
-          { urls: 'stun:stun.voxgratia.org:3478' },
-          { urls: 'stun:stun.voxox.com:3478' },
-          { urls: 'stun:stun.voys.nl:3478' },
-          { urls: 'stun:stun.voztele.com:3478' },
-          { urls: 'stun:stun.vyke.com:3478' },
-          { urls: 'stun:stun.webcalldirect.com:3478' },
-          { urls: 'stun:stun.whoi.edu:3478' },
-          { urls: 'stun:stun.wifirst.net:3478' },
-          { urls: 'stun:stun.wwdl.net:3478' },
-          { urls: 'stun:stun.xs4all.nl:3478' },
-          { urls: 'stun:stun.xtratelecom.es:3478' },
-          { urls: 'stun:stun.yesss.at:3478' },
-          { urls: 'stun:stun.zadarma.com:3478' },
-          { urls: 'stun:stun.zadv.com:3478' },
-          { urls: 'stun:stun.zoiper.com:3478' },
-          { urls: 'stun:stun1.faktortel.com.au:3478' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun1.voiceeclipse.net:3478' },
-          { urls: 'stun:stun2.l.google.com:19302' },
-          { urls: 'stun:stun3.l.google.com:19302' },
-          { urls: 'stun:stun4.l.google.com:19302' },
-          { urls: 'stun:stunserver.org:3478' },
-          // (Eliminados los TURN sin username y credential)
-          {
-            urls: 'turn:turn01.hubl.in?transport=udp'
-          },
-          {
-            urls: 'turn:turn02.hubl.in?transport=tcp'
-          }
+          { urls: 'stun:stun4.l.google.com:19302' }
         ],
         iceCandidatePoolSize: 10,
         bundlePolicy: 'max-bundle',
@@ -740,17 +350,12 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
             console.log('[RECEPTOR] Configurando stream de audio...');
             const stream = event.streams[0];
             console.log('[RECEPTOR] Stream recibido:', stream);
-            const tracks = stream.getAudioTracks();
-            console.log(`[RECEPTOR] Tracks de audio recibidos:`, tracks.length, tracks.map(t => ({id: t.id, label: t.label, enabled: t.enabled, readyState: t.readyState})));
-            // Log de estado de los tracks cada segundo
-            if (!window._receptorTrackInterval) {
-              window._receptorTrackInterval = setInterval(() => {
-                const currentTracks = remoteAudioRef.current && remoteAudioRef.current.srcObject ? remoteAudioRef.current.srcObject.getAudioTracks() : [];
-                console.log('[RECEPTOR] Estado actual de tracks:', currentTracks.map(t => ({id: t.id, label: t.label, enabled: t.enabled, readyState: t.readyState})));
-              }, 1000);
-            }
+            console.log('[RECEPTOR] Tracks en el stream:', stream.getTracks().map(t => t.kind));
+            
             // Asegurarse de que el stream se asigna correctamente
             remoteAudioRef.current.srcObject = stream;
+            const tracks = stream.getAudioTracks();
+            console.log(`[RECEPTOR] Tracks de audio recibidos:`, tracks.length);
             
             // Configurar eventos del elemento de audio
             remoteAudioRef.current.onloadedmetadata = () => {
@@ -889,33 +494,23 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
     }
   };
 
-  const waitForWebSocketClosed = async (ws) => {
-    if (!ws) return;
-    if (ws.readyState === 3) return; // CLOSED
-    return new Promise((resolve) => {
-      ws.addEventListener('close', () => resolve(), { once: true });
-      // Por si acaso, timeout de seguridad
-      setTimeout(resolve, 1000);
-    });
-  };
-
   const startWebRTC = async () => {
     try {
       if (wsRef.current) {
         wsRef.current.close();
-        await waitForWebSocketClosed(wsRef.current);
         wsRef.current = null;
       }
+      
       wsRef.current = new window.WebSocket(SIGNAL_SERVER_URL);
+      
       wsRef.current.onopen = () => {
         setStatus('Conectado al servidor de señalización');
         console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] WebSocket conectado`);
+        
         if (isEmitting) {
           sendSignal({ type: 'broadcast' });
         } else {
-          if (!receiverIdRef.current) {
-            receiverIdRef.current = Date.now().toString();
-          }
+          receiverIdRef.current = Date.now().toString();
           sendSignal({ 
             type: 'request_broadcast',
             receiverId: receiverIdRef.current
@@ -991,85 +586,21 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
 
   return (
     <div className="simple-webrtc-test">
-      <div className="header">
-        <div className="title">
-          {isEmitting ? 'Emitiendo audio del sistema' : 'Recibiendo audio remoto'}
-        </div>
-        <div className="status">
-          {isConnected ? 'Conectado' : 'Desconectado'}
-        </div>
-      </div>
-
-      <div className="connection-info">
-        <div className="network-type">
-          <span>Red:</span>
-          <span>{networkType}</span>
-        </div>
-        <div className="connection-quality">
-          <span>Calidad:</span>
-          <div className={`quality-indicator ${connectionQuality}`} />
-        </div>
-      </div>
-
-      <div className="stats">
-        <div className="stat-item">
-          <div className="label">Bitrate</div>
-          <div className="value">{Math.round(connectionStats.bitrate)} kbps</div>
-        </div>
-        <div className="stat-item">
-          <div className="label">Pérdida</div>
-          <div className="value">{Math.round(connectionStats.packetLoss)}%</div>
-        </div>
-        <div className="stat-item">
-          <div className="label">Latencia</div>
-          <div className="value">{Math.round(connectionStats.latency)} ms</div>
-        </div>
-      </div>
-
-      <div className="quality-controls">
-        <button onClick={() => setShowQualityControls(!showQualityControls)}>
-          {showQualityControls ? 'Ocultar controles' : 'Mostrar controles de calidad'}
+      <h2 style={{ fontFamily: 'VCR', color: '#fff' }}>{isEmitting ? 'Emitiendo audio del sistema' : 'Recibiendo audio remoto'}</h2>
+      <p style={{ fontFamily: 'VCR', color: '#fff' }}>{status}</p>
+      <canvas ref={canvasRef} width={350} height={60} style={{ display: 'block', margin: '16px auto', background: '#222', borderRadius: 8 }} />
+      {buttonVisible && (
+        <button onClick={handlePlay} style={{margin: '16px auto', display: 'block', padding: '12px 32px', fontSize: '1.2em', borderRadius: 8, border: 'none', background: '#222', color: '#fff', cursor: 'pointer', fontFamily: 'VCR'}}>
+          {isEmitting ? 'Capturar y emitir audio' : 'Escuchar audio remoto'}
         </button>
-        {showQualityControls && (
-          <div className="quality-options">
-            {Object.keys(AUDIO_QUALITY_PRESETS).map(quality => (
-              <button
-                key={quality}
-                className={audioQuality === quality ? 'active' : ''}
-                onClick={() => setAudioQuality(quality)}
-              >
-                {quality.charAt(0).toUpperCase() + quality.slice(1)}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="visualizer">
-        <canvas ref={canvasRef} width={350} height={60} />
-      </div>
-
-      <div className="controls">
-        {!isPlaying ? (
-          <button onClick={handlePlay}>
-            {isEmitting ? 'Capturar y emitir audio' : 'Escuchar audio remoto'}
-          </button>
-        ) : (
-          <button className="stop" onClick={handleStop}>
-            Parar
-          </button>
-        )}
-      </div>
-
-      {!isEmitting && showAudio && <audio key={audioKey} ref={remoteAudioRef} autoPlay controls playsInline crossOrigin="anonymous" />}
-
-      <div className="logs">
-        {logs.map((log, index) => (
-          <div key={index} className={`log-entry ${log.type}`}>
-            [{new Date(log.timestamp).toLocaleTimeString()}] {log.message}
-          </div>
-        ))}
-      </div>
+      )}
+      {isPlaying && (
+        <button onClick={handleStop} style={{margin: '16px auto', display: 'block', padding: '12px 32px', fontSize: '1.2em', borderRadius: 8, border: 'none', background: '#a00', color: '#fff', cursor: 'pointer', fontFamily: 'VCR'}}>
+          Parar
+        </button>
+      )}
+      {!isEmitting && <audio ref={remoteAudioRef} autoPlay controls playsInline style={{ width: '100%' }} />}
+      {isEmitting && <p style={{ fontFamily: 'VCR', color: '#fff' }}>El audio del sistema se está emitiendo a la otra pestaña/dispositivo.</p>}
     </div>
   );
 };
