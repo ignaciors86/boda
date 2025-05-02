@@ -117,7 +117,7 @@ const DrumHero = () => {
     const baseInterval = 50;
     
     if (currentTime - lastTransformTime.current > baseInterval) {
-      const newSize = 1 + (intensidad / 50);
+      const newSize = 0.15 + (intensidad / 150);
       const newOpacity = Math.max(0.3, Math.min(0.9, intensidad / 128));
       
       setPulseCircle({
@@ -457,10 +457,11 @@ const DrumHero = () => {
         opacity: opacity * elementOpacities.polygon,
         transition: 'all 0.3s ease-out',
         position: 'absolute',
-        top: '0',
-        left: '0',
-        width: '100%',
-        height: '100%',
+        top: '50%',
+        left: '50%',
+        width: '100vmin',
+        height: '100vmin',
+        transform: `translate(-50%, -50%) scale(${size})`,
         display: 'block',
         zIndex: 1
       };
