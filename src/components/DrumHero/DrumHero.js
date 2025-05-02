@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import "./DrumHero.scss";
 import { QRCodeSVG } from 'qrcode.react';
 import { io } from 'socket.io-client';
+import GaleriaLoader from '../GaticosYMonetes/GaleriaLoader';
 import { colecciones } from '../../data/GaticosYMonetes';
 
 const DrumHero = () => {
@@ -25,8 +26,9 @@ const DrumHero = () => {
   const [receivedKudos, setReceivedKudos] = useState([]);
   const [activeKudos, setActiveKudos] = useState([]);
   const [localIp, setLocalIp] = useState(null);
-  const [coleccionActual, setColeccionActual] = useState('gatos');
-  const [petImages, setPetImages] = useState(colecciones.gatos.imagenes);
+  const galerias = GaleriaLoader();
+  const [coleccionActual, setColeccionActual] = useState('test');
+  const [petImages, setPetImages] = useState([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const kudosRef = useRef(new Set());
   const audioContextRef = useRef(null);
@@ -280,26 +282,21 @@ const DrumHero = () => {
       // Actualizar rotación suavemente
       setImagePolygonState(prev => {
         const now = Date.now();
-        const currentRotation = prev.rotation % 360; // Normalizar a 360 grados
+        const currentRotation = prev.rotation % 360;
         let newRotation = currentRotation;
         let newDirection = prev.rotationDirection;
 
-        // Cambiar dirección si alcanza el límite o si es tiempo de cambiar
         if (Math.abs(currentRotation) >= MAX_ROTATION || 
             (now - lastDirectionChange > 5000 + Math.random() * 3000)) {
           lastDirectionChange = now;
           newDirection = -prev.rotationDirection;
           
-          // Si estamos en el límite, empezar a volver suavemente
           if (Math.abs(currentRotation) >= MAX_ROTATION) {
             newRotation = currentRotation > 0 ? MAX_ROTATION : -MAX_ROTATION;
           }
         }
 
-        // Calcular nueva rotación con la velocidad actual
         newRotation += rotationSpeedRef.current * newDirection;
-
-        // Asegurar que no exceda los límites
         newRotation = Math.max(-MAX_ROTATION, Math.min(MAX_ROTATION, newRotation));
 
         return {
@@ -312,7 +309,11 @@ const DrumHero = () => {
       if (intensidad > lastIntensity * 1.1) {
         updatePolygon(intensidad);
         handlePulse();
-        setCurrentImageIndex(prev => (prev + 1) % petImages.length);
+        
+        // Cambiar a la siguiente imagen de la galería actual
+        if (petImages.length > 0) {
+          setCurrentImageIndex(prev => (prev + 1) % petImages.length);
+        }
         
         const newSides = Math.floor(Math.random() * 5) + 3;
         setImagePolygonState(prev => ({
@@ -340,7 +341,7 @@ const DrumHero = () => {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isPlaying]);
+  }, [isPlaying, petImages]);
 
   const togglePlay = async () => {
     if (isPlaying) {
@@ -420,7 +421,6 @@ const DrumHero = () => {
 
   useEffect(() => {
     if (!socketRef.current) {
-      // Detectar si estamos en localhost basado en la URL
       const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       const socketUrl = isDevelopment 
         ? 'http://localhost:1337' 
@@ -449,34 +449,18 @@ const DrumHero = () => {
       socketRef.current.on('kudo', (data) => {
         console.log('DrumHero: Recibido kudo:', data);
         
-        // Mapeo de emojis a colecciones
-        const coleccionMap = {
-          '🐱': 'gatos',
-          '🐶': 'perros',
-          '🦫': 'capibaras',
-          '🦦': 'nutrias'
-        };
-        
-        const nuevaColeccion = coleccionMap[data.emoji];
-        
-        if (nuevaColeccion) {
-          console.log('DrumHero: Cambiando a colección:', nuevaColeccion);
-          if (colecciones[nuevaColeccion] && colecciones[nuevaColeccion].imagenes) {
-            const nuevasImagenes = colecciones[nuevaColeccion].imagenes;
-            console.log('DrumHero: Número de imágenes en la nueva colección:', nuevasImagenes.length);
-            setPetImages(nuevasImagenes);
-            setColeccionActual(nuevaColeccion);
-            setCurrentImageIndex(0);
-          } else {
-            console.error('DrumHero: Colección no encontrada o sin imágenes:', nuevaColeccion);
-          }
+        if (data.coleccion) {
+          console.log('DrumHero: Cambiando a colección:', data.coleccion);
+          setPetImages(galerias[data.coleccion]?.imagenes || []);
+          setColeccionActual(data.coleccion);
+          setCurrentImageIndex(0);
         } else {
-          // Si no es un emoji de colección, mostrar el kudo normal
+          // Si no es un cambio de colección, mostrar el kudo normal
           if (!kudosRef.current.has(data.id)) {
             kudosRef.current.add(data.id);
             
-            const x = Math.random() * 80 + 10; // Entre 10% y 90%
-            const y = Math.random() * 80 + 10; // Entre 10% y 90%
+            const x = Math.random() * 80 + 10;
+            const y = Math.random() * 80 + 10;
             
             const newKudo = {
               ...data,
@@ -505,7 +489,7 @@ const DrumHero = () => {
         socketRef.current = null;
       }
     };
-  }, []);
+  }, [galerias]);
 
   // Efecto para depuración
   useEffect(() => {
@@ -523,6 +507,17 @@ const DrumHero = () => {
       document.exitFullscreen();
     }
   };
+
+  useEffect(() => {
+    // Actualizar las imágenes cuando se carguen las galerías
+    if (galerias.test?.imagenes?.length > 0) {
+      console.log('DrumHero: Usando imágenes locales de test');
+      setPetImages(galerias.test.imagenes);
+    } else {
+      console.log('DrumHero: Usando imágenes de ejemplo');
+      setPetImages(colecciones.gatos.imagenes);
+    }
+  }, [galerias]);
 
   return (
     <div className="drum-hero" style={{ backgroundColor }}>

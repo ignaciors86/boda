@@ -21,3 +21,11 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Galerías de prueba
+src/components/GaticosYMonetes/galerias/test/
+src/components/GaticosYMonetes/galerias/pokemon/
+src/components/GaticosYMonetes/galerias/simpsons/
+src/components/GaticosYMonetes/galerias/Screenshots/
+src/components/GaticosYMonetes/galerias/bubucita/
+src/components/GaticosYMonetes/galerias/invitados/

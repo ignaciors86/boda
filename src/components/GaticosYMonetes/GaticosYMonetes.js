@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { io } from 'socket.io-client';
+import GaleriaLoader from './GaleriaLoader';
 import './GaticosYMonetes.scss';
 
 const GaticosYMonetes = () => {
   const [receivedKudos, setReceivedKudos] = useState([]);
   const socketRef = useRef(null);
+  const galerias = GaleriaLoader();
 
   useEffect(() => {
     // Inicializar Socket.IO

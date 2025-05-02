@@ -1,11 +1,12 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
-import { colecciones } from '../../data/GaticosYMonetes';
+import GaleriaLoader from './GaleriaLoader';
 import './Controles.scss';
 
 const Controles = () => {
   const socketRef = useRef(null);
-  const [coleccionActual, setColeccionActual] = useState('gatos');
+  const [coleccionActual, setColeccionActual] = useState('test');
+  const galerias = GaleriaLoader();
 
   useEffect(() => {
     // Inicializar Socket.IO
@@ -47,19 +48,10 @@ const Controles = () => {
     
     if (socketRef.current && socketRef.current.connected) {
       console.log('Controles: Socket conectado, emitiendo evento kudo de prueba');
-      // Mapeo de colecciones a emojis
-      const emojiMap = {
-        'gatos': '🐱',
-        'perros': '🐶',
-        'capibaras': '🦫',
-        'nutrias': '🦦'
-      };
-      
-      const emoji = emojiMap[id] || '🐱'; // Por defecto gato si no se encuentra
       
       socketRef.current.emit('kudo', {
         id: Date.now(),
-        emoji: emoji,
+        coleccion: id,
         timestamp: Date.now()
       });
     } else {
@@ -71,13 +63,13 @@ const Controles = () => {
     <div className="controles-container">
       <h2>Controles de Imágenes</h2>
       <div className="colecciones">
-        {Object.values(colecciones).map(coleccion => (
+        {Object.values(galerias).map(galeria => (
           <button
-            key={coleccion.id}
-            className={`coleccion-btn ${coleccionActual === coleccion.id ? 'active' : ''}`}
-            onClick={() => cambiarColeccion(coleccion.id)}
+            key={galeria.id}
+            className={`coleccion-btn ${coleccionActual === galeria.id ? 'active' : ''}`}
+            onClick={() => cambiarColeccion(galeria.id)}
           >
-            {coleccion.nombre}
+            {galeria.nombre}
           </button>
         ))}
       </div>
