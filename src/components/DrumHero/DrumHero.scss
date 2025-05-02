@@ -4,11 +4,12 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: #000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #000;
   z-index: 1;
   transition: background-color 0.5s ease;
   margin: 0;
@@ -16,71 +17,46 @@
 
   .image-container {
     position: relative;
-    width: 90%;
-    height: 90%;
+    width: 100%;
+    height: 100%;
     display: flex;
-    justify-content: center;
     align-items: center;
-    perspective: 1000px;
+    justify-content: center;
 
-    .polygon {
+    .background {
       position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
-      transform-style: preserve-3d;
+      z-index: 1;
       transform-origin: center;
-      will-change: transform, clip-path, background-color, opacity, filter;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+      will-change: transform, clip-path, background-color, opacity;
+      background-color: #ff3366;
 
       &.pulsing {
-        animation: polygonPulse 0.5s ease-out;
+        animation: pulse 0.5s ease-out;
       }
     }
 
     .image-wrapper {
-      position: absolute;
+      position: relative;
       width: 80%;
       height: 80%;
-      overflow: hidden;
       z-index: 2;
-      transform-style: preserve-3d;
       transform-origin: center;
-      will-change: transform, clip-path, filter;
-      transition: all 0.15s ease-out, transform 2s linear;
-      filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.4));
-
-      &::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%);
-        background-size: 200% 200%;
-        z-index: 3;
-        mix-blend-mode: overlay;
-        pointer-events: none;
-      }
+      will-change: transform, clip-path, opacity;
+      overflow: hidden;
 
       &.pulsing {
-        animation: imagePulse 0.5s ease-out;
-
-        &::before {
-          animation: shimmer 1s ease-out;
-        }
+        animation: pulse 0.5s ease-out;
       }
-    }
 
-    .pet-image {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: 2;
-      filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
-      transition: all 0.15s ease-out;
+      .pet-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
     }
   }
 

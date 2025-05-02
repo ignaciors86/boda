@@ -50,6 +50,30 @@ const DrumHero = () => {
   const MAX_ROTATION = 25; // Máximo ángulo de rotación permitido
   const [isPulsingPolygon, setIsPulsingPolygon] = useState(false);
   const [isPulsingImage, setIsPulsingImage] = useState(false);
+  const [backgroundFormat, setBackgroundFormat] = useState(() => {
+    const savedFormat = localStorage.getItem('backgroundFormat');
+    return savedFormat || 'polygons';
+  });
+  const [lastPulseTime, setLastPulseTime] = useState(Date.now());
+  const [energyHistory, setEnergyHistory] = useState([]);
+  const [bassEnergy, setBassEnergy] = useState(0);
+  const [midEnergy, setMidEnergy] = useState(0);
+  const [trebleEnergy, setTrebleEnergy] = useState(0);
+  const [beatThreshold, setBeatThreshold] = useState(1.3);
+  const [energyHistoryLength] = useState(10);
+  const [lastImageChange, setLastImageChange] = useState(Date.now());
+  const [pulseCircle, setPulseCircle] = useState({
+    size: 1,
+    color: '#ff3366',
+    opacity: 0.8
+  });
+  const [backgroundPolygon, setBackgroundPolygon] = useState({
+    sides: 3,
+    color: '#ff3366',
+    rotation: 0,
+    scale: 1,
+    opacity: 0.8
+  });
 
   const generateRandomColor = () => {
     const hue = Math.floor(Math.random() * 360);
@@ -62,18 +86,43 @@ const DrumHero = () => {
   };
 
   const updatePolygon = (intensidad) => {
+    if (backgroundFormat !== 'polygons') return;
+
     const currentTime = Date.now();
-    if (currentTime - lastTransformTime.current > 50) {
+    const baseInterval = 50;
+    const adjustedInterval = baseInterval / 2.5;
+    
+    if (currentTime - lastTransformTime.current > adjustedInterval) {
       const newSides = Math.floor(Math.random() * 5) + 3;
-      const newRotation = polygonState.rotation + (Math.random() * 20 - 10);
+      const newRotation = backgroundPolygon.rotation + (Math.random() * 20 - 10);
       const newScale = 1 + (intensidad / 200);
       const newOpacity = Math.max(0.1, Math.min(0.9, intensidad / 255));
       
-      setPolygonState({
+      setBackgroundPolygon({
         sides: newSides,
         color: generateRandomColor(),
         rotation: newRotation,
         scale: newScale,
+        opacity: newOpacity
+      });
+      
+      lastTransformTime.current = currentTime;
+    }
+  };
+
+  const updatePulseCircle = (intensidad) => {
+    if (backgroundFormat !== 'pulse') return;
+
+    const currentTime = Date.now();
+    const baseInterval = 50;
+    
+    if (currentTime - lastTransformTime.current > baseInterval) {
+      const newSize = 1 + (intensidad / 50);
+      const newOpacity = Math.max(0.3, Math.min(0.9, intensidad / 128));
+      
+      setPulseCircle({
+        size: newSize,
+        color: generateRandomColor(),
         opacity: newOpacity
       });
       
@@ -185,7 +234,11 @@ const DrumHero = () => {
         button: Math.max(0.1, prev.button + (opacidad - prev.button) * 0.1)
       }));
 
-      updatePolygon(intensidad);
+      if (backgroundFormat === 'polygons') {
+        updatePolygon(intensidad);
+      } else if (backgroundFormat === 'pulse') {
+        updatePulseCircle(intensidad);
+      }
     } else {
       setElementOpacities(prev => ({
         polygon: prev.polygon + (1 - prev.polygon) * 0.1,
@@ -193,7 +246,11 @@ const DrumHero = () => {
         button: prev.button + (1 - prev.button) * 0.1
       }));
 
-      updatePolygon(intensidad);
+      if (backgroundFormat === 'polygons') {
+        updatePolygon(intensidad);
+      } else if (backgroundFormat === 'pulse') {
+        updatePulseCircle(intensidad);
+      }
     }
   };
 
@@ -273,64 +330,71 @@ const DrumHero = () => {
     const dataArray = new Uint8Array(bufferLength);
     let lastIntensity = 0;
     let lastColorUpdate = 0;
-    let lastDirectionChange = Date.now();
 
     const analyzeAudio = () => {
       analyserRef.current.getByteFrequencyData(dataArray);
-      const intensidad = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
       
-      // Actualizar rotación suavemente
-      setImagePolygonState(prev => {
-        const now = Date.now();
-        const currentRotation = prev.rotation % 360;
-        let newRotation = currentRotation;
-        let newDirection = prev.rotationDirection;
-
-        if (Math.abs(currentRotation) >= MAX_ROTATION || 
-            (now - lastDirectionChange > 5000 + Math.random() * 3000)) {
-          lastDirectionChange = now;
-          newDirection = -prev.rotationDirection;
-          
-          if (Math.abs(currentRotation) >= MAX_ROTATION) {
-            newRotation = currentRotation > 0 ? MAX_ROTATION : -MAX_ROTATION;
-          }
+      // Calcular energía total
+      const totalEnergy = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
+      
+      // Actualizar historial de energía
+      setEnergyHistory(prev => {
+        const newHistory = [...prev, totalEnergy];
+        if (newHistory.length > energyHistoryLength) {
+          newHistory.shift();
         }
-
-        newRotation += rotationSpeedRef.current * newDirection;
-        newRotation = Math.max(-MAX_ROTATION, Math.min(MAX_ROTATION, newRotation));
-
-        return {
-          ...prev,
-          rotation: newRotation,
-          rotationDirection: newDirection
-        };
+        return newHistory;
       });
 
-      if (intensidad > lastIntensity * 1.1) {
-        updatePolygon(intensidad);
-        handlePulse();
+      // Calcular promedio de energía
+      const averageEnergy = energyHistory.reduce((sum, val) => sum + val, 0) / energyHistory.length || 1;
+
+      // Detectar pulso
+      const isBeat = totalEnergy > averageEnergy * 1.2;
+
+      if (isBeat) {
+        const now = Date.now();
+        const timeSinceLastPulse = now - lastPulseTime;
+        const timeSinceLastImage = now - lastImageChange;
         
-        // Cambiar a la siguiente imagen de la galería actual
-        if (petImages.length > 0) {
-          setCurrentImageIndex(prev => (prev + 1) % petImages.length);
+        // Intervalo base de 500ms
+        const baseInterval = 500;
+        const minPulseInterval = baseInterval;
+
+        if (timeSinceLastPulse >= minPulseInterval) {
+          if (backgroundFormat === 'polygons') {
+            updatePolygon(totalEnergy);
+          } else {
+            updatePulseCircle(totalEnergy);
+          }
+          handlePulse();
+          
+          // Cambiar imagen
+          if (timeSinceLastImage >= minPulseInterval && petImages.length > 0) {
+            setCurrentImageIndex(prev => (prev + 1) % petImages.length);
+            setLastImageChange(now);
+            
+            // Actualizar el polígono de la imagen
+            const newSides = Math.floor(Math.random() * 5) + 3;
+            setImagePolygonState(prev => ({
+              ...prev,
+              sides: newSides,
+              scale: 1 + (totalEnergy / 400)
+            }));
+          }
+
+          setLastPulseTime(now);
         }
-        
-        const newSides = Math.floor(Math.random() * 5) + 3;
-        setImagePolygonState(prev => ({
-          ...prev,
-          sides: newSides,
-          scale: 1 + (intensidad / 300)
-        }));
       }
 
       const now = Date.now();
       if (now - lastColorUpdate > 50) {
-        updateQrColor(intensidad);
+        updateQrColor(totalEnergy);
         lastColorUpdate = now;
       }
 
-      updateElementOpacities(intensidad);
-      lastIntensity = intensidad;
+      updateElementOpacities(totalEnergy);
+      lastIntensity = totalEnergy;
       animationFrameRef.current = requestAnimationFrame(analyzeAudio);
     };
 
@@ -341,7 +405,7 @@ const DrumHero = () => {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isPlaying, petImages]);
+  }, [isPlaying, petImages, backgroundFormat, lastPulseTime, energyHistory, lastImageChange]);
 
   const togglePlay = async () => {
     if (isPlaying) {
@@ -361,22 +425,46 @@ const DrumHero = () => {
     };
   }, []);
 
-  const getPolygonStyle = () => {
-    const { sides, color, rotation, scale, opacity } = polygonState;
-    const points = Array.from({ length: sides }, (_, i) => {
-      const angle = (i * 2 * Math.PI) / sides;
-      const x = 50 + 50 * Math.cos(angle);
-      const y = 50 + 50 * Math.sin(angle);
-      return `${x}% ${y}%`;
-    }).join(', ');
+  const getBackgroundStyle = () => {
+    if (backgroundFormat === 'polygons') {
+      const { sides, color, rotation, scale, opacity } = backgroundPolygon;
+      const points = Array.from({ length: sides }, (_, i) => {
+        const angle = (i * 2 * Math.PI) / sides;
+        const x = 50 + 50 * Math.cos(angle);
+        const y = 50 + 50 * Math.sin(angle);
+        return `${x}% ${y}%`;
+      }).join(', ');
 
-    return {
-      clipPath: `polygon(${points})`,
-      backgroundColor: color,
-      transform: `rotate(${rotation}deg) scale(${scale})`,
-      opacity: opacity * elementOpacities.polygon,
-      transition: 'all 0.1s ease-out'
-    };
+      return {
+        clipPath: `polygon(${points})`,
+        backgroundColor: color,
+        transform: `rotate(${rotation}deg) scale(${scale})`,
+        opacity: opacity * elementOpacities.polygon,
+        transition: 'all 0.3s ease-out',
+        position: 'absolute',
+        top: '0',
+        left: '0',
+        width: '100%',
+        height: '100%',
+        display: 'block'
+      };
+    } else {
+      const { size, color, opacity } = pulseCircle;
+      return {
+        clipPath: 'circle(50% at 50% 50%)',
+        backgroundColor: color,
+        transform: `scale(${size})`,
+        opacity: opacity * elementOpacities.polygon,
+        transition: 'all 0.3s ease-out',
+        position: 'absolute',
+        top: '0',
+        left: '0',
+        width: '100%',
+        height: '100%',
+        display: 'block',
+        zIndex: 1
+      };
+    }
   };
 
   const getImagePolygonStyle = () => {
@@ -391,7 +479,13 @@ const DrumHero = () => {
     return {
       clipPath: `polygon(${points})`,
       transform: `rotate(${rotation}deg) scale(${scale})`,
-      transition: 'all 0.15s ease-out, transform 2s linear'
+      transition: 'all 0.3s ease-out',
+      position: 'relative',
+      width: '80%',
+      height: '80%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
     };
   };
 
@@ -420,68 +514,65 @@ const DrumHero = () => {
   }, []);
 
   useEffect(() => {
-    if (!socketRef.current) {
-      const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const socketUrl = isDevelopment 
-        ? 'http://localhost:1337' 
-        : 'https://boda-strapi-production.up.railway.app';
+    const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const socketUrl = isDevelopment 
+      ? 'http://localhost:1337' 
+      : 'https://boda-strapi-production.up.railway.app';
+    
+    console.log('DrumHero: Inicializando socket en:', socketUrl);
+    
+    socketRef.current = io(socketUrl, {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      withCredentials: false,
+      forceNew: true,
+      timeout: 20000
+    });
+    
+    socketRef.current.on('connect', () => {
+      console.log('DrumHero: Socket conectado');
+    });
+
+    socketRef.current.on('connect_error', (error) => {
+      console.error('DrumHero: Error de conexión Socket.IO:', error);
+    });
+
+    socketRef.current.on('kudo', (data) => {
+      console.log('DrumHero: Recibido kudo:', data);
       
-      console.log('DrumHero: Inicializando socket en:', socketUrl);
-      
-      socketRef.current = io(socketUrl, {
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
-        withCredentials: false,
-        forceNew: true,
-        timeout: 20000
-      });
-      
-      socketRef.current.on('connect', () => {
-        console.log('DrumHero: Socket conectado');
-      });
+      if (data.coleccion) {
+        console.log('DrumHero: Cambiando a colección:', data.coleccion);
+        setPetImages(galerias[data.coleccion]?.imagenes || []);
+        setColeccionActual(data.coleccion);
+        setCurrentImageIndex(0);
+      } else {
+        if (!kudosRef.current.has(data.id)) {
+          kudosRef.current.add(data.id);
+          
+          const x = Math.random() * 80 + 10;
+          const y = Math.random() * 80 + 10;
+          
+          const newKudo = {
+            ...data,
+            scale: Math.random() * 0.5 + 0.5,
+            rotation: Math.random() * 360,
+            x: x,
+            y: y,
+            opacity: 1,
+            startTime: Date.now()
+          };
 
-      socketRef.current.on('connect_error', (error) => {
-        console.error('DrumHero: Error de conexión Socket.IO:', error);
-      });
+          setActiveKudos(prev => [...prev, newKudo]);
 
-      socketRef.current.on('kudo', (data) => {
-        console.log('DrumHero: Recibido kudo:', data);
-        
-        if (data.coleccion) {
-          console.log('DrumHero: Cambiando a colección:', data.coleccion);
-          setPetImages(galerias[data.coleccion]?.imagenes || []);
-          setColeccionActual(data.coleccion);
-          setCurrentImageIndex(0);
-        } else {
-          // Si no es un cambio de colección, mostrar el kudo normal
-          if (!kudosRef.current.has(data.id)) {
-            kudosRef.current.add(data.id);
-            
-            const x = Math.random() * 80 + 10;
-            const y = Math.random() * 80 + 10;
-            
-            const newKudo = {
-              ...data,
-              scale: Math.random() * 0.5 + 0.5,
-              rotation: Math.random() * 360,
-              x: x,
-              y: y,
-              opacity: 1,
-              startTime: Date.now()
-            };
-
-            setActiveKudos(prev => [...prev, newKudo]);
-
-            setTimeout(() => {
-              kudosRef.current.delete(data.id);
-              setActiveKudos(prev => prev.filter(k => k.id !== data.id));
-            }, 5000);
-          }
+          setTimeout(() => {
+            kudosRef.current.delete(data.id);
+            setActiveKudos(prev => prev.filter(k => k.id !== data.id));
+          }, 5000);
         }
-      });
-    }
+      }
+    });
 
     return () => {
       if (socketRef.current) {
@@ -518,6 +609,35 @@ const DrumHero = () => {
       setPetImages(colecciones.gatos.imagenes);
     }
   }, [galerias]);
+
+  // Añadimos un efecto para escuchar cambios en localStorage
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'backgroundFormat') {
+        console.log('DrumHero: Cambio detectado en formato de fondo:', e.newValue);
+        setBackgroundFormat(e.newValue);
+        if (e.newValue === 'polygons') {
+          setBackgroundPolygon({
+            sides: 3,
+            color: generateRandomColor(),
+            rotation: 0,
+            scale: 1,
+            opacity: 0.8
+          });
+        } else if (e.newValue === 'pulse') {
+          setPulseCircle({
+            size: 1,
+            color: generateRandomColor(),
+            opacity: 0.8
+          });
+          updatePulseCircle(128);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   return (
     <div className="drum-hero" style={{ backgroundColor }}>
@@ -565,8 +685,8 @@ const DrumHero = () => {
 
       <div className="image-container">
         <div 
-          className={`polygon ${isPulsingPolygon ? 'pulsing' : ''}`}
-          style={getPolygonStyle()}
+          className={`background ${isPulsingPolygon ? 'pulsing' : ''}`}
+          style={getBackgroundStyle()}
         />
         <div 
           className={`image-wrapper ${isPulsingImage ? 'pulsing' : ''}`}
