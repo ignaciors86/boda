@@ -117,12 +117,18 @@ const DrumHero = () => {
     const baseInterval = 50;
     
     if (currentTime - lastTransformTime.current > baseInterval) {
-      const newSize = 0.15 + (intensidad / 150);
+      const targetSize = 0.15 + (intensidad / 150);
+      const currentSize = pulseCircle.size;
+      const newSize = currentSize + (targetSize - currentSize) * 0.2;
+      
       const newOpacity = Math.max(0.3, Math.min(0.9, intensidad / 128));
+      
+      const hue = Math.floor(Math.random() * 60) + 180;
+      const newColor = `hsl(${hue}, 100%, 50%)`;
       
       setPulseCircle({
         size: newSize,
-        color: generateRandomColor(),
+        color: newColor,
         opacity: newOpacity
       });
       
@@ -453,9 +459,7 @@ const DrumHero = () => {
       return {
         clipPath: 'circle(50% at 50% 50%)',
         backgroundColor: color,
-        transform: `scale(${size})`,
         opacity: opacity * elementOpacities.polygon,
-        transition: 'all 0.3s ease-out',
         position: 'absolute',
         top: '50%',
         left: '50%',
@@ -463,7 +467,12 @@ const DrumHero = () => {
         height: '100vmin',
         transform: `translate(-50%, -50%) scale(${size})`,
         display: 'block',
-        zIndex: 1
+        zIndex: 1,
+        boxShadow: `0 0 30px ${color}`,
+        filter: 'blur(1px)',
+        transition: 'all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)',
+        mixBlendMode: 'screen',
+        willChange: 'transform, opacity, box-shadow'
       };
     }
   };
