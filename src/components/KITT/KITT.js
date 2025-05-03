@@ -30,9 +30,9 @@ const KITT = ({ analyser }) => {
         const numBars = 3;
         const numSegments = 13;
         const segmentSpacing = 2;
-        const segmentWidth = Math.min(barsWidth * 0.06, 24);
+        const segmentWidth = Math.min(barsWidth * 0.08, 32);
         const columnSpacing = segmentWidth * 0.8;
-        const maxHeight = barsHeight * 0.48;
+        const maxHeight = barsHeight * 0.58;
         const segmentHeight = (maxHeight / numSegments) / 2;
         const centerGap = 1;
 
