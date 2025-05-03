@@ -484,16 +484,8 @@ const DrumHero = () => {
   };
 
   const getImagePolygonStyle = () => {
-    const { sides, rotation, scale } = imagePolygonState;
-    const points = Array.from({ length: sides }, (_, i) => {
-      const angle = (i * 2 * Math.PI) / sides;
-      const x = 50 + 45 * Math.cos(angle);
-      const y = 50 + 45 * Math.sin(angle);
-      return `${x}% ${y}%`;
-    }).join(', ');
-
+    const { rotation, scale } = imagePolygonState;
     return {
-      clipPath: `polygon(${points})`,
       transform: `rotate(${rotation}deg) scale(${scale})`,
       transition: 'all 0.3s ease-out',
       position: 'relative',
