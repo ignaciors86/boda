@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { io } from 'socket.io-client';
 import gsap from 'gsap';
 import './Kudos.scss';
@@ -8,10 +8,12 @@ const Kudos = () => {
   const socketRef = useRef(null);
   const bubblesRef = useRef({});
   const containerRef = useRef(null);
+  // Estado para controlar la onda de pulso por burbuja
+  const [pulseWaves, setPulseWaves] = useState({});
 
   // Emojis organizados por niveles
   const emojiLevels = {
-    inner: ['💑', '💒', '💐', '💍', '��', '💝', '❤️'],
+    inner: ['💑', '💒', '💐', '💍', '💎', '💝', '❤️'],
     middle: ['💃', '🕺', '👰', '🤵', '🥂', '🎭', '🎪'],
     outer: ['🎊', '✨', '🎵', '🎶', '🌟', '🎉', '🎼']
   };
@@ -67,7 +69,7 @@ const Kudos = () => {
 
       // Inicializar datos de cada emoji
       Object.entries(emojiLevels).forEach(([level, emojis]) => {
-        emojis.forEach((_, index) => {
+        emojis.forEach((emoji, index) => {
           const x = Math.random() * (containerWidth - 2 * margin - bubbleSize) + margin;
           const y = Math.random() * (containerHeight - 2 * margin - bubbleSize) + margin;
           const minScale = 1.2;
@@ -160,6 +162,47 @@ const Kudos = () => {
     }
   }, []);
 
+  // Generar datos de bolas de dragón para cada emoji solo una vez
+  const dragonBallBalls = useMemo(() => {
+    const balls = {};
+    Object.entries(emojiLevels).forEach(([level, emojis]) => {
+      emojis.forEach((emoji, index) => {
+        const key = `${level}-${index}`;
+        const count = Math.floor(Math.random() * 7) + 1;
+        // Generar SVGs de estrellas rojas
+        const radius = 38; // en porcentaje del tamaño del botón
+        const size = 18; // tamaño de la estrella en px
+        const stars = [];
+        for (let i = 0; i < count; i++) {
+          const angle = (i * 2 * Math.PI) / count;
+          const x = 50 + Math.cos(angle) * radius;
+          const y = 50 + Math.sin(angle) * radius;
+          stars.push(
+            <span
+              key={i}
+              className="dragonball-star"
+              style={{
+                position: 'absolute',
+                left: `${x}%`,
+                top: `${y}%`,
+                fontSize: '1.1vw',
+                color: '#d32f2f',
+                filter: 'drop-shadow(0 0 0.2vw #0008)'
+              }}
+            >
+              ★
+            </span>
+          );
+        }
+        // Dirección y velocidad de giro aleatoria
+        const direction = Math.random() > 0.5 ? 1 : -1;
+        const speed = Math.random() * 2 + 3; // 3s a 5s por vuelta
+        balls[key] = { stars, direction, speed };
+      });
+    });
+    return balls;
+  }, [emojiLevels]);
+
   const handleEmojiClick = (emoji, e) => {
     setIsAnimating(true);
     const kudo = {
@@ -174,40 +217,97 @@ const Kudos = () => {
     }
     setTimeout(() => setIsAnimating(false), 1000);
 
-    // Efecto de onda
+    // Onda de pulso CSS: activa la onda para esta burbuja
     const btn = e.currentTarget;
-    const wave = document.createElement('span');
-    wave.className = 'pulse-wave';
-    btn.appendChild(wave);
-    gsap.fromTo(wave, {
-      scale: 0.5,
-      opacity: 0.7
-    }, {
-      scale: 2.5,
-      opacity: 0,
-      duration: 0.7,
-      ease: 'power1.out',
-      onComplete: () => {
-        if (wave && wave.parentNode) wave.parentNode.removeChild(wave);
-      }
-    });
+    const key = btn.getAttribute('data-level') + '-' + btn.getAttribute('data-index');
+    setPulseWaves(prev => ({ ...prev, [key]: false })); // reinicia
+    setTimeout(() => setPulseWaves(prev => ({ ...prev, [key]: true })), 10); // activa
+    setTimeout(() => setPulseWaves(prev => ({ ...prev, [key]: false })), 800); // limpia
   };
 
   const renderEmojiRing = (emojis, level) => {
     return emojis.map((emoji, index) => {
+      const key = `${level}-${index}`;
+      const { stars, direction, speed } = dragonBallBalls[key] || { stars: [], direction: 1, speed: 4 };
+      const showWave = pulseWaves[key];
       return (
         <button
-          key={`${level}-${index}`}
+          key={key}
           data-level={level}
           data-index={index}
-          className="emoji-option"
+          className="emoji-option dragonball"
           onClick={(e) => handleEmojiClick(emoji, e)}
+          style={{
+            background: 'none',
+            perspective: '600px',
+            overflow: 'visible',
+            position: 'absolute',
+            left: `var(--x, 0px)`,
+            top: `var(--y, 0px)`,
+            width: '6vw',
+            height: '6vw',
+            minWidth: 48,
+            minHeight: 48,
+            maxWidth: 120,
+            maxHeight: 120,
+            transform: `scale(var(--scale, 1))`,
+          }}
         >
-          {emoji}
+          <span
+            className="dragonball-3d"
+            style={{
+              width: '100%',
+              height: '100%',
+              display: 'block',
+              position: 'relative',
+              transformStyle: 'preserve-3d',
+              animation: `dragonball-spin-${key} ${speed}s linear infinite`,
+            }}
+          >
+            <span className="dragonball-sphere-bg" />
+            <span className="dragonball-sphere-highlight" />
+            <span className="dragonball-face front" style={{
+              position: 'absolute',
+              left: 0, top: 0, width: '100%', height: '100%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backfaceVisibility: 'hidden',
+              fontSize: '2.2vw',
+              filter: 'drop-shadow(0 0 0.5vw #fff8)'
+            }}>
+              {emoji}
+            </span>
+            <span className="dragonball-face back" style={{
+              position: 'absolute',
+              left: 0, top: 0, width: '100%', height: '100%',
+              display: 'block',
+              backfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg)',
+            }}>
+              <span style={{position: 'relative', width: '100%', height: '100%', display: 'block'}}>
+                {stars}
+              </span>
+            </span>
+            {showWave && <span className="pulse-wave css-pulse" />}
+          </span>
         </button>
       );
     });
   };
+
+  useEffect(() => {
+    const style = document.createElement('style');
+    let css = '';
+    Object.entries(emojiLevels).forEach(([level, emojis]) => {
+      emojis.forEach((_, index) => {
+        const key = `${level}-${index}`;
+        const { direction } = dragonBallBalls[key] || { direction: 1 };
+        css += `@keyframes dragonball-spin-${key} {from {transform: rotateY(0deg);} to {transform: rotateY(${direction * 360}deg);}}\n`;
+      });
+    });
+    style.innerHTML = css;
+    document.head.appendChild(style);
+    return () => { document.head.removeChild(style); };
+  }, [dragonBallBalls, emojiLevels]);
 
   return (
     <div className="kudos-container" ref={containerRef}>

@@ -244,4 +244,106 @@
   100% {
     transform: scale(1);
   }
+}
+
+.dragonball-3d {
+  transform-style: preserve-3d;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.dragonball-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backface-visibility: hidden;
+}
+
+.dragonball-face.back {
+  display: block;
+  transform: rotateY(180deg);
+  background: none;
+}
+
+.dragonball-star {
+  text-shadow: 0 0 0.5vw #fff8, 0 0 0.2vw #ff9800;
+  pointer-events: none;
+  font-size: 1.1vw;
+  color: #d32f2f;
+  font-family: inherit;
+  font-weight: bold;
+}
+
+.emoji-option.dragonball,
+.emoji-option.dragonball *,
+.emoji-option.dragonball *::before,
+.emoji-option.dragonball *::after {
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+}
+
+.dragonball-face.back::before {
+  display: none !important;
+  content: none !important;
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+}
+
+.dragonball-sphere-bg {
+  position: absolute;
+  left: 0; top: 0; width: 100%; height: 100%;
+  border-radius: 50%;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 60% 40%, #fff7 0%, #ffb300 60%, #ff9800 85%, #c77600 98%, transparent 100%),
+    radial-gradient(circle at 50% 60%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 80%);
+}
+
+.dragonball-emoji {
+  text-shadow: 0 0 0.5vw #fff8, 0 0 0.2vw #ff9800;
+  pointer-events: none;
+}
+
+.dragonball-main-emoji {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.pulse-wave.css-pulse {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.35);
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.5);
+  z-index: 2;
+  will-change: transform, opacity;
+  animation: pulse-wave-anim 0.7s cubic-bezier(0.4,0.2,0.2,1) forwards;
+}
+
+@keyframes pulse-wave-anim {
+  0% {
+    opacity: 0.7;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  80% {
+    opacity: 0.3;
+    transform: translate(-50%, -50%) scale(2.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.5);
+  }
 } 
