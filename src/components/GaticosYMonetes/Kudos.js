@@ -90,35 +90,67 @@ const Kudos = () => {
         });
       });
 
-      // Animación continua con rebote y oscilación de tamaño
+      // Animación continua con rebote y oscilación de tamaño y colisiones
       function animate(time) {
+        // Colisiones entre burbujas
+        for (let i = 0; i < emojisData.length; i++) {
+          for (let j = i + 1; j < emojisData.length; j++) {
+            const a = emojisData[i];
+            const b = emojisData[j];
+            // Calcular escala actual
+            const t = (time || 0) / 1000;
+            const scaleA = a.minScale + (a.maxScale - a.minScale) * 0.5 * (1 + Math.sin(a.freq * t + a.phase));
+            const scaleB = b.minScale + (b.maxScale - b.minScale) * 0.5 * (1 + Math.sin(b.freq * t + b.phase));
+            const rA = (bubbleSize * scaleA) / 2;
+            const rB = (bubbleSize * scaleB) / 2;
+            const dx = a.x - b.x;
+            const dy = a.y - b.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < rA + rB) {
+              // Intercambiar ángulos (rebote simple)
+              const temp = a.angle;
+              a.angle = b.angle;
+              b.angle = temp;
+              // Separar burbujas para evitar que se queden pegadas
+              const overlap = rA + rB - dist;
+              const nx = dx / dist;
+              const ny = dy / dist;
+              a.x += nx * (overlap / 2);
+              a.y += ny * (overlap / 2);
+              b.x -= nx * (overlap / 2);
+              b.y -= ny * (overlap / 2);
+            }
+          }
+        }
+
         emojisData.forEach(emoji => {
           // Calcular nueva posición
           let newX = emoji.x + Math.cos(emoji.angle) * emoji.speed * 2;
           let newY = emoji.y + Math.sin(emoji.angle) * emoji.speed * 2;
 
-          // Rebote en los bordes
-          if (newX < margin) {
-            newX = margin;
+          // Oscilación de tamaño
+          const t = (time || 0) / 1000;
+          const scale = emoji.minScale + (emoji.maxScale - emoji.minScale) * 0.5 * (1 + Math.sin(emoji.freq * t + emoji.phase));
+          const radio = (bubbleSize * scale) / 2;
+
+          // Rebote en los bordes usando el radio actual
+          if (newX < radio) {
+            newX = radio;
             emoji.angle = Math.PI - emoji.angle;
-          } else if (newX > containerWidth - margin - bubbleSize) {
-            newX = containerWidth - margin - bubbleSize;
+          } else if (newX > containerWidth - radio) {
+            newX = containerWidth - radio;
             emoji.angle = Math.PI - emoji.angle;
           }
-          if (newY < margin) {
-            newY = margin;
+          if (newY < radio) {
+            newY = radio;
             emoji.angle = -emoji.angle;
-          } else if (newY > containerHeight - margin - bubbleSize) {
-            newY = containerHeight - margin - bubbleSize;
+          } else if (newY > containerHeight - radio) {
+            newY = containerHeight - radio;
             emoji.angle = -emoji.angle;
           }
 
           emoji.x = newX;
           emoji.y = newY;
-
-          // Oscilación de tamaño
-          const t = (time || 0) / 1000;
-          const scale = emoji.minScale + (emoji.maxScale - emoji.minScale) * 0.5 * (1 + Math.sin(emoji.freq * t + emoji.phase));
 
           gsap.set(emoji.element, { x: emoji.x, y: emoji.y, scale, backgroundColor: emoji.bgColor });
         });
