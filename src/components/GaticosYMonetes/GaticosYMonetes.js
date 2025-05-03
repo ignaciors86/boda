@@ -39,8 +39,20 @@ const GaticosYMonetes = () => {
     });
 
     socketRef.current.on('kudo', (kudo) => {
-      console.log('GaticosYMonetes: Nuevo kudo recibido:', kudo);
-      setReceivedKudos(prevKudos => [...prevKudos, kudo]);
+      const scale = Math.random() * 2 + 1; // Escala entre 1x y 3x
+      const x = Math.random() * 80 + 10; // Posición X entre 10% y 90%
+      const y = Math.random() * 80 + 10; // Posición Y entre 10% y 90%
+      
+      setReceivedKudos(prevKudos => [
+        ...prevKudos,
+        {
+          ...kudo,
+          scale,
+          x,
+          y,
+          id: Date.now()
+        }
+      ]);
       
       // Eliminar el kudo después de 5 segundos
       setTimeout(() => {
@@ -129,9 +141,9 @@ const GaticosYMonetes = () => {
           key={kudo.id}
           className="floating-kudo"
           style={{
-            left: `${kudo.x}%`,
-            top: `${kudo.y}%`,
-            transform: `scale(${kudo.scale}) rotate(${kudo.rotation}deg)`
+            '--scale': kudo.scale,
+            '--x': `${kudo.x}%`,
+            '--y': `${kudo.y}%`
           }}
         >
           {kudo.emoji}

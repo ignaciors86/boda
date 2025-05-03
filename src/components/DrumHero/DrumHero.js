@@ -80,10 +80,13 @@ const DrumHero = () => {
     scale: 1,
     opacity: 0.8
   });
+  const [imageOrientation, setImageOrientation] = useState('landscape');
 
   const generateRandomColor = () => {
     const hue = Math.floor(Math.random() * 360);
-    return `hsl(${hue}, 70%, 50%)`;
+    const saturation = Math.floor(Math.random() * 30) + 70; // 70-100%
+    const lightness = Math.floor(Math.random() * 20) + 40; // 40-60%
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
   };
 
   const generateRandomBackgroundColor = () => {
@@ -647,6 +650,17 @@ const DrumHero = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+  useEffect(() => {
+    if (petImages.length > 0) {
+      const img = new Image();
+      img.src = petImages[currentImageIndex];
+      img.onload = () => {
+        const orientation = img.naturalHeight > img.naturalWidth ? 'portrait' : 'landscape';
+        setImageOrientation(orientation);
+      };
+    }
+  }, [currentImageIndex, petImages]);
+
   return (
     <div className="drum-hero" style={{ backgroundColor }}>
       <button 
@@ -707,6 +721,7 @@ const DrumHero = () => {
               src={petImages[currentImageIndex]}
               alt={`Pet ${currentImageIndex + 1}`}
               className="pet-image"
+              data-orientation={imageOrientation}
             />
           )}
         </div>

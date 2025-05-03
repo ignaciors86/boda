@@ -1,15 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { io } from 'socket.io-client';
+import gsap from 'gsap';
 import './Kudos.scss';
 
 const Kudos = () => {
   const [isAnimating, setIsAnimating] = useState(false);
   const socketRef = useRef(null);
   const bubblesRef = useRef({});
+  const containerRef = useRef(null);
 
   // Emojis organizados por niveles
   const emojiLevels = {
-    inner: ['💑', '💒', '💐', '💍', '🌹', '💝'],
+    inner: ['💑', '💒', '💐', '💍', '��', '💝', '❤️'],
     middle: ['💃', '🕺', '👰', '🤵', '🥂', '🎭', '🎪'],
     outer: ['🎊', '✨', '🎵', '🎶', '🌟', '🎉', '🎼']
   };
@@ -51,88 +53,123 @@ const Kudos = () => {
   }, []);
 
   useEffect(() => {
-    // Generar las posiciones iniciales una sola vez
-    if (Object.keys(bubblesRef.current).length === 0) {
-      const newBubbles = {};
-      
+    if (containerRef.current) {
+      const container = containerRef.current;
+      const vw = window.innerWidth / 100;
+      const vh = window.innerHeight / 100;
+      const containerWidth = container.offsetWidth;
+      const containerHeight = container.offsetHeight;
+      const bubbleSizeVW = 6; // 6vw ~ 80px en 1366px de ancho
+      const bubbleSize = bubbleSizeVW * vw;
+      const marginVW = 1; // 1vw
+      const margin = marginVW * vw;
+      const emojisData = [];
+
+      // Inicializar datos de cada emoji
       Object.entries(emojiLevels).forEach(([level, emojis]) => {
-        const radius = level === 'inner' ? 120 : level === 'middle' ? 200 : 280;
-        const startAngle = level === 'middle' ? Math.PI / emojis.length : 0;
-        
         emojis.forEach((_, index) => {
-          const angle = startAngle + (index * 2 * Math.PI) / emojis.length;
-          const x = Math.cos(angle) * radius;
-          const y = Math.sin(angle) * radius;
-          const key = `${level}-${index}`;
-          
-          newBubbles[key] = {
-            x,
-            y,
-            angle,
-            ...generateBubbleAnimation()
-          };
+          const x = Math.random() * (containerWidth - 2 * margin - bubbleSize) + margin;
+          const y = Math.random() * (containerHeight - 2 * margin - bubbleSize) + margin;
+          const minScale = 1.2;
+          const maxScale = 2.2;
+          const baseScale = Math.random() * (maxScale - minScale) + minScale;
+          const angle = Math.random() * Math.PI * 2;
+          const speed = Math.random() * 0.35 + 0.15; // px por frame (más lento)
+          const freq = Math.random() * 0.5 + 0.2; // frecuencia de oscilación
+          const phase = Math.random() * Math.PI * 2; // fase inicial
+          // Color aleatorio translúcido
+          const r = Math.floor(Math.random() * 200 + 30);
+          const g = Math.floor(Math.random() * 200 + 30);
+          const b = Math.floor(Math.random() * 200 + 30);
+          const bgColor = `rgba(${r},${g},${b},0.25)`;
+          const element = document.querySelector(`[data-level="${level}"][data-index="${index}"]`);
+          if (element) {
+            emojisData.push({ element, x, y, baseScale, minScale, maxScale, angle, speed, freq, phase, bgColor });
+            gsap.set(element, { x, y, scale: baseScale, backgroundColor: bgColor });
+          }
         });
       });
-      
-      bubblesRef.current = newBubbles;
+
+      // Animación continua con rebote y oscilación de tamaño
+      function animate(time) {
+        emojisData.forEach(emoji => {
+          // Calcular nueva posición
+          let newX = emoji.x + Math.cos(emoji.angle) * emoji.speed * 2;
+          let newY = emoji.y + Math.sin(emoji.angle) * emoji.speed * 2;
+
+          // Rebote en los bordes
+          if (newX < margin) {
+            newX = margin;
+            emoji.angle = Math.PI - emoji.angle;
+          } else if (newX > containerWidth - margin - bubbleSize) {
+            newX = containerWidth - margin - bubbleSize;
+            emoji.angle = Math.PI - emoji.angle;
+          }
+          if (newY < margin) {
+            newY = margin;
+            emoji.angle = -emoji.angle;
+          } else if (newY > containerHeight - margin - bubbleSize) {
+            newY = containerHeight - margin - bubbleSize;
+            emoji.angle = -emoji.angle;
+          }
+
+          emoji.x = newX;
+          emoji.y = newY;
+
+          // Oscilación de tamaño
+          const t = (time || 0) / 1000;
+          const scale = emoji.minScale + (emoji.maxScale - emoji.minScale) * 0.5 * (1 + Math.sin(emoji.freq * t + emoji.phase));
+
+          gsap.set(emoji.element, { x: emoji.x, y: emoji.y, scale, backgroundColor: emoji.bgColor });
+        });
+        requestAnimationFrame(animate);
+      }
+      animate();
     }
   }, []);
 
-  const handleEmojiClick = (emoji) => {
+  const handleEmojiClick = (emoji, e) => {
     setIsAnimating(true);
     const kudo = {
       id: Date.now(),
       emoji: emoji,
       timestamp: Date.now()
     };
-    
     if (socketRef.current && socketRef.current.connected) {
       socketRef.current.emit('kudo', kudo);
     } else {
       console.error('Socket.IO no está conectado');
     }
-    
     setTimeout(() => setIsAnimating(false), 1000);
-  };
 
-  const generateBubbleAnimation = () => {
-    const duration = Math.random() * 15 + 20;
-    const xOffset = Math.random() * 40 - 20;
-    const yOffset = Math.random() * 40 - 20;
-    const delay = Math.random() * -30;
-    const rotationSpeed = Math.random() * 15 + 10;
-    
-    return {
-      duration: `${duration}s`,
-      xOffset: `${xOffset}px`,
-      yOffset: `${yOffset}px`,
-      delay: `${delay}s`,
-      rotationSpeed: `${rotationSpeed}s`
-    };
+    // Efecto de onda
+    const btn = e.currentTarget;
+    const wave = document.createElement('span');
+    wave.className = 'pulse-wave';
+    btn.appendChild(wave);
+    gsap.fromTo(wave, {
+      scale: 0.5,
+      opacity: 0.7
+    }, {
+      scale: 2.5,
+      opacity: 0,
+      duration: 0.7,
+      ease: 'power1.out',
+      onComplete: () => {
+        if (wave && wave.parentNode) wave.parentNode.removeChild(wave);
+      }
+    });
   };
 
   const renderEmojiRing = (emojis, level) => {
     return emojis.map((emoji, index) => {
-      const key = `${level}-${index}`;
-      const bubbleProps = bubblesRef.current[key];
-      
-      if (!bubbleProps) return null;
-
       return (
         <button
-          key={key}
-          className="emoji-option floating-bubble"
-          style={{
-            '--x': `${bubbleProps.x}px`,
-            '--y': `${bubbleProps.y}px`,
-            '--angle': `${bubbleProps.angle}rad`,
-            '--bubble-duration': bubbleProps.duration,
-            '--x-offset': bubbleProps.xOffset,
-            '--y-offset': bubbleProps.yOffset,
-            '--animation-delay': bubbleProps.delay,
-            '--rotation-duration': bubbleProps.rotationSpeed
-          }}
-          onClick={() => handleEmojiClick(emoji)}
+          key={`${level}-${index}`}
+          data-level={level}
+          data-index={index}
+          className="emoji-option"
+          onClick={(e) => handleEmojiClick(emoji, e)}
         >
           {emoji}
         </button>
@@ -141,19 +178,12 @@ const Kudos = () => {
   };
 
   return (
-    <div className="kudos-container">
+    <div className="kudos-container" ref={containerRef}>
       <div className="emoji-selector">
         {renderEmojiRing(emojiLevels.inner, 'inner')}
         {renderEmojiRing(emojiLevels.middle, 'middle')}
         {renderEmojiRing(emojiLevels.outer, 'outer')}
       </div>
-      
-      <button 
-        className={`like-button ${isAnimating ? 'pulse' : ''}`} 
-        onClick={() => handleEmojiClick('❤️')}
-      >
-        <span className="heart-icon">❤️</span>
-      </button>
     </div>
   );
 };
