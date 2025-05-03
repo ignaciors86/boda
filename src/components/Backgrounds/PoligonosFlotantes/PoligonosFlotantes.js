@@ -65,7 +65,21 @@ const PoligonosFlotantes = ({ analyser }) => {
     const actualizarPoligonos = () => {
       const ahora = Date.now();
       poligonosRef.current = poligonosRef.current.filter(poligono => {
-        return ahora - poligono.creado < poligono.vida;
+        const tiempoVida = ahora - poligono.creado;
+        const tiempoFadeOut = 1000; // 1 segundo para el desvanecimiento
+        const tiempoVidaTotal = poligono.vida + tiempoFadeOut;
+        
+        if (tiempoVida > tiempoVidaTotal) {
+          return false;
+        }
+        
+        // Calcular opacidad basada en el tiempo restante
+        if (tiempoVida > poligono.vida) {
+          const tiempoFade = tiempoVida - poligono.vida;
+          poligono.opacidad = 1 - (tiempoFade / tiempoFadeOut);
+        }
+        
+        return true;
       });
 
       poligonosRef.current.forEach(poligono => {
@@ -90,7 +104,7 @@ const PoligonosFlotantes = ({ analyser }) => {
     };
 
     const dibujarPoligono = (poligono) => {
-      const { x, y, lados, radio, color, rotacion, escala } = poligono;
+      const { x, y, lados, radio, color, rotacion, escala, opacidad } = poligono;
       
       ctx.save();
       ctx.translate(x, y);
@@ -106,7 +120,7 @@ const PoligonosFlotantes = ({ analyser }) => {
       }
       
       ctx.closePath();
-      ctx.fillStyle = color;
+      ctx.fillStyle = color.replace(/[\d.]+\)$/, `${opacidad})`);
       ctx.fill();
       
       ctx.restore();

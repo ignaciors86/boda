@@ -4,6 +4,10 @@ import './Poligonos.scss';
 const Poligonos = ({ analyser }) => {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
+  const energyHistoryRef = useRef([]);
+  const beatThresholdRef = useRef(0.8);
+  const lastBeatTimeRef = useRef(0);
+  const lastChangeTimeRef = useRef(0);
 
   useEffect(() => {
     if (!analyser || !canvasRef.current) return;
@@ -40,26 +44,37 @@ const Poligonos = ({ analyser }) => {
       const intensidad = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
       const intensidadBass = dataArray.slice(0, 10).reduce((sum, value) => sum + value, 0) / 10;
       
+      // Actualizar historial de energía
+      energyHistoryRef.current.push(intensidad);
+      if (energyHistoryRef.current.length > 5) {
+        energyHistoryRef.current.shift();
+      }
+
+      const averageEnergy = energyHistoryRef.current.reduce((a, b) => a + b, 0) / energyHistoryRef.current.length;
+      const isBeat = intensidad > beatThresholdRef.current * averageEnergy;
+      
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      if (intensidad > 5) {
+      const now = Date.now();
+      const timeSinceLastChange = now - lastChangeTimeRef.current;
+      
+      if (isBeat && timeSinceLastChange >= 100) {
         const dpr = window.devicePixelRatio || 1;
         const centerX = (canvas.width / dpr) / 2;
         const centerY = (canvas.height / dpr) / 2;
         const lados = Math.floor(Math.random() * 5) + 3;
-        const radio = 50 + (intensidadBass * 1.5) + Math.random() * 50;
+        const radio = 50 + (intensidadBass * 2) + Math.random() * 50;
         const r = Math.floor(Math.random() * 255);
         const g = Math.floor(Math.random() * 255);
         const b = Math.floor(Math.random() * 255);
-        const color = `rgba(${r}, ${g}, ${b}, ${0.2 + (intensidad / 255) * 0.3})`;
+        const color = `rgba(${r}, ${g}, ${b}, ${0.3 + (intensidad / 255) * 0.4})`;
         const rotacion = Math.random() * Math.PI * 2;
         
         dibujarPoligono(centerX, centerY, lados, radio, color, rotacion);
+        lastChangeTimeRef.current = now;
       }
 
-      setTimeout(() => {
-        animationRef.current = requestAnimationFrame(animar);
-      }, 100);
+      animationRef.current = requestAnimationFrame(animar);
     };
 
     resizeCanvas();

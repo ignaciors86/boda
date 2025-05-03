@@ -1,4 +1,5 @@
 .drum-hero {
+  --image-size: 60dvh;
   position: absolute;
   top: 0;
   left: 0;
@@ -48,18 +49,25 @@
       transform-origin: center;
       will-change: transform, clip-path, opacity;
       overflow: hidden;
+      width: var(--image-size) !important;
+      height: var(--image-size) !important;
+      border-radius: calc(var(--image-size) / 2);
+      overflow: hidden;
 
-      &.pulsing {
-        animation: pulse 0.5s ease-out;
-      }
 
       .pet-image {
-        width: 100%;
-        height: 100%;
         object-fit: contain;
 
-        width: auto;
-        height: 100%;
+
+        &[data-orientation="landscape"] {
+          width: auto;
+          height: 100%;
+        }
+
+        &[data-orientation="portrait"] {
+          width: 100%;
+          height: auto;
+        }
       }
     }
   }
@@ -260,13 +268,13 @@
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 70%);
     pointer-events: none;
     z-index: -1;
   }
 
   .css-pulse {
-    animation: pulse-wave-anim 0.7s cubic-bezier(0.4,0.2,0.2,1) forwards;
+    animation: pulse-wave-anim 0.7s cubic-bezier(0.4, 0.2, 0.2, 1) forwards;
   }
 
   @keyframes pulse-wave-anim {
@@ -274,9 +282,11 @@
       transform: translate(-50%, -50%) scale(0);
       opacity: 0;
     }
+
     50% {
       opacity: 1;
     }
+
     100% {
       transform: translate(-50%, -50%) scale(1.5);
       opacity: 0;

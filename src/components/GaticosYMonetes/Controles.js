@@ -101,7 +101,6 @@ const Controles = () => {
     setBackgroundFormat(newFormat);
     localStorage.setItem('backgroundFormat', newFormat);
     
-    // Emitir el cambio de formato al servidor
     if (socketRef.current?.connected) {
       socketRef.current.emit('background-format-change', {
         format: newFormat,
@@ -111,42 +110,36 @@ const Controles = () => {
   };
 
   return (
-    <div className="controles-reset">
-      <div className="controles-remake-bg">
-        <div className="controles-remake">
-          <section className="colecciones-section">
-            <h2>Colecciones</h2>
-            <div className="colecciones-list">
-              {Object.values(galerias).map(galeria => (
-                <button
-                  key={galeria.id}
-                  className={`coleccion-btn${coleccionActual === galeria.id ? ' active' : ''}`}
-                  onClick={() => cambiarColeccion(galeria.id)}
-                >
-                  {galeria.nombre}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <div className="divider" />
-
-          <section className="formato-section">
-            <h2>Formato de Fondo</h2>
-            <div className="formato-control">
-              <select
-                value={backgroundFormat}
-                onChange={handleBackgroundFormatChange}
-                className="format-select"
+    <div className="controles">
+      <div className="controles-content">
+        <div className="controles-section">
+          <h2>COlecciones</h2>
+          <div className="controles-buttons">
+            {Object.values(galerias).map(galeria => (
+              <button
+                key={galeria.id}
+                className={`controles-btn${coleccionActual === galeria.id ? ' active' : ''}`}
+                onClick={() => cambiarColeccion(galeria.id)}
               >
-                <option value="polygons">Polígonos</option>
-                <option value="poligonos-flotantes">Polígonos Flotantes</option>
-                <option value="pulse">Círculo Pulsante</option>
-                <option value="kitt">KITT</option>
-                <option value="meteoritos">Meteoritos</option>
-              </select>
-            </div>
-          </section>
+                {galeria.nombre}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="controles-section">
+          <h2>Formato de Fondo</h2>
+          <select
+            value={backgroundFormat}
+            onChange={handleBackgroundFormatChange}
+            className="controles-select"
+          >
+            <option value="polygons">Polígonos</option>
+            <option value="poligonos-flotantes">Polígonos Flotantes</option>
+            <option value="pulse">Círculo Pulsante</option>
+            <option value="kitt">KITT</option>
+            <option value="meteoritos">Meteoritos</option>
+          </select>
         </div>
       </div>
     </div>

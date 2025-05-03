@@ -61,7 +61,6 @@ const DrumHero = () => {
     const savedFormat = localStorage.getItem('backgroundFormat');
     return savedFormat || 'polygons';
   });
-  const [lastPulseTime, setLastPulseTime] = useState(Date.now());
   const [energyHistory, setEnergyHistory] = useState([]);
   const [bassEnergy, setBassEnergy] = useState(0);
   const [midEnergy, setMidEnergy] = useState(0);
@@ -88,6 +87,15 @@ const DrumHero = () => {
   const animationRef = useRef(null);
   const lastTimeRef = useRef(0);
   const emojisContainerRef = useRef(null);
+
+  // Nuevos refs para manejar estados que no necesitan re-renders
+  const energyHistoryRef = useRef([]);
+  const lastPulseTimeRef = useRef(Date.now());
+  const lastImageChangeRef = useRef(Date.now());
+  const lastEnergyUpdateRef = useRef(Date.now());
+  const lastColorUpdateRef = useRef(Date.now());
+  const beatThresholdRef = useRef(1.3);
+  const energyHistoryLengthRef = useRef(10);
 
   const generateRandomColor = () => {
     const hue = Math.floor(Math.random() * 360);
@@ -246,14 +254,25 @@ const DrumHero = () => {
       const t = Math.max(0, Math.min(1, (value - umbralBajo/2) / (umbralBajo/2)));
       return t * t * (3 - 2 * t);
     };
+
+    // Calcular la rotación basada en el tiempo para un movimiento suave
+    const tiempo = Date.now() / 1000; // Convertir a segundos
+    const rotacion = Math.sin(tiempo * 0.5) * 5; // Oscila entre -5 y 5 grados
     
     if (intensidad < umbralBajo) {
       const opacidad = smoothFade(intensidad);
+      const scale = Math.max(0.3, opacidad);
       
       setElementOpacities(prev => ({
         polygon: Math.max(0.1, prev.polygon + (opacidad - prev.polygon) * 0.1),
-        image: Math.max(0.1, prev.image + (opacidad - prev.image) * 0.1),
+        image: Math.max(0, prev.image + (opacidad - prev.image) * 0.1),
         button: Math.max(0.1, prev.button + (opacidad - prev.button) * 0.1)
+      }));
+
+      setImagePolygonState(prev => ({
+        ...prev,
+        scale: scale,
+        rotation: rotacion
       }));
 
       if (backgroundFormat === 'polygons') {
@@ -262,10 +281,18 @@ const DrumHero = () => {
         updatePulseCircle(intensidad);
       }
     } else {
+      const scale = Math.min(1.2, 1 + (intensidad / 200));
+      
       setElementOpacities(prev => ({
         polygon: prev.polygon + (1 - prev.polygon) * 0.1,
         image: prev.image + (1 - prev.image) * 0.1,
         button: prev.button + (1 - prev.button) * 0.1
+      }));
+
+      setImagePolygonState(prev => ({
+        ...prev,
+        scale: scale,
+        rotation: rotacion
       }));
 
       if (backgroundFormat === 'polygons') {
@@ -350,40 +377,31 @@ const DrumHero = () => {
 
     const bufferLength = analyserRef.current.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
-    let lastIntensity = 0;
-    let lastColorUpdate = 0;
+    let animationFrameId = null;
 
     const analyzeAudio = () => {
       analyserRef.current.getByteFrequencyData(dataArray);
       
-      // Calcular energía total
       const totalEnergy = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
-      
-      // Actualizar historial de energía
-      setEnergyHistory(prev => {
-        const newHistory = [...prev, totalEnergy];
-        if (newHistory.length > energyHistoryLength) {
-          newHistory.shift();
+      const now = Date.now();
+
+      // Actualizar historial de energía solo cada 100ms
+      if (now - lastEnergyUpdateRef.current > 100) {
+        energyHistoryRef.current = [...energyHistoryRef.current, totalEnergy];
+        if (energyHistoryRef.current.length > energyHistoryLengthRef.current) {
+          energyHistoryRef.current.shift();
         }
-        return newHistory;
-      });
+        lastEnergyUpdateRef.current = now;
+      }
 
-      // Calcular promedio de energía
-      const averageEnergy = energyHistory.reduce((sum, val) => sum + val, 0) / energyHistory.length || 1;
-
-      // Detectar pulso
-      const isBeat = totalEnergy > averageEnergy * 1.2;
+      const averageEnergy = energyHistoryRef.current.reduce((sum, val) => sum + val, 0) / energyHistoryRef.current.length || 1;
+      const isBeat = totalEnergy > averageEnergy * beatThresholdRef.current;
 
       if (isBeat) {
-        const now = Date.now();
-        const timeSinceLastPulse = now - lastPulseTime;
-        const timeSinceLastImage = now - lastImageChange;
+        const timeSinceLastPulse = now - lastPulseTimeRef.current;
+        const timeSinceLastImage = now - lastImageChangeRef.current;
         
-        // Intervalo base de 500ms
-        const baseInterval = 500;
-        const minPulseInterval = baseInterval;
-
-        if (timeSinceLastPulse >= minPulseInterval) {
+        if (timeSinceLastPulse >= 500) {
           if (backgroundFormat === 'polygons') {
             updatePolygon(totalEnergy);
           } else {
@@ -391,12 +409,10 @@ const DrumHero = () => {
           }
           handlePulse();
           
-          // Cambiar imagen
-          if (timeSinceLastImage >= minPulseInterval && petImages.length > 0) {
+          if (timeSinceLastImage >= 1000 && petImages.length > 0) {
             setCurrentImageIndex(prev => (prev + 1) % petImages.length);
-            setLastImageChange(now);
+            lastImageChangeRef.current = now;
             
-            // Actualizar el polígono de la imagen
             const newSides = Math.floor(Math.random() * 5) + 3;
             setImagePolygonState(prev => ({
               ...prev,
@@ -405,29 +421,27 @@ const DrumHero = () => {
             }));
           }
 
-          setLastPulseTime(now);
+          lastPulseTimeRef.current = now;
         }
       }
 
-      const now = Date.now();
-      if (now - lastColorUpdate > 50) {
+      if (now - lastColorUpdateRef.current > 50) {
         updateQrColor(totalEnergy);
-        lastColorUpdate = now;
+        lastColorUpdateRef.current = now;
       }
 
       updateElementOpacities(totalEnergy);
-      lastIntensity = totalEnergy;
-      animationFrameRef.current = requestAnimationFrame(analyzeAudio);
+      animationFrameId = requestAnimationFrame(analyzeAudio);
     };
 
     analyzeAudio();
 
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [isPlaying, petImages, backgroundFormat, lastPulseTime, energyHistory, lastImageChange]);
+  }, [isPlaying, petImages, backgroundFormat]);
 
   const togglePlay = async () => {
     if (isPlaying) {
