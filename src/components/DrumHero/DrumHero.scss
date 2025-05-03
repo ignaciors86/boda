@@ -251,6 +251,37 @@
     margin: 0;
     padding: 0;
   }
+
+  .pulse-wave {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .css-pulse {
+    animation: pulse-wave-anim 0.7s cubic-bezier(0.4,0.2,0.2,1) forwards;
+  }
+
+  @keyframes pulse-wave-anim {
+    0% {
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 0;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(1.5);
+      opacity: 0;
+    }
+  }
 }
 
 @keyframes rotate {

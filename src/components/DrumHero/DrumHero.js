@@ -745,6 +745,23 @@ const DrumHero = () => {
           ref={el => {
             if (el && !elementsRef.current[kudo.id]) {
               elementsRef.current[kudo.id] = el;
+              // Animación de aparición
+              gsap.fromTo(el, 
+                { scale: 0, opacity: 0 },
+                { 
+                  scale: kudo.baseScale, 
+                  opacity: 1,
+                  duration: 0.5,
+                  ease: "back.out(1.7)",
+                  onComplete: () => {
+                    // Añadir y animar el pulso
+                    const wave = document.createElement('div');
+                    wave.className = 'pulse-wave css-pulse';
+                    el.appendChild(wave);
+                    setTimeout(() => wave.remove(), 700);
+                  }
+                }
+              );
             }
           }}
           className="emoji-option dragonball"
