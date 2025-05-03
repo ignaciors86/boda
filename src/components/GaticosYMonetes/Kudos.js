@@ -8,8 +8,9 @@ const Kudos = () => {
   const socketRef = useRef(null);
   const bubblesRef = useRef({});
   const containerRef = useRef(null);
-  // Estado para controlar la onda de pulso por burbuja
-  const [pulseWaves, setPulseWaves] = useState({});
+  const pulseWavesRef = useRef({});
+  const animationRefs = useRef({});
+  const elementsRef = useRef({});
 
   // Emojis organizados por niveles
   const emojiLevels = {
@@ -170,11 +171,16 @@ const Kudos = () => {
         const key = `${level}-${index}`;
         const count = Math.floor(Math.random() * 7) + 1;
         // Generar SVGs de estrellas rojas
-        const radius = 38; // en porcentaje del tamaño del botón
-        const size = 18; // tamaño de la estrella en px
+        const radius = 25; // Radio para las estrellas del círculo
+        const size = 14;
         const stars = [];
-        for (let i = 0; i < count; i++) {
-          const angle = (i * 2 * Math.PI) / count;
+        
+        // Si hay 6 o 7 estrellas, una va en el centro
+        const starsInCircle = count === 6 || count === 7 ? count - 1 : count;
+        
+        // Generar estrellas en círculo
+        for (let i = 0; i < starsInCircle; i++) {
+          const angle = (i * 2 * Math.PI) / starsInCircle;
           const x = 50 + Math.cos(angle) * radius;
           const y = 50 + Math.sin(angle) * radius;
           stars.push(
@@ -185,15 +191,38 @@ const Kudos = () => {
                 position: 'absolute',
                 left: `${x}%`,
                 top: `${y}%`,
-                fontSize: '1.1vw',
+                fontSize: '0.7vw',
                 color: '#d32f2f',
-                filter: 'drop-shadow(0 0 0.2vw #0008)'
+                filter: 'drop-shadow(0 0 0.2vw #0008)',
+                transform: 'translate(-50%, -50%)'
               }}
             >
               ★
             </span>
           );
         }
+
+        // Añadir estrella central si hay 6 o 7 estrellas
+        if (count === 6 || count === 7) {
+          stars.push(
+            <span
+              key="center"
+              className="dragonball-star"
+              style={{
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                fontSize: '0.7vw',
+                color: '#d32f2f',
+                filter: 'drop-shadow(0 0 0.2vw #0008)',
+                transform: 'translate(-50%, -50%)'
+              }}
+            >
+              ★
+            </span>
+          );
+        }
+
         // Dirección y velocidad de giro aleatoria
         const direction = Math.random() > 0.5 ? 1 : -1;
         const speed = Math.random() * 2 + 3; // 3s a 5s por vuelta
@@ -203,8 +232,36 @@ const Kudos = () => {
     return balls;
   }, [emojiLevels]);
 
+  // Efecto para inicializar las animaciones
+  useEffect(() => {
+    Object.entries(emojiLevels).forEach(([level, emojis]) => {
+      emojis.forEach((_, index) => {
+        const key = `${level}-${index}`;
+        const { direction, speed } = dragonBallBalls[key] || { direction: 1, speed: 4 };
+        
+        if (!animationRefs.current[key]) {
+          const element = document.querySelector(`[data-animation-key="${key}"] .dragonball-3d`);
+          if (element) {
+            animationRefs.current[key] = gsap.to(element, {
+              rotationY: direction * 360,
+              duration: speed,
+              repeat: -1,
+              ease: "none"
+            });
+          }
+        }
+      });
+    });
+
+    return () => {
+      // Limpiar animaciones al desmontar
+      Object.values(animationRefs.current).forEach(animation => {
+        if (animation) animation.kill();
+      });
+    };
+  }, [dragonBallBalls, emojiLevels]);
+
   const handleEmojiClick = (emoji, e) => {
-    setIsAnimating(true);
     const kudo = {
       id: Date.now(),
       emoji: emoji,
@@ -215,21 +272,24 @@ const Kudos = () => {
     } else {
       console.error('Socket.IO no está conectado');
     }
-    setTimeout(() => setIsAnimating(false), 1000);
 
     // Onda de pulso CSS: activa la onda para esta burbuja
     const btn = e.currentTarget;
-    const key = btn.getAttribute('data-level') + '-' + btn.getAttribute('data-index');
-    setPulseWaves(prev => ({ ...prev, [key]: false })); // reinicia
-    setTimeout(() => setPulseWaves(prev => ({ ...prev, [key]: true })), 10); // activa
-    setTimeout(() => setPulseWaves(prev => ({ ...prev, [key]: false })), 800); // limpia
+    const waveElement = btn.querySelector('.pulse-wave');
+    
+    if (waveElement) {
+      waveElement.style.animation = 'none';
+      // Forzar reflow de manera correcta
+      void waveElement.offsetHeight;
+      waveElement.style.animation = 'pulse-wave-anim 0.7s cubic-bezier(0.4,0.2,0.2,1) forwards';
+    }
   };
 
   const renderEmojiRing = (emojis, level) => {
     return emojis.map((emoji, index) => {
       const key = `${level}-${index}`;
       const { stars, direction, speed } = dragonBallBalls[key] || { stars: [], direction: 1, speed: 4 };
-      const showWave = pulseWaves[key];
+
       return (
         <button
           key={key}
@@ -261,7 +321,8 @@ const Kudos = () => {
               display: 'block',
               position: 'relative',
               transformStyle: 'preserve-3d',
-              animation: `dragonball-spin-${key} ${speed}s linear infinite`,
+              animation: `dragonball-spin ${speed}s linear infinite`,
+              animationDirection: direction > 0 ? 'normal' : 'reverse'
             }}
           >
             <span className="dragonball-sphere-bg" />
@@ -287,27 +348,12 @@ const Kudos = () => {
                 {stars}
               </span>
             </span>
-            {showWave && <span className="pulse-wave css-pulse" />}
+            <span className="pulse-wave css-pulse" style={{ opacity: 0 }} />
           </span>
         </button>
       );
     });
   };
-
-  useEffect(() => {
-    const style = document.createElement('style');
-    let css = '';
-    Object.entries(emojiLevels).forEach(([level, emojis]) => {
-      emojis.forEach((_, index) => {
-        const key = `${level}-${index}`;
-        const { direction } = dragonBallBalls[key] || { direction: 1 };
-        css += `@keyframes dragonball-spin-${key} {from {transform: rotateY(0deg);} to {transform: rotateY(${direction * 360}deg);}}\n`;
-      });
-    });
-    style.innerHTML = css;
-    document.head.appendChild(style);
-    return () => { document.head.removeChild(style); };
-  }, [dragonBallBalls, emojiLevels]);
 
   return (
     <div className="kudos-container" ref={containerRef}>

@@ -9,6 +9,13 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
+
+  .back::before {
+    mask-image: none !important;
+    -webkit-mask-image: none !important;
+    content: none !important;
+    display: none !important;
+  }
 }
 
 .qr-container {
@@ -263,6 +270,7 @@
   align-items: center;
   justify-content: center;
   backface-visibility: hidden;
+  transform-style: preserve-3d;
 }
 
 .dragonball-face.back {
@@ -272,40 +280,18 @@
 }
 
 .dragonball-star {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.7) translateY(-25%);
   text-shadow: 0 0 0.5vw #fff8, 0 0 0.2vw #ff9800;
   pointer-events: none;
-  font-size: 1.1vw;
+  font-size: 0.8vw;
   color: #d32f2f;
   font-family: inherit;
   font-weight: bold;
-}
-
-.emoji-option.dragonball,
-.emoji-option.dragonball *,
-.emoji-option.dragonball *::before,
-.emoji-option.dragonball *::after {
-  border: 0 !important;
-  outline: none !important;
-  box-shadow: none !important;
-  mask-image: none !important;
-  -webkit-mask-image: none !important;
-}
-
-.dragonball-face.back::before {
-  display: none !important;
-  content: none !important;
-  mask-image: none !important;
-  -webkit-mask-image: none !important;
-}
-
-.dragonball-sphere-bg {
-  position: absolute;
-  left: 0; top: 0; width: 100%; height: 100%;
-  border-radius: 50%;
-  z-index: 0;
-  background:
-    radial-gradient(circle at 60% 40%, #fff7 0%, #ffb300 60%, #ff9800 85%, #c77600 98%, transparent 100%),
-    radial-gradient(circle at 50% 60%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 80%);
+  letter-spacing: -0.15em;
+  margin: 0 -0.15em;
 }
 
 .dragonball-emoji {
@@ -316,6 +302,67 @@
 .dragonball-main-emoji {
   z-index: 2;
   pointer-events: none;
+}
+
+.emoji-option.dragonball {
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+  background: none;
+  perspective: 600px;
+  overflow: visible;
+  aspect-ratio: 1;
+  border-radius: 50%;
+
+  &:focus,
+  &:active {
+    outline: none !important;
+    border: none !important;
+  }
+
+  .dragonball-3d {
+    transform-style: preserve-3d;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    border-radius: 50%;
+
+    .dragonball-sphere-bg {
+      position: absolute;
+      left: 0; top: 0; width: 100%; height: 100%;
+      border-radius: 50%;
+      z-index: 0;
+      background:
+        radial-gradient(circle at 60% 40%, #fff7 0%, #ffb300 60%, #ff9800 85%, #c77600 98%, transparent 100%),
+        radial-gradient(circle at 50% 60%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 80%);
+    }
+
+    .dragonball-sphere-highlight {
+      position: absolute;
+      left: 0; top: 0; width: 100%; height: 100%;
+      border-radius: 50%;
+      z-index: 1;
+      pointer-events: none;
+      background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.12) 30%, rgba(255,255,255,0) 60%);
+      mix-blend-mode: screen;
+    }
+
+    .dragonball-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      left: 0;
+      top: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backface-visibility: hidden;
+      transform-style: preserve-3d;
+      border-radius: 50%;
+    }
+  }
 }
 
 .pulse-wave.css-pulse {
@@ -345,5 +392,14 @@
   100% {
     opacity: 0;
     transform: translate(-50%, -50%) scale(2.5);
+  }
+}
+
+@keyframes dragonball-spin {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(360deg);
   }
 } 
