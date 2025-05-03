@@ -1,191 +1,11 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import './KITT.scss';
 
-const KITT = ({ onClose, audioFile, delayPlay }) => {
-  const containerRef = useRef(null);
+const KITT = ({ analyser }) => {
   const canvasBarsRef = useRef(null);
-  const audioRef = useRef(null);
-  const [audioContext, setAudioContext] = useState(null);
-  const [analyser, setAnalyser] = useState(null);
-  const [textoParaLeer, setTextoParaLeer] = useState('');
-  const [estaGenerandoVoz, setEstaGenerandoVoz] = useState(false);
-  const [usarAudioSistema, setUsarAudioSistema] = useState(false);
-  const mediaStreamSourceRef = useRef(null);
-  const mediaElementSourceRef = useRef(null);
   const animationRef = useRef(null);
   const previousAveragesRef = useRef([0, 0, 0]);
   const targetAveragesRef = useRef([0, 0, 0]);
-
-  const API_KEY = 'sk_8bb55581a98f6d2e7a6999f5d24bc5b8f4c4d916409d3399';
-  const VOZ_ID = '21m00Tcm4TlvDq8ikWAM';
-
-  const desconectarAudio = async () => {
-    console.log('Desconectando audio...');
-    
-    if (audioRef.current) {
-      console.log('Pausando y limpiando elemento de audio...');
-      audioRef.current.pause();
-      audioRef.current.src = '';
-      audioRef.current.load();
-    }
-
-    if (mediaStreamSourceRef.current) {
-      console.log('Desconectando mediaStreamSource...');
-      mediaStreamSourceRef.current.disconnect();
-      mediaStreamSourceRef.current = null;
-    }
-
-    if (mediaElementSourceRef.current) {
-      console.log('Desconectando mediaElementSource...');
-      mediaElementSourceRef.current.disconnect();
-      mediaElementSourceRef.current = null;
-    }
-
-    if (audioContext) {
-      if (audioContext.state !== 'closed') {
-        console.log('Cerrando contexto de audio...');
-        await audioContext.close();
-      }
-      setAudioContext(null);
-      setAnalyser(null);
-    }
-  };
-
-  const iniciarAudioSistema = async () => {
-    try {
-      await desconectarAudio();
-
-      const newAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const newAnalyser = newAudioContext.createAnalyser();
-      newAnalyser.fftSize = 256;
-
-      try {
-        const stream = await navigator.mediaDevices.getDisplayMedia({
-          video: {
-            displaySurface: "monitor",
-            logicalSurface: true,
-            cursor: "never"
-          },
-          audio: {
-            suppressLocalAudioPlayback: false,
-            autoGainControl: false,
-            echoCancellation: false,
-            noiseSuppression: false,
-            latency: 0
-          },
-          preferCurrentTab: false,
-          selfBrowserSurface: "exclude",
-          systemAudio: "include"
-        });
-
-        const audioTracks = stream.getAudioTracks();
-        if (audioTracks.length === 0) {
-          throw new Error('No se detectaron pistas de audio');
-        }
-
-        stream.getVideoTracks().forEach(track => {
-          track.stop();
-          stream.removeTrack(track);
-        });
-
-        mediaStreamSourceRef.current = newAudioContext.createMediaStreamSource(stream);
-        mediaStreamSourceRef.current.connect(newAnalyser);
-
-        stream.getAudioTracks()[0].onended = () => {
-          console.log('Compartir audio detenido por el usuario');
-          setUsarAudioSistema(false);
-        };
-
-        setAudioContext(newAudioContext);
-        setAnalyser(newAnalyser);
-
-      } catch (error) {
-        console.error('Error al acceder al audio del sistema:', error);
-        setUsarAudioSistema(false);
-      }
-    } catch (error) {
-      console.error('Error al iniciar audio del sistema:', error);
-    }
-  };
-
-  const generarVoz = async () => {
-    if (!textoParaLeer.trim() || estaGenerandoVoz) return;
-    
-    setEstaGenerandoVoz(true);
-    console.log('Iniciando generación de voz...');
-    
-    try {
-      await desconectarAudio();
-
-      const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + VOZ_ID, {
-        method: 'POST',
-        headers: {
-          'Accept': 'audio/mpeg',
-          'Content-Type': 'application/json',
-          'xi-api-key': API_KEY
-        },
-        body: JSON.stringify({
-          text: textoParaLeer,
-          model_id: "eleven_multilingual_v2",
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75
-          }
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${await response.text()}`);
-      }
-
-      console.log('Audio generado correctamente');
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      console.log('URL del audio creada:', audioUrl);
-
-      const audioElement = new Audio();
-      audioElement.src = audioUrl;
-      audioElement.crossOrigin = 'anonymous';
-
-      await new Promise((resolve, reject) => {
-        audioElement.onloadedmetadata = resolve;
-        audioElement.onerror = reject;
-        audioElement.load();
-      });
-      console.log('Audio cargado y listo para reproducir');
-
-      const newAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const newAnalyser = newAudioContext.createAnalyser();
-      newAnalyser.fftSize = 256;
-      
-      setAudioContext(newAudioContext);
-      setAnalyser(newAnalyser);
-
-      if (newAudioContext.state === 'suspended') {
-        await newAudioContext.resume();
-      }
-
-      const mediaElementSource = newAudioContext.createMediaElementSource(audioElement);
-      mediaElementSource.connect(newAnalyser);
-      newAnalyser.connect(newAudioContext.destination);
-      mediaElementSourceRef.current = mediaElementSource;
-      console.log('Audio conectado al analizador');
-
-      try {
-        await audioElement.play();
-        console.log('Audio reproduciendo');
-      } catch (playError) {
-        console.error('Error al reproducir:', playError);
-        alert('Error al reproducir el audio. Por favor, inténtalo de nuevo.');
-      }
-
-    } catch (error) {
-      console.error('Error en generarVoz:', error);
-      alert('Error al generar la voz: ' + error.message);
-    } finally {
-      setEstaGenerandoVoz(false);
-    }
-  };
 
   useEffect(() => {
     if (analyser && canvasBarsRef.current) {
@@ -230,29 +50,29 @@ const KITT = ({ onClose, audioFile, delayPlay }) => {
         const calcularPromedio = (arr) => {
           const sum = arr.reduce((sum, val) => sum + val, 0);
           const rawAverage = sum / arr.length / 255;
-          return Math.pow(rawAverage, 0.25) * 255;
+          return Math.pow(rawAverage, 0.5) * 255;
         };
         
-        const rawLateral = calcularPromedio(medios) * 0.85;
+        const rawLateral = calcularPromedio(medios) * 0.7;
         const rawCentral = calcularPromedio(medios);
 
         const factorIntensidad = (valor) => {
-          if (valor < 15) return 0;
-          if (valor < 45) {
-            const factor = (valor - 15) / 30;
-            return Math.pow(factor, 0.6);
+          if (valor < 10) return 0;
+          if (valor < 35) {
+            const factor = (valor - 10) / 25;
+            return Math.pow(factor, 0.8);
           }
-          const logValue = Math.log10(((valor - 45) / 210) * 9 + 1);
-          return Math.max(logValue * 1.4, 0.4);
+          const logValue = Math.log10(((valor - 35) / 220) * 9 + 1);
+          return Math.max(logValue * 1.2, 0.3);
         };
 
-        const promedioCentral = rawCentral * 3.0 * factorIntensidad(rawCentral);
-        const promedioLateral = rawLateral * 3.0 * factorIntensidad(rawLateral);
+        const promedioCentral = rawCentral * 2.5 * factorIntensidad(rawCentral);
+        const promedioLateral = rawLateral * 2.5 * factorIntensidad(rawLateral);
         
         const minHeight = (valor) => {
           if (valor < 2) return 0;
-          if (valor > 100) {
-            return Math.max(valor * 0.4, 40);
+          if (valor > 80) {
+            return Math.max(valor * 0.35, 30);
           }
           return valor;
         };
@@ -341,100 +161,9 @@ const KITT = ({ onClose, audioFile, delayPlay }) => {
     }
   }, [analyser]);
 
-  useEffect(() => {
-    if (usarAudioSistema) {
-      iniciarAudioSistema();
-    }
-  }, [usarAudioSistema]);
-
-  useEffect(() => {
-    return () => {
-      desconectarAudio();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (audioFile) {
-      const initAudioFile = async () => {
-        try {
-          await desconectarAudio();
-
-          const newAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-          const newAnalyser = newAudioContext.createAnalyser();
-          newAnalyser.fftSize = 256;
-          
-          const audioElement = new Audio(audioFile);
-          audioElement.crossOrigin = 'anonymous';
-          audioRef.current = audioElement;
-
-          await new Promise((resolve) => {
-            audioElement.addEventListener('canplaythrough', resolve, { once: true });
-            audioElement.load();
-          });
-
-          if (newAudioContext.state === 'suspended') {
-            await newAudioContext.resume();
-          }
-
-          const source = newAudioContext.createMediaElementSource(audioElement);
-          source.connect(newAnalyser);
-          newAnalyser.connect(newAudioContext.destination);
-
-          setAudioContext(newAudioContext);
-          setAnalyser(newAnalyser);
-
-          audioElement.addEventListener('ended', () => {
-            if (onClose) onClose();
-          });
-
-          if (!delayPlay) {
-            await audioElement.play();
-          }
-
-        } catch (error) {
-          console.error('Error al inicializar el audio:', error);
-        }
-      };
-
-      initAudioFile();
-    }
-  }, [audioFile, onClose, delayPlay]);
-
   return (
-    <div ref={containerRef} className={`kitt-container ${audioFile ? 'kitt-audio-only' : ''}`}>
+    <div className="kitt-container kitt-audio-only">
       <canvas ref={canvasBarsRef} className="kitt-bars" />
-      
-      {!audioFile && (
-        <>
-          <div className="kitt-controls">
-            <input
-              type="text"
-              value={textoParaLeer}
-              onChange={(e) => setTextoParaLeer(e.target.value)}
-              placeholder="Escribe algo para leer..."
-              className="kitt-input"
-            />
-            <button
-              onClick={generarVoz}
-              disabled={estaGenerandoVoz || !textoParaLeer.trim()}
-              className="kitt-button"
-            >
-              {estaGenerandoVoz ? '🎙️ Generando...' : '🎙️ Leer'}
-            </button>
-          </div>
-
-          <button
-            onClick={() => setUsarAudioSistema(!usarAudioSistema)}
-            className="kitt-mode-button"
-          >
-            {usarAudioSistema ? '🎤 Audio Sistema' : '🎙️ Sintetizador'}
-          </button>
-
-          <button onClick={onClose} className="kitt-close-button">
-            ✕
-          </button>
-        </>
-      )}
     </div>
   );
 };

@@ -100,6 +100,14 @@ const Controles = () => {
     console.log('Controles: Cambiando formato a:', newFormat);
     setBackgroundFormat(newFormat);
     localStorage.setItem('backgroundFormat', newFormat);
+    
+    // Emitir el cambio de formato al servidor
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('background-format-change', {
+        format: newFormat,
+        timestamp: Date.now()
+      });
+    }
   };
 
   return (
@@ -129,10 +137,13 @@ const Controles = () => {
               <select
                 value={backgroundFormat}
                 onChange={handleBackgroundFormatChange}
-                className="formato-select"
+                className="format-select"
               >
                 <option value="polygons">Polígonos</option>
+                <option value="poligonos-flotantes">Polígonos Flotantes</option>
                 <option value="pulse">Círculo Pulsante</option>
+                <option value="kitt">KITT</option>
+                <option value="meteoritos">Meteoritos</option>
               </select>
             </div>
           </section>

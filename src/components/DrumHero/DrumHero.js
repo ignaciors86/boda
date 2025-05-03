@@ -4,6 +4,12 @@ import { QRCodeSVG } from 'qrcode.react';
 import { io } from 'socket.io-client';
 import GaleriaLoader from '../GaticosYMonetes/GaleriaLoader';
 import { colecciones } from '../../data/GaticosYMonetes';
+import KITT from '../KITT/KITT';
+import Meteoritos from '../Backgrounds/Meteoritos/Meteoritos';
+import Poligonos from '../Backgrounds/Poligonos/Poligonos';
+import Pulse from '../Backgrounds/Pulse/Pulse';
+import gsap from 'gsap';
+import PoligonosFlotantes from '../Backgrounds/PoligonosFlotantes/PoligonosFlotantes';
 
 const DrumHero = () => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -694,10 +700,12 @@ const DrumHero = () => {
       </div>
 
       <div className="image-container">
-        <div 
-          className={`background ${isPulsingPolygon ? 'pulsing' : ''}`}
-          style={getBackgroundStyle()}
-        />
+        {backgroundFormat === 'pulse' && (
+          <div 
+            className={`background ${isPulsingPolygon ? 'pulsing' : ''}`}
+            style={getBackgroundStyle()}
+          />
+        )}
         <div 
           className={`image-wrapper ${isPulsingImage ? 'pulsing' : ''}`}
           style={{...getImagePolygonStyle(), opacity: elementOpacities.image}}
@@ -711,18 +719,6 @@ const DrumHero = () => {
           )}
         </div>
       </div>
-
-      <button 
-        onClick={togglePlay} 
-        className={`play-button ${!buttonVisible ? 'hidden' : ''}`}
-        style={{ 
-          opacity: buttonVisible ? elementOpacities.button : 0,
-          pointerEvents: buttonVisible ? 'auto' : 'none',
-          transform: `translateX(-50%) scale(${buttonVisible ? 1 : 0.8})`
-        }}
-      >
-        {isPlaying ? 'Detener' : 'Capturar Audio'}
-      </button>
 
       {activeKudos.map(kudo => (
         <div
@@ -738,6 +734,27 @@ const DrumHero = () => {
           {kudo.emoji}
         </div>
       ))}
+
+      <button 
+        onClick={togglePlay} 
+        className={`play-button ${!buttonVisible ? 'hidden' : ''}`}
+        style={{ 
+          opacity: buttonVisible ? elementOpacities.button : 0,
+          pointerEvents: buttonVisible ? 'auto' : 'none',
+          transform: `translateX(-50%) scale(${buttonVisible ? 1 : 0.8})`,
+          zIndex: 1000
+        }}
+      >
+        {isPlaying ? 'Detener' : 'Capturar Audio'}
+      </button>
+
+      <div className="background" style={{ backgroundColor }}>
+        {backgroundFormat === 'polygons' && <Poligonos analyser={analyserRef.current} />}
+        {backgroundFormat === 'poligonos-flotantes' && <PoligonosFlotantes analyser={analyserRef.current} />}
+        {backgroundFormat === 'pulse' && <Pulse analyser={analyserRef.current} />}
+        {backgroundFormat === 'kitt' && <KITT analyser={analyserRef.current} />}
+        {backgroundFormat === 'meteoritos' && <Meteoritos analyser={analyserRef.current} />}
+      </div>
     </div>
   );
 };
