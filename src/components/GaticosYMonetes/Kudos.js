@@ -6,12 +6,14 @@ import './Kudos.scss';
 
 const Kudos = () => {
   const [isAnimating, setIsAnimating] = useState(false);
+  const [activeKudos, setActiveKudos] = useState([]);
   const socketRef = useRef(null);
   const bubblesRef = useRef({});
   const containerRef = useRef(null);
   const pulseWavesRef = useRef({});
   const animationRefs = useRef({});
   const elementsRef = useRef({});
+  const kudosDataRef = useRef([]);
 
   // Emojis organizados por niveles
   const emojiLevels = {
@@ -377,6 +379,186 @@ const Kudos = () => {
     });
   };
 
+  useEffect(() => {
+    if (socketRef.current) {
+      socketRef.current.on('kudo', (kudo) => {
+        // Generar posición inicial aleatoria
+        const container = containerRef.current;
+        const containerWidth = container.offsetWidth;
+        const containerHeight = container.offsetHeight;
+        const bubbleSize = 6 * (window.innerWidth / 100); // 6vw
+        const margin = 1 * (window.innerWidth / 100); // 1vw
+
+        const x = Math.random() * (containerWidth - 2 * margin - bubbleSize) + margin;
+        const y = Math.random() * (containerHeight - 2 * margin - bubbleSize) + margin;
+        
+        // Generar propiedades de animación
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 0.35 + 0.15;
+        const freq = Math.random() * 0.5 + 0.2;
+        const phase = Math.random() * Math.PI * 2;
+        const minScale = 1.2;
+        const maxScale = 2.2;
+        const baseScale = Math.random() * (maxScale - minScale) + minScale;
+        
+        // Color aleatorio translúcido
+        const r = Math.floor(Math.random() * 200 + 30);
+        const g = Math.floor(Math.random() * 200 + 30);
+        const b = Math.floor(Math.random() * 200 + 30);
+        const bgColor = `rgba(${r},${g},${b},0.45)`;
+
+        const kudoData = {
+          ...kudo,
+          x,
+          y,
+          angle,
+          speed,
+          freq,
+          phase,
+          minScale,
+          maxScale,
+          baseScale,
+          bgColor,
+          element: null
+        };
+
+        setActiveKudos(prev => [...prev, kudoData]);
+        kudosDataRef.current.push(kudoData);
+
+        // Programar desaparición después de 10 segundos
+        setTimeout(() => {
+          setActiveKudos(prev => prev.filter(k => k.id !== kudo.id));
+          kudosDataRef.current = kudosDataRef.current.filter(k => k.id !== kudo.id);
+        }, 10000);
+      });
+    }
+  }, []);
+
+  // Animación de kudos recibidos
+  useEffect(() => {
+    if (containerRef.current) {
+      const container = containerRef.current;
+      const containerWidth = container.offsetWidth;
+      const containerHeight = container.offsetHeight;
+      const bubbleSize = 6 * (window.innerWidth / 100);
+
+      function animateKudos(time) {
+        kudosDataRef.current.forEach(kudo => {
+          if (!kudo.element) return;
+
+          // Calcular nueva posición
+          let newX = kudo.x + Math.cos(kudo.angle) * kudo.speed * 2;
+          let newY = kudo.y + Math.sin(kudo.angle) * kudo.speed * 2;
+
+          // Oscilación de tamaño
+          const t = (time || 0) / 1000;
+          const scale = kudo.minScale + (kudo.maxScale - kudo.minScale) * 0.5 * (1 + Math.sin(kudo.freq * t + kudo.phase));
+          const radio = (bubbleSize * scale) / 2;
+
+          // Rebote en los bordes
+          if (newX < radio) {
+            newX = radio;
+            kudo.angle = Math.PI - kudo.angle;
+          } else if (newX > containerWidth - radio) {
+            newX = containerWidth - radio;
+            kudo.angle = Math.PI - kudo.angle;
+          }
+          if (newY < radio) {
+            newY = radio;
+            kudo.angle = -kudo.angle;
+          } else if (newY > containerHeight - radio) {
+            newY = containerHeight - radio;
+            kudo.angle = -kudo.angle;
+          }
+
+          kudo.x = newX;
+          kudo.y = newY;
+
+          gsap.set(kudo.element, { 
+            x: kudo.x, 
+            y: kudo.y, 
+            scale, 
+            backgroundColor: kudo.bgColor 
+          });
+        });
+
+        requestAnimationFrame(animateKudos);
+      }
+
+      animateKudos();
+    }
+  }, []);
+
+  const renderActiveKudos = () => {
+    return activeKudos.map((kudo) => {
+      const direction = Math.random() > 0.5 ? 1 : -1;
+      const speed = Math.random() * 2 + 3;
+
+      return (
+        <div
+          key={kudo.id}
+          ref={el => {
+            if (el && !kudo.element) {
+              kudo.element = el;
+            }
+          }}
+          className="emoji-option dragonball"
+          style={{
+            background: 'none',
+            perspective: '600px',
+            overflow: 'visible',
+            position: 'absolute',
+            left: `${kudo.x}px`,
+            top: `${kudo.y}px`,
+            width: '6vw',
+            height: '6vw',
+            minWidth: 48,
+            minHeight: 48,
+            maxWidth: 120,
+            maxHeight: 120,
+            transform: `scale(${kudo.baseScale})`,
+          }}
+        >
+          <Sphere speed={speed} direction={direction}>
+            <span className="dragonball-face front" style={{
+              position: 'absolute',
+              left: 0, top: 0, width: '100%', height: '100%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backfaceVisibility: 'hidden',
+              fontSize: '4.2vw',
+              filter: 'drop-shadow(0 0 0.5vw #fff8)'
+            }}>
+              {kudo.emoji}
+            </span>
+            <span className="dragonball-face back" style={{
+              position: 'absolute',
+              left: 0, top: 0, width: '100%', height: '100%',
+              display: 'block',
+              backfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg)',
+            }}>
+              <span style={{position: 'relative', width: '100%', height: '100%', display: 'block'}}>
+                <span style={{ 
+                  position: 'absolute',
+                  fontSize: '2vw',
+                  color: '#d32f2f',
+                  zIndex: 1,
+                  filter: 'drop-shadow(0 0 0.3vw #0008)'
+                }}>★</span>
+                <span style={{ 
+                  position: 'absolute',
+                  fontSize: '0.8vw',
+                  zIndex: 2,
+                  filter: 'drop-shadow(0 0 0.1vw #000)'
+                }}>{kudo.emoji}</span>
+              </span>
+            </span>
+          </Sphere>
+        </div>
+      );
+    });
+  };
+
   return (
     <div className="kudos-container" ref={containerRef}>
       <div className="emoji-selector">
@@ -384,6 +566,7 @@ const Kudos = () => {
         {renderEmojiRing(emojiLevels.middle, 'middle')}
         {renderEmojiRing(emojiLevels.outer, 'outer')}
       </div>
+      {renderActiveKudos()}
     </div>
   );
 };

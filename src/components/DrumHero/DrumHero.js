@@ -10,6 +10,7 @@ import Poligonos from '../Backgrounds/Poligonos/Poligonos';
 import Pulse from '../Backgrounds/Pulse/Pulse';
 import gsap from 'gsap';
 import PoligonosFlotantes from '../Backgrounds/PoligonosFlotantes/PoligonosFlotantes';
+import Sphere from '../GaticosYMonetes/Sphere';
 
 const DrumHero = () => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -81,6 +82,12 @@ const DrumHero = () => {
     opacity: 0.8
   });
   const [imageOrientation, setImageOrientation] = useState('landscape');
+  const kudosDataRef = useRef([]);
+  const elementsRef = useRef({});
+  const containerRef = useRef(null);
+  const animationRef = useRef(null);
+  const lastTimeRef = useRef(0);
+  const emojisContainerRef = useRef(null);
 
   const generateRandomColor = () => {
     const hue = Math.floor(Math.random() * 360);
@@ -562,25 +569,85 @@ const DrumHero = () => {
         if (!kudosRef.current.has(data.id)) {
           kudosRef.current.add(data.id);
           
-          const x = Math.random() * 80 + 10;
-          const y = Math.random() * 80 + 10;
+          // Verificar que el contenedor existe
+          if (!containerRef.current) {
+            console.warn('DrumHero: El contenedor no está disponible aún');
+            return;
+          }
+
+          const container = containerRef.current;
+          const containerWidth = container.offsetWidth;
+          const containerHeight = container.offsetHeight;
+          const bubbleSize = 6 * (window.innerWidth / 100); // 6vw
+          const margin = 1 * (window.innerWidth / 100); // 1vw
+
+          // Generar posición inicial aleatoria dentro del contenedor
+          const x = Math.random() * (containerWidth - 2 * margin - bubbleSize) + margin;
+          const y = Math.random() * (containerHeight - 2 * margin - bubbleSize) + margin;
           
-          const newKudo = {
+          // Generar propiedades de animación
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 0.5; // Velocidad constante
+          const freq = 0.3; // Frecuencia constante
+          const phase = Math.random() * Math.PI * 2;
+          const minScale = 1.2;
+          const maxScale = 2.2;
+          const baseScale = Math.random() * (maxScale - minScale) + minScale;
+          
+          // Color aleatorio translúcido
+          const r = Math.floor(Math.random() * 200 + 30);
+          const g = Math.floor(Math.random() * 200 + 30);
+          const b = Math.floor(Math.random() * 200 + 30);
+          const bgColor = `rgba(${r},${g},${b},0.45)`;
+
+          const kudoData = {
             ...data,
-            scale: Math.random() * 0.5 + 0.5,
-            rotation: Math.random() * 360,
-            x: x,
-            y: y,
-            opacity: 1,
-            startTime: Date.now()
+            x,
+            y,
+            angle,
+            speed,
+            freq,
+            phase,
+            minScale,
+            maxScale,
+            baseScale,
+            bgColor,
+            id: Date.now(),
+            opacity: 1
           };
 
-          setActiveKudos(prev => [...prev, newKudo]);
+          setActiveKudos(prev => [...prev, kudoData]);
+          kudosDataRef.current.push(kudoData);
 
+          // Efecto de onda al aparecer
+          const element = elementsRef.current[kudoData.id];
+          if (element) {
+            const wave = document.createElement('div');
+            wave.className = 'pulse-wave css-pulse';
+            element.appendChild(wave);
+            setTimeout(() => wave.remove(), 700);
+          }
+
+          // Desvanecimiento suave antes de desaparecer
           setTimeout(() => {
-            kudosRef.current.delete(data.id);
-            setActiveKudos(prev => prev.filter(k => k.id !== data.id));
-          }, 5000);
+            const element = elementsRef.current[kudoData.id];
+            if (element) {
+              gsap.to(element, {
+                opacity: 0,
+                scale: 0.8,
+                duration: 1,
+                ease: "power2.in",
+                onComplete: () => {
+                  kudosRef.current.delete(data.id);
+                  setActiveKudos(prev => prev.filter(k => k.id !== kudoData.id));
+                  kudosDataRef.current = kudosDataRef.current.filter(k => k.id !== kudoData.id);
+                  if (elementsRef.current[kudoData.id]) {
+                    delete elementsRef.current[kudoData.id];
+                  }
+                }
+              });
+            }
+          }, 9000); // Comenzar desvanecimiento 1 segundo antes de desaparecer
         }
       }
     });
@@ -592,6 +659,151 @@ const DrumHero = () => {
       }
     };
   }, [galerias]);
+
+  // Animación de kudos recibidos
+  useEffect(() => {
+    if (emojisContainerRef.current) {
+      const container = emojisContainerRef.current;
+      const vw = window.innerWidth / 100;
+      const vh = window.innerHeight / 100;
+      const containerWidth = container.offsetWidth;
+      const containerHeight = container.offsetHeight;
+      const bubbleSizeVW = 6; // 6vw ~ 80px en 1366px de ancho
+      const bubbleSize = bubbleSizeVW * vw;
+      const marginVW = 1; // 1vw
+      const margin = marginVW * vw;
+
+      function animateKudos(time) {
+        kudosDataRef.current.forEach(kudo => {
+          const element = elementsRef.current[kudo.id];
+          if (!element) return;
+
+          // Calcular nueva posición
+          let newX = kudo.x + Math.cos(kudo.angle) * kudo.speed;
+          let newY = kudo.y + Math.sin(kudo.angle) * kudo.speed;
+
+          // Oscilación de tamaño
+          const t = (time || 0) / 1000;
+          const scale = kudo.minScale + (kudo.maxScale - kudo.minScale) * 0.5 * (1 + Math.sin(kudo.freq * t + kudo.phase));
+          const radio = (bubbleSize * scale) / 2;
+
+          // Rebote en los bordes
+          if (newX < radio) {
+            newX = radio;
+            kudo.angle = Math.PI - kudo.angle;
+          } else if (newX > containerWidth - radio) {
+            newX = containerWidth - radio;
+            kudo.angle = Math.PI - kudo.angle;
+          }
+          if (newY < radio) {
+            newY = radio;
+            kudo.angle = -kudo.angle;
+          } else if (newY > containerHeight - radio) {
+            newY = containerHeight - radio;
+            kudo.angle = -kudo.angle;
+          }
+
+          kudo.x = newX;
+          kudo.y = newY;
+
+          gsap.set(element, { 
+            x: kudo.x, 
+            y: kudo.y, 
+            scale, 
+            backgroundColor: kudo.bgColor 
+          });
+        });
+
+        requestAnimationFrame(animateKudos);
+      }
+
+      // Limpiar animación anterior si existe
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+
+      // Iniciar nueva animación
+      animateKudos();
+
+      // Limpiar al desmontar
+      return () => {
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+      };
+    }
+  }, []);
+
+  const renderActiveKudos = () => {
+    return activeKudos.map((kudo) => {
+      const direction = 1;
+      const speed = 8;
+
+      return (
+        <div
+          key={kudo.id}
+          ref={el => {
+            if (el && !elementsRef.current[kudo.id]) {
+              elementsRef.current[kudo.id] = el;
+            }
+          }}
+          className="emoji-option dragonball"
+          style={{
+            background: 'none',
+            perspective: '600px',
+            overflow: 'visible',
+            position: 'absolute',
+            left: `${kudo.x}px`,
+            top: `${kudo.y}px`,
+            width: '6vw',
+            height: '6vw',
+            minWidth: 48,
+            minHeight: 48,
+            maxWidth: 120,
+            maxHeight: 120,
+            transform: `scale(${kudo.baseScale})`,
+            opacity: kudo.opacity
+          }}
+        >
+          <Sphere speed={speed} direction={direction}>
+            <span className="dragonball-face front" style={{
+              position: 'absolute',
+              left: 0, top: 0, width: '100%', height: '100%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backfaceVisibility: 'hidden',
+              fontSize: '4.2vw',
+              filter: 'drop-shadow(0 0 0.5vw #fff8)'
+            }}>
+              {kudo.emoji}
+            </span>
+            <span className="dragonball-face back" style={{
+              position: 'absolute',
+              left: 0, top: 0, width: '100%', height: '100%',
+              display: 'block',
+              backfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg)',
+            }}>
+              <span style={{position: 'relative', width: '100%', height: '100%', display: 'block'}}>
+                <span style={{ 
+                  position: 'absolute',
+                  fontSize: '2vw',
+                  color: '#d32f2f',
+                  zIndex: 1,
+                  filter: 'drop-shadow(0 0 0.3vw #0008)'
+                }}>★</span>
+                <span style={{ 
+                  position: 'absolute',
+                  fontSize: '0.8vw',
+                  zIndex: 2,
+                  filter: 'drop-shadow(0 0 0.1vw #000)'
+                }}>{kudo.emoji}</span>
+              </span>
+            </span>
+          </Sphere>
+        </div>
+      );
+    });
+  };
 
   // Efecto para depuración
   useEffect(() => {
@@ -662,7 +874,7 @@ const DrumHero = () => {
   }, [currentImageIndex, petImages]);
 
   return (
-    <div className="drum-hero" style={{ backgroundColor }}>
+    <div className="drum-hero" style={{ backgroundColor }} ref={containerRef}>
       <button 
         onClick={toggleFullScreen} 
         className="fullscreen-button"
@@ -727,20 +939,9 @@ const DrumHero = () => {
         </div>
       </div>
 
-      {activeKudos.map(kudo => (
-        <div
-          key={kudo.id}
-          className="floating-kudo"
-          style={{
-            left: `${kudo.x}%`,
-            top: `${kudo.y}%`,
-            transform: `scale(${kudo.scale}) rotate(${kudo.rotation}deg)`,
-            opacity: kudo.opacity
-          }}
-        >
-          {kudo.emoji}
-        </div>
-      ))}
+      <div className="emojis-container" ref={emojisContainerRef}>
+        {renderActiveKudos()}
+      </div>
 
       <button 
         onClick={togglePlay} 

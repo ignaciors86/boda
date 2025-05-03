@@ -209,6 +209,48 @@
       }
     }
   }
+
+  .emoji-option {
+    position: absolute;
+    transform-style: preserve-3d;
+    will-change: transform;
+    pointer-events: none;
+  }
+
+  .dragonball {
+    transform-style: preserve-3d;
+    perspective: 600px;
+  }
+
+  .dragonball-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backfaceVisibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .dragonball-face.front {
+    transform: translateZ(0);
+  }
+
+  .dragonball-face.back {
+    transform: rotateY(180deg);
+  }
+
+  .emojis-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 10;
+    margin: 0;
+    padding: 0;
+  }
 }
 
 @keyframes rotate {

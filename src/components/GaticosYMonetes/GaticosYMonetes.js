@@ -1,7 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { io } from 'socket.io-client';
+import gsap from 'gsap';
 import GaleriaLoader from './GaleriaLoader';
+import Sphere from './Sphere';
 import './GaticosYMonetes.scss';
+import './Sphere.scss';
 
 const GaticosYMonetes = () => {
   const [receivedKudos, setReceivedKudos] = useState([]);
@@ -9,6 +12,9 @@ const GaticosYMonetes = () => {
   const [borderColor, setBorderColor] = useState('#00ff00');
   const [backgroundFormat, setBackgroundFormat] = useState('polygons');
   const socketRef = useRef(null);
+  const containerRef = useRef(null);
+  const kudosDataRef = useRef([]);
+  const elementsRef = useRef({});
   const galerias = GaleriaLoader();
 
   useEffect(() => {
@@ -39,25 +45,58 @@ const GaticosYMonetes = () => {
     });
 
     socketRef.current.on('kudo', (kudo) => {
-      const scale = Math.random() * 2 + 1; // Escala entre 1x y 3x
-      const x = Math.random() * 80 + 10; // Posición X entre 10% y 90%
-      const y = Math.random() * 80 + 10; // Posición Y entre 10% y 90%
+      // Generar posición inicial aleatoria
+      const container = containerRef.current;
+      const containerWidth = container.offsetWidth;
+      const containerHeight = container.offsetHeight;
+      const bubbleSize = 6 * (window.innerWidth / 100); // 6vw
+      const margin = 1 * (window.innerWidth / 100); // 1vw
+
+      const x = Math.random() * (containerWidth - 2 * margin - bubbleSize) + margin;
+      const y = Math.random() * (containerHeight - 2 * margin - bubbleSize) + margin;
       
-      setReceivedKudos(prevKudos => [
-        ...prevKudos,
-        {
-          ...kudo,
-          scale,
-          x,
-          y,
-          id: Date.now()
-        }
-      ]);
+      // Generar propiedades de animación
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 0.35 + 0.15;
+      const freq = Math.random() * 0.5 + 0.2;
+      const phase = Math.random() * Math.PI * 2;
+      const minScale = 1.2;
+      const maxScale = 2.2;
+      const baseScale = Math.random() * (maxScale - minScale) + minScale;
       
-      // Eliminar el kudo después de 5 segundos
+      // Color aleatorio translúcido
+      const r = Math.floor(Math.random() * 200 + 30);
+      const g = Math.floor(Math.random() * 200 + 30);
+      const b = Math.floor(Math.random() * 200 + 30);
+      const bgColor = `rgba(${r},${g},${b},0.45)`;
+
+      const kudoData = {
+        ...kudo,
+        x,
+        y,
+        angle,
+        speed,
+        freq,
+        phase,
+        minScale,
+        maxScale,
+        baseScale,
+        bgColor,
+        element: null,
+        id: Date.now()
+      };
+
+      setReceivedKudos(prev => [...prev, kudoData]);
+      kudosDataRef.current.push(kudoData);
+
+      // Programar desaparición después de 10 segundos
       setTimeout(() => {
-        setReceivedKudos(prevKudos => prevKudos.filter(k => k.id !== kudo.id));
-      }, 5000);
+        setReceivedKudos(prev => prev.filter(k => k.id !== kudoData.id));
+        kudosDataRef.current = kudosDataRef.current.filter(k => k.id !== kudoData.id);
+        if (elementsRef.current[kudoData.id]) {
+          delete elementsRef.current[kudoData.id];
+        }
+      }, 10000);
     });
 
     socketRef.current.on('disconnect', () => {
@@ -95,6 +134,62 @@ const GaticosYMonetes = () => {
     };
   }, [galerias]);
 
+  // Animación de kudos recibidos
+  useEffect(() => {
+    if (containerRef.current) {
+      const container = containerRef.current;
+      const containerWidth = container.offsetWidth;
+      const containerHeight = container.offsetHeight;
+      const bubbleSize = 6 * (window.innerWidth / 100);
+
+      function animateKudos(time) {
+        kudosDataRef.current.forEach(kudo => {
+          const element = elementsRef.current[kudo.id];
+          if (!element) return;
+
+          // Calcular nueva posición
+          let newX = kudo.x + Math.cos(kudo.angle) * kudo.speed * 2;
+          let newY = kudo.y + Math.sin(kudo.angle) * kudo.speed * 2;
+
+          // Oscilación de tamaño
+          const t = (time || 0) / 1000;
+          const scale = kudo.minScale + (kudo.maxScale - kudo.minScale) * 0.5 * (1 + Math.sin(kudo.freq * t + kudo.phase));
+          const radio = (bubbleSize * scale) / 2;
+
+          // Rebote en los bordes
+          if (newX < radio) {
+            newX = radio;
+            kudo.angle = Math.PI - kudo.angle;
+          } else if (newX > containerWidth - radio) {
+            newX = containerWidth - radio;
+            kudo.angle = Math.PI - kudo.angle;
+          }
+          if (newY < radio) {
+            newY = radio;
+            kudo.angle = -kudo.angle;
+          } else if (newY > containerHeight - radio) {
+            newY = containerHeight - radio;
+            kudo.angle = -kudo.angle;
+          }
+
+          kudo.x = newX;
+          kudo.y = newY;
+
+          gsap.set(element, { 
+            x: kudo.x, 
+            y: kudo.y, 
+            scale, 
+            backgroundColor: kudo.bgColor 
+          });
+        });
+
+        requestAnimationFrame(animateKudos);
+      }
+
+      animateKudos();
+    }
+  }, []);
+
   const getClipPath = () => {
     if (backgroundFormat === 'polygons') {
       return 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)';
@@ -102,8 +197,78 @@ const GaticosYMonetes = () => {
     return 'circle(50% at 50% 50%)';
   };
 
+  const renderActiveKudos = () => {
+    return receivedKudos.map((kudo) => {
+      const direction = Math.random() > 0.5 ? 1 : -1;
+      const speed = Math.random() * 2 + 3;
+
+      return (
+        <div
+          key={kudo.id}
+          ref={el => {
+            if (el && !elementsRef.current[kudo.id]) {
+              elementsRef.current[kudo.id] = el;
+            }
+          }}
+          className="emoji-option dragonball"
+          style={{
+            background: 'none',
+            perspective: '600px',
+            overflow: 'visible',
+            position: 'absolute',
+            left: `${kudo.x}px`,
+            top: `${kudo.y}px`,
+            width: '6vw',
+            height: '6vw',
+            minWidth: 48,
+            minHeight: 48,
+            maxWidth: 120,
+            maxHeight: 120,
+            transform: `scale(${kudo.baseScale})`,
+          }}
+        >
+          <Sphere speed={speed} direction={direction}>
+            <span className="dragonball-face front" style={{
+              position: 'absolute',
+              left: 0, top: 0, width: '100%', height: '100%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backfaceVisibility: 'hidden',
+              fontSize: '4.2vw',
+              filter: 'drop-shadow(0 0 0.5vw #fff8)'
+            }}>
+              {kudo.emoji}
+            </span>
+            <span className="dragonball-face back" style={{
+              position: 'absolute',
+              left: 0, top: 0, width: '100%', height: '100%',
+              display: 'block',
+              backfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg)',
+            }}>
+              <span style={{position: 'relative', width: '100%', height: '100%', display: 'block'}}>
+                <span style={{ 
+                  position: 'absolute',
+                  fontSize: '2vw',
+                  color: '#d32f2f',
+                  zIndex: 1,
+                  filter: 'drop-shadow(0 0 0.3vw #0008)'
+                }}>★</span>
+                <span style={{ 
+                  position: 'absolute',
+                  fontSize: '0.8vw',
+                  zIndex: 2,
+                  filter: 'drop-shadow(0 0 0.1vw #000)'
+                }}>{kudo.emoji}</span>
+              </span>
+            </span>
+          </Sphere>
+        </div>
+      );
+    });
+  };
+
   return (
-    <div className="gaticos-y-monetes-container">
+    <div className="gaticos-y-monetes-container" ref={containerRef}>
       <div className="drum-hero">
         <div 
           className="image-container"
@@ -134,21 +299,7 @@ const GaticosYMonetes = () => {
           </div>
         </div>
       </div>
-      
-      {/* Renderizar los kudos recibidos */}
-      {receivedKudos.map(kudo => (
-        <div
-          key={kudo.id}
-          className="floating-kudo"
-          style={{
-            '--scale': kudo.scale,
-            '--x': `${kudo.x}%`,
-            '--y': `${kudo.y}%`
-          }}
-        >
-          {kudo.emoji}
-        </div>
-      ))}
+      {renderActiveKudos()}
     </div>
   );
 };
