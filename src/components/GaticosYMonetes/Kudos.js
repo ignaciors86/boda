@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { io } from 'socket.io-client';
 import gsap from 'gsap';
+import Sphere from './Sphere';
 import './Kudos.scss';
 
 const Kudos = () => {
@@ -84,7 +85,7 @@ const Kudos = () => {
           const r = Math.floor(Math.random() * 200 + 30);
           const g = Math.floor(Math.random() * 200 + 30);
           const b = Math.floor(Math.random() * 200 + 30);
-          const bgColor = `rgba(${r},${g},${b},0.25)`;
+          const bgColor = `rgba(${r},${g},${b},0.45)`;
           const element = document.querySelector(`[data-level="${level}"][data-index="${index}"]`);
           if (element) {
             emojisData.push({ element, x, y, baseScale, minScale, maxScale, angle, speed, freq, phase, bgColor });
@@ -170,55 +171,84 @@ const Kudos = () => {
       emojis.forEach((emoji, index) => {
         const key = `${level}-${index}`;
         const count = Math.floor(Math.random() * 7) + 1;
-        // Generar SVGs de estrellas rojas
-        const radius = 25; // Radio para las estrellas del círculo
+        const radius = 35;
         const size = 14;
-        const stars = [];
+        const emojiElements = [];
         
-        // Si hay 6 o 7 estrellas, una va en el centro
-        const starsInCircle = count === 6 || count === 7 ? count - 1 : count;
+        // Si hay 6 o 7 emojis, uno va en el centro
+        const emojisInCircle = count === 6 || count === 7 ? count - 1 : count;
         
-        // Generar estrellas en círculo
-        for (let i = 0; i < starsInCircle; i++) {
-          const angle = (i * 2 * Math.PI) / starsInCircle;
+        // Generar emojis en círculo
+        for (let i = 0; i < emojisInCircle; i++) {
+          const angle = (i * 2 * Math.PI) / emojisInCircle;
           const x = 50 + Math.cos(angle) * radius;
           const y = 50 + Math.sin(angle) * radius;
-          stars.push(
+          emojiElements.push(
             <span
               key={i}
-              className="dragonball-star"
+              className="dragonball-emoji"
               style={{
                 position: 'absolute',
                 left: `${x}%`,
                 top: `${y}%`,
-                fontSize: '0.7vw',
+                fontSize: '1.2vw',
                 color: '#d32f2f',
                 filter: 'drop-shadow(0 0 0.2vw #0008)',
-                transform: 'translate(-50%, -50%)'
+                transform: 'translate(-50%, -50%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}
             >
-              ★
+              <span style={{ 
+                position: 'absolute',
+                fontSize: '2vw',
+                color: '#d32f2f',
+                zIndex: 1,
+                filter: 'drop-shadow(0 0 0.3vw #0008)'
+              }}>★</span>
+              <span style={{ 
+                position: 'absolute',
+                fontSize: '0.8vw',
+                zIndex: 2,
+                filter: 'drop-shadow(0 0 0.1vw #000)'
+              }}>{emoji}</span>
             </span>
           );
         }
 
-        // Añadir estrella central si hay 6 o 7 estrellas
+        // Añadir emoji central si hay 6 o 7 emojis
         if (count === 6 || count === 7) {
-          stars.push(
+          emojiElements.push(
             <span
               key="center"
-              className="dragonball-star"
+              className="dragonball-emoji"
               style={{
                 position: 'absolute',
                 left: '50%',
                 top: '50%',
-                fontSize: '0.7vw',
+                fontSize: '1.2vw',
                 color: '#d32f2f',
                 filter: 'drop-shadow(0 0 0.2vw #0008)',
-                transform: 'translate(-50%, -50%)'
+                transform: 'translate(-50%, -50%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}
             >
-              ★
+              <span style={{ 
+                position: 'absolute',
+                fontSize: '2vw',
+                color: '#d32f2f',
+                zIndex: 1,
+                filter: 'drop-shadow(0 0 0.3vw #0008)'
+              }}>★</span>
+              <span style={{ 
+                position: 'absolute',
+                fontSize: '0.8vw',
+                zIndex: 2,
+                filter: 'drop-shadow(0 0 0.1vw #000)'
+              }}>{emoji}</span>
             </span>
           );
         }
@@ -226,7 +256,7 @@ const Kudos = () => {
         // Dirección y velocidad de giro aleatoria
         const direction = Math.random() > 0.5 ? 1 : -1;
         const speed = Math.random() * 2 + 3; // 3s a 5s por vuelta
-        balls[key] = { stars, direction, speed };
+        balls[key] = { emojiElements, direction, speed, mainEmoji: emoji };
       });
     });
     return balls;
@@ -288,7 +318,12 @@ const Kudos = () => {
   const renderEmojiRing = (emojis, level) => {
     return emojis.map((emoji, index) => {
       const key = `${level}-${index}`;
-      const { stars, direction, speed } = dragonBallBalls[key] || { stars: [], direction: 1, speed: 4 };
+      const { emojiElements, direction, speed, mainEmoji } = dragonBallBalls[key] || { 
+        emojiElements: [], 
+        direction: 1, 
+        speed: 4,
+        mainEmoji: emoji 
+      };
 
       return (
         <button
@@ -313,29 +348,16 @@ const Kudos = () => {
             transform: `scale(var(--scale, 1))`,
           }}
         >
-          <span
-            className="dragonball-3d"
-            style={{
-              width: '100%',
-              height: '100%',
-              display: 'block',
-              position: 'relative',
-              transformStyle: 'preserve-3d',
-              animation: `dragonball-spin ${speed}s linear infinite`,
-              animationDirection: direction > 0 ? 'normal' : 'reverse'
-            }}
-          >
-            <span className="dragonball-sphere-bg" />
-            <span className="dragonball-sphere-highlight" />
+          <Sphere speed={speed} direction={direction}>
             <span className="dragonball-face front" style={{
               position: 'absolute',
               left: 0, top: 0, width: '100%', height: '100%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               backfaceVisibility: 'hidden',
-              fontSize: '2.2vw',
+              fontSize: '4.2vw',
               filter: 'drop-shadow(0 0 0.5vw #fff8)'
             }}>
-              {emoji}
+              {mainEmoji}
             </span>
             <span className="dragonball-face back" style={{
               position: 'absolute',
@@ -345,11 +367,11 @@ const Kudos = () => {
               transform: 'rotateY(180deg)',
             }}>
               <span style={{position: 'relative', width: '100%', height: '100%', display: 'block'}}>
-                {stars}
+                {emojiElements}
               </span>
             </span>
-            <span className="pulse-wave css-pulse" style={{ opacity: 0 }} />
-          </span>
+          </Sphere>
+          <span className="pulse-wave css-pulse" style={{ opacity: 0 }} />
         </button>
       );
     });

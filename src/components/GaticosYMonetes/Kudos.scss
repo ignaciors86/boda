@@ -9,13 +9,6 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
-
-  .back::before {
-    mask-image: none !important;
-    -webkit-mask-image: none !important;
-    content: none !important;
-    display: none !important;
-  }
 }
 
 .qr-container {
@@ -268,9 +261,9 @@
   top: 0;
   display: flex;
   align-items: center;
+  border: 0;
   justify-content: center;
   backface-visibility: hidden;
-  transform-style: preserve-3d;
 }
 
 .dragonball-face.back {
@@ -280,18 +273,12 @@
 }
 
 .dragonball-star {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%) scale(0.7) translateY(-25%);
   text-shadow: 0 0 0.5vw #fff8, 0 0 0.2vw #ff9800;
   pointer-events: none;
-  font-size: 0.8vw;
+  font-size: 1.1vw;
   color: #d32f2f;
   font-family: inherit;
   font-weight: bold;
-  letter-spacing: -0.15em;
-  margin: 0 -0.15em;
 }
 
 .dragonball-emoji {
@@ -313,8 +300,6 @@
   background: none;
   perspective: 600px;
   overflow: visible;
-  aspect-ratio: 1;
-  border-radius: 50%;
 
   &:focus,
   &:active {
@@ -359,8 +344,20 @@
       align-items: center;
       justify-content: center;
       backface-visibility: hidden;
-      transform-style: preserve-3d;
       border-radius: 50%;
+
+      &.back {
+        display: block;
+        transform: rotateY(180deg);
+        background: none;
+
+        &::before {
+          display: none !important;
+          content: none !important;
+          mask-image: none !important;
+          -webkit-mask-image: none !important;
+        }
+      }
     }
   }
 }
@@ -392,14 +389,5 @@
   100% {
     opacity: 0;
     transform: translate(-50%, -50%) scale(2.5);
-  }
-}
-
-@keyframes dragonball-spin {
-  from {
-    transform: rotateY(0deg);
-  }
-  to {
-    transform: rotateY(360deg);
   }
 } 
