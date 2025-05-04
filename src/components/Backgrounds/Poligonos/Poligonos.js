@@ -19,6 +19,7 @@ const Poligonos = ({ analyser }) => {
 
     const resizeCanvas = () => {
       if (!canvas) return;
+      if (typeof canvas.getBoundingClientRect !== 'function') return;
       const rect = canvas.getBoundingClientRect();
       if (!rect) return;
       

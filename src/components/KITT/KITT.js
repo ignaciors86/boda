@@ -23,9 +23,6 @@ const KITT = ({ analyser }) => {
         canvasBarsRef.current.height = barsHeight * dpr;
         ctxBars.scale(dpr, dpr);
 
-        ctxBars.fillStyle = 'rgb(0, 0, 0)';
-        ctxBars.fillRect(0, 0, barsWidth, barsHeight);
-
         // Configuración del ecualizador KITT
         const numBars = 3;
         const numSegments = 13;
@@ -136,13 +133,13 @@ const KITT = ({ analyser }) => {
         
         const fadeGradient = ctxBars.createLinearGradient(0, startY, 0, startY + totalBarHeight);
         
-        fadeGradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
-        fadeGradient.addColorStop(0.15, 'rgba(0, 0, 0, 0.98)');
+        fadeGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        fadeGradient.addColorStop(0.15, 'rgba(0, 0, 0, 0)');
         fadeGradient.addColorStop(0.45, 'rgba(0, 0, 0, 0)');
         fadeGradient.addColorStop(0.5, 'rgba(0, 0, 0, 0)');
         fadeGradient.addColorStop(0.55, 'rgba(0, 0, 0, 0)');
-        fadeGradient.addColorStop(0.85, 'rgba(0, 0, 0, 0.98)');
-        fadeGradient.addColorStop(1, 'rgba(0, 0, 0, 1)');
+        fadeGradient.addColorStop(0.85, 'rgba(0, 0, 0, 0)');
+        fadeGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
         
         ctxBars.save();
         ctxBars.globalCompositeOperation = 'multiply';

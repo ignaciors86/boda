@@ -44,20 +44,27 @@
     .image-wrapper {
       position: relative;
       width: 80%;
-      height: 100%;
+      height: var(--image-size) !important;
       z-index: 2;
       transform-origin: center;
       will-change: transform, clip-path, opacity;
       overflow: hidden;
-      width: var(--image-size) !important;
-      height: var(--image-size) !important;
-      border-radius: calc(var(--image-size) / 2);
-      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
+      &.circular {
+        width: var(--image-size) !important;
+        height: var(--image-size) !important;
+        border-radius: 50%;
+      }
+
+      &.shaking {
+        animation: dance 2s infinite;
+      }
 
       .pet-image {
         object-fit: contain;
-
 
         &[data-orientation="landscape"] {
           width: auto;

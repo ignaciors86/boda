@@ -3,23 +3,28 @@ import { io } from 'socket.io-client';
 import GaleriaLoader from './GaleriaLoader';
 import './Controles.scss';
 
+const DEFAULT_AUTO_CHANGE_TIME = 0;
+
 const Controles = () => {
   const [speedMultiplier, setSpeedMultiplier] = useState(2.5);
   const [photoChangeFactor, setPhotoChangeFactor] = useState(1);
   const [inputValue, setInputValue] = useState('1');
-  const [autoChangeTime, setAutoChangeTime] = useState(30);
-  const [autoChangeInput, setAutoChangeInput] = useState('30');
+  const [autoChangeTime, setAutoChangeTime] = useState(DEFAULT_AUTO_CHANGE_TIME);
+  const [autoChangeInput, setAutoChangeInput] = useState(DEFAULT_AUTO_CHANGE_TIME.toString());
   const [isInputModified, setIsInputModified] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(30);
+  const [timeRemaining, setTimeRemaining] = useState(DEFAULT_AUTO_CHANGE_TIME);
   const [isResetting, setIsResetting] = useState(false);
   const socketRef = useRef(null);
   const autoChangeTimerRef = useRef(null);
   const progressTimerRef = useRef(null);
-  const [coleccionActual, setColeccionActual] = useState('test');
+  const [coleccionActual, setColeccionActual] = useState(() => {
+    const savedColeccion = localStorage.getItem('coleccionActual');
+    return savedColeccion || 'ninguna';
+  });
   const galerias = GaleriaLoader();
   const [backgroundFormat, setBackgroundFormat] = useState(() => {
     const savedFormat = localStorage.getItem('backgroundFormat');
-    return savedFormat || 'polygons';
+    return savedFormat || 'kitt';
   });
   const [sensitiveMode, setSensitiveMode] = useState(() => {
     const savedMode = localStorage.getItem('sensitiveMode');
@@ -29,10 +34,9 @@ const Controles = () => {
     const savedMode = localStorage.getItem('extraSensitiveMode');
     return savedMode === 'true';
   });
-  const [pursuitMode, setPursuitMode] = useState(() => {
-    const savedMode = localStorage.getItem('pursuitMode');
-    return savedMode === 'true';
-  });
+  const [pursuitMode, setPursuitMode] = useState(false);
+  const [circularImages, setCircularImages] = useState(false);
+  const [shakeImage, setShakeImage] = useState(false);
   const [autoChangeInterval, setAutoChangeInterval] = useState(null);
 
   const formatos = ['polygons', 'poligonos-flotantes', 'pulse', 'kitt', 'meteoritos'];
@@ -99,7 +103,7 @@ const Controles = () => {
               localStorage.setItem('backgroundFormat', nextFormat);
               
               if (socketRef.current?.connected) {
-                socketRef.current.emit('kudo', {
+                socketRef.current.emit('galerias', {
                   id: Date.now(),
                   format: nextFormat,
                   timestamp: Date.now()
@@ -126,7 +130,7 @@ const Controles = () => {
   useEffect(() => {
     if (socketRef.current?.connected) {
       console.log('Controles: Emitiendo formato inicial:', backgroundFormat);
-      socketRef.current.emit('background-format-change', {
+      socketRef.current.emit('galerias', {
         format: backgroundFormat,
         timestamp: Date.now()
       });
@@ -136,14 +140,16 @@ const Controles = () => {
   useEffect(() => {
     if (socketRef.current?.connected) {
       console.log('Controles: Emitiendo modo sensible inicial:', sensitiveMode);
-      socketRef.current.emit('sensitive-mode-change', {
-        enabled: sensitiveMode,
-        extraSensitive: extraSensitiveMode,
-        pursuit: pursuitMode,
+      socketRef.current.emit('galerias', {
+        sensitiveMode,
+        extraSensitiveMode,
+        pursuitMode,
+        circularImages,
+        shakeImage,
         timestamp: Date.now()
       });
     }
-  }, [sensitiveMode, extraSensitiveMode, pursuitMode]);
+  }, [sensitiveMode, extraSensitiveMode, pursuitMode, circularImages, shakeImage]);
 
   const handleAutoChangeTimeChange = (e) => {
     setAutoChangeInput(e.target.value);
@@ -173,7 +179,7 @@ const Controles = () => {
     localStorage.setItem('backgroundFormat', newFormat);
     
     if (socketRef.current?.connected) {
-      socketRef.current.emit('kudo', {
+      socketRef.current.emit('galerias', {
         id: Date.now(),
         format: newFormat,
         timestamp: Date.now()
@@ -183,23 +189,17 @@ const Controles = () => {
 
   const handleSensitiveModeChange = (e) => {
     const newMode = e.target.checked;
-    console.log('Controles: Cambiando modo sensible a:', newMode);
     setSensitiveMode(newMode);
-    localStorage.setItem('sensitiveMode', newMode);
-    
-    if (newMode) {
-      setExtraSensitiveMode(false);
-      setPursuitMode(false);
-      localStorage.setItem('extraSensitiveMode', false);
-      localStorage.setItem('pursuitMode', false);
-    }
-    
+    setExtraSensitiveMode(false);
+    setPursuitMode(false);
     if (socketRef.current?.connected) {
-      socketRef.current.emit('kudo', {
+      socketRef.current.emit('galerias', {
         id: Date.now(),
         sensitiveMode: newMode,
-        extraSensitive: false,
-        pursuit: false,
+        extraSensitiveMode: false,
+        pursuitMode: false,
+        circularImages,
+        shakeImage,
         timestamp: Date.now()
       });
     }
@@ -207,23 +207,17 @@ const Controles = () => {
 
   const handleExtraSensitiveModeChange = (e) => {
     const newMode = e.target.checked;
-    console.log('Controles: Cambiando modo extra sensible a:', newMode);
     setExtraSensitiveMode(newMode);
-    localStorage.setItem('extraSensitiveMode', newMode);
-    
-    if (newMode) {
-      setSensitiveMode(false);
-      setPursuitMode(false);
-      localStorage.setItem('sensitiveMode', false);
-      localStorage.setItem('pursuitMode', false);
-    }
-    
+    setSensitiveMode(false);
+    setPursuitMode(false);
     if (socketRef.current?.connected) {
-      socketRef.current.emit('kudo', {
+      socketRef.current.emit('galerias', {
         id: Date.now(),
         sensitiveMode: false,
-        extraSensitive: newMode,
-        pursuit: false,
+        extraSensitiveMode: newMode,
+        pursuitMode: false,
+        circularImages,
+        shakeImage,
         timestamp: Date.now()
       });
     }
@@ -231,23 +225,49 @@ const Controles = () => {
 
   const handlePursuitModeChange = (e) => {
     const newMode = e.target.checked;
-    console.log('Controles: Cambiando modo persecución a:', newMode);
     setPursuitMode(newMode);
-    localStorage.setItem('pursuitMode', newMode);
-    
-    if (newMode) {
-      setSensitiveMode(false);
-      setExtraSensitiveMode(false);
-      localStorage.setItem('sensitiveMode', false);
-      localStorage.setItem('extraSensitiveMode', false);
-    }
-    
+    setSensitiveMode(false);
+    setExtraSensitiveMode(false);
     if (socketRef.current?.connected) {
-      socketRef.current.emit('kudo', {
+      socketRef.current.emit('galerias', {
         id: Date.now(),
         sensitiveMode: false,
-        extraSensitive: false,
-        pursuit: newMode,
+        extraSensitiveMode: false,
+        pursuitMode: newMode,
+        circularImages,
+        shakeImage,
+        timestamp: Date.now()
+      });
+    }
+  };
+
+  const handleCircularImagesChange = (e) => {
+    const newMode = e.target.checked;
+    setCircularImages(newMode);
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('galerias', {
+        id: Date.now(),
+        sensitiveMode,
+        extraSensitiveMode,
+        pursuitMode,
+        circularImages: newMode,
+        shakeImage,
+        timestamp: Date.now()
+      });
+    }
+  };
+
+  const handleShakeImageChange = (e) => {
+    const newMode = e.target.checked;
+    setShakeImage(newMode);
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('galerias', {
+        id: Date.now(),
+        sensitiveMode,
+        extraSensitiveMode,
+        pursuitMode,
+        circularImages,
+        shakeImage: newMode,
         timestamp: Date.now()
       });
     }
@@ -255,8 +275,9 @@ const Controles = () => {
 
   const cambiarColeccion = (id) => {
     setColeccionActual(id);
+    localStorage.setItem('coleccionActual', id);
     if (socketRef.current && socketRef.current.connected) {
-      socketRef.current.emit('kudo', {
+      socketRef.current.emit('galerias', {
         id: Date.now(),
         coleccion: id,
         timestamp: Date.now()
@@ -268,7 +289,7 @@ const Controles = () => {
     const newSpeed = parseFloat(e.target.value);
     setSpeedMultiplier(newSpeed);
     if (socketRef.current?.connected) {
-      socketRef.current.emit('kudo', {
+      socketRef.current.emit('galerias', {
         id: Date.now(),
         speed: newSpeed,
         timestamp: Date.now()
@@ -282,7 +303,7 @@ const Controles = () => {
     if (!isNaN(factor) && factor > 0) {
       setPhotoChangeFactor(factor);
       if (socketRef.current && socketRef.current.connected) {
-        socketRef.current.emit('kudo', {
+        socketRef.current.emit('galerias', {
           id: Date.now(),
           photoFactor: factor,
           timestamp: Date.now()
@@ -325,7 +346,9 @@ const Controles = () => {
         <div className="controles-section">
           <h2>COlecciones</h2>
           <div className="controles-buttons">
-            {Object.values(galerias).map(galeria => (
+            {Object.values(galerias)
+              .sort((a, b) => a.id === 'ninguna' ? -1 : b.id === 'ninguna' ? 1 : 0)
+              .map(galeria => (
               <button
                 key={galeria.id}
                 className={`controles-btn${coleccionActual === galeria.id ? ' active' : ''}`}
@@ -335,6 +358,22 @@ const Controles = () => {
               </button>
             ))}
           </div>
+          <label className="controles-checkbox">
+            <input
+              type="checkbox"
+              checked={circularImages}
+              onChange={handleCircularImagesChange}
+            />
+            <span>Imágenes Circulares</span>
+          </label>
+          <label className="controles-checkbox">
+            <input
+              type="checkbox"
+              checked={shakeImage}
+              onChange={handleShakeImageChange}
+            />
+            <span>Menear Imagen</span>
+          </label>
         </div>
 
         <div className="controles-section">

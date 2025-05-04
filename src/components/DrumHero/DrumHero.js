@@ -69,10 +69,9 @@ const DrumHero = () => {
     const savedMode = localStorage.getItem('extraSensitiveMode');
     return savedMode === 'true';
   });
-  const [pursuitMode, setPursuitMode] = useState(() => {
-    const savedMode = localStorage.getItem('pursuitMode');
-    return savedMode === 'true';
-  });
+  const [pursuitMode, setPursuitMode] = useState(false);
+  const [circularImages, setCircularImages] = useState(false);
+  const [shakeImage, setShakeImage] = useState(false);
   const [energyHistory, setEnergyHistory] = useState([]);
   const [bassEnergy, setBassEnergy] = useState(0);
   const [midEnergy, setMidEnergy] = useState(0);
@@ -540,6 +539,10 @@ const DrumHero = () => {
 
   const getImagePolygonStyle = () => {
     const { rotation, scale } = imagePolygonState;
+    const shakeStyle = shakeImage ? {
+      animation: 'dance 2s infinite'
+    } : {};
+    
     return {
       transform: `rotate(${rotation}deg) scale(${scale})`,
       transition: 'all 0.3s ease-out',
@@ -548,7 +551,8 @@ const DrumHero = () => {
       height: '80%',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      ...shakeStyle
     };
   };
 
@@ -649,7 +653,7 @@ const DrumHero = () => {
     });
 
     socket.on('kudo', (data) => {
-      console.log('DrumHero: Recibido kudo:', data);
+      console.log('DrumHero: Recibido evento kudo:', data);
       
       if (!data) return;
 
@@ -658,6 +662,8 @@ const DrumHero = () => {
         setPetImages(galerias[data.coleccion]?.imagenes || []);
         setColeccionActual(data.coleccion);
         setCurrentImageIndex(0);
+        if (data.circularImages !== undefined) setCircularImages(data.circularImages);
+        if (data.shakeImage !== undefined) setShakeImage(data.shakeImage);
       } else if (data.format) {
         console.log('DrumHero: Cambiando formato de fondo:', data.format);
         setBackgroundFormat(data.format);
@@ -770,6 +776,20 @@ const DrumHero = () => {
             }
           }, 9000);
         }
+      }
+    });
+
+    socket.on('galerias', (data) => {
+      console.log('DrumHero: Recibido evento galerias:', data);
+      if (typeof data.sensitiveMode !== 'undefined') setSensitiveMode(data.sensitiveMode);
+      if (typeof data.extraSensitiveMode !== 'undefined') setExtraSensitiveMode(data.extraSensitiveMode);
+      if (typeof data.pursuitMode !== 'undefined') setPursuitMode(data.pursuitMode);
+      if (typeof data.circularImages !== 'undefined') setCircularImages(data.circularImages);
+      if (typeof data.shakeImage !== 'undefined') setShakeImage(data.shakeImage);
+      if (data.coleccion) {
+        setPetImages(galerias[data.coleccion]?.imagenes || []);
+        setColeccionActual(data.coleccion);
+        setCurrentImageIndex(0);
       }
     });
 
@@ -946,13 +966,6 @@ const DrumHero = () => {
     });
   };
 
-  // Efecto para depuración
-  useEffect(() => {
-    console.log('DrumHero: Estado actualizado - coleccionActual:', coleccionActual);
-    console.log('DrumHero: Estado actualizado - petImages:', petImages);
-    console.log('DrumHero: Estado actualizado - currentImageIndex:', currentImageIndex);
-  }, [coleccionActual, petImages, currentImageIndex]);
-
   const toggleFullScreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch((err) => {
@@ -1069,8 +1082,12 @@ const DrumHero = () => {
           />
         )}
         <div 
-          className={`image-wrapper ${isPulsingImage ? 'pulsing' : ''}`}
-          style={{...getImagePolygonStyle(), opacity: elementOpacities.image}}
+          className={
+            'image-wrapper' +
+            (circularImages ? ' circular' : '') +
+            (shakeImage ? ' shaking' : '')
+          }
+          style={{ opacity: elementOpacities.image }}
         >
           {petImages.length > 0 && (
             <img
@@ -1111,4 +1128,4 @@ const DrumHero = () => {
   );
 };
 
-export default DrumHero; 
+export default DrumHero;
