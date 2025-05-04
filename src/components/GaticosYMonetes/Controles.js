@@ -29,6 +29,7 @@ const Controles = () => {
     const savedMode = localStorage.getItem('extraSensitiveMode');
     return savedMode === 'true';
   });
+  const [autoChangeInterval, setAutoChangeInterval] = useState(null);
 
   const formatos = ['polygons', 'poligonos-flotantes', 'pulse', 'kitt', 'meteoritos'];
 
@@ -81,14 +82,11 @@ const Controles = () => {
     }
 
     if (autoChangeTime > 0) {
-      // Timer para la barra de progreso
       progressTimerRef.current = setInterval(() => {
         setTimeRemaining(prev => {
           if (prev <= 0) {
-            // Esperar a que la animación termine antes de resetear
             setTimeout(() => {
               setTimeRemaining(autoChangeTime);
-              // Lanzar el cambio de fondo después del reseteo
               const currentIndex = formatos.indexOf(backgroundFormat);
               const nextIndex = (currentIndex + 1) % formatos.length;
               const nextFormat = formatos[nextIndex];
@@ -157,6 +155,12 @@ const Controles = () => {
     }
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleAutoChangeTimeSubmit(e);
+    }
+  };
+
   const handleBackgroundFormatChange = (e) => {
     const newFormat = e.target.value;
     console.log('Controles: Cambiando formato a:', newFormat);
@@ -178,7 +182,6 @@ const Controles = () => {
     setSensitiveMode(newMode);
     localStorage.setItem('sensitiveMode', newMode);
     
-    // Si se activa el modo sensible, desactivar el extra sensible
     if (newMode) {
       setExtraSensitiveMode(false);
       localStorage.setItem('extraSensitiveMode', false);
@@ -200,7 +203,6 @@ const Controles = () => {
     setExtraSensitiveMode(newMode);
     localStorage.setItem('extraSensitiveMode', newMode);
     
-    // Si se activa el modo extra sensible, desactivar el sensible
     if (newMode) {
       setSensitiveMode(false);
       localStorage.setItem('sensitiveMode', false);
@@ -254,6 +256,34 @@ const Controles = () => {
     }
   };
 
+  const startAutoChange = (increment) => {
+    // Cambio inmediato
+    setAutoChangeInput(prev => Math.max(0, parseInt(prev || 0) + (increment ? 1 : -1)));
+    
+    // Configurar intervalo para cambios rápidos
+    const interval = setInterval(() => {
+      setAutoChangeInput(prev => Math.max(0, parseInt(prev || 0) + (increment ? 1 : -1)));
+    }, 100); // Cambio cada 100ms
+
+    setAutoChangeInterval(interval);
+  };
+
+  const stopAutoChange = () => {
+    if (autoChangeInterval) {
+      clearInterval(autoChangeInterval);
+      setAutoChangeInterval(null);
+    }
+  };
+
+  // Limpiar intervalo al desmontar
+  useEffect(() => {
+    return () => {
+      if (autoChangeInterval) {
+        clearInterval(autoChangeInterval);
+      }
+    };
+  }, [autoChangeInterval]);
+
   return (
     <div className="controles">
       <div className="controles-content">
@@ -287,14 +317,37 @@ const Controles = () => {
               <option value="meteoritos">Meteoritos</option>
             </select>
             <form onSubmit={handleAutoChangeTimeSubmit} className="auto-change-form">
-              <input
-                type="number"
-                value={autoChangeInput}
-                onChange={handleAutoChangeTimeChange}
-                placeholder="Segundos"
-                min="0"
-                className="auto-change-input"
-              />
+              <div className="auto-change-input-container">
+                <input
+                  type="number"
+                  value={autoChangeInput}
+                  onChange={handleAutoChangeTimeChange}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Segundos"
+                  min="0"
+                  className="auto-change-input"
+                />
+                <div className="auto-change-buttons">
+                  <button 
+                    type="button" 
+                    className="auto-change-button down"
+                    onMouseDown={() => startAutoChange(false)}
+                    onMouseUp={stopAutoChange}
+                    onMouseLeave={stopAutoChange}
+                    onTouchStart={() => startAutoChange(false)}
+                    onTouchEnd={stopAutoChange}
+                  />
+                  <button 
+                    type="button" 
+                    className="auto-change-button up"
+                    onMouseDown={() => startAutoChange(true)}
+                    onMouseUp={stopAutoChange}
+                    onMouseLeave={stopAutoChange}
+                    onTouchStart={() => startAutoChange(true)}
+                    onTouchEnd={stopAutoChange}
+                  />
+                </div>
+              </div>
               <button
                 type="submit"
                 className={`auto-change-btn${isInputModified ? ' modified' : ''}`}
@@ -313,7 +366,7 @@ const Controles = () => {
                   transition: 'width 1s linear'
                 }} />
                 <span style={{ position: 'relative', zIndex: 1 }}>
-                  Actualizar
+                  Actualizar {timeRemaining > 0 ? timeRemaining : 0}s
                 </span>
               </button>
             </form>
@@ -344,4 +397,4 @@ const Controles = () => {
   );
 };
 
-export default Controles; 
+export default Controles;

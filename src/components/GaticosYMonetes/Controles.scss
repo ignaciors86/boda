@@ -46,6 +46,7 @@
     border-radius: 0.5rem;
     background: rgba(20, 20, 25, 0.8);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    position: relative;
 
     h2 {
       color: #00ff00;
@@ -232,69 +233,132 @@
       box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
     }
   }
-}
 
-.format-controls {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
+  .format-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    align-items: center;
 
-.auto-change-form {
-  display: flex;
-  gap: 5px;
-  align-items: center;
-}
-
-.auto-change-input {
-  width: 80px;
-  padding: 5px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  text-align: center;
-
-  &::placeholder {
-    color: rgba(255, 255, 255, 0.5);
+    @media (min-width: 768px) {
+      flex-direction: row;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
   }
 
-  &:focus {
-    outline: none;
-    border-color: #00ff00;
-    box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
-  }
-}
-
-.auto-change-btn {
-  padding: 5px 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &.modified {
-    background: rgba(0, 255, 0, 0.2);
-    border-color: #00ff00;
-    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
-    animation: pulse 1s infinite;
+  .auto-change-form {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    position: relative;
   }
 
-  &:hover {
-    background: rgba(255, 255, 255, 0.2);
+  .auto-change-input-container {
+    position: relative;
+    display: inline-block;
   }
-}
 
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+  .auto-change-input {
+    width: 80px;
+    padding: 8px 30px;
+    border: 1px solid rgba(0, 255, 0, 0.3);
+    border-radius: 4px;
+    background-color: rgba(30, 30, 35, 0.8);
+    color: #00ff00;
+    font-size: 16px;
+    -moz-appearance: textfield;
+    text-align: center;
+    text-shadow: 0 0 5px #00ff00;
+    
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
   }
-  50% {
-    box-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
+
+  .auto-change-buttons {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 8px;
+    pointer-events: none;
   }
-  100% {
-    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+
+  .auto-change-button {
+    width: 20px;
+    height: 20px;
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #00ff00;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    pointer-events: all;
+    text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+    
+    &:hover {
+      color: #00ff00;
+      text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+    }
+    
+    &.up {
+      &::before {
+        content: '→';
+        line-height: 1;
+      }
+    }
+    
+    &.down {
+      &::before {
+        content: '←';
+        line-height: 1;
+      }
+    }
+  }
+
+  .auto-change-btn {
+    padding: 5px 10px;
+    border: 1px solid rgba(0, 255, 0, 0.3);
+    border-radius: 4px;
+    background: rgba(30, 30, 35, 0.8);
+    color: #00ff00;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-shadow: 0 0 5px #00ff00;
+
+    &.modified {
+      background: rgba(0, 255, 0, 0.2);
+      border-color: #00ff00;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+      animation: pulse 1s infinite;
+    }
+
+    &:hover {
+      background: rgba(0, 255, 0, 0.1);
+      border-color: rgba(0, 255, 0, 0.5);
+    }
+  }
+
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+    }
+    50% {
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
+    }
+    100% {
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+    }
   }
 } 
