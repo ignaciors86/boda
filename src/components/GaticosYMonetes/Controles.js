@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import GaleriaLoader from './GaleriaLoader';
 import './Controles.scss';
+import MinimalChromePicker from './MinimalChromePicker';
 
 const DEFAULT_AUTO_CHANGE_TIME = 0;
 
@@ -38,6 +39,16 @@ const Controles = () => {
   const [circularImages, setCircularImages] = useState(false);
   const [shakeImage, setShakeImage] = useState(false);
   const [autoChangeInterval, setAutoChangeInterval] = useState(null);
+  const [imageBgColor, setImageBgColor] = useState('transparent');
+  const [useBgColor, setUseBgColor] = useState(true);
+  const [imageScale, setImageScale] = useState(1);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const scaleIntervalRef = useRef(null);
+  const colorBtnRef = useRef(null);
+  const colorPickerRef = useRef(null);
+  const [pickerPosition, setPickerPosition] = useState('bottom');
+  const [scaleChangeInterval, setScaleChangeInterval] = useState(null);
+  const [pickerCoords, setPickerCoords] = useState({ left: 0, top: 0 });
 
   const formatos = ['polygons', 'poligonos-flotantes', 'pulse', 'kitt', 'meteoritos'];
 
@@ -146,10 +157,12 @@ const Controles = () => {
         pursuitMode,
         circularImages,
         shakeImage,
+        imageBgColor,
+        imageScale,
         timestamp: Date.now()
       });
     }
-  }, [sensitiveMode, extraSensitiveMode, pursuitMode, circularImages, shakeImage]);
+  }, [sensitiveMode, extraSensitiveMode, pursuitMode, circularImages, shakeImage, imageBgColor, imageScale]);
 
   const handleAutoChangeTimeChange = (e) => {
     setAutoChangeInput(e.target.value);
@@ -187,6 +200,103 @@ const Controles = () => {
     }
   };
 
+  const handleUseBgColorChange = (e) => {
+    const checked = e.target.checked;
+    setUseBgColor(checked);
+    if (checked) {
+      setImageBgColor('transparent');
+      if (socketRef.current?.connected) {
+        socketRef.current.emit('galerias', {
+          id: Date.now(),
+          sensitiveMode,
+          extraSensitiveMode,
+          pursuitMode,
+          circularImages,
+          shakeImage,
+          imageBgColor: null,
+          imageScale,
+          timestamp: Date.now()
+        });
+      }
+    } else {
+      setImageBgColor(prev => {
+        if (prev === 'transparent') {
+          if (socketRef.current?.connected) {
+            socketRef.current.emit('galerias', {
+              id: Date.now(),
+              sensitiveMode,
+              extraSensitiveMode,
+              pursuitMode,
+              circularImages,
+              shakeImage,
+              imageBgColor: '#ffffff',
+              imageScale,
+              timestamp: Date.now()
+            });
+          }
+          return '#ffffff';
+        }
+        return prev;
+      });
+    }
+  };
+
+  const handleImageBgColorChange = (color) => {
+    if (useBgColor) return;
+    const rgba = color.rgb;
+    const rgbaString = `rgba(${rgba.r},${rgba.g},${rgba.b},${rgba.a})`;
+    setImageBgColor(rgbaString);
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('galerias', {
+        id: Date.now(),
+        sensitiveMode,
+        extraSensitiveMode,
+        pursuitMode,
+        circularImages,
+        shakeImage,
+        imageBgColor: rgbaString,
+        imageScale,
+        timestamp: Date.now()
+      });
+    }
+  };
+
+  const handleImageScaleChange = (e) => {
+    const newScale = parseFloat(e.target.value);
+    setImageScale(newScale);
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('galerias', {
+        id: Date.now(),
+        sensitiveMode,
+        extraSensitiveMode,
+        pursuitMode,
+        circularImages,
+        shakeImage,
+        imageBgColor,
+        imageScale: newScale,
+        timestamp: Date.now()
+      });
+    }
+  };
+
+  const handleScaleStep = (step) => {
+    let newScale = Math.max(0, Math.min(5, parseFloat((imageScale + step).toFixed(2))));
+    setImageScale(newScale);
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('galerias', {
+        id: Date.now(),
+        sensitiveMode,
+        extraSensitiveMode,
+        pursuitMode,
+        circularImages,
+        shakeImage,
+        imageBgColor,
+        imageScale: newScale,
+        timestamp: Date.now()
+      });
+    }
+  };
+
   const handleSensitiveModeChange = (e) => {
     const newMode = e.target.checked;
     setSensitiveMode(newMode);
@@ -200,6 +310,8 @@ const Controles = () => {
         pursuitMode: false,
         circularImages,
         shakeImage,
+        imageBgColor,
+        imageScale,
         timestamp: Date.now()
       });
     }
@@ -218,6 +330,8 @@ const Controles = () => {
         pursuitMode: false,
         circularImages,
         shakeImage,
+        imageBgColor,
+        imageScale,
         timestamp: Date.now()
       });
     }
@@ -236,6 +350,8 @@ const Controles = () => {
         pursuitMode: newMode,
         circularImages,
         shakeImage,
+        imageBgColor,
+        imageScale,
         timestamp: Date.now()
       });
     }
@@ -252,6 +368,8 @@ const Controles = () => {
         pursuitMode,
         circularImages: newMode,
         shakeImage,
+        imageBgColor,
+        imageScale,
         timestamp: Date.now()
       });
     }
@@ -268,6 +386,8 @@ const Controles = () => {
         pursuitMode,
         circularImages,
         shakeImage: newMode,
+        imageBgColor,
+        imageScale,
         timestamp: Date.now()
       });
     }
@@ -340,43 +460,290 @@ const Controles = () => {
     };
   }, [autoChangeInterval]);
 
+  const handleResetImageScale = () => {
+    setImageScale(1);
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('galerias', {
+        id: Date.now(),
+        sensitiveMode,
+        extraSensitiveMode,
+        pursuitMode,
+        circularImages,
+        shakeImage,
+        imageBgColor,
+        imageScale: 1,
+        timestamp: Date.now()
+      });
+    }
+  };
+
+  const startScaleChange = (increment) => {
+    // Cambio inmediato
+    setImageScale(prev => {
+      let newScale = Math.max(0, Math.min(5, parseFloat((prev + (increment ? 0.05 : -0.05)).toFixed(2))));
+      if (socketRef.current?.connected) {
+        socketRef.current.emit('galerias', {
+          id: Date.now(),
+          sensitiveMode,
+          extraSensitiveMode,
+          pursuitMode,
+          circularImages,
+          shakeImage,
+          imageBgColor,
+          imageScale: newScale,
+          timestamp: Date.now()
+        });
+      }
+      return newScale;
+    });
+
+    // Configurar intervalo para cambios rápidos
+    const interval = setInterval(() => {
+      setImageScale(prev => {
+        let newScale = Math.max(0, Math.min(5, parseFloat((prev + (increment ? 0.05 : -0.05)).toFixed(2))));
+        if (socketRef.current?.connected) {
+          socketRef.current.emit('galerias', {
+            id: Date.now(),
+            sensitiveMode,
+            extraSensitiveMode,
+            pursuitMode,
+            circularImages,
+            shakeImage,
+            imageBgColor,
+            imageScale: newScale,
+            timestamp: Date.now()
+          });
+        }
+        return newScale;
+      });
+    }, 100);
+    setScaleChangeInterval(interval);
+  };
+
+  const stopScaleChange = () => {
+    if (scaleChangeInterval) {
+      clearInterval(scaleChangeInterval);
+      setScaleChangeInterval(null);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (scaleChangeInterval) {
+        clearInterval(scaleChangeInterval);
+      }
+    };
+  }, [scaleChangeInterval]);
+
+  const handleShowColorPicker = () => {
+    if (colorBtnRef.current) {
+      const rect = colorBtnRef.current.getBoundingClientRect();
+      // Preferimos mostrar a la derecha, pero si no cabe, debajo
+      let left = rect.right + 8;
+      let top = rect.top;
+      const pickerWidth = 220; // Aproximado
+      const pickerHeight = 260; // Aproximado
+      if (left + pickerWidth > window.innerWidth) {
+        left = rect.left;
+      }
+      if (top + pickerHeight > window.innerHeight) {
+        top = window.innerHeight - pickerHeight - 16;
+      }
+      setPickerCoords({ left, top });
+    }
+    setShowColorPicker(v => !v);
+  };
+
+  // Cerrar el color picker al hacer clic fuera
+  useEffect(() => {
+    if (!showColorPicker) return;
+    const handleClickOutside = (e) => {
+      if (
+        colorPickerRef.current &&
+        !colorPickerRef.current.contains(e.target) &&
+        colorBtnRef.current &&
+        !colorBtnRef.current.contains(e.target)
+      ) {
+        setShowColorPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showColorPicker]);
+
   return (
     <div className="controles">
       <div className="controles-content">
-        <div className="controles-section">
-          <h2>COlecciones</h2>
-          <div className="controles-buttons">
+        <div className="controles-section colecciones" style={{ width: '100%' }}>
+          <h2>Colecciones</h2>
+          {/* Botones de colecciones */}
+          <div className="controles-buttons controles-bloque" >
             {Object.values(galerias)
               .sort((a, b) => a.id === 'ninguna' ? -1 : b.id === 'ninguna' ? 1 : 0)
               .map(galeria => (
-              <button
-                key={galeria.id}
-                className={`controles-btn${coleccionActual === galeria.id ? ' active' : ''}`}
-                onClick={() => cambiarColeccion(galeria.id)}
-              >
-                {galeria.nombre}
-              </button>
+                <button
+                  key={galeria.id}
+                  className={`controles-btn${coleccionActual === galeria.id ? ' active' : ''}`}
+                  onClick={() => cambiarColeccion(galeria.id)}
+                >
+                  {galeria.nombre}
+                </button>
             ))}
           </div>
-          <label className="controles-checkbox">
-            <input
-              type="checkbox"
-              checked={circularImages}
-              onChange={handleCircularImagesChange}
-            />
-            <span>Imágenes Circulares</span>
-          </label>
-          <label className="controles-checkbox">
-            <input
-              type="checkbox"
-              checked={shakeImage}
-              onChange={handleShakeImageChange}
-            />
-            <span>Menear Imagen</span>
-          </label>
+
+          {/* Grupo de controles de imagen */}
+          <div className="controles-bloque-grupo">
+            {/* Color fondo imagen */}
+            <div className="controles-bloque controles-bloque-color">
+              <span className="controles-titulo-bloque">Color fondo imagen:</span>
+              <div className="controles-bloque-row" style={{flexDirection: 'column', alignItems: 'stretch', gap: 8}}>
+                <label className="controles-checkbox controles-checkbox-color" style={{marginBottom: !useBgColor ? 8 : 0}}>
+                  <input
+                    type="checkbox"
+                    checked={useBgColor}
+                    onChange={handleUseBgColorChange}
+                  />
+                  <span>Sin fondo</span>
+                </label>
+                {!useBgColor && (
+                  <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6}}>
+                    <span className="controles-titulo-bloque controles-titulo-bloque-secundario">Color seleccionado</span>
+                    <button
+                      type="button"
+                      ref={colorBtnRef}
+                      onClick={handleShowColorPicker}
+                      className="controles-color-btn"
+                      style={{ border: `2px solid ${imageBgColor}`, boxShadow: `0 2px 8px ${imageBgColor}55`, background: imageBgColor, outline: showColorPicker ? `2px solid ${imageBgColor}` : 'none' }}
+                      title="Elegir color y transparencia"
+                    />
+                    {showColorPicker && (
+                      <div
+                        ref={colorPickerRef}
+                        style={{
+                          position: 'fixed',
+                          zIndex: 100,
+                          left: pickerCoords.left,
+                          top: pickerCoords.top,
+                          background: '#222',
+                          borderRadius: 8,
+                          boxShadow: '0 4px 24px #0006',
+                          padding: 8,
+                          minWidth: 200,
+                          maxWidth: 260
+                        }}
+                      >
+                        <MinimalChromePicker
+                          color={imageBgColor}
+                          onChange={handleImageBgColorChange}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowColorPicker(false)}
+                          style={{
+                            marginTop: 6,
+                            width: '100%',
+                            background: imageBgColor,
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: 6,
+                            padding: '4px 0',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            fontSize: 13
+                          }}
+                        >Cerrar</button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Escala imagen */}
+            <div className="controles-bloque controles-bloque-escala">
+              <span className="controles-titulo-bloque">Escala imagen:</span>
+              <div className="controles-bloque-row controles-bloque-row-escala" style={{gap: 8, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                <button
+                  type="button"
+                  onMouseDown={() => startScaleChange(false)}
+                  onMouseUp={stopScaleChange}
+                  onMouseLeave={stopScaleChange}
+                  onTouchStart={() => startScaleChange(false)}
+                  onTouchEnd={stopScaleChange}
+                  className="auto-change-btn"
+                  title="Disminuir escala"
+                  style={{ minWidth: 28, maxWidth: 32 }}
+                >
+                  –
+                </button>
+                <input
+                  type="range"
+                  min={0}
+                  max={5}
+                  step={0.01}
+                  value={imageScale}
+                  onChange={handleImageScaleChange}
+                  className="controles-image-scale-range"
+                  style={{ minWidth: 0, width: '100%', flex: 1 }}
+                />
+                <button
+                  type="button"
+                  onMouseDown={() => startScaleChange(true)}
+                  onMouseUp={stopScaleChange}
+                  onMouseLeave={stopScaleChange}
+                  onTouchStart={() => startScaleChange(true)}
+                  onTouchEnd={stopScaleChange}
+                  className="auto-change-btn"
+                  title="Aumentar escala"
+                  style={{ minWidth: 28, maxWidth: 32 }}
+                >
+                  +
+                </button>
+              </div>
+              <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 6}}>
+                <span className="controles-titulo-bloque-secundario" style={{margin: 0, padding: 0, fontWeight: 400}}>
+                  Escala
+                </span>
+                <span className="controles-image-scale-value">
+                  {imageScale.toFixed(2)}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleResetImageScale}
+                  className="auto-change-btn"
+                  title="Resetear escala"
+                  style={{ minWidth: 28, maxWidth: 32 }}
+                >
+                  ↺
+                </button>
+              </div>
+            </div>
+
+            {/* Checkboxes de imagen */}
+            <div className="controles-bloque controles-bloque-checkboxes" style={{display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 8}}>
+              <label className="controles-checkbox controles-checkbox-img">
+                <input
+                  type="checkbox"
+                  checked={circularImages}
+                  onChange={handleCircularImagesChange}
+                />
+                <span>Imágenes Circulares</span>
+              </label>
+              <label className="controles-checkbox controles-checkbox-img">
+                <input
+                  type="checkbox"
+                  checked={shakeImage}
+                  onChange={handleShakeImageChange}
+                />
+                <span>Menear Imagen</span>
+              </label>
+            </div>
+          </div>
         </div>
 
-        <div className="controles-section">
+        <div className="controles-section formato">
           <h2>Formato de Fondo</h2>
           <div className="format-controls">
             <select
@@ -447,7 +814,7 @@ const Controles = () => {
           </div>
         </div>
 
-        <div className="controles-section">
+        <div className="controles-section modos">
           <h2>Modo de Cambio</h2>
           <label className="controles-checkbox">
             <input

@@ -98,6 +98,8 @@ const DrumHero = () => {
   const animationRef = useRef(null);
   const lastTimeRef = useRef(0);
   const emojisContainerRef = useRef(null);
+  const [imageBgColor, setImageBgColor] = useState('transparent');
+  const [imageScale, setImageScale] = useState(1);
 
   // Nuevos refs para manejar estados que no necesitan re-renders
   const energyHistoryRef = useRef([]);
@@ -786,6 +788,8 @@ const DrumHero = () => {
       if (typeof data.pursuitMode !== 'undefined') setPursuitMode(data.pursuitMode);
       if (typeof data.circularImages !== 'undefined') setCircularImages(data.circularImages);
       if (typeof data.shakeImage !== 'undefined') setShakeImage(data.shakeImage);
+      if (typeof data.imageBgColor !== 'undefined') setImageBgColor(data.imageBgColor);
+      if (typeof data.imageScale !== 'undefined') setImageScale(data.imageScale);
       if (data.coleccion) {
         setPetImages(galerias[data.coleccion]?.imagenes || []);
         setColeccionActual(data.coleccion);
@@ -1087,7 +1091,12 @@ const DrumHero = () => {
             (circularImages ? ' circular' : '') +
             (shakeImage ? ' shaking' : '')
           }
-          style={{ opacity: elementOpacities.image }}
+          style={{
+            opacity: elementOpacities.image,
+            background: imageBgColor,
+            transform: `scale(${imageScale})`,
+            transition: 'background 0.3s cubic-bezier(.4,1.3,.6,1), transform 0.3s cubic-bezier(.4,1.3,.6,1)'
+          }}
         >
           {petImages.length > 0 && (
             <img
