@@ -14,6 +14,10 @@ const Controles = () => {
     const savedFormat = localStorage.getItem('backgroundFormat');
     return savedFormat || 'polygons';
   });
+  const [sensitiveMode, setSensitiveMode] = useState(() => {
+    const savedMode = localStorage.getItem('sensitiveMode');
+    return savedMode === 'true';
+  });
 
   useEffect(() => {
     const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -58,6 +62,16 @@ const Controles = () => {
       });
     }
   }, [backgroundFormat]);
+
+  useEffect(() => {
+    if (socketRef.current?.connected) {
+      console.log('Controles: Emitiendo modo sensible inicial:', sensitiveMode);
+      socketRef.current.emit('sensitive-mode-change', {
+        enabled: sensitiveMode,
+        timestamp: Date.now()
+      });
+    }
+  }, [sensitiveMode]);
 
   const cambiarColeccion = (id) => {
     setColeccionActual(id);
@@ -109,6 +123,20 @@ const Controles = () => {
     }
   };
 
+  const handleSensitiveModeChange = (e) => {
+    const newMode = e.target.checked;
+    console.log('Controles: Cambiando modo sensible a:', newMode);
+    setSensitiveMode(newMode);
+    localStorage.setItem('sensitiveMode', newMode);
+    
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('sensitive-mode-change', {
+        enabled: newMode,
+        timestamp: Date.now()
+      });
+    }
+  };
+
   return (
     <div className="controles">
       <div className="controles-content">
@@ -140,6 +168,18 @@ const Controles = () => {
             <option value="kitt">KITT</option>
             <option value="meteoritos">Meteoritos</option>
           </select>
+        </div>
+
+        <div className="controles-section">
+          <h2>Modo de Cambio</h2>
+          <label className="controles-checkbox">
+            <input
+              type="checkbox"
+              checked={sensitiveMode}
+              onChange={handleSensitiveModeChange}
+            />
+            <span>Modo Sensible (cambios rápidos)</span>
+          </label>
         </div>
       </div>
     </div>

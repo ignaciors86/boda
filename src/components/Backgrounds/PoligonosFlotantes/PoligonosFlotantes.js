@@ -56,7 +56,7 @@ const PoligonosFlotantes = ({ analyser }) => {
         velocidadX,
         velocidadY,
         creado: ahora,
-        vida: 5000 + Math.random() * 5000
+        vida: 10000 + Math.random() * 5000
       });
 
       ultimoCambioRef.current = ahora;
@@ -76,7 +76,9 @@ const PoligonosFlotantes = ({ analyser }) => {
         // Calcular opacidad basada en el tiempo restante
         if (tiempoVida > poligono.vida) {
           const tiempoFade = tiempoVida - poligono.vida;
-          poligono.opacidad = 1 - (tiempoFade / tiempoFadeOut);
+          poligono.opacidad = 0.9 - (tiempoFade / tiempoFadeOut) * 0.9; // Mantener mínimo 0.1 de opacidad
+        } else {
+          poligono.opacidad = 0.9; // Opacidad máxima durante la vida normal
         }
         
         return true;

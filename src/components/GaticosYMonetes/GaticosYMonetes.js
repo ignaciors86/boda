@@ -11,6 +11,10 @@ const GaticosYMonetes = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [borderColor, setBorderColor] = useState('#00ff00');
   const [backgroundFormat, setBackgroundFormat] = useState('polygons');
+  const [sensitiveMode, setSensitiveMode] = useState(() => {
+    const savedMode = localStorage.getItem('sensitiveMode');
+    return savedMode === 'true';
+  });
   const socketRef = useRef(null);
   const containerRef = useRef(null);
   const kudosDataRef = useRef([]);
@@ -42,6 +46,12 @@ const GaticosYMonetes = () => {
 
     socketRef.current.on('background-format-change', (data) => {
       setBackgroundFormat(data.format);
+    });
+
+    socketRef.current.on('sensitive-mode-change', (data) => {
+      console.log('GaticosYMonetes: Recibido cambio de modo sensible:', data);
+      setSensitiveMode(data.enabled);
+      localStorage.setItem('sensitiveMode', data.enabled);
     });
 
     socketRef.current.on('kudo', (kudo) => {

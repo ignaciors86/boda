@@ -6,157 +6,230 @@
   height: 100vh;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   z-index: 1000;
   font-family: 'VCR', monospace;
   pointer-events: none;
+  overflow: auto;
+  padding: 1rem;
+  box-sizing: border-box;
+  background: rgba(10, 10, 15, 0.5);
 
   * {
     font-family: 'VCR', monospace;
+    box-sizing: border-box;
   }
 
   &-content {
-    background: rgba(0, 0, 0, 0.8);
-    padding: 2rem;
-    border-radius: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
+    background: rgba(15, 15, 20, 0.95);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
     pointer-events: all;
-    max-width: 90vw;
-    width: 800px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    box-sizing: border-box;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
   }
 
   &-section {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.5rem;
     align-items: center;
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid rgba(0, 255, 0, 0.1);
+    border-radius: 0.5rem;
+    background: rgba(20, 20, 25, 0.8);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 
     h2 {
       color: #00ff00;
-      font-size: 1.8rem;
+      font-size: clamp(1rem, 3vw, 1.5rem);
       text-shadow: 0 0 10px #00ff00;
       text-transform: uppercase;
-      letter-spacing: 3px;
+      letter-spacing: 2px;
       margin: 0;
-      padding: 0.5rem 1rem;
-      border: 2px solid #00ff00;
-      border-radius: 0.5rem;
-      background: rgba(0, 0, 0, 0.5);
-      box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+      padding: 0.25rem 0.5rem;
+      text-align: center;
+      width: 100%;
+      border-bottom: 1px solid rgba(0, 255, 0, 0.1);
+      padding-bottom: 0.5rem;
+      margin-bottom: 0.5rem;
     }
   }
 
   &-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.5rem;
     width: 100%;
   }
 
   &-btn {
+    background: rgba(30, 30, 35, 0.8);
+    border: 1px solid rgba(0, 255, 0, 0.3);
+    color: #00ff00;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: clamp(0.8rem, 2.5vw, 1rem);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.2s ease;
+    min-width: fit-content;
+    text-shadow: 0 0 5px #00ff00;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    white-space: nowrap;
+
+    &:hover {
+      background: rgba(0, 255, 0, 0.1);
+      border-color: rgba(0, 255, 0, 0.5);
+      transform: translateY(-1px);
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+    }
+
+    &.active {
+      background: rgba(0, 255, 0, 0.2);
+      border-color: #00ff00;
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+    }
+  }
+
+  &-select {
+    background: rgba(30, 30, 35, 0.8);
+    border: 1px solid rgba(0, 255, 0, 0.3);
+    color: #00ff00;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: clamp(0.8rem, 2.5vw, 1rem);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    min-width: fit-content;
+    text-align: center;
+    text-shadow: 0 0 5px #00ff00;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300ff00'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1.25rem;
+    padding-right: 2.5rem;
+    width: 100%;
+    max-width: 250px;
+
+    &:hover {
+      background: rgba(0, 255, 0, 0.1);
+      border-color: rgba(0, 255, 0, 0.5);
+    }
+
+    option {
+      background: rgba(20, 20, 25, 0.95);
+      color: #00ff00;
+      padding: 0.75rem 0.5rem;
+      border: none;
+      text-shadow: 0 0 5px #00ff00;
+
+      &:hover {
+        background: rgba(255, 255, 0, 0.2);
+        color: #ffff00;
+        text-shadow: 0 0 5px #ffff00;
+      }
+    }
+  }
+
+  &-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #00ff00;
+    cursor: pointer;
+    font-size: clamp(0.8rem, 2.5vw, 1rem);
+    text-shadow: 0 0 5px #00ff00;
+    width: 100%;
+    justify-content: center;
+    padding: 0.25rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+    background: rgba(30, 30, 35, 0.8);
+    border: 1px solid rgba(0, 255, 0, 0.3);
+
+    &:hover {
+      background: rgba(0, 255, 0, 0.1);
+      border-color: rgba(0, 255, 0, 0.5);
+    }
+
+    input[type="checkbox"] {
+      width: 1.25rem;
+      height: 1.25rem;
+      cursor: pointer;
+      appearance: none;
+      background: rgba(20, 20, 25, 0.8);
+      border: 1px solid rgba(0, 255, 0, 0.3);
+      border-radius: 0.25rem;
+      position: relative;
+      transition: all 0.2s ease;
+
+      &:checked {
+        background: rgba(0, 255, 0, 0.2);
+        border-color: #00ff00;
+        box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+
+        &::after {
+          content: '✓';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          color: #00ff00;
+          font-size: 0.9rem;
+          text-shadow: 0 0 5px #00ff00;
+        }
+      }
+    }
+  }
+
+  &-input {
+    background: transparent;
+    border: 2px solid #00ff00;
+    color: #00ff00;
+    padding: 0.8rem 1.5rem;
+    border-radius: 0.5rem;
+    font-size: clamp(0.8rem, 3vw, 1rem);
+    text-align: center;
+    min-width: min(200px, 50vw);
+    text-shadow: 0 0 5px #00ff00;
+
+    &::placeholder {
+      color: rgba(0, 255, 0, 0.5);
+    }
+  }
+
+  &-submit {
     background: transparent;
     border: 2px solid #00ff00;
     color: #00ff00;
     padding: 0.8rem 1.5rem;
     border-radius: 0.5rem;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: clamp(0.8rem, 3vw, 1rem);
     text-transform: uppercase;
     letter-spacing: 1px;
     transition: all 0.2s ease;
-    min-width: 150px;
+    min-width: min(150px, 40vw);
     text-shadow: 0 0 5px #00ff00;
-    position: relative;
-    overflow: hidden;
-
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(45deg, transparent, rgba(0, 255, 0, 0.1), transparent);
-      transform: translateX(-100%);
-      transition: transform 0.3s ease;
-    }
+    text-align: center;
 
     &:hover {
       background: rgba(0, 255, 0, 0.1);
       transform: translateY(-2px);
       box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
-
-      &::before {
-        transform: translateX(100%);
-      }
-    }
-
-    &.active {
-      background: #00ff00;
-      color: #000;
-      text-shadow: none;
-      box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
-      animation: pulse 2s infinite;
-
-      &::before {
-        display: none;
-      }
-    }
-  }
-
-  &-select {
-    background: rgba(0, 0, 0, 0.8);
-    border: 2px solid #00ff00;
-    color: #00ff00;
-    padding: 0.8rem 1.5rem;
-    border-radius: 0.5rem;
-    font-size: 1rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    cursor: pointer;
-    min-width: 250px;
-    text-align: center;
-    text-shadow: 0 0 5px #00ff00;
-    appearance: none;
-    transition: all 0.2s ease;
-    position: relative;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2300ff00' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 1rem center;
-    background-size: 1rem;
-    padding-right: 3rem;
-
-    &:hover {
-      background: rgba(0, 0, 0, 0.9);
-      box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
-    }
-
-    &:focus {
-      outline: none;
-      box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
-      animation: pulse 2s infinite;
-    }
-
-    option {
-      background: #000;
-      color: #00ff00;
-      padding: 1.2rem 2rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      transition: none;
-
-      &:checked {
-        background: #00ff00;
-        color: #000;
-        font-weight: bold;
-      }
-
-      &:hover {
-        background: rgba(0, 255, 0, 0.2);
-      }
     }
   }
 }

@@ -61,6 +61,10 @@ const DrumHero = () => {
     const savedFormat = localStorage.getItem('backgroundFormat');
     return savedFormat || 'polygons';
   });
+  const [sensitiveMode, setSensitiveMode] = useState(() => {
+    const savedMode = localStorage.getItem('sensitiveMode');
+    return savedMode === 'true';
+  });
   const [energyHistory, setEnergyHistory] = useState([]);
   const [bassEnergy, setBassEnergy] = useState(0);
   const [midEnergy, setMidEnergy] = useState(0);
@@ -395,13 +399,13 @@ const DrumHero = () => {
       }
 
       const averageEnergy = energyHistoryRef.current.reduce((sum, val) => sum + val, 0) / energyHistoryRef.current.length || 1;
-      const isBeat = totalEnergy > averageEnergy * beatThresholdRef.current;
+      const isBeat = totalEnergy > averageEnergy * (sensitiveMode ? 1.1 : beatThresholdRef.current);
 
       if (isBeat) {
         const timeSinceLastPulse = now - lastPulseTimeRef.current;
         const timeSinceLastImage = now - lastImageChangeRef.current;
         
-        if (timeSinceLastPulse >= 500) {
+        if (timeSinceLastPulse >= (sensitiveMode ? 200 : 500)) {
           if (backgroundFormat === 'polygons') {
             updatePolygon(totalEnergy);
           } else {
@@ -409,7 +413,9 @@ const DrumHero = () => {
           }
           handlePulse();
           
-          if (timeSinceLastImage >= 1000 && petImages.length > 0) {
+          // Modificar el tiempo mínimo entre cambios de imagen según el modo
+          const minImageChangeTime = sensitiveMode ? 50 : 1000;
+          if (timeSinceLastImage >= minImageChangeTime && petImages.length > 0) {
             setCurrentImageIndex(prev => (prev + 1) % petImages.length);
             lastImageChangeRef.current = now;
             
@@ -441,7 +447,7 @@ const DrumHero = () => {
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [isPlaying, petImages, backgroundFormat]);
+  }, [isPlaying, petImages, backgroundFormat, sensitiveMode]);
 
   const togglePlay = async () => {
     if (isPlaying) {
@@ -569,6 +575,11 @@ const DrumHero = () => {
 
     socketRef.current.on('connect_error', (error) => {
       console.error('DrumHero: Error de conexión Socket.IO:', error);
+    });
+
+    socketRef.current.on('sensitive-mode-change', (data) => {
+      console.log('DrumHero: Recibido cambio de modo sensible:', data);
+      setSensitiveMode(data.enabled);
     });
 
     socketRef.current.on('kudo', (data) => {
@@ -886,6 +897,9 @@ const DrumHero = () => {
           });
           updatePulseCircle(128);
         }
+      } else if (e.key === 'sensitiveMode') {
+        console.log('DrumHero: Cambio detectado en modo sensible:', e.newValue);
+        setSensitiveMode(e.newValue === 'true');
       }
     };
 
