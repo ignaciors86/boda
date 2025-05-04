@@ -791,7 +791,7 @@ const DrumHero = () => {
           }}
           className="emoji-option dragonball"
           style={{
-            background: 'none',
+            background: 'radial-gradient(circle at 30% 30%, rgba(255, 165, 0, 0.8), rgba(255, 69, 0, 0.4))',
             perspective: '600px',
             overflow: 'visible',
             position: 'absolute',
@@ -804,7 +804,10 @@ const DrumHero = () => {
             maxWidth: 120,
             maxHeight: 120,
             transform: `scale(${kudo.baseScale})`,
-            opacity: kudo.opacity
+            opacity: kudo.opacity,
+            borderRadius: '50%',
+            boxShadow: '0 0 20px rgba(255, 165, 0, 0.6)',
+            animation: 'dragonballGlow 2s infinite alternate'
           }}
         >
           <Sphere speed={speed} direction={direction}>
@@ -823,7 +826,7 @@ const DrumHero = () => {
               left: 0, top: 0, width: '100%', height: '100%',
               display: 'block',
               backfaceVisibility: 'hidden',
-              transform: 'rotateY(180deg)',
+              transform: 'rotateY(180deg)'
             }}>
               <span style={{position: 'relative', width: '100%', height: '100%', display: 'block'}}>
                 <span style={{ 
