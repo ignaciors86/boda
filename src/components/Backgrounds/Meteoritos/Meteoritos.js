@@ -52,8 +52,10 @@ const Meteoritos = ({ analyser }) => {
         creado: ahora,
         vida: 10000,
         rotacion,
-        forma: Math.random() > 0.5 ? 'redonda' : 'alargada',
-        estela: []
+        estela: [],
+        ultimoDestello: ahora,
+        faseDestello: 0,
+        destelloIntenso: Math.random() > 0.7 // 30% de probabilidad de destello intenso
       });
 
       ultimoMeteoritoRef.current = ahora;
@@ -80,13 +82,13 @@ const Meteoritos = ({ analyser }) => {
 
     const crearExplosion = (x, y, color) => {
       const particulas = [];
-      const tamañoBase = 40 + Math.random() * 60;
+      const tamañoBase = 15 + Math.random() * 25;
       const intensidad = 0.8 + Math.random() * 0.2;
       
-      for (let i = 0; i < 80; i++) {
-        const angulo = (Math.PI * 2 * i) / 80;
-        const velocidad = 6 + Math.random() * 10;
-        const tamaño = tamañoBase * (0.3 + Math.random() * 0.7);
+      for (let i = 0; i < 50; i++) {
+        const angulo = (Math.PI * 2 * i) / 50 + (Math.random() - 0.5) * 0.5;
+        const velocidad = 3 + Math.random() * 7;
+        const tamaño = tamañoBase * (0.2 + Math.random() * 0.8);
         particulas.push({
           x,
           y,
@@ -94,45 +96,54 @@ const Meteoritos = ({ analyser }) => {
           velocidadY: Math.sin(angulo) * velocidad,
           tamaño,
           color,
-          vida: 3000 + Math.random() * 2000,
+          vida: 1500 + Math.random() * 2000,
           creado: Date.now(),
           tipo: Math.random() > 0.6 ? 'brillante' : 'normal',
           rotacion: Math.random() * Math.PI * 2,
-          crecimiento: 0.15 + Math.random() * 0.25,
-          intensidad
+          crecimiento: 0.05 + Math.random() * 0.25,
+          intensidad: intensidad * (0.7 + Math.random() * 0.6)
         });
       }
       particulasRef.current.push(...particulas);
       
-      for (let i = 0; i < 4; i++) {
-        const radio = tamañoBase * (0.5 + i * 0.6);
+      for (let i = 0; i < 3; i++) {
+        const radioBase = tamañoBase * (0.3 + i * 0.6);
         const particulasOnda = [];
-        for (let j = 0; j < 50; j++) {
-          const angulo = (Math.PI * 2 * j) / 50;
+        const variacionAngulo = (Math.random() - 0.5) * 0.3;
+        
+        for (let j = 0; j < 40; j++) {
+          const angulo = (Math.PI * 2 * j) / 40 + variacionAngulo;
+          const radio = radioBase * (0.8 + Math.random() * 0.4);
+          const velocidad = 1.5 + Math.random() * 2.5;
+          const tamaño = tamañoBase * (0.1 + Math.random() * 0.4);
+          
           particulasOnda.push({
             x: x + Math.cos(angulo) * radio,
             y: y + Math.sin(angulo) * radio,
-            velocidadX: Math.cos(angulo) * 3,
-            velocidadY: Math.sin(angulo) * 3,
-            tamaño: tamañoBase * (0.2 + Math.random() * 0.4),
+            velocidadX: Math.cos(angulo + (Math.random() - 0.5) * 0.2) * velocidad,
+            velocidadY: Math.sin(angulo + (Math.random() - 0.5) * 0.2) * velocidad,
+            tamaño,
             color,
-            vida: 2500 + i * 600,
+            vida: 1500 + i * 400 + Math.random() * 1000,
             creado: Date.now(),
             tipo: 'onda',
             rotacion: Math.random() * Math.PI * 2,
-            crecimiento: 0.25 + Math.random() * 0.35,
-            intensidad
+            crecimiento: 0.1 + Math.random() * 0.3,
+            intensidad: intensidad * (0.6 + Math.random() * 0.8)
           });
         }
         particulasRef.current.push(...particulasOnda);
       }
       
-      for (let i = 0; i < 70; i++) {
-        const angulo = (Math.PI * 2 * i) / 70;
-        const distancia = Math.random() * tamañoBase * 2.5;
+      for (let i = 0; i < 50; i++) {
+        const angulo = (Math.PI * 2 * i) / 50 + (Math.random() - 0.5) * 0.4;
+        const distancia = Math.random() * tamañoBase * (1.5 + Math.random() * 1);
         const xHumo = x + Math.cos(angulo) * distancia;
         const yHumo = y + Math.sin(angulo) * distancia;
-        crearHumo(xHumo, yHumo, color, 1, tamañoBase * 0.4);
+        const tamañoHumo = tamañoBase * (0.2 + Math.random() * 0.3);
+        const opacidadHumo = 0.2 + Math.random() * 0.2;
+        
+        crearHumo(xHumo, yHumo, `rgba(255, 255, 255, ${opacidadHumo})`, 1, tamañoHumo);
       }
     };
 
@@ -154,8 +165,15 @@ const Meteoritos = ({ analyser }) => {
         meteorito.y += meteorito.velocidadY;
         meteorito.brillo = Math.max(0.3, meteorito.brillo - 0.0005) * vidaRestante;
         
+        // Actualizar fase del destello
+        const tiempoDesdeUltimoDestello = ahora - meteorito.ultimoDestello;
+        if (tiempoDesdeUltimoDestello > 50) {
+          meteorito.faseDestello = (meteorito.faseDestello + 0.2) % 1;
+          meteorito.ultimoDestello = ahora;
+        }
+        
         meteorito.estela.push({ x: meteorito.x, y: meteorito.y });
-        if (meteorito.estela.length > 20) {
+        if (meteorito.estela.length > 40) {
           meteorito.estela.shift();
         }
         
@@ -200,17 +218,25 @@ const Meteoritos = ({ analyser }) => {
     const dibujarMeteoritos = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
+      // Dibujar humo primero
       humoRef.current.forEach(particula => {
         const { x, y, tamaño, color, opacidad } = particula;
         const vidaRestante = Math.max(0, 1 - (Date.now() - particula.creado) / particula.vida);
+        
         ctx.beginPath();
         ctx.arc(x, y, tamaño, 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.globalAlpha = opacidad * vidaRestante;
+        
+        const gradienteHumo = ctx.createRadialGradient(x, y, 0, x, y, tamaño);
+        gradienteHumo.addColorStop(0, `rgba(255, 255, 255, ${opacidad * 0.3 * vidaRestante})`);
+        gradienteHumo.addColorStop(0.3, `rgba(255, 255, 255, ${opacidad * 0.2 * vidaRestante})`);
+        gradienteHumo.addColorStop(0.7, `rgba(255, 255, 255, ${opacidad * 0.1 * vidaRestante})`);
+        gradienteHumo.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        
+        ctx.fillStyle = gradienteHumo;
         ctx.fill();
-        ctx.globalAlpha = 1;
       });
 
+      // Dibujar partículas de explosión
       particulasRef.current.forEach(particula => {
         const { x, y, tamaño, color, tipo, rotacion, intensidad } = particula;
         const vidaRestante = Math.max(0, 1 - (Date.now() - particula.creado) / particula.vida);
@@ -226,14 +252,18 @@ const Meteoritos = ({ analyser }) => {
         if (tipo === 'brillante') {
           const gradiente = ctx.createRadialGradient(0, 0, 0, 0, 0, radio);
           gradiente.addColorStop(0, `rgba(255, 255, 255, ${0.95 * vidaRestante * intensidad})`);
-          gradiente.addColorStop(0.3, `rgba(255, 255, 255, ${0.8 * vidaRestante * intensidad})`);
-          gradiente.addColorStop(0.7, `rgba(255, 255, 255, ${0.4 * vidaRestante * intensidad})`);
+          gradiente.addColorStop(0.2, `rgba(255, 255, 255, ${0.8 * vidaRestante * intensidad})`);
+          gradiente.addColorStop(0.4, `rgba(255, 255, 255, ${0.6 * vidaRestante * intensidad})`);
+          gradiente.addColorStop(0.6, `rgba(255, 255, 255, ${0.4 * vidaRestante * intensidad})`);
+          gradiente.addColorStop(0.8, `rgba(255, 255, 255, ${0.2 * vidaRestante * intensidad})`);
           gradiente.addColorStop(1, color);
           ctx.fillStyle = gradiente;
         } else if (tipo === 'onda') {
           const gradiente = ctx.createRadialGradient(0, 0, 0, 0, 0, radio);
           gradiente.addColorStop(0, `rgba(255, 255, 255, ${0.7 * vidaRestante * intensidad})`);
-          gradiente.addColorStop(0.5, `rgba(255, 255, 255, ${0.3 * vidaRestante * intensidad})`);
+          gradiente.addColorStop(0.3, `rgba(255, 255, 255, ${0.5 * vidaRestante * intensidad})`);
+          gradiente.addColorStop(0.6, `rgba(255, 255, 255, ${0.3 * vidaRestante * intensidad})`);
+          gradiente.addColorStop(0.9, `rgba(255, 255, 255, ${0.1 * vidaRestante * intensidad})`);
           gradiente.addColorStop(1, 'rgba(255, 255, 255, 0)');
           ctx.fillStyle = gradiente;
         } else {
@@ -245,12 +275,19 @@ const Meteoritos = ({ analyser }) => {
         ctx.restore();
         ctx.globalAlpha = 1;
       });
-
+      
+      // Dibujar meteoritos
       meteoritosRef.current.forEach(meteorito => {
-        const { x, y, tamaño, color, brillo, velocidadX, velocidadY, rotacion, forma, estela } = meteorito;
+        const { x, y, tamaño, color, brillo, velocidadX, velocidadY, rotacion, estela, faseDestello, destelloIntenso } = meteorito;
         const [r, g, b] = color.match(/\d+/g).map(Number);
         const vidaRestante = Math.max(0, 1 - (Date.now() - meteorito.creado) / meteorito.vida);
         
+        // Calcular intensidad del destello con más variación
+        const intensidadDestello = destelloIntenso 
+          ? Math.sin(faseDestello * Math.PI * 2) * 0.8 + 0.2
+          : Math.sin(faseDestello * Math.PI * 2) * 0.6 + 0.4;
+        
+        // Dibujar estela con gradiente más suave
         if (estela.length > 1) {
           ctx.beginPath();
           ctx.moveTo(estela[0].x, estela[0].y);
@@ -260,11 +297,12 @@ const Meteoritos = ({ analyser }) => {
           
           const gradienteEstela = ctx.createLinearGradient(estela[0].x, estela[0].y, x, y);
           gradienteEstela.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0)`);
-          gradienteEstela.addColorStop(0.3, `rgba(${r}, ${g}, ${b}, ${brillo * 0.5 * vidaRestante})`);
+          gradienteEstela.addColorStop(0.2, `rgba(${r}, ${g}, ${b}, ${brillo * 0.5 * vidaRestante})`);
+          gradienteEstela.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, ${brillo * 0.8 * vidaRestante})`);
           gradienteEstela.addColorStop(1, `rgba(${r}, ${g}, ${b}, ${brillo * vidaRestante})`);
           
           ctx.strokeStyle = gradienteEstela;
-          ctx.lineWidth = tamaño * 0.8;
+          ctx.lineWidth = tamaño * 0.7;
           ctx.lineCap = 'round';
           ctx.stroke();
         }
@@ -275,76 +313,57 @@ const Meteoritos = ({ analyser }) => {
         ctx.translate(x, y);
         ctx.rotate(angulo + rotacion);
         
-        if (forma === 'redonda') {
-          ctx.beginPath();
-          ctx.arc(0, 0, tamaño, 0, Math.PI * 2);
-        } else {
-          ctx.beginPath();
-          ctx.ellipse(0, 0, tamaño * 1.5, tamaño * 0.7, 0, 0, Math.PI * 2);
-        }
+        // Dibujar cuerpo del meteorito con gradiente más suave
+        ctx.beginPath();
+        ctx.arc(0, 0, tamaño, 0, Math.PI * 2);
         
-        const gradienteCuerpo = ctx.createLinearGradient(-tamaño, 0, tamaño, 0);
-        gradienteCuerpo.addColorStop(0, color);
-        gradienteCuerpo.addColorStop(1, `rgba(${r}, ${g}, ${b}, ${0.3 * vidaRestante})`);
+        const gradienteCuerpo = ctx.createRadialGradient(0, 0, 0, 0, 0, tamaño);
+        gradienteCuerpo.addColorStop(0, `rgba(255, 255, 255, ${brillo * vidaRestante * intensidadDestello})`);
+        gradienteCuerpo.addColorStop(0.3, `rgba(${r}, ${g}, ${b}, ${brillo * 0.8 * vidaRestante * intensidadDestello})`);
+        gradienteCuerpo.addColorStop(0.7, `rgba(${r}, ${g}, ${b}, ${brillo * 0.4 * vidaRestante * intensidadDestello})`);
+        gradienteCuerpo.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+        
         ctx.fillStyle = gradienteCuerpo;
         ctx.fill();
-
-        const radioCabeza = tamaño * 0.8;
-        const radioBrillo = radioCabeza * 2.5;
         
+        // Capa exterior de brillo (con color del meteorito)
+        const radioBrillo = tamaño * 13.5;
         const gradienteExterior = ctx.createRadialGradient(0, 0, 0, 0, 0, radioBrillo);
-        gradienteExterior.addColorStop(0, `rgba(255, 255, 255, ${brillo * 0.4 * vidaRestante})`);
-        gradienteExterior.addColorStop(0.2, `rgba(255, 255, 255, ${brillo * 0.3 * vidaRestante})`);
-        gradienteExterior.addColorStop(0.4, `rgba(255, 255, 255, ${brillo * 0.2 * vidaRestante})`);
-        gradienteExterior.addColorStop(0.6, `rgba(255, 255, 255, ${brillo * 0.1 * vidaRestante})`);
-        gradienteExterior.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        gradienteExterior.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${brillo * 0.3 * vidaRestante * intensidadDestello})`);
+        gradienteExterior.addColorStop(0.2, `rgba(${r}, ${g}, ${b}, ${brillo * 0.25 * vidaRestante * intensidadDestello})`);
+        gradienteExterior.addColorStop(0.4, `rgba(${r}, ${g}, ${b}, ${brillo * 0.2 * vidaRestante * intensidadDestello})`);
+        gradienteExterior.addColorStop(0.6, `rgba(${r}, ${g}, ${b}, ${brillo * 0.15 * vidaRestante * intensidadDestello})`);
+        gradienteExterior.addColorStop(0.8, `rgba(${r}, ${g}, ${b}, ${brillo * 0.1 * vidaRestante * intensidadDestello})`);
+        gradienteExterior.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
         
         ctx.beginPath();
         ctx.arc(0, 0, radioBrillo, 0, Math.PI * 2);
         ctx.fillStyle = gradienteExterior;
         ctx.fill();
         
-        const radioIntermedio = radioCabeza * 1.8;
-        const gradienteIntermedio = ctx.createRadialGradient(0, 0, 0, 0, 0, radioIntermedio);
-        gradienteIntermedio.addColorStop(0, `rgba(255, 255, 255, ${brillo * 0.7 * vidaRestante})`);
-        gradienteIntermedio.addColorStop(0.3, `rgba(255, 255, 255, ${brillo * 0.5 * vidaRestante})`);
-        gradienteIntermedio.addColorStop(0.6, `rgba(255, 255, 255, ${brillo * 0.3 * vidaRestante})`);
-        gradienteIntermedio.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        
-        ctx.beginPath();
-        ctx.arc(0, 0, radioIntermedio, 0, Math.PI * 2);
-        ctx.fillStyle = gradienteIntermedio;
-        ctx.fill();
-        
-        const gradienteInterior = ctx.createRadialGradient(0, 0, 0, 0, 0, radioCabeza);
-        gradienteInterior.addColorStop(0, `rgba(255, 255, 255, ${brillo * vidaRestante})`);
-        gradienteInterior.addColorStop(0.2, `rgba(255, ${g}, ${b}, ${brillo * 0.9 * vidaRestante})`);
-        gradienteInterior.addColorStop(0.4, `rgba(${r}, ${g}, ${b}, ${brillo * 0.7 * vidaRestante})`);
-        gradienteInterior.addColorStop(0.7, `rgba(${r}, ${g}, ${b}, ${brillo * 0.3 * vidaRestante})`);
-        gradienteInterior.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
-        
-        ctx.beginPath();
-        ctx.arc(0, 0, radioCabeza, 0, Math.PI * 2);
-        ctx.fillStyle = gradienteInterior;
-        ctx.fill();
-        
-        const radioNucleo = radioCabeza * 0.6;
+        // Núcleo brillante (con color del meteorito)
+        const radioNucleo = tamaño * 2.7;
         const gradienteNucleo = ctx.createRadialGradient(0, 0, 0, 0, 0, radioNucleo);
-        gradienteNucleo.addColorStop(0, `rgba(255, 255, 255, ${vidaRestante})`);
-        gradienteNucleo.addColorStop(0.3, `rgba(255, 255, 255, ${brillo * 0.9 * vidaRestante})`);
-        gradienteNucleo.addColorStop(0.7, `rgba(255, 255, 255, ${brillo * 0.5 * vidaRestante})`);
-        gradienteNucleo.addColorStop(1, `rgba(255, 255, 255, 0)`);
+        gradienteNucleo.addColorStop(0, `rgba(255, 255, 255, ${vidaRestante * intensidadDestello})`);
+        gradienteNucleo.addColorStop(0.2, `rgba(${r}, ${g}, ${b}, ${brillo * 0.9 * vidaRestante * intensidadDestello})`);
+        gradienteNucleo.addColorStop(0.4, `rgba(${r}, ${g}, ${b}, ${brillo * 0.8 * vidaRestante * intensidadDestello})`);
+        gradienteNucleo.addColorStop(0.6, `rgba(${r}, ${g}, ${b}, ${brillo * 0.6 * vidaRestante * intensidadDestello})`);
+        gradienteNucleo.addColorStop(0.8, `rgba(${r}, ${g}, ${b}, ${brillo * 0.3 * vidaRestante * intensidadDestello})`);
+        gradienteNucleo.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
         
         ctx.beginPath();
         ctx.arc(0, 0, radioNucleo, 0, Math.PI * 2);
         ctx.fillStyle = gradienteNucleo;
         ctx.fill();
         
-        const radioDestello = radioNucleo * 0.4;
+        // Destello central pulsante (con color del meteorito)
+        const radioDestello = radioNucleo * (0.5 + intensidadDestello * 0.4);
         const gradienteDestello = ctx.createRadialGradient(0, 0, 0, 0, 0, radioDestello);
-        gradienteDestello.addColorStop(0, `rgba(255, 255, 255, ${vidaRestante})`);
-        gradienteDestello.addColorStop(0.5, `rgba(255, 255, 255, ${brillo * vidaRestante})`);
-        gradienteDestello.addColorStop(1, `rgba(255, 255, 255, 0)`);
+        gradienteDestello.addColorStop(0, `rgba(255, 255, 255, ${vidaRestante * intensidadDestello})`);
+        gradienteDestello.addColorStop(0.3, `rgba(${r}, ${g}, ${b}, ${brillo * 0.9 * vidaRestante * intensidadDestello})`);
+        gradienteDestello.addColorStop(0.6, `rgba(${r}, ${g}, ${b}, ${brillo * 0.7 * vidaRestante * intensidadDestello})`);
+        gradienteDestello.addColorStop(0.9, `rgba(${r}, ${g}, ${b}, ${brillo * 0.3 * vidaRestante * intensidadDestello})`);
+        gradienteDestello.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
         
         ctx.beginPath();
         ctx.arc(0, 0, radioDestello, 0, Math.PI * 2);
