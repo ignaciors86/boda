@@ -88,8 +88,9 @@ const Controles = () => {
     const newSpeed = parseFloat(e.target.value);
     setSpeedMultiplier(newSpeed);
     if (socketRef.current?.connected) {
-      socketRef.current.emit('speed-change', {
-        multiplier: newSpeed,
+      socketRef.current.emit('kudo', {
+        id: Date.now(),
+        speed: newSpeed,
         timestamp: Date.now()
       });
     }
@@ -101,8 +102,9 @@ const Controles = () => {
     if (!isNaN(factor) && factor > 0) {
       setPhotoChangeFactor(factor);
       if (socketRef.current && socketRef.current.connected) {
-        socketRef.current.emit('photo-factor-change', {
-          factor: factor,
+        socketRef.current.emit('kudo', {
+          id: Date.now(),
+          photoFactor: factor,
           timestamp: Date.now()
         });
       }
@@ -116,7 +118,8 @@ const Controles = () => {
     localStorage.setItem('backgroundFormat', newFormat);
     
     if (socketRef.current?.connected) {
-      socketRef.current.emit('background-format-change', {
+      socketRef.current.emit('kudo', {
+        id: Date.now(),
         format: newFormat,
         timestamp: Date.now()
       });
@@ -130,8 +133,9 @@ const Controles = () => {
     localStorage.setItem('sensitiveMode', newMode);
     
     if (socketRef.current?.connected) {
-      socketRef.current.emit('sensitive-mode-change', {
-        enabled: newMode,
+      socketRef.current.emit('kudo', {
+        id: Date.now(),
+        sensitiveMode: newMode,
         timestamp: Date.now()
       });
     }

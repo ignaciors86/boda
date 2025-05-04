@@ -559,38 +559,85 @@ const DrumHero = () => {
     
     console.log('DrumHero: Inicializando socket en:', socketUrl);
     
-    socketRef.current = io(socketUrl, {
+    // Crear una nueva instancia de socket con configuración más permisiva
+    const socket = io(socketUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
       withCredentials: false,
       forceNew: true,
-      timeout: 20000
+      timeout: 20000,
+      autoConnect: true,
+      path: '/socket.io/',
+      extraHeaders: {
+        'Access-Control-Allow-Origin': '*'
+      }
     });
-    
-    socketRef.current.on('connect', () => {
+
+    // Manejar la conexión
+    socket.on('connect', () => {
       console.log('DrumHero: Socket conectado');
+      socketRef.current = socket;
     });
 
-    socketRef.current.on('connect_error', (error) => {
+    // Manejar errores de conexión
+    socket.on('connect_error', (error) => {
       console.error('DrumHero: Error de conexión Socket.IO:', error);
+      // Intentar reconectar con un retraso exponencial
+      const delay = Math.min(1000 * Math.pow(2, socket.io.reconnectionAttempts), 10000);
+      setTimeout(() => {
+        if (!socket.connected) {
+          console.log('DrumHero: Intentando reconectar...');
+          socket.connect();
+        }
+      }, delay);
     });
 
-    socketRef.current.on('sensitive-mode-change', (data) => {
+    // Manejar desconexiones
+    socket.on('disconnect', (reason) => {
+      console.log('DrumHero: Socket desconectado:', reason);
+      if (reason === 'io server disconnect' || reason === 'transport close') {
+        // El servidor cerró la conexión, intentar reconectar
+        socket.connect();
+      }
+    });
+
+    // Manejar eventos
+    socket.on('sensitive-mode-change', (data) => {
       console.log('DrumHero: Recibido cambio de modo sensible:', data);
-      setSensitiveMode(data.enabled);
+      if (data && typeof data.enabled !== 'undefined') {
+        setSensitiveMode(data.enabled);
+        localStorage.setItem('sensitiveMode', data.enabled);
+      }
     });
 
-    socketRef.current.on('kudo', (data) => {
+    socket.on('kudo', (data) => {
       console.log('DrumHero: Recibido kudo:', data);
       
+      if (!data) return;
+
       if (data.coleccion) {
         console.log('DrumHero: Cambiando a colección:', data.coleccion);
         setPetImages(galerias[data.coleccion]?.imagenes || []);
         setColeccionActual(data.coleccion);
         setCurrentImageIndex(0);
-      } else {
+      } else if (data.format) {
+        console.log('DrumHero: Cambiando formato de fondo:', data.format);
+        setBackgroundFormat(data.format);
+        localStorage.setItem('backgroundFormat', data.format);
+      } else if (data.sensitiveMode !== undefined) {
+        console.log('DrumHero: Cambiando modo sensible:', data.sensitiveMode);
+        setSensitiveMode(data.sensitiveMode);
+        localStorage.setItem('sensitiveMode', data.sensitiveMode);
+      } else if (data.speed) {
+        console.log('DrumHero: Cambiando velocidad:', data.speed);
+        rotationSpeedRef.current = data.speed;
+      } else if (data.photoFactor) {
+        console.log('DrumHero: Cambiando factor de fotos:', data.photoFactor);
+        // Aquí puedes agregar la lógica para el factor de fotos si es necesario
+      } else if (data.emoji && data.id) {
         if (!kudosRef.current.has(data.id)) {
           kudosRef.current.add(data.id);
           
@@ -672,15 +719,15 @@ const DrumHero = () => {
                 }
               });
             }
-          }, 9000); // Comenzar desvanecimiento 1 segundo antes de desaparecer
+          }, 9000);
         }
       }
     });
 
+    // Limpiar al desmontar
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
+      if (socket) {
+        socket.disconnect();
       }
     };
   }, [galerias]);
