@@ -18,7 +18,11 @@ const Meteoritos = ({ analyser }) => {
     const dataArray = new Uint8Array(bufferLength);
 
     const resizeCanvas = () => {
-      const { width, height } = canvas.getBoundingClientRect();
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      if (!rect) return;
+      
+      const { width, height } = rect;
       const dpr = window.devicePixelRatio || 1;
       canvas.width = width * dpr;
       canvas.height = height * dpr;
@@ -389,6 +393,7 @@ const Meteoritos = ({ analyser }) => {
       animationRef.current = requestAnimationFrame(animar);
     };
 
+    // Inicializar el canvas
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
     animar();

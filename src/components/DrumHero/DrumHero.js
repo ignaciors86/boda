@@ -65,6 +65,10 @@ const DrumHero = () => {
     const savedMode = localStorage.getItem('sensitiveMode');
     return savedMode === 'true';
   });
+  const [extraSensitiveMode, setExtraSensitiveMode] = useState(() => {
+    const savedMode = localStorage.getItem('extraSensitiveMode');
+    return savedMode === 'true';
+  });
   const [energyHistory, setEnergyHistory] = useState([]);
   const [bassEnergy, setBassEnergy] = useState(0);
   const [midEnergy, setMidEnergy] = useState(0);
@@ -399,13 +403,14 @@ const DrumHero = () => {
       }
 
       const averageEnergy = energyHistoryRef.current.reduce((sum, val) => sum + val, 0) / energyHistoryRef.current.length || 1;
-      const isBeat = totalEnergy > averageEnergy * (sensitiveMode ? 1.1 : beatThresholdRef.current);
+      const beatThreshold = extraSensitiveMode ? 1.05 : (sensitiveMode ? 1.3 : 1.5);
+      const isBeat = totalEnergy > averageEnergy * beatThreshold;
 
       if (isBeat) {
         const timeSinceLastPulse = now - lastPulseTimeRef.current;
         const timeSinceLastImage = now - lastImageChangeRef.current;
         
-        if (timeSinceLastPulse >= (sensitiveMode ? 200 : 500)) {
+        if (timeSinceLastPulse >= (extraSensitiveMode ? 50 : (sensitiveMode ? 200 : 500))) {
           if (backgroundFormat === 'polygons') {
             updatePolygon(totalEnergy);
           } else {
@@ -414,7 +419,7 @@ const DrumHero = () => {
           handlePulse();
           
           // Modificar el tiempo mínimo entre cambios de imagen según el modo
-          const minImageChangeTime = sensitiveMode ? 50 : 1000;
+          const minImageChangeTime = extraSensitiveMode ? 2 : (sensitiveMode ? 50 : 1000);
           if (timeSinceLastImage >= minImageChangeTime && petImages.length > 0) {
             setCurrentImageIndex(prev => (prev + 1) % petImages.length);
             lastImageChangeRef.current = now;
@@ -447,7 +452,7 @@ const DrumHero = () => {
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [isPlaying, petImages, backgroundFormat, sensitiveMode]);
+  }, [isPlaying, petImages, backgroundFormat, sensitiveMode, extraSensitiveMode]);
 
   const togglePlay = async () => {
     if (isPlaying) {
@@ -606,10 +611,16 @@ const DrumHero = () => {
 
     // Manejar eventos
     socket.on('sensitive-mode-change', (data) => {
-      console.log('DrumHero: Recibido cambio de modo sensible:', data);
-      if (data && typeof data.enabled !== 'undefined') {
-        setSensitiveMode(data.enabled);
-        localStorage.setItem('sensitiveMode', data.enabled);
+      console.log('DrumHero: Recibido cambio de modo:', data);
+      if (data) {
+        if (typeof data.enabled !== 'undefined') {
+          setSensitiveMode(data.enabled);
+          localStorage.setItem('sensitiveMode', data.enabled);
+        }
+        if (typeof data.extraSensitive !== 'undefined') {
+          setExtraSensitiveMode(data.extraSensitive);
+          localStorage.setItem('extraSensitiveMode', data.extraSensitive);
+        }
       }
     });
 
@@ -627,10 +638,16 @@ const DrumHero = () => {
         console.log('DrumHero: Cambiando formato de fondo:', data.format);
         setBackgroundFormat(data.format);
         localStorage.setItem('backgroundFormat', data.format);
-      } else if (data.sensitiveMode !== undefined) {
-        console.log('DrumHero: Cambiando modo sensible:', data.sensitiveMode);
-        setSensitiveMode(data.sensitiveMode);
-        localStorage.setItem('sensitiveMode', data.sensitiveMode);
+      } else if (data.sensitiveMode !== undefined || data.extraSensitive !== undefined) {
+        console.log('DrumHero: Cambiando modo:', { sensitiveMode: data.sensitiveMode, extraSensitive: data.extraSensitive });
+        if (data.sensitiveMode !== undefined) {
+          setSensitiveMode(data.sensitiveMode);
+          localStorage.setItem('sensitiveMode', data.sensitiveMode);
+        }
+        if (data.extraSensitive !== undefined) {
+          setExtraSensitiveMode(data.extraSensitive);
+          localStorage.setItem('extraSensitiveMode', data.extraSensitive);
+        }
       } else if (data.speed) {
         console.log('DrumHero: Cambiando velocidad:', data.speed);
         rotationSpeedRef.current = data.speed;

@@ -14,7 +14,11 @@ const Pulse = ({ analyser }) => {
     const dataArray = new Uint8Array(bufferLength);
 
     const resizeCanvas = () => {
-      const { width, height } = canvas.getBoundingClientRect();
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      if (!rect) return;
+      
+      const { width, height } = rect;
       const dpr = window.devicePixelRatio || 1;
       canvas.width = width * dpr;
       canvas.height = height * dpr;
@@ -35,8 +39,10 @@ const Pulse = ({ analyser }) => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       if (intensidad > 30) {
-        const x = canvas.width / 2;
-        const y = canvas.height / 2;
+        const rect = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        const x = rect.width / 2;
+        const y = rect.height / 2;
         const radio = 50 + intensidad * 2;
         const r = Math.floor(Math.random() * 255);
         const g = Math.floor(Math.random() * 255);
@@ -49,6 +55,7 @@ const Pulse = ({ analyser }) => {
       animationRef.current = requestAnimationFrame(animar);
     };
 
+    // Inicializar el canvas
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
     animar();
