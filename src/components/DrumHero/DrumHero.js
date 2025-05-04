@@ -69,6 +69,10 @@ const DrumHero = () => {
     const savedMode = localStorage.getItem('extraSensitiveMode');
     return savedMode === 'true';
   });
+  const [pursuitMode, setPursuitMode] = useState(() => {
+    const savedMode = localStorage.getItem('pursuitMode');
+    return savedMode === 'true';
+  });
   const [energyHistory, setEnergyHistory] = useState([]);
   const [bassEnergy, setBassEnergy] = useState(0);
   const [midEnergy, setMidEnergy] = useState(0);
@@ -386,6 +390,9 @@ const DrumHero = () => {
     const bufferLength = analyserRef.current.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     let animationFrameId = null;
+    let lastValidBeatTime = 0;
+    const SILENCE_THRESHOLD = 30; // Umbral de silencio
+    const MIN_TIME_BETWEEN_BEATS = 100; // Tiempo mínimo entre beats en ms
 
     const analyzeAudio = () => {
       analyserRef.current.getByteFrequencyData(dataArray);
@@ -403,14 +410,24 @@ const DrumHero = () => {
       }
 
       const averageEnergy = energyHistoryRef.current.reduce((sum, val) => sum + val, 0) / energyHistoryRef.current.length || 1;
-      const beatThreshold = extraSensitiveMode ? 1.05 : (sensitiveMode ? 1.3 : 1.5);
-      const isBeat = totalEnergy > averageEnergy * beatThreshold;
+      const beatThreshold = pursuitMode ? 1.03 : (extraSensitiveMode ? 1.2 : (sensitiveMode ? 1.3 : 1.5));
+      
+      // Para el modo persecución, detectamos tanto el nivel absoluto como el cambio relativo
+      const energyChange = Math.abs(totalEnergy - averageEnergy);
+      const isBeat = pursuitMode ? 
+        (totalEnergy > 15 || (totalEnergy > 8 && energyChange > 12)) : 
+        (totalEnergy > averageEnergy * beatThreshold && totalEnergy > 20);
 
       if (isBeat) {
         const timeSinceLastPulse = now - lastPulseTimeRef.current;
         const timeSinceLastImage = now - lastImageChangeRef.current;
         
-        if (timeSinceLastPulse >= (extraSensitiveMode ? 50 : (sensitiveMode ? 200 : 500))) {
+        // En modo persecución, ajustamos la velocidad según la energía
+        const pursuitSpeed = pursuitMode ? 
+          (totalEnergy > 100 ? 15 : (totalEnergy > 50 ? 25 : 40)) : 
+          (extraSensitiveMode ? 50 : (sensitiveMode ? 200 : 500));
+        
+        if (timeSinceLastPulse >= pursuitSpeed) {
           if (backgroundFormat === 'polygons') {
             updatePolygon(totalEnergy);
           } else {
@@ -418,9 +435,12 @@ const DrumHero = () => {
           }
           handlePulse();
           
-          // Modificar el tiempo mínimo entre cambios de imagen según el modo
-          const minImageChangeTime = extraSensitiveMode ? 2 : (sensitiveMode ? 50 : 1000);
-          if (timeSinceLastImage >= minImageChangeTime && petImages.length > 0) {
+          // En modo persecución, ajustamos el tiempo entre cambios según la energía
+          const imageChangeTime = pursuitMode ? 
+            (totalEnergy > 100 ? 3 : (totalEnergy > 50 ? 8 : 15)) : 
+            (extraSensitiveMode ? 2 : (sensitiveMode ? 50 : 1000));
+          
+          if (timeSinceLastImage >= imageChangeTime && petImages.length > 0) {
             setCurrentImageIndex(prev => (prev + 1) % petImages.length);
             lastImageChangeRef.current = now;
             
@@ -452,7 +472,7 @@ const DrumHero = () => {
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [isPlaying, petImages, backgroundFormat, sensitiveMode, extraSensitiveMode]);
+  }, [isPlaying, petImages, backgroundFormat, sensitiveMode, extraSensitiveMode, pursuitMode]);
 
   const togglePlay = async () => {
     if (isPlaying) {
@@ -621,6 +641,10 @@ const DrumHero = () => {
           setExtraSensitiveMode(data.extraSensitive);
           localStorage.setItem('extraSensitiveMode', data.extraSensitive);
         }
+        if (typeof data.pursuit !== 'undefined') {
+          setPursuitMode(data.pursuit);
+          localStorage.setItem('pursuitMode', data.pursuit);
+        }
       }
     });
 
@@ -638,8 +662,12 @@ const DrumHero = () => {
         console.log('DrumHero: Cambiando formato de fondo:', data.format);
         setBackgroundFormat(data.format);
         localStorage.setItem('backgroundFormat', data.format);
-      } else if (data.sensitiveMode !== undefined || data.extraSensitive !== undefined) {
-        console.log('DrumHero: Cambiando modo:', { sensitiveMode: data.sensitiveMode, extraSensitive: data.extraSensitive });
+      } else if (data.sensitiveMode !== undefined || data.extraSensitive !== undefined || data.pursuit !== undefined) {
+        console.log('DrumHero: Cambiando modo:', { 
+          sensitiveMode: data.sensitiveMode, 
+          extraSensitive: data.extraSensitive,
+          pursuit: data.pursuit 
+        });
         if (data.sensitiveMode !== undefined) {
           setSensitiveMode(data.sensitiveMode);
           localStorage.setItem('sensitiveMode', data.sensitiveMode);
@@ -647,6 +675,10 @@ const DrumHero = () => {
         if (data.extraSensitive !== undefined) {
           setExtraSensitiveMode(data.extraSensitive);
           localStorage.setItem('extraSensitiveMode', data.extraSensitive);
+        }
+        if (data.pursuit !== undefined) {
+          setPursuitMode(data.pursuit);
+          localStorage.setItem('pursuitMode', data.pursuit);
         }
       } else if (data.speed) {
         console.log('DrumHero: Cambiando velocidad:', data.speed);

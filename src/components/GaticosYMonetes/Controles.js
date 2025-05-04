@@ -29,6 +29,10 @@ const Controles = () => {
     const savedMode = localStorage.getItem('extraSensitiveMode');
     return savedMode === 'true';
   });
+  const [pursuitMode, setPursuitMode] = useState(() => {
+    const savedMode = localStorage.getItem('pursuitMode');
+    return savedMode === 'true';
+  });
   const [autoChangeInterval, setAutoChangeInterval] = useState(null);
 
   const formatos = ['polygons', 'poligonos-flotantes', 'pulse', 'kitt', 'meteoritos'];
@@ -135,10 +139,11 @@ const Controles = () => {
       socketRef.current.emit('sensitive-mode-change', {
         enabled: sensitiveMode,
         extraSensitive: extraSensitiveMode,
+        pursuit: pursuitMode,
         timestamp: Date.now()
       });
     }
-  }, [sensitiveMode, extraSensitiveMode]);
+  }, [sensitiveMode, extraSensitiveMode, pursuitMode]);
 
   const handleAutoChangeTimeChange = (e) => {
     setAutoChangeInput(e.target.value);
@@ -184,7 +189,9 @@ const Controles = () => {
     
     if (newMode) {
       setExtraSensitiveMode(false);
+      setPursuitMode(false);
       localStorage.setItem('extraSensitiveMode', false);
+      localStorage.setItem('pursuitMode', false);
     }
     
     if (socketRef.current?.connected) {
@@ -192,6 +199,7 @@ const Controles = () => {
         id: Date.now(),
         sensitiveMode: newMode,
         extraSensitive: false,
+        pursuit: false,
         timestamp: Date.now()
       });
     }
@@ -205,7 +213,9 @@ const Controles = () => {
     
     if (newMode) {
       setSensitiveMode(false);
+      setPursuitMode(false);
       localStorage.setItem('sensitiveMode', false);
+      localStorage.setItem('pursuitMode', false);
     }
     
     if (socketRef.current?.connected) {
@@ -213,6 +223,31 @@ const Controles = () => {
         id: Date.now(),
         sensitiveMode: false,
         extraSensitive: newMode,
+        pursuit: false,
+        timestamp: Date.now()
+      });
+    }
+  };
+
+  const handlePursuitModeChange = (e) => {
+    const newMode = e.target.checked;
+    console.log('Controles: Cambiando modo persecución a:', newMode);
+    setPursuitMode(newMode);
+    localStorage.setItem('pursuitMode', newMode);
+    
+    if (newMode) {
+      setSensitiveMode(false);
+      setExtraSensitiveMode(false);
+      localStorage.setItem('sensitiveMode', false);
+      localStorage.setItem('extraSensitiveMode', false);
+    }
+    
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('kudo', {
+        id: Date.now(),
+        sensitiveMode: false,
+        extraSensitive: false,
+        pursuit: newMode,
         timestamp: Date.now()
       });
     }
@@ -390,6 +425,14 @@ const Controles = () => {
               onChange={handleExtraSensitiveModeChange}
             />
             <span>Modo Extra Sensible (cambios muy rápidos)</span>
+          </label>
+          <label className="controles-checkbox">
+            <input
+              type="checkbox"
+              checked={pursuitMode}
+              onChange={handlePursuitModeChange}
+            />
+            <span>Modo Persecución (cambios extremadamente rápidos)</span>
           </label>
         </div>
       </div>

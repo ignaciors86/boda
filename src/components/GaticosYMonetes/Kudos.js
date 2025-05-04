@@ -500,57 +500,68 @@ const Kudos = () => {
           ref={el => {
             if (el && !kudo.element) {
               kudo.element = el;
+              
+              // Crear timeline para la animación inicial
+              const tl = gsap.timeline({
+                onComplete: () => {
+                  // Una vez completada la animación inicial, empezar el movimiento
+                  kudo.velocityX = Math.cos(kudo.angle) * kudo.speed;
+                  kudo.velocityY = Math.sin(kudo.angle) * kudo.speed;
+                }
+              });
+
+              // Animación de aparición desde otra dimensión
+              tl.fromTo(el, 
+                { 
+                  scale: 0,
+                  opacity: 0,
+                  rotationY: 180,
+                  rotationX: 180,
+                  x: kudo.x,
+                  y: kudo.y,
+                  z: -1000,
+                  filter: "blur(20px) brightness(2)",
+                  transformOrigin: "center center"
+                },
+                { 
+                  scale: kudo.baseScale,
+                  opacity: 1,
+                  rotationY: 0,
+                  rotationX: 0,
+                  z: 0,
+                  filter: "blur(0px) brightness(1)",
+                  duration: 1.2,
+                  ease: "power4.out"
+                }
+              )
+              .to(el, {
+                scale: kudo.baseScale * 1.1,
+                duration: 0.2,
+                ease: "power2.inOut"
+              })
+              .to(el, {
+                scale: kudo.baseScale,
+                duration: 0.3,
+                ease: "elastic.out(1, 0.5)"
+              });
             }
           }}
           className="emoji-option dragonball"
           style={{
-            background: 'none',
-            perspective: '600px',
-            overflow: 'visible',
-            position: 'absolute',
             left: `${kudo.x}px`,
             top: `${kudo.y}px`,
-            width: '6vw',
-            height: '6vw',
-            minWidth: 48,
-            minHeight: 48,
-            maxWidth: 120,
-            maxHeight: 120,
             transform: `scale(${kudo.baseScale})`,
+            backgroundColor: kudo.bgColor
           }}
         >
           <Sphere speed={speed} direction={direction}>
-            <span className="dragonball-face front" style={{
-              position: 'absolute',
-              left: 0, top: 0, width: '100%', height: '100%',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              backfaceVisibility: 'hidden',
-              fontSize: '4.2vw',
-              filter: 'drop-shadow(0 0 0.5vw #fff8)'
-            }}>
+            <span className="dragonball-face front">
               {kudo.emoji}
             </span>
-            <span className="dragonball-face back" style={{
-              position: 'absolute',
-              left: 0, top: 0, width: '100%', height: '100%',
-              display: 'block',
-              backfaceVisibility: 'hidden',
-              transform: 'rotateY(180deg)',
-            }}>
-              <span style={{position: 'relative', width: '100%', height: '100%', display: 'block'}}>
-                <span style={{ 
-                  position: 'absolute',
-                  fontSize: '2vw',
-                  color: '#d32f2f',
-                  zIndex: 1,
-                  filter: 'drop-shadow(0 0 0.3vw #0008)'
-                }}>★</span>
-                <span style={{ 
-                  position: 'absolute',
-                  fontSize: '0.8vw',
-                  zIndex: 2,
-                  filter: 'drop-shadow(0 0 0.1vw #000)'
-                }}>{kudo.emoji}</span>
+            <span className="dragonball-face back">
+              <span className="dragonball-emoji">
+                <span className="star">★</span>
+                <span className="emoji">{kudo.emoji}</span>
               </span>
             </span>
           </Sphere>
