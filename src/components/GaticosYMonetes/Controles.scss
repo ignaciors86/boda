@@ -1,3 +1,124 @@
+:root {
+  /* Variables por defecto, sin transición ni temas */
+  --controles-bg-main: #23243a;
+  --controles-bg-content: #2d2e48;
+  --controles-bg-block: #23243a;
+  --controles-bg-block-alt: #23243acc;
+  --controles-accent: #00ffd0;
+  --controles-accent-alt: #00e0ff;
+  --controles-accent-yellow: #ffe600;
+  --controles-accent-yellow-soft: #fffbe6;
+  --controles-border: #00ffd0;
+  --controles-border-soft: rgba(0,255,208,0.3);
+  --controles-text-main: #00ffd0;
+  --controles-text-alt: #fff;
+  --controles-shadow: 0 0 20px #00ffd044;
+  --controles-shadow-strong: 0 0 30px #00ffd099;
+  --controles-shadow-yellow: 0 0 10px #ffe60099;
+  --controles-bg-btn-hover: rgba(0,255,208,0.12);
+  --controles-bg-btn-active: rgba(0,255,208,0.22);
+  --controles-bg-btn: #23243a;
+}
+
+body.theme-neon .controles,
+body.theme-pastel .controles,
+body.theme-dark .controles,
+body.theme-green .controles {
+  transition:
+    --controles-bg-main 2s cubic-bezier(.4,1.3,.6,1),
+    --controles-bg-content 2s cubic-bezier(.4,1.3,.6,1),
+    --controles-bg-block 2s cubic-bezier(.4,1.3,.6,1),
+    --controles-bg-block-alt 2s cubic-bezier(.4,1.3,.6,1),
+    --controles-accent 2s cubic-bezier(.4,1.3,.6,1),
+    --controles-accent-alt 2s cubic-bezier(.4,1.3,.6,1),
+    --controles-accent-yellow 2s cubic-bezier(.4,1.3,.6,1),
+    --controles-accent-yellow-soft 2s cubic-bezier(.4,1.3,.6,1),
+    --controles-border 2s cubic-bezier(.4,1.3,.6,1),
+    --controles-border-soft 2s cubic-bezier(.4,1.3,.6,1),
+    --controles-text-main 2s cubic-bezier(.4,1.3,.6,1),
+    --controles-text-alt 2s cubic-bezier(.4,1.3,.6,1),
+    --controles-shadow 2s cubic-bezier(.4,1.3,.6,1),
+    --controles-shadow-strong 2s cubic-bezier(.4,1.3,.6,1),
+    --controles-shadow-yellow 2s cubic-bezier(.4,1.3,.6,1),
+    --controles-bg-btn-hover 2s cubic-bezier(.4,1.3,.6,1),
+    --controles-bg-btn-active 2s cubic-bezier(.4,1.3,.6,1),
+    --controles-bg-btn 2s cubic-bezier(.4,1.3,.6,1);
+}
+
+body.theme-neon .controles {
+  --controles-bg-main: #23243a;
+  --controles-bg-content: #2d2e48;
+  --controles-bg-block: #23243a;
+  --controles-bg-block-alt: #23243acc;
+  --controles-accent: #00ffd0;
+  --controles-accent-alt: #00e0ff;
+  --controles-accent-yellow: #ffe600;
+  --controles-border: #00ffd0;
+  --controles-text-main: #00ffd0;
+  --controles-text-alt: #fff;
+  --controles-shadow: 0 0 20px #00ffd044;
+  --controles-bg-btn-hover: rgba(0,255,208,0.12);
+  --controles-bg-btn-active: rgba(0,255,208,0.22);
+  --controles-bg-btn: #23243a;
+}
+
+body.theme-pastel .controles {
+  --controles-bg-main: #f7f7fa;
+  --controles-bg-content: #e6e6f0;
+  --controles-bg-block: #fff;
+  --controles-bg-block-alt: #f7f7faee;
+  --controles-accent: #ff7eb9;
+  --controles-accent-alt: #7afcff;
+  --controles-accent-yellow: #fff685;
+  --controles-border: #ff7eb9;
+  --controles-text-main: #ff7eb9;
+  --controles-text-alt: #23243a;
+  --controles-shadow: 0 0 20px #ff7eb944;
+  --controles-bg-btn-hover: #ffe6f6;
+  --controles-bg-btn-active: #ffd6ef;
+  --controles-bg-btn: #fff;
+}
+
+body.theme-dark .controles {
+  --controles-bg-main: #18181c;
+  --controles-bg-content: #23232b;
+  --controles-bg-block: #18181c;
+  --controles-bg-block-alt: #23232bcc;
+  --controles-accent: #ffb300;
+  --controles-accent-alt: #ff6f00;
+  --controles-accent-yellow: #ffe600;
+  --controles-border: #ffb300;
+  --controles-text-main: #ffb300;
+  --controles-text-alt: #fff;
+  --controles-shadow: 0 0 20px #ffb30044;
+  --controles-bg-btn-hover: #2a2a2f;
+  --controles-bg-btn-active: #23232b;
+  --controles-bg-btn: #18181c;
+}
+
+body.theme-green .controles {
+  --controles-bg-main: #1a2d1a;
+  --controles-bg-content: #223822;
+  --controles-bg-block: #1a2d1a;
+  --controles-bg-block-alt: #223822cc;
+  --controles-accent: #00ff99;
+  --controles-accent-alt: #00e0b0;
+  --controles-accent-yellow: #eaffd0;
+  --controles-border: #00ff99;
+  --controles-text-main: #00ff99;
+  --controles-text-alt: #fff;
+  --controles-shadow: 0 0 20px #00ff9944;
+  --controles-bg-btn-hover: #1e3a2e;
+  --controles-bg-btn-active: #224d3a;
+  --controles-bg-btn: #1a2d1a;
+}
+
+// Refuerzo de fuente y estilos de texto
+.controles, .controles * {
+  font-family: 'VCR', monospace !important;
+  box-sizing: border-box;
+}
+
 .controles {
   position: fixed;
   top: 0;
@@ -8,20 +129,14 @@
   justify-content: center;
   align-items: flex-start;
   z-index: 1000;
-  font-family: 'VCR', monospace;
   pointer-events: none;
   overflow: auto;
   padding: 0.5rem;
   box-sizing: border-box;
-  background: rgba(10, 10, 15, 0.5);
-
-  * {
-    font-family: 'VCR', monospace;
-    box-sizing: border-box;
-  }
+  background: var(--controles-bg-main);
 
   &-content {
-    background: rgba(15, 15, 20, 0.95);
+    background: var(--controles-bg-content) !important;
     padding: 0.5rem;
     border-radius: 0.5rem;
     display: grid;
@@ -35,7 +150,7 @@
     max-width: 1200px;
     margin: 0 auto;
     box-sizing: border-box;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--controles-shadow);
   }
 
   &-section {
@@ -45,16 +160,16 @@
     align-items: center;
     width: 100%;
     padding: 0.5rem;
-    border: 1px solid rgba(0, 255, 0, 0.1);
+    border: 1px solid var(--controles-border-soft);
     border-radius: 0.5rem;
-    background: rgba(20, 20, 25, 0.8);
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    background: var(--controles-bg-block-alt);
+    box-shadow: 0 0 10px #0003;
     position: relative;
 
     h2 {
-      color: #00ff00;
+      color: var(--controles-accent);
       font-size: clamp(1rem, 3vw, 1.5rem);
-      text-shadow: 0 0 10px #00ff00;
+      text-shadow: 0 0 10px var(--controles-accent);
       text-transform: uppercase;
       letter-spacing: 2px;
       margin: 0;
@@ -62,7 +177,7 @@
       padding-bottom: 0.25rem;
       text-align: center;
       width: 100%;
-      border-bottom: 1px solid rgba(0, 255, 0, 0.1);
+      border-bottom: 1px solid var(--controles-border-soft);
     }
   }
 
@@ -87,12 +202,22 @@
 
   &-btn, &-select {
     padding: 0.4rem 0.7rem;
+    background: var(--controles-bg-btn);
+    border: 1px solid var(--controles-border-soft);
+    color: var(--controles-accent);
+    text-shadow: 0 0 5px var(--controles-accent);
+    &:hover {
+      background: var(--controles-bg-btn-hover);
+      border-color: var(--controles-border);
+    }
+    &.active {
+      background: var(--controles-bg-btn-active);
+      border-color: var(--controles-border);
+      box-shadow: var(--controles-shadow);
+    }
   }
 
   &-btn {
-    background: rgba(30, 30, 35, 0.8);
-    border: 1px solid rgba(0, 255, 0, 0.3);
-    color: #00ff00;
     padding: 0.4rem 0.7rem;
     border-radius: 0.5rem;
     cursor: pointer;
@@ -101,30 +226,11 @@
     letter-spacing: 1px;
     transition: all 0.2s ease;
     min-width: fit-content;
-    text-shadow: 0 0 5px #00ff00;
-    position: relative;
-    overflow: hidden;
     text-align: center;
     white-space: nowrap;
-
-    &:hover {
-      background: rgba(0, 255, 0, 0.1);
-      border-color: rgba(0, 255, 0, 0.5);
-      transform: translateY(-1px);
-      box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
-    }
-
-    &.active {
-      background: rgba(0, 255, 0, 0.2);
-      border-color: #00ff00;
-      box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
-    }
   }
 
   &-select {
-    background: rgba(30, 30, 35, 0.8);
-    border: 1px solid rgba(0, 255, 0, 0.3);
-    color: #00ff00;
     padding: 0.4rem 0.7rem;
     border-radius: 0.5rem;
     cursor: pointer;
@@ -133,7 +239,6 @@
     letter-spacing: 1px;
     min-width: fit-content;
     text-align: center;
-    text-shadow: 0 0 5px #00ff00;
     appearance: none;
     background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300ff00'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
     background-repeat: no-repeat;
@@ -143,22 +248,17 @@
     width: 100%;
     max-width: 250px;
 
-    &:hover {
-      background: rgba(0, 255, 0, 0.1);
-      border-color: rgba(0, 255, 0, 0.5);
-    }
-
     option {
-      background: rgba(20, 20, 25, 0.95);
-      color: #00ff00;
+      background: var(--controles-bg-block-alt);
+      color: var(--controles-accent);
       padding: 0.75rem 0.5rem;
       border: none;
-      text-shadow: 0 0 5px #00ff00;
+      text-shadow: 0 0 5px var(--controles-accent);
 
       &:hover {
-        background: rgba(255, 255, 0, 0.2);
-        color: #ffff00;
-        text-shadow: 0 0 5px #ffff00;
+        background: var(--controles-accent-yellow-soft);
+        color: var(--controles-accent-yellow);
+        text-shadow: var(--controles-shadow-yellow);
       }
     }
   }
@@ -167,22 +267,22 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: #00ff00;
+    color: var(--controles-accent);
     cursor: pointer;
     font-size: clamp(0.8rem, 2.5vw, 1rem);
-    text-shadow: 0 0 5px #00ff00;
+    text-shadow: 0 0 5px var(--controles-accent);
     width: 100%;
     justify-content: flex-start;
     padding: 0.15rem 0.3rem;
     border-radius: 0.5rem;
     transition: all 0.2s ease;
-    background: rgba(30, 30, 35, 0.8);
-    border: 1px solid rgba(0, 255, 0, 0.3);
+    background: var(--controles-bg-btn);
+    border: 1px solid var(--controles-border-soft);
     box-sizing: border-box;
 
     &:hover {
-      background: rgba(0, 255, 0, 0.1);
-      border-color: rgba(0, 255, 0, 0.5);
+      background: var(--controles-bg-btn-hover);
+      border-color: var(--controles-border);
     }
 
     input[type="checkbox"] {
@@ -194,8 +294,8 @@
       max-height: 1.25rem;
       cursor: pointer;
       appearance: none;
-      background: rgba(20, 20, 25, 0.8);
-      border: 1px solid rgba(0, 255, 0, 0.3);
+      background: var(--controles-bg-block-alt);
+      border: 1px solid var(--controles-border-soft);
       border-radius: 0.25rem;
       position: relative;
       transition: all 0.2s ease;
@@ -203,9 +303,9 @@
       vertical-align: middle;
 
       &:checked {
-        background: rgba(0, 255, 0, 0.2);
-        border-color: #00ff00;
-        box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        background: var(--controles-bg-btn-active);
+        border-color: var(--controles-border);
+        box-shadow: var(--controles-shadow);
 
         &::after {
           content: '✓';
@@ -213,9 +313,9 @@
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
-          color: #00ff00;
+          color: var(--controles-accent);
           font-size: 0.9rem;
-          text-shadow: 0 0 5px #00ff00;
+          text-shadow: 0 0 5px var(--controles-accent);
         }
       }
     }
@@ -228,6 +328,7 @@
       white-space: normal;
       word-break: break-word;
       text-align: left !important;
+      color: var(--controles-accent);
     }
   }
 
@@ -237,14 +338,14 @@
 
   &-input {
     background: transparent;
-    border: 2px solid #00ff00;
-    color: #00ff00;
+    border: 2px solid var(--controles-accent);
+    color: var(--controles-accent);
     padding: 0.5rem 1rem;
     border-radius: 0.5rem;
     font-size: clamp(0.8rem, 3vw, 1rem);
     text-align: center;
     min-width: min(200px, 50vw);
-    text-shadow: 0 0 5px #00ff00;
+    text-shadow: 0 0 5px var(--controles-accent);
 
     &::placeholder {
       color: rgba(0, 255, 0, 0.5);
@@ -253,8 +354,8 @@
 
   &-submit {
     background: transparent;
-    border: 2px solid #00ff00;
-    color: #00ff00;
+    border: 2px solid var(--controles-accent);
+    color: var(--controles-accent);
     padding: 0.5rem 1rem;
     border-radius: 0.5rem;
     cursor: pointer;
@@ -263,13 +364,13 @@
     letter-spacing: 1px;
     transition: all 0.2s ease;
     min-width: min(150px, 40vw);
-    text-shadow: 0 0 5px #00ff00;
+    text-shadow: 0 0 5px var(--controles-accent);
     text-align: center;
 
     &:hover {
-      background: rgba(0, 255, 0, 0.1);
+      background: var(--controles-bg-btn-hover);
       transform: translateY(-2px);
-      box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+      box-shadow: var(--controles-shadow);
     }
   }
 
@@ -302,14 +403,14 @@
   .auto-change-input {
     width: 80px;
     padding: 6px 20px;
-    border: 1px solid rgba(0, 255, 0, 0.3);
+    border: 1px solid var(--controles-border-soft);
     border-radius: 4px;
-    background-color: rgba(30, 30, 35, 0.8);
-    color: #00ff00;
+    background-color: var(--controles-bg-block-alt);
+    color: var(--controles-accent);
     font-size: 16px;
     -moz-appearance: textfield;
     text-align: center;
-    text-shadow: 0 0 5px #00ff00;
+    text-shadow: 0 0 5px var(--controles-accent);
     
     &::-webkit-inner-spin-button,
     &::-webkit-outer-spin-button {
@@ -339,16 +440,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #00ff00;
+    color: var(--controles-accent);
     font-size: 16px;
     cursor: pointer;
     transition: all 0.2s ease;
     pointer-events: all;
-    text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+    text-shadow: 0 0 5px var(--controles-accent-alt);
     
     &:hover {
-      color: #00ff00;
-      text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+      color: var(--controles-accent-alt);
+      text-shadow: 0 0 10px var(--controles-accent-alt);
     }
     
     &.up {
@@ -368,31 +469,25 @@
 
   .auto-change-btn {
     padding: 4px 8px;
-    border: 1px solid rgba(0, 255, 0, 0.3);
+    border: 1px solid var(--controles-border-soft);
     border-radius: 4px;
-    background: rgba(30, 30, 35, 0.8);
-    color: #00ff00;
+    background: var(--controles-bg-btn);
+    color: var(--controles-accent);
     cursor: pointer;
     transition: all 0.3s ease;
-    text-shadow: 0 0 5px #00ff00;
+    text-shadow: 0 0 5px var(--controles-accent);
     font-size: 0.92em;
 
-    &.modified {
-      background: rgba(0, 255, 0, 0.2);
-      border-color: #00ff00;
-      box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+    &.modified, &.pending {
+      background: var(--controles-bg-btn-active);
+      border-color: var(--controles-border);
+      box-shadow: var(--controles-shadow);
     }
 
     &:hover {
-      background: rgba(0, 255, 0, 0.1);
-      border-color: rgba(0, 255, 0, 0.5);
+      background: var(--controles-bg-btn-hover);
+      border-color: var(--controles-border);
     }
-  }
-
-  .auto-change-btn.pending {
-    background: rgba(0, 255, 0, 0.2);
-    border-color: #00ff00;
-    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
   }
 
   &-bloque,
@@ -421,12 +516,13 @@
     box-sizing: border-box;
     padding: 24px !important;
     border-radius: 18px;
-    background: rgba(30, 30, 35, 0.85);
+    background: var(--controles-bg-block);
     box-shadow: 0 2px 24px #0008;
     min-width: 320px;
     max-width: 600px;
     flex: 1 1 0;
     margin: 0 8px;
+    border: 1.5px solid var(--controles-border-soft);
   }
 
   &-bloque-escala {
@@ -451,6 +547,8 @@
         max-width: 100%;
       }
     }
+    background: var(--controles-bg-block);
+    border: 1.5px solid var(--controles-border-soft);
   }
 
   &-bloque-row {
@@ -475,6 +573,7 @@
     text-align: center !important;
     width: 100%;
     padding: 2dvh 0;
+    color: var(--controles-accent);
   }
 
   &-color-btn {
@@ -494,6 +593,8 @@
     transition: outline 0.3s;
     flex: 0 0 auto;
     transition: background 0.5s, box-shadow 0.5s;
+    border: 4px solid var(--controles-accent);
+    background: var(--controles-accent);
   }
 
   &-checkbox-color,
@@ -506,15 +607,15 @@
 
   &-image-scale-value {
     font-size: 13px;
-    color: #00ff00;
+    color: var(--controles-accent);
     font-weight: 700;
     min-width: 56px;
     text-align: center;
     display: inline-block;
     letter-spacing: 0.5px;
     flex: 0 0 auto;
-    background: rgba(30, 30, 35, 0.8);
-    border: 1px solid rgba(0, 255, 0, 0.3);
+    background: var(--controles-bg-block-alt);
+    border: 1px solid var(--controles-border-soft);
     border-radius: 6px;
     padding: 4px 14px;
   }
@@ -527,7 +628,7 @@
     max-width: 1200px;
     margin: 0 auto;
     box-sizing: border-box;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--controles-shadow);
     min-width: 0;
   }
 
@@ -552,21 +653,21 @@
   flex: 1 1 120px;
   min-width: 120px;
   max-width: 320px;
-  accent-color: #00ff00;
+  accent-color: var(--controles-accent);
   border-radius: 8px;
   height: 32px;
-  background: rgba(30, 30, 35, 0.8);
-  box-shadow: 0 1px 4px #00ff0033;
+  background: var(--controles-bg-block-alt);
+  box-shadow: 0 1px 4px var(--controles-accent)33;
   outline: none;
-  border: 1px solid rgba(0, 255, 0, 0.3);
+  border: 1px solid var(--controles-border-soft);
   margin: 0 2px;
   padding: 0 8px;
 }
 
 .controles-image-scale-btn {
-  background: rgba(30, 30, 35, 0.8);
-  color: #00ff00;
-  border: 1.5px solid #00ff00;
+  background: var(--controles-bg-btn);
+  color: var(--controles-accent);
+  border: 1.5px solid var(--controles-accent);
   border-radius: 50%;
   width: 28px;
   height: 28px;
@@ -576,7 +677,7 @@
   font-weight: 700;
   font-size: 18px;
   cursor: pointer;
-  box-shadow: 0 1px 4px #00ff0033;
+  box-shadow: 0 1px 4px var(--controles-accent)33;
   transition: background 0.2s, border 0.2s;
   margin: 0;
   flex: 0 0 auto;
@@ -612,6 +713,11 @@
   margin: 0 0 4px 0;
   padding: 0.15rem 0.3rem;
   box-sizing: border-box;
+  background: var(--controles-bg-btn) !important;
+}
+
+.controles-checkbox input[type="checkbox"] {
+  background: var(--controles-bg-block-alt) !important;
 }
 
 .fondos-bloques {
@@ -663,12 +769,13 @@
   max-width: 100% !important;
   margin-left: 0 !important;
   margin-right: 0 !important;
+  background: var(--controles-bg-block);
+  border: 1.5px solid var(--controles-border-soft);
 }
 
 @media (max-width: 800px) {
   .fondos-bloques {
     flex-direction: column !important;
-    gap: 16px !important;
     align-items: stretch !important;
     justify-content: flex-start !important;
   }
@@ -680,4 +787,38 @@
     margin: 0 0 12px 0 !important;
     box-sizing: border-box !important;
   }
+}
+
+.controles-theme-row {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 32px;
+  min-height: 48px;
+}
+
+.controles-theme-label {
+  color: var(--controles-text-main);
+  font-weight: 600;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.controles-theme-select {
+  background: var(--controles-bg-btn);
+  color: var(--controles-accent);
+  border: 1.5px solid var(--controles-border);
+  border-radius: 8px;
+  font-size: 18px;
+  padding: 8px 18px;
+  box-shadow: var(--controles-shadow);
+  outline: none;
+  margin-bottom: 24px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  transition: all 2s cubic-bezier(.4,1.3,.6,1);
 } 

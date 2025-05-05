@@ -69,6 +69,10 @@ const Controles = () => {
     dynamicWrapperBgColor,
     lastPickedWrapperColor,
   });
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined' && window.__selectedTheme) return window.__selectedTheme;
+    return 'neon';
+  });
 
   const formatos = ['polygons', 'poligonos-flotantes', 'pulse', 'kitt', 'karr', 'meteoritos'];
 
@@ -877,13 +881,19 @@ const Controles = () => {
     });
   }, [useWrapperBgColor, dynamicWrapperBgColor, lastPickedWrapperColor]);
 
+  useEffect(() => {
+    document.body.classList.remove('theme-neon', 'theme-pastel', 'theme-dark', 'theme-green');
+    document.body.classList.add(`theme-${theme}`);
+    window.__selectedTheme = theme;
+  }, [theme]);
+
   return (
     <div className="controles">
       <div className="controles-content">
         <div className="controles-section colecciones" style={{ width: '100%' }}>
           <h2>Colecciones</h2>
-          {/* Botones de colecciones */}
-          <div className="controles-buttons controles-bloque" >
+          {/* Botones de colecciones arriba, ocupando todo el ancho */}
+          <div className="controles-buttons" style={{ width: '100%', marginBottom: 24 }}>
             {Object.values(galerias)
               .sort((a, b) => a.id === 'ninguna' ? -1 : b.id === 'ninguna' ? 1 : 0)
               .map(galeria => (
@@ -896,62 +906,92 @@ const Controles = () => {
                 </button>
             ))}
           </div>
-          <div className="controles-bloque controles-bloque-escala">
-            <span className="controles-titulo-bloque">Escala imagen:</span>
-            <div className="controles-bloque-row controles-bloque-row-escala" style={{gap: 8, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-              <button
-                type="button"
-                onMouseDown={() => startScaleChange(false)}
-                onMouseUp={stopScaleChange}
-                onMouseLeave={stopScaleChange}
-                onTouchStart={() => startScaleChange(false)}
-                onTouchEnd={stopScaleChange}
-                className="auto-change-btn"
-                title="Disminuir escala"
-                style={{ minWidth: 28, maxWidth: 32 }}
-              >
-                –
-              </button>
-              <input
-                type="range"
-                min={0}
-                max={5}
-                step={0.01}
-                value={imageScale}
-                onChange={handleImageScaleChange}
-                className="controles-image-scale-range"
-                style={{ minWidth: 0, width: '100%', flex: 1 }}
-              />
-              <button
-                type="button"
-                onMouseDown={() => startScaleChange(true)}
-                onMouseUp={stopScaleChange}
-                onMouseLeave={stopScaleChange}
-                onTouchStart={() => startScaleChange(true)}
-                onTouchEnd={stopScaleChange}
-                className="auto-change-btn"
-                title="Aumentar escala"
-                style={{ minWidth: 28, maxWidth: 32 }}
-              >
-                +
-              </button>
+          {/* Bloques en fila como fondos-bloques */}
+          <div className="fondos-bloques" style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start', justifyContent: 'space-evenly' }}>
+            <div className="controles-bloque controles-bloque-color" style={{ minWidth: 320, maxWidth: 600, width: '100%', flex: '1 1 0', padding: 24, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
+              <span className="controles-titulo-bloque">Escala imagen:</span>
+              <div className="controles-bloque-row controles-bloque-row-escala" style={{gap: 8, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                <button
+                  type="button"
+                  onMouseDown={() => startScaleChange(false)}
+                  onMouseUp={stopScaleChange}
+                  onMouseLeave={stopScaleChange}
+                  onTouchStart={() => startScaleChange(false)}
+                  onTouchEnd={stopScaleChange}
+                  className="auto-change-btn"
+                  title="Disminuir escala"
+                  style={{ minWidth: 28, maxWidth: 32 }}
+                >
+                  –
+                </button>
+                <input
+                  type="range"
+                  min={0}
+                  max={5}
+                  step={0.01}
+                  value={imageScale}
+                  onChange={handleImageScaleChange}
+                  className="controles-image-scale-range"
+                  style={{ minWidth: 0, width: '100%', flex: 1 }}
+                />
+                <button
+                  type="button"
+                  onMouseDown={() => startScaleChange(true)}
+                  onMouseUp={stopScaleChange}
+                  onMouseLeave={stopScaleChange}
+                  onTouchStart={() => startScaleChange(true)}
+                  onTouchEnd={stopScaleChange}
+                  className="auto-change-btn"
+                  title="Aumentar escala"
+                  style={{ minWidth: 28, maxWidth: 32 }}
+                >
+                  +
+                </button>
+              </div>
+              <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 6}}>
+                <span className="controles-titulo-bloque-secundario" style={{margin: 0, padding: 0, fontWeight: 400}}>
+                  Escala
+                </span>
+                <span className="controles-image-scale-value">
+                  {imageScale.toFixed(2)}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleResetImageScale}
+                  className="auto-change-btn"
+                  title="Resetear escala"
+                  style={{ minWidth: 28, maxWidth: 32 }}
+                >
+                  ↺
+                </button>
+              </div>
             </div>
-            <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 6}}>
-              <span className="controles-titulo-bloque-secundario" style={{margin: 0, padding: 0, fontWeight: 400}}>
-                Escala
-              </span>
-              <span className="controles-image-scale-value">
-                {imageScale.toFixed(2)}
-              </span>
-              <button
-                type="button"
-                onClick={handleResetImageScale}
-                className="auto-change-btn"
-                title="Resetear escala"
-                style={{ minWidth: 28, maxWidth: 32 }}
-              >
-                ↺
-              </button>
+            <div className="controles-bloque controles-bloque-color" style={{ minWidth: 320, maxWidth: 600, width: '100%', flex: '1 1 0', padding: 24, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
+              <span className="controles-titulo-bloque">Modo de Cambio</span>
+              <label className="controles-checkbox">
+                <input
+                  type="checkbox"
+                  checked={sensitiveMode}
+                  onChange={handleSensitiveModeChange}
+                />
+                <span>Modo Sensible</span>
+              </label>
+              <label className="controles-checkbox">
+                <input
+                  type="checkbox"
+                  checked={extraSensitiveMode}
+                  onChange={handleExtraSensitiveModeChange}
+                />
+                <span>Modo Extra Sensible</span>
+              </label>
+              <label className="controles-checkbox">
+                <input
+                  type="checkbox"
+                  checked={pursuitMode}
+                  onChange={handlePursuitModeChange}
+                />
+                <span>Modo Persecución</span>
+              </label>
             </div>
           </div>
         </div>
@@ -1259,33 +1299,20 @@ const Controles = () => {
             </div>
           </div>
         </div>
-
-        <div className="controles-section modos">
-          <h2>Modo de Cambio</h2>
-          <label className="controles-checkbox">
-            <input
-              type="checkbox"
-              checked={sensitiveMode}
-              onChange={handleSensitiveModeChange}
-            />
-            <span>Modo Sensible (cambios rápidos)</span>
-          </label>
-          <label className="controles-checkbox">
-            <input
-              type="checkbox"
-              checked={extraSensitiveMode}
-              onChange={handleExtraSensitiveModeChange}
-            />
-            <span>Modo Extra Sensible (cambios muy rápidos)</span>
-          </label>
-          <label className="controles-checkbox">
-            <input
-              type="checkbox"
-              checked={pursuitMode}
-              onChange={handlePursuitModeChange}
-            />
-            <span>Modo Persecución (cambios extremadamente rápidos)</span>
-          </label>
+        {/* Selector de tema visual */}
+        <div className="controles-theme-row">
+          <label htmlFor="theme-select" className="controles-theme-label">Tema visual:</label>
+          <select
+            id="theme-select"
+            className="controles-theme-select"
+            value={theme}
+            onChange={e => setTheme(e.target.value)}
+          >
+            <option value="neon">Neón</option>
+            <option value="pastel">Pastel</option>
+            <option value="dark">Oscuro</option>
+            <option value="green">Verde</option>
+          </select>
         </div>
       </div>
     </div>
