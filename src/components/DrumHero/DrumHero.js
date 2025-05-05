@@ -997,9 +997,9 @@ const DrumHero = () => {
 
   useEffect(() => {
     // Actualizar las imágenes cuando se carguen las galerías
-    if (galerias.test?.imagenes?.length > 0) {
-      console.log('DrumHero: Usando imágenes locales de test');
-      setPetImages(galerias.test.imagenes);
+    if (galerias.pokemon?.imagenes?.length > 0) {
+      console.log('DrumHero: Usando imágenes locales de pokemon');
+      setPetImages(galerias.pokemon.imagenes);
     } else {
       console.log('DrumHero: Usando imágenes de ejemplo');
       setPetImages(colecciones.gatos.imagenes);
