@@ -110,6 +110,9 @@ const DrumHero = () => {
   const beatThresholdRef = useRef(1.3);
   const energyHistoryLengthRef = useRef(10);
 
+  // Timeout configurable para cambio de imagen si no hay beat
+  const IMAGE_CHANGE_TIMEOUT_MS = 3000; // 3 segundos, fácil de cambiar
+
   const generateRandomColor = () => {
     const hue = Math.floor(Math.random() * 360);
     const saturation = Math.floor(Math.random() * 30) + 70; // 70-100%
@@ -419,6 +422,8 @@ const DrumHero = () => {
         (totalEnergy > 15 || (totalEnergy > 8 && energyChange > 12)) : 
         (totalEnergy > averageEnergy * beatThreshold && totalEnergy > 20);
 
+      let imageChanged = false;
+
       if (isBeat) {
         const timeSinceLastPulse = now - lastPulseTimeRef.current;
         const timeSinceLastImage = now - lastImageChangeRef.current;
@@ -444,7 +449,7 @@ const DrumHero = () => {
           if (timeSinceLastImage >= imageChangeTime && petImages.length > 0) {
             setCurrentImageIndex(prev => (prev + 1) % petImages.length);
             lastImageChangeRef.current = now;
-            
+            imageChanged = true;
             const newSides = Math.floor(Math.random() * 5) + 3;
             setImagePolygonState(prev => ({
               ...prev,
@@ -456,6 +461,16 @@ const DrumHero = () => {
           lastPulseTimeRef.current = now;
         }
       }
+
+      // --- NUEVO: Forzar cambio de imagen si ha pasado el timeout ---
+      if (!imageChanged && petImages.length > 0) {
+        const timeSinceLastImage = now - lastImageChangeRef.current;
+        if (timeSinceLastImage >= IMAGE_CHANGE_TIMEOUT_MS) {
+          setCurrentImageIndex(prev => (prev + 1) % petImages.length);
+          lastImageChangeRef.current = now;
+        }
+      }
+      // --- FIN NUEVO ---
 
       if (now - lastColorUpdateRef.current > 50) {
         updateQrColor(totalEnergy);
