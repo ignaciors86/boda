@@ -751,10 +751,10 @@ const Controles = () => {
               onChange={handleBackgroundFormatChange}
               className="controles-select"
             >
+              <option value="kitt">KITT</option>
               <option value="polygons">Polígonos</option>
               <option value="poligonos-flotantes">Polígonos Flotantes</option>
               <option value="pulse">Círculo Pulsante</option>
-              <option value="kitt">KITT</option>
               <option value="meteoritos">Meteoritos</option>
             </select>
             <form onSubmit={handleAutoChangeTimeSubmit} className="auto-change-form">
