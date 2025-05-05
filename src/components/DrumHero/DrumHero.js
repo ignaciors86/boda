@@ -34,7 +34,7 @@ const DrumHero = () => {
   const [activeKudos, setActiveKudos] = useState([]);
   const [localIp, setLocalIp] = useState(null);
   const galerias = GaleriaLoader();
-  const [coleccionActual, setColeccionActual] = useState('test');
+  const [coleccionActual, setColeccionActual] = useState('mascotas');
   const [petImages, setPetImages] = useState([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const kudosRef = useRef(new Set());
