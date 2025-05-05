@@ -56,11 +56,12 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: border-radius 1s linear;
 
       &.circular {
         width: var(--image-size) !important;
         height: var(--image-size) !important;
-        border-radius: 50%;
+        border-radius: calc(var(--image-size) / 2);
       }
 
       .pet-image {

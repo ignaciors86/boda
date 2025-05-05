@@ -103,6 +103,10 @@ const CocheFantastico = () => {
   const [wrapperBgColor, setWrapperBgColor] = useState('transparent');
   const [dynamicWrapperBgColor, setDynamicWrapperBgColor] = useState(false);
 
+  // NUEVO: Estados efectivos para el color de fondo y wrapper
+  const [effectiveImageBgColor, setEffectiveImageBgColor] = useState('transparent');
+  const [effectiveWrapperBgColor, setEffectiveWrapperBgColor] = useState('transparent');
+
   // Nuevos refs para manejar estados que no necesitan re-renders
   const energyHistoryRef = useRef([]);
   const lastPulseTimeRef = useRef(Date.now());
@@ -480,25 +484,33 @@ const CocheFantastico = () => {
       }
 
       // Emitir color dinámico si está activo
-      if (dynamicBgColor && socketRef.current && socketRef.current.connected) {
-        const hue = Math.floor((totalEnergy * 3) % 360);
-        const color = `hsl(${hue}, 90%, 60%)`;
-        socketRef.current.emit('galerias', {
-          dynamicBgColor: true,
-          imageBgColor: color,
-          timestamp: Date.now()
-        });
+      if (dynamicBgColor) {
+        // Color más visible y cambio más rápido
+        const hue = Math.floor((Date.now() / 8) % 360); // Cambio rápido
+        const color = `hsl(${hue}, 100%, 50%)`;
+        setEffectiveImageBgColor(color);
+        if (socketRef.current && socketRef.current.connected) {
+          socketRef.current.emit('galerias', {
+            dynamicBgColor: true,
+            imageBgColor: color,
+            timestamp: Date.now()
+          });
+        }
       }
 
       // Emitir wrapperBgColor dinámico si corresponde
-      if (dynamicWrapperBgColor && socketRef.current && socketRef.current.connected) {
-        const hue = Math.floor((totalEnergy * 3 + 120) % 360);
-        const color = `hsl(${hue}, 90%, 60%)`;
-        socketRef.current.emit('galerias', {
-          dynamicWrapperBgColor: true,
-          wrapperBgColor: color,
-          timestamp: Date.now()
-        });
+      if (dynamicWrapperBgColor) {
+        // Color más visible y cambio más rápido
+        const hue = Math.floor(((Date.now() / 8) + 120) % 360);
+        const color = `hsl(${hue}, 100%, 50%)`;
+        setEffectiveWrapperBgColor(color);
+        if (socketRef.current && socketRef.current.connected) {
+          socketRef.current.emit('galerias', {
+            dynamicWrapperBgColor: true,
+            wrapperBgColor: color,
+            timestamp: Date.now()
+          });
+        }
       }
 
       updateElementOpacities(totalEnergy);
@@ -840,7 +852,19 @@ const CocheFantastico = () => {
         setColeccionActual(data.coleccion);
         setCurrentImageIndex(0);
       }
-      if (typeof data.dynamicBgColor !== 'undefined') setDynamicBgColor(data.dynamicBgColor);
+      // --- NUEVO: Manejo de fondo dinámico ---
+      if (typeof data.dynamicBgColor !== 'undefined') {
+        setDynamicBgColor(data.dynamicBgColor);
+        if (!data.dynamicBgColor && typeof data.imageBgColor !== 'undefined') {
+          setEffectiveImageBgColor(data.imageBgColor);
+        }
+      }
+      if (typeof data.dynamicWrapperBgColor !== 'undefined') {
+        setDynamicWrapperBgColor(data.dynamicWrapperBgColor);
+        if (!data.dynamicWrapperBgColor && typeof data.wrapperBgColor !== 'undefined') {
+          setEffectiveWrapperBgColor(data.wrapperBgColor);
+        }
+      }
     });
 
     // Limpiar al desmontar
@@ -1068,13 +1092,28 @@ const CocheFantastico = () => {
     }
   }, [currentImageIndex, petImages]);
 
+  // Actualizar el color efectivo cuando cambian los modos o los colores
+  useEffect(() => {
+    if (dynamicBgColor) {
+      // El color dinámico se actualizará en el efecto de audio
+    } else {
+      setEffectiveImageBgColor(imageBgColor);
+    }
+  }, [dynamicBgColor, imageBgColor]);
+
+  useEffect(() => {
+    if (dynamicWrapperBgColor) {
+      // El color dinámico se actualizará en el efecto de audio
+    } else {
+      setEffectiveWrapperBgColor(wrapperBgColor);
+    }
+  }, [dynamicWrapperBgColor, wrapperBgColor]);
+
   return (
     <div
       className="coche-fantastico"
       style={{
-        background: dynamicBgColor && imageBgColor && imageBgColor !== 'transparent'
-          ? imageBgColor
-          : (imageBgColor !== 'transparent' ? imageBgColor : undefined)
+        background: effectiveImageBgColor && effectiveImageBgColor !== 'transparent' ? effectiveImageBgColor : 'transparent'
       }}
       ref={containerRef}
     >
@@ -1140,7 +1179,7 @@ const CocheFantastico = () => {
             }
             style={{
               opacity: elementOpacities.image,
-              background: wrapperBgColor,
+              background: effectiveWrapperBgColor && effectiveWrapperBgColor !== 'transparent' ? effectiveWrapperBgColor : 'transparent',
               transform: `scale(${imageScale})`,
               transition: 'background 0.3s cubic-bezier(.4,1.3,.6,1), transform 0.3s cubic-bezier(.4,1.3,.6,1)'
             }}

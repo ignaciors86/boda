@@ -716,40 +716,83 @@ const Controles = () => {
   }, [showWrapperColorPicker]);
 
   const handlePendingBgUseBgColorChange = (checked) => {
-    setPendingBg(prev => ({ ...prev, useBgColor: checked }));
+    setPendingBg(prev => ({ ...prev, useBgColor: checked, dynamicBgColor: checked ? false : prev.dynamicBgColor }));
     setUseBgColor(checked);
     if (checked) {
+      setDynamicBgColor(false);
       setImageBgColor('transparent');
       if (socketRef.current?.connected) {
         socketRef.current.emit('galerias', {
           imageBgColor: 'transparent',
-          dynamicBgColor: pendingBg.dynamicBgColor,
+          dynamicBgColor: false,
           timestamp: Date.now(),
         });
       }
+    }
+  };
+
+  const handlePendingBgDynamicChange = (checked) => {
+    setPendingBg(prev => ({ ...prev, dynamicBgColor: checked, useBgColor: checked ? false : prev.useBgColor }));
+    setDynamicBgColor(checked);
+    if (checked) {
+      setUseBgColor(false);
+      if (socketRef.current?.connected) {
+        socketRef.current.emit('galerias', {
+          imageBgColor: 'transparent',
+          dynamicBgColor: true,
+          timestamp: Date.now(),
+        });
+      }
+    } else {
+      // Al desactivar el dinámico, NO cambiar el fondo automáticamente
+      if (socketRef.current?.connected) {
+        socketRef.current.emit('galerias', {
+          dynamicBgColor: false,
+          timestamp: Date.now(),
+        });
+      }
+      // El color sólido solo se aplicará cuando el usuario pulse 'Actualizar'
     }
   };
 
   const handlePendingWrapperBgUseWrapperBgColorChange = (checked) => {
-    setPendingWrapperBg(prev => ({ ...prev, useWrapperBgColor: checked }));
+    setPendingWrapperBg(prev => ({ ...prev, useWrapperBgColor: checked, dynamicWrapperBgColor: checked ? false : prev.dynamicWrapperBgColor }));
     setUseWrapperBgColor(checked);
     if (checked) {
+      setDynamicWrapperBgColor(false);
       setWrapperBgColor('transparent');
       if (socketRef.current?.connected) {
         socketRef.current.emit('galerias', {
           wrapperBgColor: 'transparent',
-          dynamicWrapperBgColor: pendingWrapperBg.dynamicWrapperBgColor,
+          dynamicWrapperBgColor: false,
           timestamp: Date.now(),
         });
       }
     }
   };
 
-  const handlePendingBgChange = (field, value) => {
-    setPendingBg(prev => ({ ...prev, [field]: value }));
-  };
-  const handlePendingWrapperBgChange = (field, value) => {
-    setPendingWrapperBg(prev => ({ ...prev, [field]: value }));
+  const handlePendingWrapperBgDynamicChange = (checked) => {
+    setPendingWrapperBg(prev => ({ ...prev, dynamicWrapperBgColor: checked, useWrapperBgColor: checked ? false : prev.useWrapperBgColor }));
+    setDynamicWrapperBgColor(checked);
+    if (checked) {
+      setUseWrapperBgColor(false);
+      if (socketRef.current?.connected) {
+        socketRef.current.emit('galerias', {
+          wrapperBgColor: 'transparent',
+          dynamicWrapperBgColor: true,
+          timestamp: Date.now(),
+        });
+      }
+    } else {
+      // Al desactivar el dinámico, NO cambiar el fondo automáticamente
+      if (socketRef.current?.connected) {
+        socketRef.current.emit('galerias', {
+          dynamicWrapperBgColor: false,
+          timestamp: Date.now(),
+        });
+      }
+      // El color sólido solo se aplicará cuando el usuario pulse 'Actualizar'
+    }
   };
 
   const handleUpdateBg = () => {
@@ -758,6 +801,8 @@ const Controles = () => {
     setLastPickedColor(pendingBg.lastPickedColor);
     if (pendingBg.useBgColor) {
       setImageBgColor('transparent');
+    } else if (!pendingBg.dynamicBgColor) {
+      setImageBgColor(pendingBg.lastPickedColor);
     }
     if (socketRef.current?.connected) {
       socketRef.current.emit('galerias', {
@@ -773,12 +818,15 @@ const Controles = () => {
       lastPickedColor: pendingBg.lastPickedColor
     });
   };
+
   const handleUpdateWrapperBg = () => {
     setUseWrapperBgColor(pendingWrapperBg.useWrapperBgColor);
     setDynamicWrapperBgColor(pendingWrapperBg.dynamicWrapperBgColor);
     setLastPickedWrapperColor(pendingWrapperBg.lastPickedWrapperColor);
     if (pendingWrapperBg.useWrapperBgColor) {
       setWrapperBgColor('transparent');
+    } else if (!pendingWrapperBg.dynamicWrapperBgColor) {
+      setWrapperBgColor(pendingWrapperBg.lastPickedWrapperColor);
     }
     if (socketRef.current?.connected) {
       socketRef.current.emit('galerias', {
@@ -1016,7 +1064,10 @@ const Controles = () => {
                     >
                       <MinimalChromePicker
                         color={pendingBg.lastPickedColor}
-                        onChange={color => handlePendingBgChange('lastPickedColor', color.rgb ? `rgba(${color.rgb.r},${color.rgb.g},${color.rgb.b},${color.rgb.a})` : color.hex)}
+                        onChange={color => setPendingBg(prev => ({
+                          ...prev,
+                          lastPickedColor: color.rgb ? `rgba(${color.rgb.r},${color.rgb.g},${color.rgb.b},${color.rgb.a})` : color.hex
+                        }))}
                       />
                       <button
                         type="button"
@@ -1076,7 +1127,7 @@ const Controles = () => {
                       <input
                         type="checkbox"
                         checked={pendingBg.dynamicBgColor}
-                        onChange={e => handlePendingBgChange('dynamicBgColor', e.target.checked)}
+                        onChange={e => handlePendingBgDynamicChange(e.target.checked)}
                       />
                       <span>Fondo dinámico (colores según música)</span>
                     </label>
@@ -1118,7 +1169,10 @@ const Controles = () => {
                     >
                       <MinimalChromePicker
                         color={pendingWrapperBg.lastPickedWrapperColor}
-                        onChange={color => handlePendingWrapperBgChange('lastPickedWrapperColor', color.rgb ? `rgba(${color.rgb.r},${color.rgb.g},${color.rgb.b},${color.rgb.a})` : color.hex)}
+                        onChange={color => setPendingWrapperBg(prev => ({
+                          ...prev,
+                          lastPickedWrapperColor: color.rgb ? `rgba(${color.rgb.r},${color.rgb.g},${color.rgb.b},${color.rgb.a})` : color.hex
+                        }))}
                       />
                       <button
                         type="button"
@@ -1178,7 +1232,7 @@ const Controles = () => {
                       <input
                         type="checkbox"
                         checked={pendingWrapperBg.dynamicWrapperBgColor}
-                        onChange={e => handlePendingWrapperBgChange('dynamicWrapperBgColor', e.target.checked)}
+                        onChange={e => handlePendingWrapperBgDynamicChange(e.target.checked)}
                       />
                       <span>Fondo dinámico (image-wrapper)</span>
                     </label>
