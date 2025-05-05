@@ -27,9 +27,10 @@ const PoligonosFlotantes = ({ analyser }) => {
       ctx.scale(dpr, dpr);
     };
 
-    const crearPoligono = (intensidad) => {
+    const crearPoligono = (intensidad, maxPoligonos) => {
       const ahora = Date.now();
-      if (ahora - ultimoCambioRef.current < 100) return;
+      if (ahora - ultimoCambioRef.current < 500) return;
+      if (poligonosRef.current.length >= maxPoligonos) return;
 
       const x = Math.random() * canvas.width;
       const y = Math.random() * canvas.height;
@@ -60,7 +61,7 @@ const PoligonosFlotantes = ({ analyser }) => {
         velocidadX,
         velocidadY,
         creado: ahora,
-        vida: 10000 + Math.random() * 5000
+        vida: 3000 + Math.random() * 2000
       });
 
       ultimoCambioRef.current = ahora;
@@ -138,8 +139,10 @@ const PoligonosFlotantes = ({ analyser }) => {
       
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      if (intensidad > 30) {
-        crearPoligono(intensidad);
+      // El número máximo de polígonos depende de la intensidad
+      const maxPoligonos = Math.floor(5 + intensidad / 16); // mínimo 5, sube con la energía
+      if (intensidad > 50) {
+        crearPoligono(intensidad, maxPoligonos);
       }
 
       actualizarPoligonos();

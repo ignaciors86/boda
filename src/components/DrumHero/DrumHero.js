@@ -1087,25 +1087,31 @@ const DrumHero = () => {
         )}
         <div 
           className={
-            'image-wrapper' +
-            (circularImages ? ' circular' : '') +
+            'image-shake-wrapper' +
             (shakeImage ? ' shaking' : '')
           }
-          style={{
-            opacity: elementOpacities.image,
-            background: imageBgColor,
-            transform: `scale(${imageScale})`,
-            transition: 'background 0.3s cubic-bezier(.4,1.3,.6,1), transform 0.3s cubic-bezier(.4,1.3,.6,1)'
-          }}
         >
-          {petImages.length > 0 && (
-            <img
-              src={petImages[currentImageIndex]}
-              alt={`Pet ${currentImageIndex + 1}`}
-              className="pet-image"
-              data-orientation={imageOrientation}
-            />
-          )}
+          <div 
+            className={
+              'image-wrapper' +
+              (circularImages ? ' circular' : '')
+            }
+            style={{
+              opacity: elementOpacities.image,
+              background: imageBgColor,
+              transform: `scale(${imageScale})`,
+              transition: 'background 0.3s cubic-bezier(.4,1.3,.6,1), transform 0.3s cubic-bezier(.4,1.3,.6,1)'
+            }}
+          >
+            {petImages.length > 0 && (
+              <img
+                src={petImages[currentImageIndex]}
+                alt={`Pet ${currentImageIndex + 1}`}
+                className="pet-image"
+                data-orientation={imageOrientation}
+              />
+            )}
+          </div>
         </div>
       </div>
 
@@ -1130,7 +1136,7 @@ const DrumHero = () => {
         {backgroundFormat === 'polygons' && <Poligonos analyser={analyserRef.current} />}
         {backgroundFormat === 'poligonos-flotantes' && <PoligonosFlotantes analyser={analyserRef.current} />}
         {backgroundFormat === 'pulse' && <Pulse analyser={analyserRef.current} />}
-        {backgroundFormat === 'kitt' && <KITT analyser={analyserRef.current} />}
+        {backgroundFormat === 'kitt' && <KITT analyser={analyserRef.current} imageBgColor={imageBgColor} />}
         {backgroundFormat === 'meteoritos' && <Meteoritos analyser={analyserRef.current} />}
       </div>
     </div>

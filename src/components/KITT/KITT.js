@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import './KITT.scss';
 
-const KITT = ({ analyser }) => {
+const KITT = ({ analyser, imageBgColor }) => {
   const canvasBarsRef = useRef(null);
   const animationRef = useRef(null);
   const previousAveragesRef = useRef([0, 0, 0]);
@@ -159,7 +159,7 @@ const KITT = ({ analyser }) => {
   }, [analyser]);
 
   return (
-    <div className="kitt-container kitt-audio-only">
+    <div className="kitt-container kitt-audio-only" style={imageBgColor ? { background: imageBgColor } : {}}>
       <canvas ref={canvasBarsRef} className="kitt-bars" />
     </div>
   );
