@@ -1153,6 +1153,7 @@ const DrumHero = () => {
         {backgroundFormat === 'pulse' && <Pulse analyser={analyserRef.current} />}
         {backgroundFormat === 'kitt' && <KITT analyser={analyserRef.current} imageBgColor={imageBgColor} />}
         {backgroundFormat === 'meteoritos' && <Meteoritos analyser={analyserRef.current} />}
+        {backgroundFormat === 'karr' && <KITT analyser={analyserRef.current} imageBgColor={imageBgColor} variant="karr" />}
       </div>
     </div>
   );

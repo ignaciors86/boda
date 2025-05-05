@@ -50,7 +50,7 @@ const Controles = () => {
   const [scaleChangeInterval, setScaleChangeInterval] = useState(null);
   const [pickerCoords, setPickerCoords] = useState({ left: 0, top: 0 });
 
-  const formatos = ['polygons', 'poligonos-flotantes', 'pulse', 'kitt', 'meteoritos'];
+  const formatos = ['polygons', 'poligonos-flotantes', 'pulse', 'kitt', 'karr', 'meteoritos'];
 
   useEffect(() => {
     const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -752,6 +752,7 @@ const Controles = () => {
               className="controles-select"
             >
               <option value="kitt">KITT</option>
+              <option value="karr">KARR</option>
               <option value="polygons">Polígonos</option>
               <option value="poligonos-flotantes">Polígonos Flotantes</option>
               <option value="pulse">Círculo Pulsante</option>

@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import './KITT.scss';
 
-const KITT = ({ analyser, imageBgColor }) => {
+const KITT = ({ analyser, imageBgColor, variant = 'kitt' }) => {
   const canvasBarsRef = useRef(null);
   const animationRef = useRef(null);
   const previousAveragesRef = useRef([0, 0, 0]);
@@ -17,26 +17,24 @@ const KITT = ({ analyser, imageBgColor }) => {
         animationRef.current = requestAnimationFrame(draw);
         analyser.getByteFrequencyData(dataArray);
 
+        if (!canvasBarsRef.current) return;
         const { width: barsWidth, height: barsHeight } = canvasBarsRef.current.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
         canvasBarsRef.current.width = barsWidth * dpr;
         canvasBarsRef.current.height = barsHeight * dpr;
         ctxBars.scale(dpr, dpr);
 
-        // Configuración del ecualizador KITT
+        // Configuración general
         const numBars = 3;
         const numSegments = 13;
         const segmentSpacing = 2;
-        const segmentWidth = Math.min(barsWidth * 0.08, 32);
+        const segmentWidth = window.innerHeight * 0.06; // 2dvh, proporcional a la altura de la ventana
         const columnSpacing = segmentWidth * 0.8;
-        const maxHeight = barsHeight * 0.58;
+        const maxHeight = barsHeight * 0.7;
         const segmentHeight = (maxHeight / numSegments) / 2;
         const centerGap = 1;
-
-        // Calcular el ancho total y posición central
         const totalWidth = (segmentWidth * numBars) + (columnSpacing * (numBars - 1));
         const centerX = barsWidth / 2;
-        const startX = centerX - (totalWidth / 2);
         const centerY = barsHeight / 2;
 
         // Dividir el array de frecuencias en tres secciones
@@ -63,8 +61,14 @@ const KITT = ({ analyser, imageBgColor }) => {
           return Math.max(logValue * 1.2, 0.3);
         };
 
-        const promedioCentral = rawCentral * 2.5 * factorIntensidad(rawCentral);
-        const promedioLateral = rawLateral * 2.5 * factorIntensidad(rawLateral);
+        // Ajuste de altura para la barra central en KARR
+        const karrHeightFactor = 0.82;
+        const centralHeightFactor = variant === 'karr' ? 0.5 : 1;
+        const lateralHeightFactor = 1;
+        const maxHeightKarr = maxHeight * (variant === 'karr' ? karrHeightFactor : 1);
+
+        const promedioCentral = rawCentral * 2.5 * factorIntensidad(rawCentral) * centralHeightFactor;
+        const promedioLateral = rawLateral * 2.5 * factorIntensidad(rawLateral) * lateralHeightFactor;
         
         const minHeight = (valor) => {
           if (valor < 2) return 0;
@@ -94,45 +98,77 @@ const KITT = ({ analyser, imageBgColor }) => {
           const isCenter = i === 1;
           const distanceFromCenter = i === 0 ? -1 : (i === 2 ? 1 : 0);
           const x = centerX + (distanceFromCenter * (segmentWidth + columnSpacing));
-          
-          let normalizedValue;
-          if (!isCenter) {
-            normalizedValue = Math.min(averages[i] / 255, 1);
-            if (averages[1] > 3 && normalizedValue * 255 >= 1) {
-              normalizedValue = Math.max(normalizedValue * 0.85, 1/numSegments);
+          let normalizedValue = Math.min(averages[i] / 255, 1);
+          if (!isCenter && averages[1] > 3 && normalizedValue * 255 >= 1) {
+            normalizedValue = Math.max(normalizedValue * 0.85, 1/numSegments);
+          }
+          if (variant === 'karr' && !isCenter) {
+            const karrBoost = 4; // Permite que las laterales lleguen más lejos
+            normalizedValue = Math.min(normalizedValue * karrBoost, 1);
+          }
+          if (variant === 'karr' && isCenter) {
+            const centralKarrBoost = 2.2; // Ajusta este valor según lo que necesites
+            normalizedValue = Math.min(normalizedValue * centralKarrBoost, 1);
+          }
+          if (normalizedValue * 255 < 3) continue;
+          // Para KARR, permitir que las barras laterales sean una sola barra desde ambos extremos
+          const totalSegments = variant === 'karr' && !isCenter
+            ? Math.floor(maxHeightKarr / (segmentHeight + segmentSpacing))
+            : numSegments;
+          const activeSegments = Math.ceil(normalizedValue * totalSegments);
+
+          // Color según variante
+          const color = variant === 'karr' ? '255, 255, 0' : '255, 0, 0';
+
+          if (variant === 'karr' && !isCenter) {
+            // Barras laterales: crecen desde arriba y abajo hacia el centro, pueden tocarse
+            const totalBarHeight = maxHeight * .75;
+            const blockTop = centerY - totalBarHeight / 2;
+            const totalSegments = Math.floor(totalBarHeight / (segmentHeight + segmentSpacing));
+            const activeSegments = Math.ceil(normalizedValue * totalSegments);
+            const topSegments = Math.ceil(activeSegments / 2);
+            const bottomSegments = Math.floor(activeSegments / 2);
+            // Desde arriba
+            for (let j = 0; j < topSegments; j++) {
+              const y = blockTop + (j * (segmentHeight + segmentSpacing));
+              // Degradado: más transparente cuanto más arriba
+              const alpha = 0.99 * (1 - j / totalSegments) + 0.01;
+              ctxBars.fillStyle = `rgba(${color}, ${alpha})`;
+              ctxBars.fillRect(x - segmentWidth / 2, y, segmentWidth, segmentHeight);
+            }
+            // Desde abajo
+            for (let j = 0; j < bottomSegments; j++) {
+              const y = blockTop + totalBarHeight - ((j + 1) * (segmentHeight + segmentSpacing));
+              // Degradado: más transparente cuanto más abajo
+              const alpha = 0.99 * (1 - j / totalSegments) + 0.01;
+              ctxBars.fillStyle = `rgba(${color}, ${alpha})`;
+              ctxBars.fillRect(x - segmentWidth / 2, y, segmentWidth, segmentHeight);
             }
           } else {
-            normalizedValue = Math.min(averages[i] / 255, 1);
-          }
-          
-          if (normalizedValue * 255 < 3) continue;
-          
-          const activeSegments = Math.ceil(normalizedValue * numSegments);
-          
-          for (let direction = -1; direction <= 1; direction += 2) {
-            for (let j = 0; j < numSegments; j++) {
-              const isActive = j < activeSegments;
-              if (!isActive) continue;
-              
-              const y = centerY + (direction * ((j * (segmentHeight + segmentSpacing)) + centerGap));
-              const segmentIntensity = Math.pow(1 - (j / numSegments), 0.7);
-              const musicIntensity = normalizedValue * 0.3;
-              const finalIntensity = segmentIntensity + musicIntensity;
-              
-              const baseIntensity = isCenter ? 0.7 : 0.8;
-              ctxBars.fillStyle = `rgba(255, 0, 0, ${baseIntensity + finalIntensity * 0.3})`;
-              
-              const barX = x - (segmentWidth / 2);
-              ctxBars.fillRect(barX, y, segmentWidth, direction * segmentHeight);
+            // Barra normal (KITT o central de KARR)
+            for (let direction = -1; direction <= 1; direction += 2) {
+              for (let j = 0; j < numSegments; j++) {
+                const isActive = j < activeSegments;
+                if (!isActive) continue;
+                const y = centerY + (direction * ((j * (segmentHeight + segmentSpacing)) + centerGap));
+                const segmentIntensity = Math.pow(1 - (j / numSegments), 0.7);
+                const musicIntensity = normalizedValue * 0.3;
+                const finalIntensity = segmentIntensity + musicIntensity;
+                const baseIntensity = isCenter ? 0.7 : 0.8;
+                // Degradado: más transparente cuanto más lejos del centro
+                const alpha = 0.99 * (1 - j / totalSegments) + 0.01;
+                ctxBars.fillStyle = `rgba(${color}, ${alpha})`;
+                const barX = x - (segmentWidth / 2);
+                ctxBars.fillRect(barX, y, segmentWidth, direction * segmentHeight);
+              }
             }
           }
         }
 
+        // Gradiente de desvanecimiento (igual para ambos)
         const totalBarHeight = (numSegments * (segmentHeight + segmentSpacing) + centerGap) * 2;
         const startY = centerY - (totalBarHeight / 2);
-        
         const fadeGradient = ctxBars.createLinearGradient(0, startY, 0, startY + totalBarHeight);
-        
         fadeGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
         fadeGradient.addColorStop(0.15, 'rgba(0, 0, 0, 0)');
         fadeGradient.addColorStop(0.45, 'rgba(0, 0, 0, 0)');
@@ -140,7 +176,6 @@ const KITT = ({ analyser, imageBgColor }) => {
         fadeGradient.addColorStop(0.55, 'rgba(0, 0, 0, 0)');
         fadeGradient.addColorStop(0.85, 'rgba(0, 0, 0, 0)');
         fadeGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        
         ctxBars.save();
         ctxBars.globalCompositeOperation = 'multiply';
         ctxBars.fillStyle = fadeGradient;
@@ -156,11 +191,11 @@ const KITT = ({ analyser, imageBgColor }) => {
         }
       };
     }
-  }, [analyser]);
+  }, [analyser, variant]);
 
   return (
-    <div className="kitt-container kitt-audio-only" style={imageBgColor ? { background: imageBgColor } : {}}>
-      <canvas ref={canvasBarsRef} className="kitt-bars" />
+    <div className={`kitt-container kitt-audio-only ${variant === 'karr' ? 'karr' : ''}`} style={imageBgColor ? { background: imageBgColor } : {}}>
+      <canvas ref={canvasBarsRef} className={`kitt-bars ${variant === 'karr' ? 'karr-bars' : ''}`} />
     </div>
   );
 };
