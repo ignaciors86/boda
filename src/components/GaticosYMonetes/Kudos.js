@@ -172,15 +172,10 @@ const Kudos = () => {
     Object.entries(emojiLevels).forEach(([level, emojis]) => {
       emojis.forEach((emoji, index) => {
         const key = `${level}-${index}`;
-        const count = Math.floor(Math.random() * 7) + 1;
+        const count = index + 1; // 1 a 7 estrellas, según la bola
         const radius = 35;
-        const size = 14;
         const emojiElements = [];
-        
-        // Si hay 6 o 7 emojis, uno va en el centro
         const emojisInCircle = count === 6 || count === 7 ? count - 1 : count;
-        
-        // Generar emojis en círculo
         for (let i = 0; i < emojisInCircle; i++) {
           const angle = (i * 2 * Math.PI) / emojisInCircle;
           const x = 50 + Math.cos(angle) * radius;
@@ -202,14 +197,14 @@ const Kudos = () => {
                 justifyContent: 'center'
               }}
             >
-              <span style={{ 
+              <span style={{
                 position: 'absolute',
                 fontSize: '2vw',
                 color: '#d32f2f',
                 zIndex: 1,
                 filter: 'drop-shadow(0 0 0.3vw #0008)'
               }}>★</span>
-              <span style={{ 
+              <span style={{
                 position: 'absolute',
                 fontSize: '0.8vw',
                 zIndex: 2,
@@ -218,8 +213,6 @@ const Kudos = () => {
             </span>
           );
         }
-
-        // Añadir emoji central si hay 6 o 7 emojis
         if (count === 6 || count === 7) {
           emojiElements.push(
             <span
@@ -238,14 +231,14 @@ const Kudos = () => {
                 justifyContent: 'center'
               }}
             >
-              <span style={{ 
+              <span style={{
                 position: 'absolute',
                 fontSize: '2vw',
                 color: '#d32f2f',
                 zIndex: 1,
                 filter: 'drop-shadow(0 0 0.3vw #0008)'
               }}>★</span>
-              <span style={{ 
+              <span style={{
                 position: 'absolute',
                 fontSize: '0.8vw',
                 zIndex: 2,
@@ -254,11 +247,9 @@ const Kudos = () => {
             </span>
           );
         }
-
-        // Dirección y velocidad de giro aleatoria
         const direction = Math.random() > 0.5 ? 1 : -1;
-        const speed = Math.random() * 2 + 3; // 3s a 5s por vuelta
-        balls[key] = { emojiElements, direction, speed, mainEmoji: emoji };
+        const speed = Math.random() * 2 + 3;
+        balls[key] = { emojiElements, direction, speed, mainEmoji: emoji, count };
       });
     });
     return balls;
@@ -294,9 +285,14 @@ const Kudos = () => {
   }, [dragonBallBalls, emojiLevels]);
 
   const handleEmojiClick = (emoji, e) => {
+    const level = e.currentTarget.getAttribute('data-level');
+    const index = parseInt(e.currentTarget.getAttribute('data-index'), 10);
+    const key = `${level}-${index}`;
+    const count = dragonBallBalls[key]?.count || (index + 1);
     const kudo = {
       id: Date.now(),
       emoji: emoji,
+      stars: count,
       timestamp: Date.now()
     };
     if (socketRef.current && socketRef.current.connected) {
@@ -304,14 +300,11 @@ const Kudos = () => {
     } else {
       console.error('Socket.IO no está conectado');
     }
-
-    // Onda de pulso CSS: activa la onda para esta burbuja
+    // Onda de pulso CSS local
     const btn = e.currentTarget;
     const waveElement = btn.querySelector('.pulse-wave');
-    
     if (waveElement) {
       waveElement.style.animation = 'none';
-      // Forzar reflow de manera correcta
       void waveElement.offsetHeight;
       waveElement.style.animation = 'pulse-wave-anim 0.7s cubic-bezier(0.4,0.2,0.2,1) forwards';
     }
@@ -382,17 +375,15 @@ const Kudos = () => {
   useEffect(() => {
     if (socketRef.current) {
       socketRef.current.on('kudo', (kudo) => {
-        // Generar posición inicial aleatoria
+        // Aparecer en el centro de la pantalla
         const container = containerRef.current;
         const containerWidth = container.offsetWidth;
         const containerHeight = container.offsetHeight;
         const bubbleSize = 6 * (window.innerWidth / 100); // 6vw
-        const margin = 1 * (window.innerWidth / 100); // 1vw
-
-        const x = Math.random() * (containerWidth - 2 * margin - bubbleSize) + margin;
-        const y = Math.random() * (containerHeight - 2 * margin - bubbleSize) + margin;
-        
-        // Generar propiedades de animación
+        // Centro exacto
+        const x = containerWidth / 2 - bubbleSize / 2;
+        const y = containerHeight / 2 - bubbleSize / 2;
+        // Dirección aleatoria 360º
         const angle = Math.random() * Math.PI * 2;
         const speed = Math.random() * 0.35 + 0.15;
         const freq = Math.random() * 0.5 + 0.2;
@@ -400,13 +391,11 @@ const Kudos = () => {
         const minScale = 1.2;
         const maxScale = 2.2;
         const baseScale = Math.random() * (maxScale - minScale) + minScale;
-        
         // Color aleatorio translúcido
         const r = Math.floor(Math.random() * 200 + 30);
         const g = Math.floor(Math.random() * 200 + 30);
         const b = Math.floor(Math.random() * 200 + 30);
         const bgColor = `rgba(${r},${g},${b},0.45)`;
-
         const kudoData = {
           ...kudo,
           x,
@@ -421,11 +410,8 @@ const Kudos = () => {
           bgColor,
           element: null
         };
-
         setActiveKudos(prev => [...prev, kudoData]);
         kudosDataRef.current.push(kudoData);
-
-        // Programar desaparición después de 10 segundos
         setTimeout(() => {
           setActiveKudos(prev => prev.filter(k => k.id !== kudo.id));
           kudosDataRef.current = kudosDataRef.current.filter(k => k.id !== kudo.id);
@@ -489,28 +475,63 @@ const Kudos = () => {
     }
   }, []);
 
+  const renderDragonBallStars = (count) => {
+    if (!count || count < 1) count = 1;
+    const stars = [];
+    const radius = 22; // % del círculo
+    if (count === 1) {
+      stars.push(
+        <span key={0} className="star" style={{
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          transform: 'translate(-50%, -50%)',
+          fontSize: '2.7vw',
+          color: '#d32f2f',
+          zIndex: 1,
+          filter: 'drop-shadow(0 0 0.3vw #0008)'
+        }}>★</span>
+      );
+    } else {
+      const angleOffset = count === 2 ? Math.PI / 2 : 0;
+      for (let i = 0; i < count; i++) {
+        const angle = (i * 2 * Math.PI) / count + angleOffset;
+        const x = 50 + Math.cos(angle) * radius;
+        const y = 50 + Math.sin(angle) * radius;
+        stars.push(
+          <span key={i} className="star" style={{
+            position: 'absolute',
+            left: `${x}%`,
+            top: `${y}%`,
+            transform: 'translate(-50%, -50%)',
+            fontSize: '2.7vw',
+            color: '#d32f2f',
+            zIndex: 1,
+            filter: 'drop-shadow(0 0 0.3vw #0008)'
+          }}>★</span>
+        );
+      }
+    }
+    return stars;
+  };
+
   const renderActiveKudos = () => {
     return activeKudos.map((kudo) => {
       const direction = Math.random() > 0.5 ? 1 : -1;
       const speed = Math.random() * 2 + 3;
-
       return (
         <div
           key={kudo.id}
           ref={el => {
             if (el && !kudo.element) {
               kudo.element = el;
-              
-              // Crear timeline para la animación inicial
+              // Animación de aparición (igual que antes)
               const tl = gsap.timeline({
                 onComplete: () => {
-                  // Una vez completada la animación inicial, empezar el movimiento
                   kudo.velocityX = Math.cos(kudo.angle) * kudo.speed;
                   kudo.velocityY = Math.sin(kudo.angle) * kudo.speed;
                 }
               });
-
-              // Animación de aparición desde otra dimensión
               tl.fromTo(el, 
                 { 
                   scale: 0,
@@ -555,13 +576,57 @@ const Kudos = () => {
           }}
         >
           <Sphere speed={speed} direction={direction}>
-            <span className="dragonball-face front">
-              {kudo.emoji}
+            <span className="dragonball-face front" style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'absolute',
+              left: 0,
+              top: 0
+            }}>
+              <span style={{
+                width: '70%',
+                height: '70%',
+                background: 'white',
+                borderRadius: '50%',
+                border: '4px solid #ddd',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 12px #0004',
+                fontSize: '3vw',
+                color: '#222',
+                fontWeight: 'bold',
+                textShadow: '0 1px 0 #fff, 0 2px 8px #0002'
+              }}>
+                {kudo.emoji}
+              </span>
             </span>
-            <span className="dragonball-face back">
-              <span className="dragonball-emoji">
-                <span className="star">★</span>
-                <span className="emoji">{kudo.emoji}</span>
+            <span className="dragonball-face back" style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'absolute',
+              left: 0,
+              top: 0
+            }}>
+              <span style={{
+                width: '70%',
+                height: '70%',
+                background: 'white',
+                borderRadius: '50%',
+                border: '4px solid #ddd',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 12px #0004',
+                position: 'relative'
+              }}>
+                {renderDragonBallStars(kudo.stars)}
               </span>
             </span>
           </Sphere>

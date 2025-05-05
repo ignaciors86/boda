@@ -194,7 +194,7 @@ const KITT = ({ analyser, imageBgColor, variant = 'kitt' }) => {
   }, [analyser, variant]);
 
   return (
-    <div className={`kitt-container kitt-audio-only ${variant === 'karr' ? 'karr' : ''}`} style={imageBgColor ? { background: imageBgColor } : {}}>
+    <div className={`kitt-container kitt-audio-only ${variant === 'karr' ? 'karr' : ''}`} >
       <canvas ref={canvasBarsRef} className={`kitt-bars ${variant === 'karr' ? 'karr-bars' : ''}`} />
     </div>
   );

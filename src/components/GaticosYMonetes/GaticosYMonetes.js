@@ -15,6 +15,11 @@ const GaticosYMonetes = () => {
     const savedMode = localStorage.getItem('sensitiveMode');
     return savedMode === 'true';
   });
+  const [imageBgColor, setImageBgColor] = useState('transparent');
+  const [dynamicBgColor, setDynamicBgColor] = useState(false);
+  const [dynamicColor, setDynamicColor] = useState('#ff00ff');
+  const [wrapperBgColor, setWrapperBgColor] = useState('transparent');
+  const [dynamicWrapperBgColor, setDynamicWrapperBgColor] = useState(false);
   const socketRef = useRef(null);
   const containerRef = useRef(null);
   const kudosDataRef = useRef([]);
@@ -111,6 +116,26 @@ const GaticosYMonetes = () => {
 
     socketRef.current.on('disconnect', () => {
       console.log('GaticosYMonetes: Desconectado del servidor Socket.IO');
+    });
+
+    socketRef.current.on('galerias', (data) => {
+      if (typeof data.imageBgColor !== 'undefined') {
+        if (dynamicBgColor || data.dynamicBgColor) {
+          setImageBgColor(data.imageBgColor);
+        } else if (!dynamicBgColor) {
+          setImageBgColor(data.imageBgColor);
+        }
+      }
+      if (typeof data.dynamicBgColor !== 'undefined') {
+        setDynamicBgColor(data.dynamicBgColor);
+        console.log('GaticosYMonetes: Recibido dynamicBgColor', data.dynamicBgColor);
+      }
+      if (typeof data.dynamicColor !== 'undefined') {
+        setDynamicColor(data.dynamicColor);
+        console.log('GaticosYMonetes: Recibido dynamicColor', data.dynamicColor);
+      }
+      if (typeof data.wrapperBgColor !== 'undefined') setWrapperBgColor(data.wrapperBgColor);
+      if (typeof data.dynamicWrapperBgColor !== 'undefined') setDynamicWrapperBgColor(data.dynamicWrapperBgColor);
     });
 
     // Intervalo para cambiar imágenes
@@ -278,7 +303,10 @@ const GaticosYMonetes = () => {
   };
 
   return (
-    <div className="gaticos-y-monetes-container" ref={containerRef}>
+    <div className="gaticos-y-monetes-container" ref={containerRef} style={{
+      background: imageBgColor !== 'transparent' ? imageBgColor : undefined,
+      transition: 'background 0.7s',
+    }}>
       <div className="drum-hero">
         <div 
           className="image-container"
@@ -292,7 +320,8 @@ const GaticosYMonetes = () => {
             style={{
               border: `3px solid ${borderColor}`,
               boxShadow: `0 0 10px ${borderColor}, 0 0 20px ${borderColor}`,
-              filter: 'brightness(1.2)'
+              filter: 'brightness(1.2)',
+              background: wrapperBgColor !== 'transparent' ? wrapperBgColor : undefined
             }}
           >
             {Object.values(galerias)[0]?.imagenes[currentImageIndex] && (

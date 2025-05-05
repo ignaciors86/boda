@@ -29,7 +29,6 @@ const DrumHero = () => {
     opacity: 0.8
   });
   const [isPulsing, setIsPulsing] = useState(false);
-  const [backgroundColor, setBackgroundColor] = useState('#000000');
   const [receivedKudos, setReceivedKudos] = useState([]);
   const [activeKudos, setActiveKudos] = useState([]);
   const [localIp, setLocalIp] = useState(null);
@@ -100,6 +99,9 @@ const DrumHero = () => {
   const emojisContainerRef = useRef(null);
   const [imageBgColor, setImageBgColor] = useState('transparent');
   const [imageScale, setImageScale] = useState(1);
+  const [dynamicBgColor, setDynamicBgColor] = useState(false);
+  const [wrapperBgColor, setWrapperBgColor] = useState('transparent');
+  const [dynamicWrapperBgColor, setDynamicWrapperBgColor] = useState(false);
 
   // Nuevos refs para manejar estados que no necesitan re-renders
   const energyHistoryRef = useRef([]);
@@ -477,6 +479,28 @@ const DrumHero = () => {
         lastColorUpdateRef.current = now;
       }
 
+      // Emitir color dinámico si está activo
+      if (dynamicBgColor && socketRef.current && socketRef.current.connected) {
+        const hue = Math.floor((totalEnergy * 3) % 360);
+        const color = `hsl(${hue}, 90%, 60%)`;
+        socketRef.current.emit('galerias', {
+          dynamicBgColor: true,
+          imageBgColor: color,
+          timestamp: Date.now()
+        });
+      }
+
+      // Emitir wrapperBgColor dinámico si corresponde
+      if (dynamicWrapperBgColor && socketRef.current && socketRef.current.connected) {
+        const hue = Math.floor((totalEnergy * 3 + 120) % 360);
+        const color = `hsl(${hue}, 90%, 60%)`;
+        socketRef.current.emit('galerias', {
+          dynamicWrapperBgColor: true,
+          wrapperBgColor: color,
+          timestamp: Date.now()
+        });
+      }
+
       updateElementOpacities(totalEnergy);
       animationFrameId = requestAnimationFrame(analyzeAudio);
     };
@@ -488,7 +512,7 @@ const DrumHero = () => {
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [isPlaying, petImages, backgroundFormat, sensitiveMode, extraSensitiveMode, pursuitMode]);
+  }, [isPlaying, petImages, backgroundFormat, sensitiveMode, extraSensitiveMode, pursuitMode, dynamicBgColor, dynamicWrapperBgColor]);
 
   const togglePlay = async () => {
     if (isPlaying) {
@@ -805,11 +829,14 @@ const DrumHero = () => {
       if (typeof data.shakeImage !== 'undefined') setShakeImage(data.shakeImage);
       if (typeof data.imageBgColor !== 'undefined') setImageBgColor(data.imageBgColor);
       if (typeof data.imageScale !== 'undefined') setImageScale(data.imageScale);
+      if (typeof data.wrapperBgColor !== 'undefined') setWrapperBgColor(data.wrapperBgColor);
+      if (typeof data.dynamicWrapperBgColor !== 'undefined') setDynamicWrapperBgColor(data.dynamicWrapperBgColor);
       if (data.coleccion) {
         setPetImages(galerias[data.coleccion]?.imagenes || []);
         setColeccionActual(data.coleccion);
         setCurrentImageIndex(0);
       }
+      if (typeof data.dynamicBgColor !== 'undefined') setDynamicBgColor(data.dynamicBgColor);
     });
 
     // Limpiar al desmontar
@@ -926,7 +953,7 @@ const DrumHero = () => {
           }}
           className="emoji-option dragonball"
           style={{
-            background: 'radial-gradient(circle at 30% 30%, rgba(255, 165, 0, 0.8), rgba(255, 69, 0, 0.4))',
+            background: kudo.bgColor,
             perspective: '600px',
             overflow: 'visible',
             position: 'absolute',
@@ -951,7 +978,7 @@ const DrumHero = () => {
               left: 0, top: 0, width: '100%', height: '100%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               backfaceVisibility: 'hidden',
-              fontSize: '4.2vw',
+              fontSize: '4vw',
               filter: 'drop-shadow(0 0 0.5vw #fff8)'
             }}>
               {kudo.emoji}
@@ -959,25 +986,13 @@ const DrumHero = () => {
             <span className="dragonball-face back" style={{
               position: 'absolute',
               left: 0, top: 0, width: '100%', height: '100%',
-              display: 'block',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
               backfaceVisibility: 'hidden',
-              transform: 'rotateY(180deg)'
+              transform: 'rotateY(180deg)',
+              fontSize: '4vw',
+              filter: 'drop-shadow(0 0 0.5vw #fff8)'
             }}>
-              <span style={{position: 'relative', width: '100%', height: '100%', display: 'block'}}>
-                <span style={{ 
-                  position: 'absolute',
-                  fontSize: '2vw',
-                  color: '#d32f2f',
-                  zIndex: 1,
-                  filter: 'drop-shadow(0 0 0.3vw #0008)'
-                }}>★</span>
-                <span style={{ 
-                  position: 'absolute',
-                  fontSize: '0.8vw',
-                  zIndex: 2,
-                  filter: 'drop-shadow(0 0 0.1vw #000)'
-                }}>{kudo.emoji}</span>
-              </span>
+              {kudo.emoji}
             </span>
           </Sphere>
         </div>
@@ -1050,7 +1065,15 @@ const DrumHero = () => {
   }, [currentImageIndex, petImages]);
 
   return (
-    <div className="drum-hero" style={{ backgroundColor }} ref={containerRef}>
+    <div
+      className="drum-hero"
+      style={{
+        background: dynamicBgColor && imageBgColor && imageBgColor !== 'transparent'
+          ? imageBgColor
+          : (imageBgColor !== 'transparent' ? imageBgColor : undefined)
+      }}
+      ref={containerRef}
+    >
       <button 
         onClick={toggleFullScreen} 
         className="fullscreen-button"
@@ -1113,7 +1136,7 @@ const DrumHero = () => {
             }
             style={{
               opacity: elementOpacities.image,
-              background: imageBgColor,
+              background: wrapperBgColor,
               transform: `scale(${imageScale})`,
               transition: 'background 0.3s cubic-bezier(.4,1.3,.6,1), transform 0.3s cubic-bezier(.4,1.3,.6,1)'
             }}
@@ -1147,7 +1170,7 @@ const DrumHero = () => {
         {isPlaying ? 'Detener' : 'Capturar Audio'}
       </button>
 
-      <div className="background" style={{ backgroundColor }}>
+      <div className="background" style={{ background: imageBgColor !== 'transparent' ? imageBgColor : undefined }}>
         {backgroundFormat === 'polygons' && <Poligonos analyser={analyserRef.current} />}
         {backgroundFormat === 'poligonos-flotantes' && <PoligonosFlotantes analyser={analyserRef.current} />}
         {backgroundFormat === 'pulse' && <Pulse analyser={analyserRef.current} />}
