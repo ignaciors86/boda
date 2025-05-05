@@ -10,7 +10,7 @@ import { items } from './components/Timeline/items'; // Asegúrate de importar c
 import Creditos from 'components/Creditos/Creditos';
 import KITT from 'components/KITT/KITT';
 import { InvitadoImageProvider } from './contexts/InvitadoImageContext';
-import DrumHero from 'components/DrumHero/DrumHero';
+import CocheFantastico from 'components/CocheFantastico/CocheFantastico';
 import Kudos from './components/GaticosYMonetes/Kudos';
 import Controles from './components/GaticosYMonetes/Controles';
 import SimpleWebRTCTest from './components/SimpleWebRTCTest';
@@ -184,8 +184,8 @@ const App = () => {
             />
             <Route path="/fondos-baile" element={<FondosBaile />} />
             <Route path="/kitt" element={<KITT />} />
-            <Route path="/gaticos-y-monetes" element={<DrumHero />} />
-            <Route path="/gaticos-y-monetes/enar" element={<DrumHero />} />
+            <Route path="/gaticos-y-monetes" element={<CocheFantastico />} />
+            <Route path="/gaticos-y-monetes/enar" element={<CocheFantastico />} />
             <Route path="/gaticos-y-monetes/kudos" element={<Kudos />} />
             <Route path="/gaticos-y-monetes/controles" element={<Controles />} />
             <Route path="/emitter" element={<SimpleWebRTCTest isEmitting={true} />} />

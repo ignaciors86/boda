@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import "./DrumHero.scss";
+import "./CocheFantastico.scss";
 import { QRCodeSVG } from 'qrcode.react';
 import { io } from 'socket.io-client';
 import GaleriaLoader from '../GaticosYMonetes/GaleriaLoader';
@@ -12,7 +12,7 @@ import gsap from 'gsap';
 import PoligonosFlotantes from '../Backgrounds/PoligonosFlotantes/PoligonosFlotantes';
 import Sphere from '../GaticosYMonetes/Sphere';
 
-const DrumHero = () => {
+const CocheFantastico = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
   const [buttonVisible, setButtonVisible] = useState(true);
@@ -627,7 +627,7 @@ const DrumHero = () => {
       ? 'http://localhost:1337' 
       : 'https://boda-strapi-production.up.railway.app';
     
-    console.log('DrumHero: Inicializando socket en:', socketUrl);
+    console.log('CocheFantastico: Inicializando socket en:', socketUrl);
     
     // Crear una nueva instancia de socket con configuración más permisiva
     const socket = io(socketUrl, {
@@ -648,18 +648,18 @@ const DrumHero = () => {
 
     // Manejar la conexión
     socket.on('connect', () => {
-      console.log('DrumHero: Socket conectado');
+      console.log('CocheFantastico: Socket conectado');
       socketRef.current = socket;
     });
 
     // Manejar errores de conexión
     socket.on('connect_error', (error) => {
-      console.error('DrumHero: Error de conexión Socket.IO:', error);
+      console.error('CocheFantastico: Error de conexión Socket.IO:', error);
       // Intentar reconectar con un retraso exponencial
       const delay = Math.min(1000 * Math.pow(2, socket.io.reconnectionAttempts), 10000);
       setTimeout(() => {
         if (!socket.connected) {
-          console.log('DrumHero: Intentando reconectar...');
+          console.log('CocheFantastico: Intentando reconectar...');
           socket.connect();
         }
       }, delay);
@@ -667,7 +667,7 @@ const DrumHero = () => {
 
     // Manejar desconexiones
     socket.on('disconnect', (reason) => {
-      console.log('DrumHero: Socket desconectado:', reason);
+      console.log('CocheFantastico: Socket desconectado:', reason);
       if (reason === 'io server disconnect' || reason === 'transport close') {
         // El servidor cerró la conexión, intentar reconectar
         socket.connect();
@@ -676,7 +676,7 @@ const DrumHero = () => {
 
     // Manejar eventos
     socket.on('sensitive-mode-change', (data) => {
-      console.log('DrumHero: Recibido cambio de modo:', data);
+      console.log('CocheFantastico: Recibido cambio de modo:', data);
       if (data) {
         if (typeof data.enabled !== 'undefined') {
           setSensitiveMode(data.enabled);
@@ -694,23 +694,23 @@ const DrumHero = () => {
     });
 
     socket.on('kudo', (data) => {
-      console.log('DrumHero: Recibido evento kudo:', data);
+      console.log('CocheFantastico: Recibido evento kudo:', data);
       
       if (!data) return;
 
       if (data.coleccion) {
-        console.log('DrumHero: Cambiando a colección:', data.coleccion);
+        console.log('CocheFantastico: Cambiando a colección:', data.coleccion);
         setPetImages(galerias[data.coleccion]?.imagenes || []);
         setColeccionActual(data.coleccion);
         setCurrentImageIndex(0);
         if (data.circularImages !== undefined) setCircularImages(data.circularImages);
         if (data.shakeImage !== undefined) setShakeImage(data.shakeImage);
       } else if (data.format) {
-        console.log('DrumHero: Cambiando formato de fondo:', data.format);
+        console.log('CocheFantastico: Cambiando formato de fondo:', data.format);
         setBackgroundFormat(data.format);
         localStorage.setItem('backgroundFormat', data.format);
       } else if (data.sensitiveMode !== undefined || data.extraSensitive !== undefined || data.pursuit !== undefined) {
-        console.log('DrumHero: Cambiando modo:', { 
+        console.log('CocheFantastico: Cambiando modo:', { 
           sensitiveMode: data.sensitiveMode, 
           extraSensitive: data.extraSensitive,
           pursuit: data.pursuit 
@@ -728,10 +728,10 @@ const DrumHero = () => {
           localStorage.setItem('pursuitMode', data.pursuit);
         }
       } else if (data.speed) {
-        console.log('DrumHero: Cambiando velocidad:', data.speed);
+        console.log('CocheFantastico: Cambiando velocidad:', data.speed);
         rotationSpeedRef.current = data.speed;
       } else if (data.photoFactor) {
-        console.log('DrumHero: Cambiando factor de fotos:', data.photoFactor);
+        console.log('CocheFantastico: Cambiando factor de fotos:', data.photoFactor);
         // Aquí puedes agregar la lógica para el factor de fotos si es necesario
       } else if (data.emoji && data.id) {
         if (!kudosRef.current.has(data.id)) {
@@ -739,7 +739,7 @@ const DrumHero = () => {
           
           // Verificar que el contenedor existe
           if (!containerRef.current) {
-            console.warn('DrumHero: El contenedor no está disponible aún');
+            console.warn('CocheFantastico: El contenedor no está disponible aún');
             return;
           }
 
@@ -821,7 +821,11 @@ const DrumHero = () => {
     });
 
     socket.on('galerias', (data) => {
-      console.log('DrumHero: Recibido evento galerias:', data);
+      console.log('CocheFantastico: Recibido evento galerias:', data);
+      if (data.format) {
+        setBackgroundFormat(data.format);
+        localStorage.setItem('backgroundFormat', data.format);
+      }
       if (typeof data.sensitiveMode !== 'undefined') setSensitiveMode(data.sensitiveMode);
       if (typeof data.extraSensitiveMode !== 'undefined') setExtraSensitiveMode(data.extraSensitiveMode);
       if (typeof data.pursuitMode !== 'undefined') setPursuitMode(data.pursuitMode);
@@ -1013,10 +1017,10 @@ const DrumHero = () => {
   useEffect(() => {
     // Actualizar las imágenes cuando se carguen las galerías
     if (galerias.pokemon?.imagenes?.length > 0) {
-      console.log('DrumHero: Usando imágenes locales de pokemon');
+      console.log('CocheFantastico: Usando imágenes locales de pokemon');
       setPetImages(galerias.pokemon.imagenes);
     } else {
-      console.log('DrumHero: Usando imágenes de ejemplo');
+      console.log('CocheFantastico: Usando imágenes de ejemplo');
       setPetImages(colecciones.gatos.imagenes);
     }
   }, [galerias]);
@@ -1025,7 +1029,7 @@ const DrumHero = () => {
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === 'backgroundFormat') {
-        console.log('DrumHero: Cambio detectado en formato de fondo:', e.newValue);
+        console.log('CocheFantastico: Cambio detectado en formato de fondo:', e.newValue);
         setBackgroundFormat(e.newValue);
         if (e.newValue === 'polygons') {
           setBackgroundPolygon({
@@ -1044,7 +1048,7 @@ const DrumHero = () => {
           updatePulseCircle(128);
         }
       } else if (e.key === 'sensitiveMode') {
-        console.log('DrumHero: Cambio detectado en modo sensible:', e.newValue);
+        console.log('CocheFantastico: Cambio detectado en modo sensible:', e.newValue);
         setSensitiveMode(e.newValue === 'true');
       }
     };
@@ -1066,7 +1070,7 @@ const DrumHero = () => {
 
   return (
     <div
-      className="drum-hero"
+      className="coche-fantastico"
       style={{
         background: dynamicBgColor && imageBgColor && imageBgColor !== 'transparent'
           ? imageBgColor
@@ -1182,4 +1186,4 @@ const DrumHero = () => {
   );
 };
 
-export default DrumHero;
+export default CocheFantastico;
