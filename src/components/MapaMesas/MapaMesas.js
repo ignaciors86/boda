@@ -613,10 +613,7 @@ const MapaMesas = () => {
                 }
               });
               // Guardar snapshot de las posiciones de las mesas (copia profunda)
-              snapshotMesasPlano.current = mesasPlano.map(m => ({
-                ...m,
-                invitados: m.invitados ? m.invitados.map(inv => ({ ...inv })) : []
-              }));
+              actualizarSnapshot();
               // Resetear transformaciones de GSAP en todas las mesas para el snapshot
               Object.values(mesaRefs.current).forEach(ref => {
                 const mesaEl = ref.current;
@@ -1067,23 +1064,21 @@ const MapaMesas = () => {
     <div className="mapa-mesas-root">
       {/* Panel lateral */}
       <aside className="mapa-mesas-panel">
-        <h2 style={{marginTop:0}}>Grupos de origen</h2>
+        <h2>Grupos de origen</h2>
         {Object.values(porGrupoOrigen).map(grupo => (
           <details key={grupo.nombre} className="mapa-mesas-grupo">
             <summary>{grupo.nombre}</summary>
-            <div style={{marginLeft:12}}>
+            <div>
               {grupo.invitados.map(inv => {
-                // Comprobar si el invitado tiene mesa asignada en Strapi
                 const tieneMesaStrapi = inv.mesaId && inv.mesaId !== 0;
-                // Comprobar si el invitado está en alguna mesa actualmente
                 const enMesa = Object.values(mesasOrganizadas).some(mesa => mesa.invitados.some(i => i.id === inv.id));
                 let colorBolita = undefined;
                 let colorTexto = undefined;
                 if (tieneMesaStrapi) {
-                  colorBolita = '#22c55e'; // verde
+                  colorBolita = '#22c55e';
                   colorTexto = '#22c55e';
                 } else {
-                  colorBolita = '#f43f5e'; // rojo
+                  colorBolita = '#f43f5e';
                   colorTexto = '#f43f5e';
                 }
                 return (
@@ -1096,7 +1091,7 @@ const MapaMesas = () => {
                       className="mapa-mesas-bolita"
                       style={{background: colorBolita, color: colorBolita ? '#fff' : undefined}}
                     >{inv.nombre[0]}</div>
-                    <span style={{fontSize:15, color: colorTexto}}>{inv.nombre}</span>
+                    <span style={{color: colorTexto}}>{inv.nombre}</span>
                   </div>
                 );
               })}
@@ -1105,9 +1100,9 @@ const MapaMesas = () => {
         ))}
         
         {/* Sección de invitados sin mesa */}
-        <div style={{marginTop: 24, padding: '16px', background: '#2a2a32', borderRadius: '8px'}}>
-          <h3 style={{marginTop: 0, marginBottom: 12, fontSize: 16}}>Invitados sin mesa</h3>
-          <div style={{display: 'flex', flexWrap: 'wrap', gap: '8px'}}>
+        <div className="mapa-mesas-sin-mesa">
+          <h3>Invitados sin mesa</h3>
+          <div className="mapa-mesas-bolitas-container">
             {Object.values(porGrupoOrigen).flatMap(grupo => 
               grupo.invitados.filter(inv => {
                 const sinMesa = !inv.mesaId || inv.mesaId === 0;
@@ -1122,20 +1117,7 @@ const MapaMesas = () => {
                   <div
                     key={inv.id}
                     className="mapa-mesas-bolita-flotante"
-                    style={{
-                      width: '36px',
-                      height: '36px',
-                      borderRadius: '18px',
-                      background: colorGrupo,
-                      color: '#fff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 600,
-                      cursor: 'grab',
-                      boxShadow: '0 2px 8px #0004',
-                      border: '2px solid #fff'
-                    }}
+                    style={{background: colorGrupo}}
                     ref={getInvitadoRef(inv.id)}
                     onClick={() => setInvitadoDetalle(inv)}
                   >
@@ -1148,7 +1130,6 @@ const MapaMesas = () => {
         </div>
 
         <button className="mapa-mesas-btn-add" onClick={()=>setShowAddMesa(true)}>Añadir mesa</button>
-        {/* Botón para descargar backup */}
         <button
           className="mapa-mesas-btn-backup"
           onClick={() => {
@@ -1162,7 +1143,6 @@ const MapaMesas = () => {
             URL.revokeObjectURL(url);
           }}
         >Descargar backup</button>
-        {/* Botón para subir backup */}
         <input
           type="file"
           accept="application/json"
@@ -1176,7 +1156,6 @@ const MapaMesas = () => {
               try {
                 const data = JSON.parse(ev.target.result);
                 localStorage.setItem('mesasPosiciones', JSON.stringify(data));
-                // Forzar recarga de posiciones
                 setMesasPlano(prev => prev.map(m => data[m.id] ? { ...m, x: data[m.id].x, y: data[m.id].y } : m));
                 alert('Backup restaurado correctamente.');
               } catch {
@@ -1184,7 +1163,6 @@ const MapaMesas = () => {
               }
             };
             reader.readAsText(file);
-            // Limpiar el input para permitir subir el mismo archivo de nuevo si se desea
             e.target.value = '';
           }}
         />
@@ -1212,38 +1190,30 @@ const MapaMesas = () => {
         )}
         {/* Modal de detalle de mesa */}
         {mesaDetalle && (
-          <div className="mapa-mesas-modal-bg" style={{zIndex: 10000}} onClick={() => setMesaDetalle(null)}>
-            <div className="mapa-mesas-modal" style={{minWidth: 420, minHeight: 320, position: 'relative'}} onClick={e => e.stopPropagation()}>
-              <button style={{position:'absolute',top:10,right:10,fontSize:22,background:'none',border:'none',cursor:'pointer',color:'#888'}} onClick={()=>setMesaDetalle(null)}>&times;</button>
-              <h2 style={{textAlign:'center',marginTop:0,marginBottom:12}}>{mesaDetalle.nombre}</h2>
-              <div style={{display:'flex',justifyContent:'center',alignItems:'center',marginBottom:16}}>
-                <div style={{
-                  width: mesaDetalle.tipo==='imperial'?320:180,
-                  height: mesaDetalle.tipo==='imperial'?320:180,
-                  position:'relative',
-                  margin:'0 auto',
-                  display:'block'
-                }}>
+          <div className="mapa-mesas-modal-bg" onClick={() => setMesaDetalle(null)}>
+            <div className="mapa-mesas-modal mapa-mesas-modal-detalle" onClick={e => e.stopPropagation()}>
+              <button className="mapa-mesas-modal-close" onClick={()=>setMesaDetalle(null)}>&times;</button>
+              <h2>{mesaDetalle.nombre}</h2>
+              <div className="mapa-mesas-modal-mesa">
+                <div className="mapa-mesas-modal-mesa-container">
                   {/* Mesa centrada */}
-                  <div style={{
-                    position:'absolute',
-                    left:'50%',
-                    top:'50%',
-                    transform:'translate(-50%,-50%)',
+                  <div className="mapa-mesas-modal-mesa-div" style={{
                     width: mesaDetalle.tipo==='imperial'?160:180,
                     height: mesaDetalle.tipo==='imperial'?50:180,
                     borderRadius: mesaDetalle.tipo==='imperial'?18:'50%',
                     background: getMesaBackground(mesaDetalle),
-                    border: `4px solid ${mesaDetalle.tipo==='imperial'?'#f59e42':'#6366f1'}`,
-                    display:'flex',alignItems:'center',justifyContent:'center',
+                    border: `4px solid ${mesaDetalle.tipo==='imperial'?'#f59e42':'#6366f1'}`
                   }}>
-                    <span style={{position:'absolute',left:'50%',top:'50%',transform:'translate(-50%,-50%)',fontSize:28,fontWeight:800,color:'#18181b',opacity:0.9}}>{mesaDetalle.nombre}</span>
+                    <span>{mesaDetalle.nombre}</span>
                   </div>
                   {/* Invitados centrados alrededor */}
                   {(() => {
                     const invitados = mesaDetalle.invitados;
-                    const size = mesaDetalle.tipo==='imperial'?320:180;
-                    const radio = mesaDetalle.tipo==='imperial'?110:110;
+                    const size = 320; // Tamaño fijo del contenedor
+                    const radio = 140; // Radio del círculo de invitados
+                    const mesaSize = mesaDetalle.tipo==='imperial'?160:180;
+                    const mesaOffset = mesaSize / 2;
+                    
                     return invitados.map((inv,idx)=>{
                       const ang = (2*Math.PI*idx)/invitados.length-Math.PI/2;
                       const cx = size/2;
@@ -1252,20 +1222,32 @@ const MapaMesas = () => {
                       const by = cy + Math.sin(ang)*radio - 18;
                       const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
                       const colorGrupo = grupoColorMap[grupo] || (mesaDetalle.tipo==='imperial'?'#f59e42':'#6366f1');
-                      return <div key={inv.id} style={{position:'absolute',left:bx,top:by,width:36,height:36,borderRadius:18,background:colorGrupo,color:'#18181b',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:13,border:'2px solid #fff',boxShadow:'0 2px 8px #0004'}}>{inv.nombre[0]}</div>
+                      return (
+                        <div 
+                          key={inv.id} 
+                          className="mapa-mesas-modal-invitado" 
+                          style={{
+                            left: bx,
+                            top: by,
+                            background: colorGrupo
+                          }}
+                        >
+                          {inv.nombre[0]}
+                        </div>
+                      );
                     });
                   })()}
                 </div>
               </div>
-              <div style={{textAlign:'center',marginTop:24}}>
-                <b style={{color:'#18181b',fontSize:16}}>Invitados:</b>
-                <ul style={{listStyle:'none',padding:0,margin:0,marginTop:12,display:'flex',flexDirection:'column',alignItems:'center'}}>
+              <div className="mapa-mesas-modal-invitados">
+                <b>Invitados:</b>
+                <ul>
                   {mesaDetalle.invitados.map(inv=>{
                     const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
                     const colorGrupo = grupoColorMap[grupo] || '#6366f1';
                     return (
-                      <li key={inv.id} style={{marginBottom:7,display:'flex',alignItems:'center',color:'#18181b',fontSize:15}}>
-                        <span style={{display:'inline-block',width:18,height:18,borderRadius:9,background:colorGrupo,marginRight:8,border:'2px solid #fff',boxShadow:'0 1px 4px #0002',fontWeight:700,color:'#18181b',textAlign:'center',lineHeight:'18px',fontSize:13}}>{inv.nombre[0]}</span>
+                      <li key={inv.id}>
+                        <span className="mapa-mesas-modal-invitado-bolita" style={{background: colorGrupo}}>{inv.nombre[0]}</span>
                         {inv.nombre}
                       </li>
                     );
@@ -1277,43 +1259,29 @@ const MapaMesas = () => {
         )}
         {/* Modal de detalle de invitado */}
         {invitadoDetalle && (
-          <div className="mapa-mesas-modal-bg" style={{zIndex: 10000}} onClick={() => setInvitadoDetalle(null)}>
-            <div className="mapa-mesas-modal" style={{minWidth: 320, minHeight: 240, position: 'relative'}} onClick={e => e.stopPropagation()}>
-              <button style={{position:'absolute',top:10,right:10,fontSize:22,background:'none',border:'none',cursor:'pointer',color:'#888'}} onClick={()=>setInvitadoDetalle(null)}>&times;</button>
-              <h2 style={{textAlign:'center',marginTop:0,marginBottom:12}}>{invitadoDetalle.nombre}</h2>
-              <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'16px'}}>
-                <div style={{
-                  width: 120,
-                  height: 120,
-                  borderRadius: '50%',
-                  background: grupoColorMap[invitadoDetalle.grupoOrigen] || '#6366f1',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#fff',
-                  fontSize: 48,
-                  fontWeight: 700,
-                  border: '4px solid #fff',
-                  boxShadow: '0 4px 12px #0004'
-                }}>
-                  {invitadoDetalle.nombre[0]}
-                </div>
-                <div style={{textAlign:'center'}}>
-                  <p style={{margin:0,fontSize:16,color:'#18181b'}}>
-                    <b>Grupo:</b> {invitadoDetalle.grupoOrigen}
-                  </p>
-                  <p style={{margin:'8px 0 0',fontSize:16,color:'#18181b'}}>
-                    <b>Mesa:</b> {
-                      (() => {
-                        // Buscar la mesa actual del invitado
-                        const mesaActual = Object.values(mesasOrganizadas).find(mesa => 
-                          mesa.invitados.some(i => i.id === invitadoDetalle.id)
-                        );
-                        return mesaActual ? mesaActual.nombre : 'Sin asignar';
-                      })()
-                    }
-                  </p>
-                </div>
+          <div className="mapa-mesas-modal-bg" onClick={() => setInvitadoDetalle(null)}>
+            <div className="mapa-mesas-modal mapa-mesas-modal-invitado-detalle" onClick={e => e.stopPropagation()}>
+              <button className="mapa-mesas-modal-close" onClick={()=>setInvitadoDetalle(null)}>&times;</button>
+              <h2>{invitadoDetalle.nombre}</h2>
+              <div className="mapa-mesas-modal-invitado-avatar" style={{
+                background: grupoColorMap[invitadoDetalle.grupoOrigen] || '#6366f1'
+              }}>
+                {invitadoDetalle.nombre[0]}
+              </div>
+              <div className="mapa-mesas-modal-invitado-info">
+                <p>
+                  <b>Grupo:</b> {invitadoDetalle.grupoOrigen}
+                </p>
+                <p>
+                  <b>Mesa:</b> {
+                    (() => {
+                      const mesaActual = Object.values(mesasOrganizadas).find(mesa => 
+                        mesa.invitados.some(i => i.id === invitadoDetalle.id)
+                      );
+                      return mesaActual ? mesaActual.nombre : 'Sin asignar';
+                    })()
+                  }
+                </p>
               </div>
             </div>
           </div>
