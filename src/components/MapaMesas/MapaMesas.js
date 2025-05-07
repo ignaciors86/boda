@@ -38,6 +38,7 @@ const MapaMesas = () => {
   const mesaPositions = useRef({});
   const [isDraggingInvitado, setIsDraggingInvitado] = useState(false);
   const [isDraggingMesa, setIsDraggingMesa] = useState(false);
+  const DISTANCIA_SCALE = 7; // Factor de escala para las distancias en dvh
 
   // Paleta de colores para grupos de origen
   const coloresGrupos = [
@@ -1018,8 +1019,8 @@ const MapaMesas = () => {
           <circle r={diametroRedonda/2} fill="#f3f4f6" stroke="#6366f1" strokeWidth={5} filter="url(#mesaShadow)" />
           <text x={0} y={0} textAnchor="middle" dy=".3em" fontSize={22} fill="#18181b" fontWeight={700} style={{textShadow:'0 2px 8px #fff, 0 1px 0 #0008'}}>R</text>
           <g>
-            <rect x={-45} y={34} width={90} height={22} rx={8} fill="#fff" fillOpacity={0.85} />
-            <text x={0} y={50} textAnchor="middle" fontSize={15} fill="#18181b" fontWeight={700} style={{textShadow:'0 2px 8px #fff, 0 1px 0 #0008', letterSpacing:0.5}}>{mesa.nombre}</text>
+            <rect x={-35} y={34} width={70} height={18} rx={6} fill="#fff" fillOpacity={0.85} />
+            <text x={0} y={46} textAnchor="middle" fontSize="2.2dvh" fill="#18181b" fontWeight={700} style={{textShadow:'0 2px 8px #fff, 0 1px 0 #0008', letterSpacing:0.5}}>{mesa.nombre}</text>
           </g>
           {bolitas}
         </g>
@@ -1031,8 +1032,8 @@ const MapaMesas = () => {
           <rect x={-largoImperial/2} y={-anchoImperial/2} width={largoImperial} height={anchoImperial} rx={16} fill="#f3f4f6" stroke="#f59e42" strokeWidth={5} filter="url(#mesaShadow)" />
           <text x={0} y={0} textAnchor="middle" dy=".3em" fontSize={22} fill="#18181b" fontWeight={700} style={{textShadow:'0 2px 8px #fff, 0 1px 0 #0008'}}>I</text>
           <g>
-            <rect x={-60} y={34} width={120} height={22} rx={8} fill="#fff" fillOpacity={0.85} />
-            <text x={0} y={50} textAnchor="middle" fontSize={15} fill="#18181b" fontWeight={700} style={{textShadow:'0 2px 8px #fff, 0 1px 0 #0008', letterSpacing:0.5}}>{mesa.nombre}</text>
+            <rect x={-45} y={34} width={90} height={18} rx={6} fill="#fff" fillOpacity={0.85} />
+            <text x={0} y={46} textAnchor="middle" fontSize="2.2dvh" fill="#18181b" fontWeight={700} style={{textShadow:'0 2px 8px #fff, 0 1px 0 #0008', letterSpacing:0.5}}>{mesa.nombre}</text>
           </g>
           {bolitas}
         </g>
@@ -1057,7 +1058,7 @@ const MapaMesas = () => {
     }
 
     // Tamaño del contenedor externo (deja margen para bolitas)
-    const padding = 50;
+    const padding = 30;
     const width = mesaWidth + padding * 2;
     const height = mesaHeight + padding * 2;
 
@@ -1085,12 +1086,12 @@ const MapaMesas = () => {
               position: 'absolute',
               left: '50%',
               top: '50%',
-              transform: `translate(calc(-50% + ${bx}px), calc(-50% + ${by}px))`,
+              transform: `translate(calc(-50% + ${bx/DISTANCIA_SCALE}dvh), calc(-50% + ${by/DISTANCIA_SCALE}dvh))`,
               background: colorGrupo,
-              width: '26px',
-              height: '26px',
-              borderRadius: '13px',
-              fontSize: '14px',
+              width: '2.6dvh',
+              height: '2.6dvh',
+              borderRadius: '1.3dvh',
+              fontSize: '1.8dvh',
               cursor: 'grab',
               pointerEvents: 'auto',
               zIndex: 2
@@ -1126,12 +1127,12 @@ const MapaMesas = () => {
               position: 'absolute',
               left: '50%',
               top: '50%',
-              transform: `translate(calc(-50% + ${bx}px), calc(-50% + ${by}px))`,
+              transform: `translate(calc(-50% + ${bx/DISTANCIA_SCALE}dvh), calc(-50% + ${by/DISTANCIA_SCALE}dvh))`,
               background: colorGrupo,
-              width: '26px',
-              height: '26px',
-              borderRadius: '13px',
-              fontSize: '14px',
+              width: '2.6dvh',
+              height: '2.6dvh',
+              borderRadius: '1.3dvh',
+              fontSize: '1.8dvh',
               cursor: 'grab',
               pointerEvents: 'auto',
               zIndex: 2
@@ -1185,8 +1186,8 @@ const MapaMesas = () => {
             }
           }}
         >
-          <span className="mapa-mesa-label">{label}</span>
-          <span className="mapa-mesa-nombre" style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}>{mesa.nombre}</span>
+          <span className="mapa-mesa-label" style={{ fontSize: '3dvh' }}>{label}</span>
+          <span className="mapa-mesa-nombre" style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', fontSize: '2.2dvh' }}>{mesa.nombre}</span>
         </div>
         {bolitas}
       </div>

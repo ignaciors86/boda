@@ -265,11 +265,23 @@
   z-index: 3;
   
   &.mapa-mesa-redonda {
+    width: 8dvh;
+    height: 8dvh;
+    min-width: 8dvh;
+    min-height: 8dvh;
+    max-width: 8dvh;
+    max-height: 8dvh;
     border-radius: 50%;
     border: 4px solid #6366f1;
   }
   
   &.mapa-mesa-imperial {
+    width: 16dvh;
+    height: 6dvh;
+    min-width: 16dvh;
+    min-height: 6dvh;
+    max-width: 16dvh;
+    max-height: 6dvh;
     border-radius: 16px;
     border: 4px solid #f59e42;
   }
@@ -319,9 +331,13 @@
 
 .mapa-invitado-bolita {
   position: absolute;
-  width: 26px;
-  height: 26px;
-  border-radius: 13px;
+  width: 2.5dvh;
+  height: 2.5dvh;
+  min-width: 2.5dvh;
+  min-height: 2.5dvh;
+  max-width: 2.5dvh;
+  max-height: 2.5dvh;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
