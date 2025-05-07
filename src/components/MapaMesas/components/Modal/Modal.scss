@@ -65,34 +65,66 @@
 
 // Estilos específicos para el modal de detalle de mesa
 .mapa-mesas-modal-detalle {
-  max-width: 500px;
+  box-sizing: border-box;
+  max-width: 100vw;
+  width: 100vw;
+  min-width: 0;
+  margin: 0 auto;
+  height: 95vh;
+  padding: 2vw 1vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+
+  .modal-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2vw;
+    width: 100%;
+    max-width: 1400px;
+    min-width: 0;
+    height: 100%;
+    align-items: stretch;
+    box-sizing: border-box;
+  }
 
   .mapa-mesas-modal-mesa {
-    margin-bottom: 1.5rem;
     background: #111827;
-    border-radius: 8px;
-    padding: 1rem;
-  }
-
-  .mapa-mesas-modal-mesa-container {
-    position: relative;
-    width: 320px;
-    height: 320px;
-    margin: 0 auto;
-  }
-
-  .mapa-mesas-modal-mesa-div {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
+    border-radius: 12px;
+    padding: 1.5rem 1rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #f3f4f6;
-    font-weight: 700;
-    font-size: 1.25rem;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    min-width: 0;
+    min-height: 340px;
+    height: 100%;
+    box-sizing: border-box;
+  }
+
+  .mapa-mesas-modal-mesa-container {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: visible;
+  }
+
+  .mapa-mesas-modal-mesa-dibujo {
+    width: 32dvh;
+    height: 32dvh;
+    max-width: 100%;
+    max-height: 100%;
+    aspect-ratio: 1/1;
+    margin: 0 auto;
+    position: relative;
+    display: block;
+    background: none;
   }
 
   .mapa-mesas-modal-invitado {
@@ -108,74 +140,114 @@
     font-size: 1rem;
     border: 2px solid #fff;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    background: #222b3a;
+    z-index: 2;
+    pointer-events: auto;
+  }
+
+  .mapa-mesas-modal-mesa-div {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f3f4f6;
+    font-weight: 700;
+    font-size: 1.25rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   }
 
   .mapa-mesas-modal-invitados {
-    padding: 1rem;
     background: #111827;
-    border-radius: 8px;
+    border-radius: 12px;
+    padding: 1.5rem 1rem;
+    min-width: 0;
+    min-height: 340px;
+    height: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    position: relative;
+    overflow: hidden;
 
     b {
       display: block;
-      margin-bottom: 0.75rem;
-      font-size: 1rem;
-      color: #f3f4f6;
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+      color: #fff;
+      font-weight: 700;
+      letter-spacing: 0.5px;
     }
 
     ul {
       list-style: none;
       padding: 0;
       margin: 0;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.7rem;
+      width: 100%;
+      max-height: 60vh;
+      overflow-y: auto;
+      align-content: flex-start;
     }
 
     li {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      padding: 0.5rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.875rem;
-      color: #f3f4f6;
+      padding: 0.5rem 0.7rem;
+      border-radius: 16px;
+      font-size: 1rem;
+      color: #fff;
       background: #374151;
       cursor: grab;
-      transition: all 0.2s ease;
       user-select: none;
-
-      &:hover {
-        background: #4b5563;
-        transform: translateY(-1px);
-      }
-
-      &.dragging {
-        opacity: 0.5;
-        background: #4b5563;
-      }
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: transform, opacity;
+      position: relative;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+      min-width: 0;
+      max-width: 100%;
+      font-weight: 500;
+      overflow: hidden;
 
       .mapa-mesas-modal-invitado-bolita {
-        width: 24px;
-        height: 24px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 600;
-        font-size: 0.875rem;
+        font-weight: 700;
+        color: #fff;
         flex-shrink: 0;
+        border: 2px solid rgba(255,255,255,0.18);
+        font-size: 1.1rem;
+        background: #222b3a;
       }
-
       .mapa-mesas-modal-invitado-nombre {
+        flex: 1;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        font-weight: 600;
+        font-size: 1.05rem;
+        color: #fff;
+        letter-spacing: 0.2px;
       }
-
       .mapa-mesas-modal-invitado-orden {
-        color: #9ca3af;
-        font-size: 0.75rem;
-        margin-left: 0.25rem;
+        font-size: 0.85rem;
+        color: #cbd5e1;
+        background: rgba(0,0,0,0.18);
+        padding: 0.18rem 0.5rem;
+        border-radius: 8px;
+        flex-shrink: 0;
+        font-weight: 600;
       }
     }
   }
@@ -275,4 +347,22 @@
   &:hover {
     background: #b91c1c;
   }
+}
+
+.drag-clone {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.95;
+  transform-origin: center center;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  border-radius: 20px;
+  background: #4b5563;
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #f3f4f6;
+  transition: transform 0.2s ease, opacity 0.2s ease;
 } 

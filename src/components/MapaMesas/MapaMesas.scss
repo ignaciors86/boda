@@ -457,4 +457,50 @@
       border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
     }
   }
+}
+
+.mapa-mesas-modal-invitados {
+  .drop-marker {
+    height: 2px;
+    background: #6366f1;
+    position: absolute;
+    width: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+
+    &.visible {
+      opacity: 1;
+    }
+
+    &.left {
+      left: 0;
+      transform: none;
+    }
+
+    &.right {
+      left: auto;
+      right: 0;
+      transform: none;
+    }
+  }
+
+  li {
+    position: relative;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    
+    &.dragging {
+      opacity: 0.5;
+      transform: scale(0.95);
+    }
+  }
+
+  &.dragging-active {
+    li {
+      cursor: grabbing;
+    }
+  }
 } 
