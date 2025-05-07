@@ -1,0 +1,136 @@
+.panel-lateral {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 300px;
+  background: #1f2937;
+  color: #f3f4f6;
+  border-right: 1px solid #374151;
+  z-index: 1000;
+  overflow-y: auto;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease-in-out;
+
+  &.open {
+    transform: translateX(0);
+  }
+
+  &-toggle {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    width: 40px;
+    height: 40px;
+    background: #1f2937;
+    border: 1px solid #374151;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 1001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 2px;
+      background: #f3f4f6;
+      transition: all 0.3s ease;
+    }
+
+    &::before {
+      transform: translateY(-5px);
+    }
+
+    &::after {
+      transform: translateY(5px);
+    }
+
+    &.open {
+      left: 260px;
+      background: #374151;
+
+      &::before {
+        transform: rotate(45deg);
+      }
+
+      &::after {
+        transform: rotate(-45deg);
+      }
+    }
+
+    &:hover {
+      background: #374151;
+    }
+  }
+
+  h2 {
+    color: #f3f4f6;
+    border-bottom: 1px solid #374151;
+    padding: 1rem;
+    margin: 0;
+  }
+
+  &-grupo {
+    border-bottom: 1px solid #374151;
+    background-color: #111827;
+
+    summary {
+      color: #f3f4f6;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      user-select: none;
+
+      &:hover {
+        background-color: #1f2937;
+      }
+    }
+
+    &-contenido {
+      background-color: #1f2937;
+    }
+  }
+
+  &-invitado {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid #374151;
+    gap: 0.75rem;
+
+    &:hover {
+      background-color: #374151;
+    }
+  }
+
+  &-bolita {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  &-btn-add {
+    background-color: #374151;
+    color: #f3f4f6;
+    border: 1px solid #4b5563;
+    padding: 0.75rem 1.5rem;
+    margin: 1rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: #4b5563;
+    }
+  }
+} 
