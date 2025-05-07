@@ -1,5 +1,6 @@
 import React from 'react';
 import './PanelLateral.scss';
+import { FaFileExcel } from 'react-icons/fa';
 
 const PanelLateral = ({
   isPanelOpen,
@@ -11,7 +12,9 @@ const PanelLateral = ({
   setShowAddMesa,
   setIsPanelOpen,
   urlstrapi,
-  STRAPI_TOKEN
+  STRAPI_TOKEN,
+  generarInformeExcel,
+  actualizarInvitado
 }) => {
   const handleDragStart = (e, inv) => {
     if (!inv.documentId) {
@@ -43,30 +46,7 @@ const PanelLateral = ({
         return;
       }
 
-      console.log('Actualizando invitado:', {
-        invitadoId: invitado.documentId,
-        mesaId: mesaId
-      });
-
-      const response = await fetch(`${urlstrapi}/api/invitados/${invitado.documentId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${STRAPI_TOKEN}`
-        },
-        body: JSON.stringify({ 
-          data: { 
-            mesa: mesaId
-          } 
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error al actualizar invitado: ${response.status}`);
-      }
-
-      // Recargar la página para actualizar los datos
-      window.location.reload();
+      await actualizarInvitado(invitado.documentId, mesaId);
     } catch (error) {
       console.error('Error al actualizar invitado:', error);
     }
@@ -105,6 +85,9 @@ const PanelLateral = ({
                     className="panel-lateral-invitado"
                     ref={(!tieneMesaStrapi) ? getInvitadoRef(inv.id) : null}
                     draggable={!tieneMesaStrapi}
+                    onDragStart={(e) => handleDragStart(e, inv)}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
                   >
                     <div
                       className="panel-lateral-bolita"
@@ -118,12 +101,21 @@ const PanelLateral = ({
           </details>
         ))}
 
-        <button 
-          className="panel-lateral-btn-add" 
-          onClick={() => setShowAddMesa(true)}
-        >
-          Añadir mesa
-        </button>
+        <div className="panel-lateral-buttons">
+          <button 
+            className="panel-lateral-btn-add" 
+            onClick={() => setShowAddMesa(true)}
+          >
+            Añadir mesa
+          </button>
+          <button 
+            className="panel-lateral-btn-excel" 
+            onClick={generarInformeExcel}
+            title="Generar informe Excel"
+          >
+            <FaFileExcel /> Informe Excel
+          </button>
+        </div>
       </aside>
     </>
   );

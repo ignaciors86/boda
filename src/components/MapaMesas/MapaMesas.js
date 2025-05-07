@@ -4,6 +4,8 @@ import { Draggable } from "gsap/Draggable";
 import './MapaMesas.scss';
 import Modal from './components/Modal/Modal';
 import PanelLateral from './components/PanelLateral/PanelLateral';
+import { FaPlus, FaEdit, FaHashtag, FaUsers, FaCrown, FaUserFriends, FaBorderAll, FaMagnet, FaLock, FaCompress, FaExpand, FaFileExcel } from 'react-icons/fa';
+import ExcelJS from 'exceljs';
 gsap.registerPlugin(Draggable);
 
 const urlstrapi =
@@ -313,9 +315,18 @@ const MapaMesas = () => {
               mesaDocumentId: invitado?.mesa?.documentId || "",
               mesa: invitado?.mesa?.nombre || "",
               grupoOrigenId: invitado?.grupo_origen?.id || 0,
-              grupoOrigen: invitado?.grupo_origen?.nombre || "Sin grupo"
+              grupoOrigen: invitado?.grupo_origen?.nombre || "Sin grupo",
+              menu: invitado?.menu || "",
+              alergias: invitado?.alergias || "",
+              asistira: invitado?.asistira,
+              preboda: invitado?.preboda,
+              postboda: invitado?.postboda,
+              autobus: invitado?.autobus,
+              alojamiento: invitado?.alojamiento,
+              dedicatoria: invitado?.dedicatoria || ""
             }));
             setInvitados(invitadosData);
+            console.log('Invitados tras fetch inicial:', invitadosData);
 
             // Organizar por grupo de origen
             const grupos = {};
@@ -703,7 +714,15 @@ const MapaMesas = () => {
                           mesaDocumentId: invitado?.mesa?.documentId || "",
                           mesa: invitado?.mesa?.nombre || "",
                           grupoOrigenId: invitado?.grupo_origen?.id || 0,
-                          grupoOrigen: invitado?.grupo_origen?.nombre || "Sin grupo"
+                          grupoOrigen: invitado?.grupo_origen?.nombre || "Sin grupo",
+                          menu: invitado?.menu || "",
+                          alergias: invitado?.alergias || "",
+                          asistira: invitado?.asistira,
+                          preboda: invitado?.preboda,
+                          postboda: invitado?.postboda,
+                          autobus: invitado?.autobus,
+                          alojamiento: invitado?.alojamiento,
+                          dedicatoria: invitado?.dedicatoria || ""
                         }));
                         setInvitados(invitadosData);
                         
@@ -948,7 +967,15 @@ const MapaMesas = () => {
                           mesaDocumentId: invitado?.mesa?.documentId || "",
                           mesa: invitado?.mesa?.nombre || "",
                           grupoOrigenId: invitado?.grupo_origen?.id || 0,
-                          grupoOrigen: invitado?.grupo_origen?.nombre || "Sin grupo"
+                          grupoOrigen: invitado?.grupo_origen?.nombre || "Sin grupo",
+                          menu: invitado?.menu || "",
+                          alergias: invitado?.alergias || "",
+                          asistira: invitado?.asistira,
+                          preboda: invitado?.preboda,
+                          postboda: invitado?.postboda,
+                          autobus: invitado?.autobus,
+                          alojamiento: invitado?.alojamiento,
+                          dedicatoria: invitado?.dedicatoria || ""
                         }));
                         setInvitados(invitadosData);
                         
@@ -1798,6 +1825,167 @@ const MapaMesas = () => {
     }, { offset: Number.NEGATIVE_INFINITY }).element;
   };
 
+  const generarInformeExcel = async () => {
+    try {
+      console.log('Iniciando generación de informe Excel...');
+      
+      // Obtener todas las mesas ordenadas por número
+      const mesasOrdenadas = [...mesasPlano].sort((a, b) => {
+        const numA = mesaNumbers[a.id] || 0;
+        const numB = mesaNumbers[b.id] || 0;
+        return numA - numB;
+      });
+
+      console.log('Mesas ordenadas:', mesasOrdenadas);
+
+      // Crear un nuevo libro de Excel
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'Boda App';
+      workbook.lastModifiedBy = 'Boda App';
+      workbook.created = new Date();
+      workbook.modified = new Date();
+
+      // Para cada mesa, crear una hoja
+      for (const mesa of mesasOrdenadas) {
+        const sheet = workbook.addWorksheet(`Mesa ${mesaNumbers[mesa.id] || 'Sin número'}`);
+        
+        // Configurar columnas
+        sheet.columns = [
+          { header: 'Nombre', key: 'nombre', width: 30 },
+          { header: 'Grupo Origen', key: 'grupoOrigen', width: 20 },
+          { header: 'Menú', key: 'menu', width: 30 },
+          { header: 'Alergias', key: 'alergias', width: 30 },
+          { header: 'Asistirá', key: 'asistira', width: 15 },
+          { header: 'Preboda', key: 'preboda', width: 15 },
+          { header: 'Postboda', key: 'postboda', width: 15 },
+          { header: 'Autobús', key: 'autobus', width: 15 },
+          { header: 'Alojamiento', key: 'alojamiento', width: 15 },
+          { header: 'Dedicatoria', key: 'dedicatoria', width: 40 }
+        ];
+
+        // Estilo para el encabezado
+        sheet.getRow(1).font = { bold: true };
+        sheet.getRow(1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        // Filtrar invitados de la mesa actual usando los datos locales
+        let invitadosMesa = invitados.filter(inv => String(inv.mesaId) === String(mesa.id));
+        // Ordenar según mapaMesasData.ordenInvitados si existe
+        const ordenInvitados = mesa.mapaMesasData?.ordenInvitados;
+        if (ordenInvitados) {
+          invitadosMesa = [...invitadosMesa].sort((a, b) => {
+            const ordenA = ordenInvitados[a.id] ?? 0;
+            const ordenB = ordenInvitados[b.id] ?? 0;
+            return ordenA - ordenB;
+          });
+        }
+        console.log(`Invitados para mesa ${mesa.id}:`, invitadosMesa);
+
+        // Helper para valores booleanos
+        const getBooleanValue = (value) => {
+          if (value === null || value === undefined) return 'No especificado';
+          return value ? 'Sí' : 'No';
+        };
+
+        invitadosMesa.forEach(inv => {
+          const row = {
+            nombre: inv.nombre || 'Sin nombre',
+            grupoOrigen: inv.grupoOrigen || 'Sin grupo',
+            menu: inv.menu || 'No especificado',
+            alergias: inv.alergias || 'No especificado',
+            asistira: getBooleanValue(inv.asistira),
+            preboda: getBooleanValue(inv.preboda),
+            postboda: getBooleanValue(inv.postboda),
+            autobus: getBooleanValue(inv.autobus),
+            alojamiento: getBooleanValue(inv.alojamiento),
+            dedicatoria: inv.dedicatoria || 'Sin dedicatoria'
+          };
+          sheet.addRow(row);
+        });
+
+        // Ajustar altura de filas
+        sheet.eachRow((row) => {
+          row.height = 25;
+        });
+      }
+
+      // Generar el archivo
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Informe_Mesas_Boda_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      console.log('Informe Excel generado exitosamente');
+
+    } catch (error) {
+      console.error('Error detallado al generar el informe:', error);
+      alert('Error al generar el informe. Por favor, revisa la consola para más detalles.');
+    }
+  };
+
+  const actualizarInvitado = async (invitadoId, mesaId) => {
+    try {
+      const response = await fetch(`${urlstrapi}/api/invitados/${invitadoId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${STRAPI_TOKEN}`
+        },
+        body: JSON.stringify({ 
+          data: { 
+            mesa: mesaId
+          } 
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error al actualizar invitado: ${response.status}`);
+      }
+
+      // Actualizar el estado local en lugar de recargar la página
+      const data = await response.json();
+      const invitadoActualizado = data.data;
+      
+      setInvitados(prev => prev.map(inv => 
+        inv.documentId === invitadoId 
+          ? { 
+              ...inv, 
+              mesaId: mesaId,
+              mesa: invitadoActualizado.attributes.mesa?.data?.attributes?.nombre || ''
+            }
+          : inv
+      ));
+
+      // Actualizar mesasPlano
+      setMesasPlano(prev => prev.map(mesa => {
+        if (mesa.id === mesaId) {
+          return {
+            ...mesa,
+            invitados: [...mesa.invitados, {
+              id: invitadoActualizado.id,
+              documentId: invitadoActualizado.attributes.documentId,
+              nombre: invitadoActualizado.attributes.nombre
+            }]
+          };
+        }
+        return mesa;
+      }));
+
+    } catch (error) {
+      console.error('Error al actualizar invitado:', error);
+      throw error;
+    }
+  };
+
   if (cargando) return <p>Cargando datos de invitados...</p>;
   if (error) return <p>{error}</p>;
 
@@ -1816,6 +2004,8 @@ const MapaMesas = () => {
         setIsPanelOpen={setIsPanelOpen}
         urlstrapi={urlstrapi}
         STRAPI_TOKEN={STRAPI_TOKEN}
+        generarInformeExcel={generarInformeExcel}
+        actualizarInvitado={actualizarInvitado}
       />
       
       {/* Plano central */}
@@ -2407,7 +2597,15 @@ const MapaMesas = () => {
                             mesaDocumentId: invitado?.mesa?.documentId || "",
                             mesa: invitado?.mesa?.nombre || "",
                             grupoOrigenId: invitado?.grupo_origen?.id || 0,
-                            grupoOrigen: invitado?.grupo_origen?.nombre || "Sin grupo"
+                            grupoOrigen: invitado?.grupo_origen?.nombre || "Sin grupo",
+                            menu: invitado?.menu || "",
+                            alergias: invitado?.alergias || "",
+                            asistira: invitado?.asistira,
+                            preboda: invitado?.preboda,
+                            postboda: invitado?.postboda,
+                            autobus: invitado?.autobus,
+                            alojamiento: invitado?.alojamiento,
+                            dedicatoria: invitado?.dedicatoria || ""
                           }));
                           setInvitados(invitadosData);
                           // Organizar por grupo de origen
