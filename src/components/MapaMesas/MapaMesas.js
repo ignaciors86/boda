@@ -24,6 +24,7 @@ const MapaMesas = () => {
   const [mesaDetalle, setMesaDetalle] = useState(null);
   const [invitadoDetalle, setInvitadoDetalle] = useState(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [invitadosOrdenados, setInvitadosOrdenados] = useState({});
   const diametroRedonda = 'var(--diametro-redonda)';
   const largoImperial = 'var(--largo-imperial)';
   const anchoImperial = 'var(--ancho-imperial)';
@@ -386,6 +387,15 @@ const MapaMesas = () => {
             console.log('Mesas iniciales finales:', mesasIniciales);
             setMesasPlano(mesasIniciales);
             setCargando(false);
+
+            // Dentro del .then donde se procesan los datos de las mesas:
+            const ordenInvitados = {};
+            mesasData.data.forEach(mesa => {
+              if (mesa.mapaMesasData?.ordenInvitados) {
+                ordenInvitados[mesa.id] = mesa.mapaMesasData.ordenInvitados;
+              }
+            });
+            setInvitadosOrdenados(ordenInvitados);
           });
       })
       .catch((err) => {
@@ -1314,6 +1324,151 @@ const MapaMesas = () => {
     );
   }
 
+  // Función para actualizar el orden de los invitados
+  const actualizarOrdenInvitados = async (mesaId, nuevoOrden) => {
+    try {
+      const mesa = mesasPlano.find(m => String(m.id) === String(mesaId));
+      if (!mesa) return;
+
+      // Obtener los datos actuales de la mesa
+      const getResponse = await fetch(`${urlstrapi}/api/mesas/${mesa.documentId}`, {
+        headers: {
+          'Authorization': `Bearer ${STRAPI_TOKEN}`
+        }
+      });
+
+      if (!getResponse.ok) {
+        throw new Error(`Error HTTP al obtener datos: ${getResponse.status}`);
+      }
+
+      const mesaData = await getResponse.json();
+      const mapaMesasDataActual = mesaData.data?.attributes?.mapaMesasData || {};
+
+      // Asegurarnos de mantener la posición actual
+      const posicionActual = mapaMesasDataActual.posicion || { x: mesa.x, y: mesa.y };
+
+      // Actualizar manteniendo TODOS los datos existentes
+      const response = await fetch(`${urlstrapi}/api/mesas/${mesa.documentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${STRAPI_TOKEN}`
+        },
+        body: JSON.stringify({
+          data: {
+            mapaMesasData: {
+              ...mapaMesasDataActual,
+              posicion: posicionActual,
+              ordenInvitados: nuevoOrden
+            }
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error HTTP al actualizar: ${response.status}`);
+      }
+
+      // Actualizar el estado local
+      setInvitadosOrdenados(prev => ({
+        ...prev,
+        [mesaId]: nuevoOrden
+      }));
+
+      // Actualizar mesasPlano manteniendo la posición
+      setMesasPlano(prev => prev.map(m => {
+        if (String(m.id) === String(mesaId)) {
+          const invitadosOrdenados = [...m.invitados].sort((a, b) => {
+            const ordenA = nuevoOrden[a.id] || 0;
+            const ordenB = nuevoOrden[b.id] || 0;
+            return ordenA - ordenB;
+          });
+          return { 
+            ...m, 
+            invitados: invitadosOrdenados,
+            x: posicionActual.x,
+            y: posicionActual.y
+          };
+        }
+        return m;
+      }));
+
+      // Actualizar también la posición en mesaPositions
+      mesaPositions.current[mesaId] = posicionActual;
+
+    } catch (error) {
+      console.error('Error al actualizar orden de invitados:', error);
+    }
+  };
+
+  // Función para quitar un invitado de una mesa
+  const quitarInvitadoMesa = async (invitadoId) => {
+    try {
+      const invitado = invitados.find(inv => inv.id === invitadoId);
+      if (!invitado) return;
+
+      // Actualizar el invitado en Strapi
+      const response = await fetch(`${urlstrapi}/api/invitados/${invitado.documentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${STRAPI_TOKEN}`
+        },
+        body: JSON.stringify({
+          data: {
+            mesa: null
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error HTTP al actualizar invitado: ${response.status}`);
+      }
+
+      // Actualizar el estado local
+      setInvitados(prev => prev.map(inv => 
+        inv.id === invitadoId ? { ...inv, mesa: null, mesaId: null } : inv
+      ));
+
+      // Actualizar mesasPlano
+      setMesasPlano(prev => prev.map(mesa => ({
+        ...mesa,
+        invitados: mesa.invitados.filter(inv => inv.id !== invitadoId)
+      })));
+
+      // Actualizar el orden de invitados
+      const mesaId = mesaDetalle?.id;
+      if (mesaId) {
+        const ordenActual = invitadosOrdenados[mesaId] || {};
+        const { [invitadoId]: removed, ...newOrder } = ordenActual;
+        setInvitadosOrdenados(prev => ({
+          ...prev,
+          [mesaId]: newOrder
+        }));
+        actualizarOrdenInvitados(mesaId, newOrder);
+      }
+
+    } catch (error) {
+      console.error('Error al quitar invitado de la mesa:', error);
+    }
+  };
+
+  // Función helper para el drag & drop
+  const getDragAfterElement = (container, y) => {
+    const draggableElements = [...container.querySelectorAll('li:not(.dragging)')];
+    
+    return draggableElements.reduce((closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+      
+      if (offset < 0 && offset > closest.offset) {
+        return { offset: offset, element: child };
+      } else {
+        return closest;
+      }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+  };
+
   if (cargando) return <p>Cargando datos de invitados...</p>;
   if (error) return <p>{error}</p>;
 
@@ -1385,73 +1540,132 @@ const MapaMesas = () => {
           </Modal>
         )}
         {/* Modal de detalle de mesa */}
-        <Modal
-          isOpen={!!mesaDetalle}
-          onClose={() => setMesaDetalle(null)}
-          title={mesaDetalle?.nombre}
-          className="mapa-mesas-modal-detalle"
-        >
-          <div className="mapa-mesas-modal-mesa">
-            <div className="mapa-mesas-modal-mesa-container">
-              {/* Mesa centrada */}
-              <div className="mapa-mesas-modal-mesa-div" style={{
-                width: mesaDetalle?.tipo==='imperial'?160:180,
-                height: mesaDetalle?.tipo==='imperial'?anchoImperial:180,
-                borderRadius: mesaDetalle?.tipo==='imperial'?18:'50%',
-                background: getMesaBackground(mesaDetalle),
-                border: `4px solid ${mesaDetalle?.tipo==='imperial'?'#f59e42':'#6366f1'}`
-              }}>
-                <span>{mesaDetalle?.nombre}</span>
+        {mesaDetalle && (
+          <Modal
+            isOpen={!!mesaDetalle}
+            onClose={() => setMesaDetalle(null)}
+            title={mesaDetalle?.nombre}
+            className="mapa-mesas-modal-detalle"
+          >
+            <div className="mapa-mesas-modal-mesa">
+              <div className="mapa-mesas-modal-mesa-container">
+                {/* Mesa centrada */}
+                <div className="mapa-mesas-modal-mesa-div" style={{
+                  width: mesaDetalle?.tipo==='imperial'?160:180,
+                  height: mesaDetalle?.tipo==='imperial'?anchoImperial:180,
+                  borderRadius: mesaDetalle?.tipo==='imperial'?18:'50%',
+                  background: getMesaBackground(mesaDetalle),
+                  border: `4px solid ${mesaDetalle?.tipo==='imperial'?'#f59e42':'#6366f1'}`
+                }}>
+                  <span>{mesaDetalle?.nombre}</span>
+                </div>
+                {/* Invitados centrados alrededor */}
+                {(() => {
+                  const invitados = mesaDetalle?.invitados || [];
+                  const ordenActual = invitadosOrdenados[mesaDetalle?.id] || {};
+                  const invitadosOrdenadosLista = [...invitados].sort((a, b) => {
+                    const ordenA = ordenActual[a.id] || 0;
+                    const ordenB = ordenActual[b.id] || 0;
+                    return ordenA - ordenB;
+                  });
+                  
+                  const size = 320;
+                  const radio = 140;
+                  const mesaSize = mesaDetalle?.tipo==='imperial'?160:180;
+                  const mesaOffset = mesaSize / 2;
+                  
+                  return invitadosOrdenadosLista.map((inv,idx)=>{
+                    const ang = (2*Math.PI*idx)/invitados.length-Math.PI/2;
+                    const cx = size/2;
+                    const cy = size/2;
+                    const bx = cx + Math.cos(ang)*radio - 18;
+                    const by = cy + Math.sin(ang)*radio - 18;
+                    const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
+                    const colorGrupo = grupoColorMap[grupo] || (mesaDetalle?.tipo==='imperial'?'#f59e42':'#6366f1');
+                    return (
+                      <div 
+                        key={inv.id} 
+                        className="mapa-mesas-modal-invitado" 
+                        style={{
+                          left: bx,
+                          top: by,
+                          background: colorGrupo
+                        }}
+                      >
+                        {inv.nombre[0]}
+                      </div>
+                    );
+                  });
+                })()}
               </div>
-              {/* Invitados centrados alrededor */}
-              {(() => {
-                const invitados = mesaDetalle?.invitados;
-                const size = 320;
-                const radio = 140;
-                const mesaSize = mesaDetalle?.tipo==='imperial'?160:180;
-                const mesaOffset = mesaSize / 2;
-                
-                return invitados?.map((inv,idx)=>{
-                  const ang = (2*Math.PI*idx)/invitados.length-Math.PI/2;
-                  const cx = size/2;
-                  const cy = size/2;
-                  const bx = cx + Math.cos(ang)*radio - 18;
-                  const by = cy + Math.sin(ang)*radio - 18;
-                  const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
-                  const colorGrupo = grupoColorMap[grupo] || (mesaDetalle?.tipo==='imperial'?'#f59e42':'#6366f1');
-                  return (
-                    <div 
-                      key={inv.id} 
-                      className="mapa-mesas-modal-invitado" 
-                      style={{
-                        left: bx,
-                        top: by,
-                        background: colorGrupo
-                      }}
-                    >
-                      {inv.nombre[0]}
-                    </div>
-                  );
-                });
-              })()}
             </div>
-          </div>
-          <div className="mapa-mesas-modal-invitados">
-            <b>Invitados:</b>
-            <ul>
-              {mesaDetalle?.invitados.map(inv=>{
-                const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
-                const colorGrupo = grupoColorMap[grupo] || '#6366f1';
-                return (
-                  <li key={inv.id}>
-                    <span className="mapa-mesas-modal-invitado-bolita" style={{background: colorGrupo}}>{inv.nombre[0]}</span>
-                    {inv.nombre}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        </Modal>
+            <div className="mapa-mesas-modal-invitados">
+              <b>Invitados:</b>
+              <ul>
+                {(() => {
+                  const invitados = mesaDetalle?.invitados || [];
+                  const ordenActual = invitadosOrdenados[mesaDetalle?.id] || {};
+                  const invitadosOrdenadosLista = [...invitados].sort((a, b) => {
+                    const ordenA = ordenActual[a.id] || 0;
+                    const ordenB = ordenActual[b.id] || 0;
+                    return ordenA - ordenB;
+                  });
+
+                  return invitadosOrdenadosLista.map((inv, idx) => {
+                    const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
+                    const colorGrupo = grupoColorMap[grupo] || '#6366f1';
+                    return (
+                      <li 
+                        key={inv.id}
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData('text/plain', inv.id);
+                          e.target.classList.add('dragging');
+                        }}
+                        onDragEnd={(e) => {
+                          e.target.classList.remove('dragging');
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          const draggingItem = document.querySelector('.dragging');
+                          if (!draggingItem || draggingItem === e.target) return;
+                          
+                          const container = e.target.closest('ul');
+                          if (!container) return;
+
+                          const afterElement = getDragAfterElement(container, e.clientY);
+                          if (afterElement) {
+                            container.insertBefore(draggingItem, afterElement);
+                          } else {
+                            container.appendChild(draggingItem);
+                          }
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const draggedId = e.dataTransfer.getData('text/plain');
+                          const newOrder = {};
+                          const items = [...e.target.closest('ul').querySelectorAll('li')];
+                          items.forEach((item, index) => {
+                            const id = item.getAttribute('data-id');
+                            if (id) newOrder[id] = index;
+                          });
+                          actualizarOrdenInvitados(mesaDetalle.id, newOrder);
+                        }}
+                        data-id={inv.id}
+                      >
+                        <span className="mapa-mesas-modal-invitado-bolita" style={{background: colorGrupo}}>
+                          {inv.nombre[0]}
+                        </span>
+                        <span className="mapa-mesas-modal-invitado-nombre">{inv.nombre}</span>
+                        <span className="mapa-mesas-modal-invitado-orden">#{idx + 1}</span>
+                      </li>
+                    );
+                  });
+                })()}
+              </ul>
+            </div>
+          </Modal>
+        )}
         {/* Modal de detalle de invitado */}
         <Modal
           isOpen={!!invitadoDetalle}
