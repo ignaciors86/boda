@@ -29,7 +29,6 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.25rem 1.5rem;
     border-bottom: 1px solid #374151;
     flex-shrink: 0;
 
@@ -57,7 +56,6 @@
   }
 
   &-content {
-    padding: 1.5rem;
     overflow-y: auto;
     flex: 1;
   }
@@ -255,41 +253,80 @@
 
 // Estilos específicos para el modal de detalle de invitado
 .mapa-mesas-modal-invitado-detalle {
-  max-width: 400px;
+  max-width: 500px;
+  width: 90%;
+  padding: 2rem;
+
+  .mapa-mesas-modal-invitado-detalle-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    background: #111827;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  }
 
   .mapa-mesas-modal-invitado-avatar {
-    width: 120px;
-    height: 120px;
-    border-radius: 60px;
-    margin: 0 auto 1.5rem;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    margin: 0 auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.5rem;
+    font-size: 3.5rem;
     font-weight: 700;
     color: #fff;
-    border: 2px solid #374151;
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, #4f8a8b 0%, #6898e6 100%);
+    transition: transform 0.3s ease;
+
+    &:hover {
+      transform: scale(1.05);
+    }
   }
 
   .mapa-mesas-modal-invitado-info {
-    text-align: center;
-    font-size: 0.875rem;
+    width: 100%;
+    text-align: left;
+    font-size: 1rem;
     color: #f3f4f6;
-    background: #111827;
-    border-radius: 8px;
-    padding: 1rem;
+    background: #1f2937;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 
-    p {
-      margin: 0.75rem 0;
+    .mapa-mesas-modal-invitado-info-row {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-    }
+      padding: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      transition: background-color 0.2s ease;
 
-    b {
-      color: #f3f4f6;
-      font-weight: 600;
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+      }
+
+      b {
+        color: #9ca3af;
+        font-weight: 600;
+        min-width: 120px;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      span {
+        color: #f3f4f6;
+        font-weight: 500;
+      }
     }
   }
 }
@@ -365,4 +402,29 @@
   font-size: 0.875rem;
   color: #f3f4f6;
   transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.mapa-mesas-modal button,
+.mapa-mesas-modal-detalle button,
+.mapa-mesas-modal-quitar-mesa {
+  display: block;
+  width: 100%;
+  padding: 1.2rem 0;
+  margin: 1.2rem 0 0 0;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, #4f8a8b 0%, #6898e6 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px #0002;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+.mapa-mesas-modal button:hover,
+.mapa-mesas-modal-detalle button:hover,
+.mapa-mesas-modal-quitar-mesa:hover {
+  background: linear-gradient(90deg, #6898e6 0%, #4f8a8b 100%);
+  color: #fff;
+  box-shadow: 0 4px 16px #0003;
 } 

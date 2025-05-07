@@ -329,6 +329,8 @@ const MapaMesas = () => {
             }));
             setInvitados(invitadosData);
             console.log('Invitados tras fetch inicial:', invitadosData);
+            console.log('===== DATOS COMPLETOS DE INVITADOS TRAS FETCH =====');
+            console.log(JSON.stringify(invitadosData, null, 2));
 
             // Organizar por grupo de origen
             const grupos = {};
@@ -339,15 +341,7 @@ const MapaMesas = () => {
                   invitados: []
                 };
               }
-              grupos[inv.grupoOrigenId].invitados.push({
-                id: inv.id,
-                documentId: inv.documentId,
-                nombre: inv.nombre,
-                imagen: inv.imagen,
-                mesa: inv.mesa,
-                mesaId: inv.mesaId,
-                mesaDocumentId: inv.mesaDocumentId
-              });
+              grupos[inv.grupoOrigenId].invitados.push(inv); // Guarda el objeto invitado completo
             });
             setPorGrupoOrigen(grupos);
 
@@ -362,13 +356,7 @@ const MapaMesas = () => {
                   invitados: []
                 };
               }
-              mesas[inv.mesaId].invitados.push({
-                id: inv.id,
-                documentId: inv.documentId,
-                nombre: inv.nombre,
-                imagen: inv.imagen,
-                grupoOrigen: inv.grupoOrigen
-              });
+              mesas[inv.mesaId].invitados.push(inv); // Guarda el objeto invitado completo
             });
             setMesasOrganizadas(mesas);
 
@@ -737,15 +725,7 @@ const MapaMesas = () => {
                               invitados: []
                             };
                           }
-                          grupos[inv.grupoOrigenId].invitados.push({
-                            id: inv.id,
-                            documentId: inv.documentId,
-                            nombre: inv.nombre,
-                            imagen: inv.imagen,
-                            mesa: inv.mesa,
-                            mesaId: inv.mesaId,
-                            mesaDocumentId: inv.mesaDocumentId
-                          });
+                          grupos[inv.grupoOrigenId].invitados.push(inv); // Guarda el objeto invitado completo
                         });
                         setPorGrupoOrigen(grupos);
 
@@ -760,13 +740,7 @@ const MapaMesas = () => {
                               invitados: []
                             };
                           }
-                          mesas[inv.mesaId].invitados.push({
-                            id: inv.id,
-                            documentId: inv.documentId,
-                            nombre: inv.nombre,
-                            imagen: inv.imagen,
-                            grupoOrigen: inv.grupoOrigen
-                          });
+                          mesas[inv.mesaId].invitados.push(inv); // Guarda el objeto invitado completo
                         });
                         setMesasOrganizadas(mesas);
 
@@ -990,15 +964,7 @@ const MapaMesas = () => {
                               invitados: []
                             };
                           }
-                          grupos[inv.grupoOrigenId].invitados.push({
-                            id: inv.id,
-                            documentId: inv.documentId,
-                            nombre: inv.nombre,
-                            imagen: inv.imagen,
-                            mesa: inv.mesa,
-                            mesaId: inv.mesaId,
-                            mesaDocumentId: inv.mesaDocumentId
-                          });
+                          grupos[inv.grupoOrigenId].invitados.push(inv); // Guarda el objeto invitado completo
                         });
                         setPorGrupoOrigen(grupos);
 
@@ -2092,6 +2058,23 @@ const MapaMesas = () => {
     }
   };
 
+  // Helper para mostrar valores de texto distinguiendo vacío y no existente
+  function mostrarCampoTexto(valor, vacio = '(vacío)', noEspecificado = 'No especificado') {
+    if (valor === undefined || valor === null) return noEspecificado;
+    if (typeof valor === 'string' && valor.trim() === '') return vacio;
+    return valor;
+  }
+
+  // Helper para obtener el invitado completo desde mesasOrganizadas
+  function getInvitadoCompleto(idInvitado) {
+    for (const mesa of Object.values(mesasOrganizadas)) {
+      const invitado = mesa.invitados.find(i => i.id === idInvitado);
+      if (invitado) return invitado;
+    }
+    // Si no está en ninguna mesa, buscar en el array plano
+    return invitados.find(i => i.id === idInvitado);
+  }
+
   if (cargando) return <p>Cargando datos de invitados...</p>;
   if (error) return <p>{error}</p>;
 
@@ -2642,139 +2625,90 @@ const MapaMesas = () => {
           title={invitadoDetalle?.nombre}
           className="mapa-mesas-modal-invitado-detalle"
         >
-          <div className="mapa-mesas-modal-invitado-avatar" style={{
-            background: grupoColorMap[invitadoDetalle?.grupoOrigen] || '#6366f1'
-          }}>
-            {invitadoDetalle?.nombre[0]}
-          </div>
-          <div className="mapa-mesas-modal-invitado-info" style={{ position: 'relative' }}>
-            <p>
-              <b>Grupo:</b> {invitadoDetalle?.grupoOrigen}
-            </p>
-            <p>
-              <b>Mesa:</b> {
-                (() => {
-                  const mesaActual = Object.values(mesasOrganizadas).find(mesa => 
-                    mesa.invitados.some(i => i.id === invitadoDetalle?.id)
-                  );
-                  return mesaActual ? mesaActual.nombre : 'Sin asignar';
-                })()
-              }
-            </p>
-            {(() => {
-              const mesaActual = Object.values(mesasOrganizadas).find(mesa => 
-                mesa.invitados.some(i => i.id === invitadoDetalle?.id)
-              );
-              if (mesaActual) {
-                return (
-                  <button 
-                    className="mapa-mesas-modal-quitar-mesa"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (window.confirm('¿Estás seguro de quitar este invitado de la mesa?')) {
-                        const invitadoIdStrapi = invitadoDetalle?.documentId;
-                        fetch(`${urlstrapi}/api/invitados/${invitadoIdStrapi}`, {
-                          method: 'PUT',
-                          headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${STRAPI_TOKEN}`
-                          },
-                          body: JSON.stringify({ 
-                            data: { 
-                              mesa: null
-                            } 
-                          })
-                        })
-                        .then(res => res.json())
-                        .then(() => {
-                          return fetch(
-                            `${urlstrapi}/api/invitados?populate[personaje][populate]=imagen&populate[mesa][populate]=*&populate[grupo_origen][populate]=*`
-                          );
-                        })
-                        .then((response) => response.json())
-                        .then((data) => {
-                          const invitadosData = data?.data.map((invitado) => ({
-                            id: invitado.id,
-                            documentId: invitado.documentId,
-                            nombre: invitado?.nombre,
-                            imagen: invitado?.personaje
-                              ? `https://boda-strapi-production.up.railway.app${invitado?.personaje?.imagen?.url}`
-                              : "",
-                            mesaId: invitado?.mesa?.id || 0,
-                            mesaDocumentId: invitado?.mesa?.documentId || "",
-                            mesa: invitado?.mesa?.nombre || "",
-                            grupoOrigenId: invitado?.grupo_origen?.id || 0,
-                            grupoOrigen: invitado?.grupo_origen?.nombre || "Sin grupo",
-                            menu: invitado?.menu || "",
-                            alergias: invitado?.alergias || "",
-                            asistira: invitado?.asistira,
-                            preboda: invitado?.preboda,
-                            postboda: invitado?.postboda,
-                            autobus: invitado?.autobus,
-                            alojamiento: invitado?.alojamiento,
-                            dedicatoria: invitado?.dedicatoria || ""
-                          }));
-                          setInvitados(invitadosData);
-                          // Organizar por grupo de origen
-                          const grupos = {};
-                          invitadosData.forEach((inv) => {
-                            if (!grupos[inv.grupoOrigenId]) {
-                              grupos[inv.grupoOrigenId] = {
-                                nombre: inv.grupoOrigen,
-                                invitados: []
-                              };
-                            }
-                            grupos[inv.grupoOrigenId].invitados.push({
-                              id: inv.id,
-                              documentId: inv.documentId,
-                              nombre: inv.nombre,
-                              imagen: inv.imagen,
-                              mesa: inv.mesa,
-                              mesaId: inv.mesaId,
-                              mesaDocumentId: inv.mesaDocumentId
-                            });
-                          });
-                          setPorGrupoOrigen(grupos);
-                          // Organizar por mesa
-                          const mesas = {};
-                          invitadosData.forEach((inv) => {
-                            if (!mesas[inv.mesaId]) {
-                              mesas[inv.mesaId] = {
-                                id: inv.mesaId,
-                                documentId: inv.mesaDocumentId,
-                                nombre: inv.mesa,
-                                invitados: []
-                              };
-                            }
-                            mesas[inv.mesaId].invitados.push({
-                              id: inv.id,
-                              documentId: inv.documentId,
-                              nombre: inv.nombre,
-                              imagen: inv.imagen,
-                              grupoOrigen: inv.grupoOrigen
-                            });
-                          });
-                          setMesasOrganizadas(mesas);
-                          // Actualizar mesasPlano con los nuevos invitados
-                          setMesasPlano(prev => prev.map(m => {
-                            const mesaActualizada = mesas[m.id];
-                            if (mesaActualizada) {
-                              return { ...m, invitados: mesaActualizada.invitados };
-                            }
-                            return { ...m, invitados: [] };
-                          }));
-                          setInvitadoDetalle(null);
-                        });
-                      }
-                    }}
-                  >
-                    Quitar de la mesa
-                  </button>
-                );
-              }
-              return null;
-            })()}
-          </div>
+          {(() => {
+            const invitadoCompleto = invitadoDetalle ? getInvitadoCompleto(invitadoDetalle.id) : null;
+            if (!invitadoCompleto) return <div style={{padding:'2rem',color:'#fff'}}>No se han encontrado datos completos de este invitado.</div>;
+            return (
+              <div className="mapa-mesas-modal-invitado-detalle-content">
+                <div className="mapa-mesas-modal-invitado-avatar" style={{ background: grupoColorMap[invitadoCompleto?.grupoOrigen] || '#6366f1' }}>
+                  {invitadoCompleto?.nombre?.[0]}
+                </div>
+                <div className="mapa-mesas-modal-invitado-info">
+                  <div className="mapa-mesas-modal-invitado-info-row">
+                    <b>Nombre</b>
+                    <span>{mostrarCampoTexto(invitadoCompleto?.nombre)}</span>
+                  </div>
+                  <div className="mapa-mesas-modal-invitado-info-row">
+                    <b>Grupo</b>
+                    <span>{mostrarCampoTexto(invitadoCompleto?.grupoOrigen, '(vacío)', 'Sin grupo')}</span>
+                  </div>
+                  <div className="mapa-mesas-modal-invitado-info-row">
+                    <b>Mesa</b>
+                    <span>{(() => {
+                      const mesaActual = Object.values(mesasOrganizadas).find(mesa => mesa.invitados.some(i => i.id === invitadoCompleto?.id));
+                      return mesaActual ? mostrarCampoTexto(mesaActual.nombre) : 'Sin asignar';
+                    })()}</span>
+                  </div>
+                  <div className="mapa-mesas-modal-invitado-info-row">
+                    <b>Menú</b>
+                    <span>{mostrarCampoTexto(invitadoCompleto?.menu)}</span>
+                  </div>
+                  <div className="mapa-mesas-modal-invitado-info-row">
+                    <b>Alergias</b>
+                    <span>{mostrarCampoTexto(invitadoCompleto?.alergias)}</span>
+                  </div>
+                  <div className="mapa-mesas-modal-invitado-info-row">
+                    <b>Asistirá</b>
+                    <span>{invitadoCompleto?.asistira === true ? 'Sí' : invitadoCompleto?.asistira === false ? 'No' : 'No especificado'}</span>
+                  </div>
+                  <div className="mapa-mesas-modal-invitado-info-row">
+                    <b>Preboda</b>
+                    <span>{invitadoCompleto?.preboda === true ? 'Sí' : invitadoCompleto?.preboda === false ? 'No' : 'No especificado'}</span>
+                  </div>
+                  <div className="mapa-mesas-modal-invitado-info-row">
+                    <b>Postboda</b>
+                    <span>{invitadoCompleto?.postboda === true ? 'Sí' : invitadoCompleto?.postboda === false ? 'No' : 'No especificado'}</span>
+                  </div>
+                  <div className="mapa-mesas-modal-invitado-info-row">
+                    <b>Autobús</b>
+                    <span>{invitadoCompleto?.autobus === true ? 'Sí' : invitadoCompleto?.autobus === false ? 'No' : 'No especificado'}</span>
+                  </div>
+                  <div className="mapa-mesas-modal-invitado-info-row">
+                    <b>Alojamiento</b>
+                    <span>{invitadoCompleto?.alojamiento === true ? 'Sí' : invitadoCompleto?.alojamiento === false ? 'No' : 'No especificado'}</span>
+                  </div>
+                  <div className="mapa-mesas-modal-invitado-info-row">
+                    <b>Dedicatoria</b>
+                    <span>{mostrarCampoTexto(invitadoCompleto?.dedicatoria, '(vacío)', 'Sin dedicatoria')}</span>
+                  </div>
+                  <div className="mapa-mesas-modal-invitado-info-row">
+                    <b>Imagen</b>
+                    <span>{invitadoCompleto?.imagen ? 'Sí' : 'No'}</span>
+                  </div>
+                  <div className="mapa-mesas-modal-invitado-info-row">
+                    <b>ID</b>
+                    <span>{invitadoCompleto?.id}</span>
+                  </div>
+                  <div className="mapa-mesas-modal-invitado-info-row">
+                    <b>Document ID</b>
+                    <span>{invitadoCompleto?.documentId}</span>
+                  </div>
+                  <div className="mapa-mesas-modal-invitado-info-row">
+                    <b>Mesa ID</b>
+                    <span>{invitadoCompleto?.mesaId || 'Sin asignar'}</span>
+                  </div>
+                  <div className="mapa-mesas-modal-invitado-info-row">
+                    <b>Mesa Document ID</b>
+                    <span>{invitadoCompleto?.mesaDocumentId || 'Sin asignar'}</span>
+                  </div>
+                  <div className="mapa-mesas-modal-invitado-info-row">
+                    <b>Grupo ID</b>
+                    <span>{invitadoCompleto?.grupoOrigenId || 'Sin asignar'}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </Modal>
       </main>
     </div>
