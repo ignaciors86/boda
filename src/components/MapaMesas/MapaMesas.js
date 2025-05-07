@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { gsap } from "gsap";
 import { Draggable } from "gsap/Draggable";
 import './MapaMesas.scss';
+import Modal from './components/Modal';
 gsap.registerPlugin(Draggable);
 
 const urlstrapi =
@@ -66,7 +67,7 @@ const MapaMesas = () => {
 
   // Helper para calcular fondo de mesa según grupos de origen
   function getMesaBackground(mesa) {
-    if (!mesa.invitados || mesa.invitados.length === 0) return '#f3f4f6';
+    if (!mesa || !mesa.invitados || mesa.invitados.length === 0) return '#f3f4f6';
     const grupos = {};
     mesa.invitados.forEach(inv => {
       const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
@@ -1094,7 +1095,7 @@ const MapaMesas = () => {
           onClick={() => setMesaDetalle(mesa)}
         >
           <span className="mapa-mesa-label">{label}</span>
-          <span className="mapa-mesa-nombre">{mesa.nombre}</span>
+          <span className="mapa-mesa-nombre" style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}>{mesa.nombre}</span>
         </div>
         <div className="mapa-mesa-bolitas-area" style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
           {bolitas}
@@ -1243,250 +1244,222 @@ const MapaMesas = () => {
           </div>
         )}
         {/* Modal de detalle de mesa */}
-        {mesaDetalle && (
-          <div className="mapa-mesas-modal-bg" onClick={() => setMesaDetalle(null)}>
-            <div className="mapa-mesas-modal mapa-mesas-modal-detalle" onClick={e => e.stopPropagation()}>
-              <button className="mapa-mesas-modal-close" onClick={()=>setMesaDetalle(null)}>&times;</button>
-              <h2>{mesaDetalle.nombre}</h2>
-              <div className="mapa-mesas-modal-mesa">
-                <div className="mapa-mesas-modal-mesa-container">
-                  {/* Mesa centrada */}
-                  <div className="mapa-mesas-modal-mesa-div" style={{
-                    width: mesaDetalle.tipo==='imperial'?160:180,
-                    height: mesaDetalle.tipo==='imperial'?anchoImperial:180,
-                    borderRadius: mesaDetalle.tipo==='imperial'?18:'50%',
-                    background: getMesaBackground(mesaDetalle),
-                    border: `4px solid ${mesaDetalle.tipo==='imperial'?'#f59e42':'#6366f1'}`
-                  }}>
-                    <span>{mesaDetalle.nombre}</span>
-                  </div>
-                  {/* Invitados centrados alrededor */}
-                  {(() => {
-                    const invitados = mesaDetalle.invitados;
-                    const size = 320; // Tamaño fijo del contenedor
-                    const radio = 140; // Radio del círculo de invitados
-                    const mesaSize = mesaDetalle.tipo==='imperial'?160:180;
-                    const mesaOffset = mesaSize / 2;
-                    
-                    return invitados.map((inv,idx)=>{
-                      const ang = (2*Math.PI*idx)/invitados.length-Math.PI/2;
-                      const cx = size/2;
-                      const cy = size/2;
-                      const bx = cx + Math.cos(ang)*radio - 18;
-                      const by = cy + Math.sin(ang)*radio - 18;
-                      const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
-                      const colorGrupo = grupoColorMap[grupo] || (mesaDetalle.tipo==='imperial'?'#f59e42':'#6366f1');
-                      return (
-                        <div 
-                          key={inv.id} 
-                          className="mapa-mesas-modal-invitado" 
-                          style={{
-                            left: bx,
-                            top: by,
-                            background: colorGrupo
-                          }}
-                        >
-                          {inv.nombre[0]}
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
-              </div>
-              <div className="mapa-mesas-modal-invitados">
-                <b>Invitados:</b>
-                <ul>
-                  {mesaDetalle.invitados.map(inv=>{
-                    const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
-                    const colorGrupo = grupoColorMap[grupo] || '#6366f1';
-                    return (
-                      <li key={inv.id}>
-                        <span className="mapa-mesas-modal-invitado-bolita" style={{background: colorGrupo}}>{inv.nombre[0]}</span>
-                        {inv.nombre}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            </div>
-          </div>
-        )}
-        {/* Modal de detalle de invitado */}
-        {invitadoDetalle && (
-          <div className="mapa-mesas-modal-bg" onClick={() => setInvitadoDetalle(null)}>
-            <div className="mapa-mesas-modal mapa-mesas-modal-invitado-detalle" onClick={e => e.stopPropagation()}>
-              <button 
-                className="mapa-mesas-modal-close" 
-                onClick={()=>setInvitadoDetalle(null)}
-                style={{
-                  position: 'absolute',
-                  top: '15px',
-                  right: '15px',
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '16px',
-                  background: '#f3f4f6',
-                  border: 'none',
-                  color: '#18181b',
-                  fontSize: '20px',
-                  fontWeight: 'bold',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = '#e5e7eb'}
-                onMouseOut={(e) => e.currentTarget.style.background = '#f3f4f6'}
-              >
-                ×
-              </button>
-              <h2>{invitadoDetalle.nombre}</h2>
-              <div className="mapa-mesas-modal-invitado-avatar" style={{
-                background: grupoColorMap[invitadoDetalle.grupoOrigen] || '#6366f1'
+        <Modal
+          isOpen={!!mesaDetalle}
+          onClose={() => setMesaDetalle(null)}
+          title={mesaDetalle?.nombre}
+          className="mapa-mesas-modal-detalle"
+        >
+          <div className="mapa-mesas-modal-mesa">
+            <div className="mapa-mesas-modal-mesa-container">
+              {/* Mesa centrada */}
+              <div className="mapa-mesas-modal-mesa-div" style={{
+                width: mesaDetalle?.tipo==='imperial'?160:180,
+                height: mesaDetalle?.tipo==='imperial'?anchoImperial:180,
+                borderRadius: mesaDetalle?.tipo==='imperial'?18:'50%',
+                background: getMesaBackground(mesaDetalle),
+                border: `4px solid ${mesaDetalle?.tipo==='imperial'?'#f59e42':'#6366f1'}`
               }}>
-                {invitadoDetalle.nombre[0]}
+                <span>{mesaDetalle?.nombre}</span>
               </div>
-              <div className="mapa-mesas-modal-invitado-info" style={{ position: 'relative' }}>
-                <p>
-                  <b>Grupo:</b> {invitadoDetalle.grupoOrigen}
-                </p>
-                <p>
-                  <b>Mesa:</b> {
-                    (() => {
-                      const mesaActual = Object.values(mesasOrganizadas).find(mesa => 
-                        mesa.invitados.some(i => i.id === invitadoDetalle.id)
-                      );
-                      return mesaActual ? mesaActual.nombre : 'Sin asignar';
-                    })()
-                  }
-                </p>
-                {(() => {
-                  const mesaActual = Object.values(mesasOrganizadas).find(mesa => 
-                    mesa.invitados.some(i => i.id === invitadoDetalle.id)
+              {/* Invitados centrados alrededor */}
+              {(() => {
+                const invitados = mesaDetalle?.invitados;
+                const size = 320; // Tamaño fijo del contenedor
+                const radio = 140; // Radio del círculo de invitados
+                const mesaSize = mesaDetalle?.tipo==='imperial'?160:180;
+                const mesaOffset = mesaSize / 2;
+                
+                return invitados?.map((inv,idx)=>{
+                  const ang = (2*Math.PI*idx)/invitados.length-Math.PI/2;
+                  const cx = size/2;
+                  const cy = size/2;
+                  const bx = cx + Math.cos(ang)*radio - 18;
+                  const by = cy + Math.sin(ang)*radio - 18;
+                  const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
+                  const colorGrupo = grupoColorMap[grupo] || (mesaDetalle?.tipo==='imperial'?'#f59e42':'#6366f1');
+                  return (
+                    <div 
+                      key={inv.id} 
+                      className="mapa-mesas-modal-invitado" 
+                      style={{
+                        left: bx,
+                        top: by,
+                        background: colorGrupo
+                      }}
+                    >
+                      {inv.nombre[0]}
+                    </div>
                   );
-                  if (mesaActual) {
-                    return (
-                      <button 
-                        className="mapa-mesas-modal-quitar-mesa"
-                        style={{
-                          position: 'relative',
-                          marginTop: '15px',
-                          padding: '8px 16px',
-                          borderRadius: '8px',
-                          background: '#f43f5e',
-                          color: '#fff',
-                          border: 'none',
-                          fontSize: '14px',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseOver={(e) => e.currentTarget.style.background = '#e11d48'}
-                        onMouseOut={(e) => e.currentTarget.style.background = '#f43f5e'}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (window.confirm('¿Estás seguro de quitar este invitado de la mesa?')) {
-                            const invitadoIdStrapi = invitadoDetalle.documentId;
-                            fetch(`${urlstrapi}/api/invitados/${invitadoIdStrapi}`, {
-                              method: 'PUT',
-                              headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${STRAPI_TOKEN}`
-                              },
-                              body: JSON.stringify({ 
-                                data: { 
-                                  mesa: null
-                                } 
-                              })
-                            })
-                            .then(res => res.json())
-                            .then(() => {
-                              return fetch(
-                                `${urlstrapi}/api/invitados?populate[personaje][populate]=imagen&populate[mesa][populate]=*&populate[grupo_origen][populate]=*`
-                              );
-                            })
-                            .then((response) => response.json())
-                            .then((data) => {
-                              const invitadosData = data?.data.map((invitado) => ({
-                                id: invitado.id,
-                                documentId: invitado.documentId,
-                                nombre: invitado?.nombre,
-                                imagen: invitado?.personaje
-                                  ? `https://boda-strapi-production.up.railway.app${invitado?.personaje?.imagen?.url}`
-                                  : "",
-                                mesaId: invitado?.mesa?.id || 0,
-                                mesaDocumentId: invitado?.mesa?.documentId || "",
-                                mesa: invitado?.mesa?.nombre || "",
-                                grupoOrigenId: invitado?.grupo_origen?.id || 0,
-                                grupoOrigen: invitado?.grupo_origen?.nombre || "Sin grupo"
-                              }));
-                              setInvitados(invitadosData);
-                              // Organizar por grupo de origen
-                              const grupos = {};
-                              invitadosData.forEach((inv) => {
-                                if (!grupos[inv.grupoOrigenId]) {
-                                  grupos[inv.grupoOrigenId] = {
-                                    nombre: inv.grupoOrigen,
-                                    invitados: []
-                                  };
-                                }
-                                grupos[inv.grupoOrigenId].invitados.push({
-                                  id: inv.id,
-                                  documentId: inv.documentId,
-                                  nombre: inv.nombre,
-                                  imagen: inv.imagen,
-                                  mesa: inv.mesa,
-                                  mesaId: inv.mesaId,
-                                  mesaDocumentId: inv.mesaDocumentId
-                                });
-                              });
-                              setPorGrupoOrigen(grupos);
-                              // Organizar por mesa
-                              const mesas = {};
-                              invitadosData.forEach((inv) => {
-                                if (!mesas[inv.mesaId]) {
-                                  mesas[inv.mesaId] = {
-                                    id: inv.mesaId,
-                                    documentId: inv.mesaDocumentId,
-                                    nombre: inv.mesa,
-                                    invitados: []
-                                  };
-                                }
-                                mesas[inv.mesaId].invitados.push({
-                                  id: inv.id,
-                                  documentId: inv.documentId,
-                                  nombre: inv.nombre,
-                                  imagen: inv.imagen,
-                                  grupoOrigen: inv.grupoOrigen
-                                });
-                              });
-                              setMesasOrganizadas(mesas);
-                              // Actualizar mesasPlano con los nuevos invitados
-                              setMesasPlano(prev => prev.map(m => {
-                                const mesaActualizada = mesas[m.id];
-                                if (mesaActualizada) {
-                                  return { ...m, invitados: mesaActualizada.invitados };
-                                }
-                                return { ...m, invitados: [] };
-                              }));
-                              setInvitadoDetalle(null);
-                            });
-                          }
-                        }}
-                      >
-                        Quitar de la mesa
-                      </button>
-                    );
-                  }
-                  return null;
-                })()}
-              </div>
+                });
+              })()}
             </div>
           </div>
-        )}
+          <div className="mapa-mesas-modal-invitados">
+            <b>Invitados:</b>
+            <ul>
+              {mesaDetalle?.invitados.map(inv=>{
+                const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
+                const colorGrupo = grupoColorMap[grupo] || '#6366f1';
+                return (
+                  <li key={inv.id}>
+                    <span className="mapa-mesas-modal-invitado-bolita" style={{background: colorGrupo}}>{inv.nombre[0]}</span>
+                    {inv.nombre}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </Modal>
+        {/* Modal de detalle de invitado */}
+        <Modal
+          isOpen={!!invitadoDetalle}
+          onClose={() => setInvitadoDetalle(null)}
+          title={invitadoDetalle?.nombre}
+          className="mapa-mesas-modal-invitado-detalle"
+        >
+          <div className="mapa-mesas-modal-invitado-avatar" style={{
+            background: grupoColorMap[invitadoDetalle?.grupoOrigen] || '#6366f1'
+          }}>
+            {invitadoDetalle?.nombre[0]}
+          </div>
+          <div className="mapa-mesas-modal-invitado-info" style={{ position: 'relative' }}>
+            <p>
+              <b>Grupo:</b> {invitadoDetalle?.grupoOrigen}
+            </p>
+            <p>
+              <b>Mesa:</b> {
+                (() => {
+                  const mesaActual = Object.values(mesasOrganizadas).find(mesa => 
+                    mesa.invitados.some(i => i.id === invitadoDetalle?.id)
+                  );
+                  return mesaActual ? mesaActual.nombre : 'Sin asignar';
+                })()
+              }
+            </p>
+            {(() => {
+              const mesaActual = Object.values(mesasOrganizadas).find(mesa => 
+                mesa.invitados.some(i => i.id === invitadoDetalle?.id)
+              );
+              if (mesaActual) {
+                return (
+                  <button 
+                    className="mapa-mesas-modal-quitar-mesa"
+                    style={{
+                      position: 'relative',
+                      marginTop: '15px',
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      background: '#f43f5e',
+                      color: '#fff',
+                      border: 'none',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.background = '#e11d48'}
+                    onMouseOut={(e) => e.currentTarget.style.background = '#f43f5e'}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm('¿Estás seguro de quitar este invitado de la mesa?')) {
+                        const invitadoIdStrapi = invitadoDetalle?.documentId;
+                        fetch(`${urlstrapi}/api/invitados/${invitadoIdStrapi}`, {
+                          method: 'PUT',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${STRAPI_TOKEN}`
+                          },
+                          body: JSON.stringify({ 
+                            data: { 
+                              mesa: null
+                            } 
+                          })
+                        })
+                        .then(res => res.json())
+                        .then(() => {
+                          return fetch(
+                            `${urlstrapi}/api/invitados?populate[personaje][populate]=imagen&populate[mesa][populate]=*&populate[grupo_origen][populate]=*`
+                          );
+                        })
+                        .then((response) => response.json())
+                        .then((data) => {
+                          const invitadosData = data?.data.map((invitado) => ({
+                            id: invitado.id,
+                            documentId: invitado.documentId,
+                            nombre: invitado?.nombre,
+                            imagen: invitado?.personaje
+                              ? `https://boda-strapi-production.up.railway.app${invitado?.personaje?.imagen?.url}`
+                              : "",
+                            mesaId: invitado?.mesa?.id || 0,
+                            mesaDocumentId: invitado?.mesa?.documentId || "",
+                            mesa: invitado?.mesa?.nombre || "",
+                            grupoOrigenId: invitado?.grupo_origen?.id || 0,
+                            grupoOrigen: invitado?.grupo_origen?.nombre || "Sin grupo"
+                          }));
+                          setInvitados(invitadosData);
+                          // Organizar por grupo de origen
+                          const grupos = {};
+                          invitadosData.forEach((inv) => {
+                            if (!grupos[inv.grupoOrigenId]) {
+                              grupos[inv.grupoOrigenId] = {
+                                nombre: inv.grupoOrigen,
+                                invitados: []
+                              };
+                            }
+                            grupos[inv.grupoOrigenId].invitados.push({
+                              id: inv.id,
+                              documentId: inv.documentId,
+                              nombre: inv.nombre,
+                              imagen: inv.imagen,
+                              mesa: inv.mesa,
+                              mesaId: inv.mesaId,
+                              mesaDocumentId: inv.mesaDocumentId
+                            });
+                          });
+                          setPorGrupoOrigen(grupos);
+                          // Organizar por mesa
+                          const mesas = {};
+                          invitadosData.forEach((inv) => {
+                            if (!mesas[inv.mesaId]) {
+                              mesas[inv.mesaId] = {
+                                id: inv.mesaId,
+                                documentId: inv.mesaDocumentId,
+                                nombre: inv.mesa,
+                                invitados: []
+                              };
+                            }
+                            mesas[inv.mesaId].invitados.push({
+                              id: inv.id,
+                              documentId: inv.documentId,
+                              nombre: inv.nombre,
+                              imagen: inv.imagen,
+                              grupoOrigen: inv.grupoOrigen
+                            });
+                          });
+                          setMesasOrganizadas(mesas);
+                          // Actualizar mesasPlano con los nuevos invitados
+                          setMesasPlano(prev => prev.map(m => {
+                            const mesaActualizada = mesas[m.id];
+                            if (mesaActualizada) {
+                              return { ...m, invitados: mesaActualizada.invitados };
+                            }
+                            return { ...m, invitados: [] };
+                          }));
+                          setInvitadoDetalle(null);
+                        });
+                      }
+                    }}
+                  >
+                    Quitar de la mesa
+                  </button>
+                );
+              }
+              return null;
+            })()}
+          </div>
+        </Modal>
       </main>
     </div>
   );
