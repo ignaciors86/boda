@@ -34,8 +34,9 @@ const MapaMesas = () => {
   const bolitaRefs = useRef({});
   // Ref para almacenar los documentIds de las mesas
   const mesaDocumentIds = useRef({});
+  // Ref para almacenar las posiciones de las mesas
+  const mesaPositions = useRef({});
   const [isDraggingInvitado, setIsDraggingInvitado] = useState(false);
-  const snapshotMesasPlano = useRef([]);
 
   // Paleta de colores para grupos de origen
   const coloresGrupos = [
@@ -111,13 +112,79 @@ const MapaMesas = () => {
     return invitadoRefs.current[id];
   }
 
-  // Función auxiliar para actualizar el snapshot
-  const actualizarSnapshot = () => {
-    snapshotMesasPlano.current = mesasPlano.map(m => ({
-      ...m,
-      invitados: m.invitados ? [...m.invitados] : []
-    }));
+  // Función para actualizar la posición de una mesa en Strapi
+  const actualizarPosicionMesa = async (mesaId, x, y) => {
+    console.log('[MAPA-MESAS] Iniciando actualización de posición para mesa:', mesaId);
+    try {
+      // Obtener el documentId de la mesa
+      const mesa = mesasPlano.find(m => String(m.id) === String(mesaId));
+      if (!mesa) {
+        console.error('[MAPA-MESAS] No se encontró la mesa:', mesaId);
+        return;
+      }
+
+      // Primero obtener los datos actuales de la mesa
+      const getResponse = await fetch(`${urlstrapi}/api/mesas/${mesa.documentId}`, {
+        headers: {
+          'Authorization': `Bearer ${STRAPI_TOKEN}`
+        }
+      });
+
+      if (!getResponse.ok) {
+        throw new Error(`Error HTTP al obtener datos: ${getResponse.status}`);
+      }
+
+      const mesaData = await getResponse.json();
+      console.log('Datos de la mesa:', mesaData);
+      
+      // Obtener mapaMesasData actual o crear uno nuevo
+      const mapaMesasDataActual = mesaData.data?.attributes?.mapaMesasData || {};
+
+      // Actualizar manteniendo los datos existentes
+      const response = await fetch(`${urlstrapi}/api/mesas/${mesa.documentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${STRAPI_TOKEN}`
+        },
+        body: JSON.stringify({
+          data: {
+            mapaMesasData: {
+              ...mapaMesasDataActual,
+              posicion: { x, y }
+            }
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error HTTP al actualizar: ${response.status}`);
+      }
+
+      console.log(`[MAPA-MESAS] Posición actualizada en Strapi para mesa ${mesaId}:`, { x, y });
+    } catch (error) {
+      console.error('[MAPA-MESAS] Error al actualizar posición en Strapi:', error);
+    }
   };
+
+  // Función para actualizar la posición de una mesa en el DOM
+  const updateMesaPosition = (mesaId, x, y) => {
+    const mesaEl = mesaRefs.current[mesaId]?.current;
+    if (mesaEl) {
+      const width = mesaEl.offsetWidth;
+      const height = mesaEl.offsetHeight;
+      mesaEl.style.left = `${x - width/2}px`;
+      mesaEl.style.top = `${y - height/2}px`;
+      mesaPositions.current[mesaId] = { x, y };
+    }
+  };
+
+  // Efecto para inicializar las posiciones de las mesas
+  useEffect(() => {
+    mesasPlano.forEach(mesa => {
+      updateMesaPosition(mesa.id, mesa.x, mesa.y);
+    });
+  }, [mesasPlano]);
 
   useEffect(() => {
     // Primero obtener todas las mesas de Strapi
@@ -125,7 +192,45 @@ const MapaMesas = () => {
       .then(response => response.json())
       .then(mesasData => {
         console.log('Mesas de Strapi:', mesasData);
-        const todasLasMesas = mesasData.data;
+        // Calcular posiciones para las que no tienen posición guardada
+        let sinPosicionIdx = 0;
+        const startX = 1200;
+        const startY = 800;
+        const spacing = 180;
+        const todasLasMesas = mesasData.data.map((mesa, idx) => {
+          // Log completo para depuración
+          console.log('Mesa recibida de Strapi:', mesa);
+          // Leer posición correctamente del JSON de Strapi
+          let x = 0;
+          let y = 0;
+          let tienePosicion = false;
+          if (
+            mesa.mapaMesasData &&
+            mesa.mapaMesasData.posicion &&
+            typeof mesa.mapaMesasData.posicion.x === 'number' &&
+            typeof mesa.mapaMesasData.posicion.y === 'number'
+          ) {
+            x = mesa.mapaMesasData.posicion.x;
+            y = mesa.mapaMesasData.posicion.y;
+            tienePosicion = true;
+            console.log(`Mesa ${mesa.id} posición encontrada en Strapi:`, x, y);
+          } else {
+            // Asignar posición en fila abajo a la derecha
+            x = startX + sinPosicionIdx * spacing;
+            y = startY;
+            sinPosicionIdx++;
+            console.log(`Mesa ${mesa.id} SIN posición guardada en Strapi, usando fila:`, x, y);
+          }
+          return {
+            id: mesa.id,
+            documentId: mesa.id,
+            nombre: mesa.nombre || `Mesa ${mesa.id}`,
+            tipo: mesa.tipo || 'redonda',
+            mapaMesasData: mesa.mapaMesasData || {},
+            x,
+            y
+          };
+        });
         
         // Luego obtener los invitados
         return fetch(
@@ -198,10 +303,12 @@ const MapaMesas = () => {
               const mesaId = mesaStrapi.id;
               const mesa = mesas[mesaId] || {
                 id: mesaId,
-                documentId: mesaStrapi.id,
-                nombre: mesaStrapi.nombre || `Mesa ${mesaId}`,
-                tipo: mesaStrapi.tipo || 'redonda',
-                invitados: []
+                documentId: mesaStrapi.documentId,
+                nombre: mesaStrapi.nombre,
+                tipo: mesaStrapi.tipo,
+                invitados: [],
+                x: mesaStrapi.x,
+                y: mesaStrapi.y
               };
               
               if (mesa.invitados && mesa.invitados.length > 0) {
@@ -213,24 +320,18 @@ const MapaMesas = () => {
 
             console.log('Mesas con invitados:', mesasConInvitados);
             console.log('Mesas sin invitados:', mesasSinInvitados);
+            console.log('Todas las mesas de Strapi:', todasLasMesas);
 
-            // Calcular el radio mínimo para que no se solapen las mesas con invitados
-            const mesaSize = 130;
-            const minRadio = Math.max(320, (mesaSize / 2) / Math.sin(Math.PI / Math.max(2, mesasConInvitados.length)) + 80);
-            const radioPlano = minRadio;
-            const centroX = 800;
-            const centroY = 450;
-
-            // Posicionar mesas con invitados en círculo
+            // Posicionar mesas con invitados
             const mesasIniciales = mesasConInvitados.map((mesa, idx) => {
-              const angulo = (2 * Math.PI * idx) / Math.max(1, mesasConInvitados.length);
-              const x = centroX + radioPlano * Math.cos(angulo);
-              const y = centroY + radioPlano * Math.sin(angulo);
+              // Usar SIEMPRE la posición guardada en Strapi
+              const mesaStrapi = todasLasMesas.find(m => String(m.id) === String(mesa.id));
+              let x = mesaStrapi?.x ?? 0;
+              let y = mesaStrapi?.y ?? 0;
+              // Eliminar cálculo circular
               let maxInv = 11;
               if (mesa.invitados.length > 11) maxInv = 16;
-
               mesaDocumentIds.current[mesa.id] = mesa.documentId;
-
               return {
                 id: String(mesa.id),
                 documentId: mesa.documentId,
@@ -243,17 +344,17 @@ const MapaMesas = () => {
               };
             });
 
-            // Posicionar mesas sin invitados en fila en la parte inferior derecha
+            // Posicionar mesas sin invitados
             const startX = 1200;
             const startY = 800;
             const spacing = 180;
-
             mesasSinInvitados.forEach((mesa, idx) => {
-              const x = startX + (idx * spacing);
-              const y = startY;
-
+              // Usar SIEMPRE la posición guardada en Strapi
+              const mesaStrapi = todasLasMesas.find(m => String(m.id) === String(mesa.id));
+              let x = mesaStrapi?.x ?? 0;
+              let y = mesaStrapi?.y ?? 0;
+              // Eliminar cálculo alternativo
               mesaDocumentIds.current[mesa.id] = mesa.documentId;
-
               mesasIniciales.push({
                 id: String(mesa.id),
                 documentId: mesa.documentId,
@@ -267,43 +368,7 @@ const MapaMesas = () => {
             });
 
             console.log('Mesas iniciales finales:', mesasIniciales);
-
-            // Recuperar posiciones guardadas en localStorage
-            const posicionesGuardadas = localStorage.getItem('mesasPosiciones');
-            let mesasConPosiciones = mesasIniciales;
-            let posiciones = {};
-            
-            if (posicionesGuardadas) {
-              try {
-                posiciones = JSON.parse(posicionesGuardadas);
-                mesasConPosiciones = mesasIniciales.map(mesa => {
-                  if (posiciones[mesa.id]) {
-                    return { ...mesa, x: posiciones[mesa.id].x, y: posiciones[mesa.id].y };
-                  }
-                  // Si la mesa no tiene posición guardada, guardar su posición inicial
-                  posiciones[mesa.id] = { x: mesa.x, y: mesa.y };
-                  return mesa;
-                });
-              } catch (e) {
-                console.error('Error al cargar posiciones guardadas:', e);
-                // Si hay error, crear nuevo objeto de posiciones
-                posiciones = {};
-                mesasConPosiciones.forEach(mesa => {
-                  posiciones[mesa.id] = { x: mesa.x, y: mesa.y };
-                });
-              }
-            } else {
-              // Si no hay posiciones guardadas, crear nuevo objeto
-              mesasConPosiciones.forEach(mesa => {
-                posiciones[mesa.id] = { x: mesa.x, y: mesa.y };
-              });
-            }
-
-            // Guardar todas las posiciones en localStorage
-            localStorage.setItem('mesasPosiciones', JSON.stringify(posiciones));
-            
-            console.log('Mesas con posiciones guardadas:', mesasConPosiciones);
-            setMesasPlano(mesasConPosiciones);
+            setMesasPlano(mesasIniciales);
             setCargando(false);
           });
       })
@@ -338,7 +403,10 @@ const MapaMesas = () => {
       body: JSON.stringify({
         data: {
           nombre: `Mesa ${mesasPlano.length + 1}`,
-          tipo: tipoMesa
+          tipo: tipoMesa,
+          mapaMesasData: {
+            posicion: { x, y }
+          }
         }
       })
     })
@@ -355,6 +423,8 @@ const MapaMesas = () => {
         nombre: data.data.attributes.nombre
       };
       setMesasPlano(prev => [...prev, nuevaMesa]);
+      // Actualizar la posición usando el ref
+      updateMesaPosition(nuevaMesa.id, x, y);
     })
     .catch(error => {
       console.error('Error al crear la mesa:', error);
@@ -364,45 +434,14 @@ const MapaMesas = () => {
   }, [tipoMesa]);
 
   useEffect(() => {
-    // Deshabilitar o habilitar los Draggables de las mesas según isDraggingInvitado
-    Object.values(mesaRefs.current).forEach(ref => {
-      const mesaEl = ref.current;
-      if (mesaEl && mesaEl._draggable) {
-        if (isDraggingInvitado) {
-          mesaEl._draggable.disable();
-        } else {
-          mesaEl._draggable.enable();
-        }
-      }
-    });
-    // Inicializar Draggables solo si no hay drag de invitado
     if (isDraggingInvitado) return;
+
     mesasPlano.forEach(mesa => {
       if (!mesaRefs.current[mesa.id]) {
         mesaRefs.current[mesa.id] = React.createRef();
       }
       const el = mesaRefs.current[mesa.id].current;
       if (el) {
-        // Calcular width y height igual que en renderMesaDiv
-        let mesaWidth, mesaHeight;
-        if (mesa.tipo === 'redonda') {
-          mesaWidth = 90;
-          mesaHeight = 90;
-        } else if (mesa.tipo === 'imperial') {
-          mesaWidth = 160;
-          mesaHeight = anchoImperial;
-        } else {
-          mesaWidth = 50;
-          mesaHeight = 50;
-        }
-        const padding = 36;
-        const width = mesaWidth + padding * 2;
-        const height = mesaHeight + padding * 2;
-        // Inicializar posición solo con left/top
-        el.style.left = (mesa.x - width / 2) + 'px';
-        el.style.top = (mesa.y - height / 2) + 'px';
-        // Eliminar cualquier transform residual
-        el.style.transform = '';
         if (!el._draggable) {
           el._draggable = Draggable.create(el, {
             type: 'left,top',
@@ -413,24 +452,70 @@ const MapaMesas = () => {
               if (e && e.target && e.target.classList && e.target.classList.contains('mapa-invitado-bolita')) return false;
             },
             onDragEnd: function() {
-              const left = parseFloat(el.style.left);
-              const top = parseFloat(el.style.top);
-              const newX = left + width / 2;
-              const newY = top + height / 2;
+              const rect = el.getBoundingClientRect();
+              const planoRect = planoRef.current.getBoundingClientRect();
+              const newX = rect.left - planoRect.left + el.offsetWidth / 2;
+              const newY = rect.top - planoRect.top + el.offsetHeight / 2;
+              
+              // Actualizar el estado local
               setMesasPlano(prev => {
                 const nuevas = prev.map(m => m.id === mesa.id ? { ...m, x: newX, y: newY } : m);
-                const posiciones = {};
-                nuevas.forEach(m => {
-                  posiciones[m.id] = { x: m.x, y: m.y };
-                });
-                localStorage.setItem('mesasPosiciones', JSON.stringify(posiciones));
                 return nuevas;
               });
+
+              // Actualizar la posición en Strapi
+              actualizarPosicionMesa(mesa.id, newX, newY);
             }
           })[0];
         }
       }
     });
+  }, [mesasPlano, isDraggingInvitado]);
+
+  // Efecto para hacer draggables las mesas y actualizar bounds al redimensionar
+  useEffect(() => {
+    function recreateDraggables() {
+      Object.values(mesaRefs.current).forEach(ref => {
+        const el = ref.current;
+        if (el && el._draggable) {
+          el._draggable.kill();
+          el._draggable = null;
+        }
+      });
+      mesasPlano.forEach(mesa => {
+        const el = mesaRefs.current[mesa.id]?.current;
+        if (el && !el._draggable) {
+          el._draggable = Draggable.create(el, {
+            type: 'left,top',
+            bounds: planoRef.current,
+            inertia: true,
+            onPress: function(e) {
+              if (window.isDraggingInvitadoOrBolita) return false;
+              if (e && e.target && e.target.classList && e.target.classList.contains('mapa-invitado-bolita')) return false;
+            },
+            onDragEnd: function() {
+              const rect = el.getBoundingClientRect();
+              const planoRect = planoRef.current.getBoundingClientRect();
+              const newX = rect.left - planoRect.left + el.offsetWidth / 2;
+              const newY = rect.top - planoRect.top + el.offsetHeight / 2;
+              setMesasPlano(prev => prev.map(m => m.id === mesa.id ? { ...m, x: newX, y: newY } : m));
+              actualizarPosicionMesa(mesa.id, newX, newY);
+            }
+          })[0];
+        }
+      });
+    }
+    recreateDraggables();
+    window.addEventListener('resize', recreateDraggables);
+    return () => {
+      window.removeEventListener('resize', recreateDraggables);
+      Object.values(mesaRefs.current).forEach(ref => {
+        const el = ref.current;
+        if (el && el._draggable) {
+          el._draggable.kill();
+        }
+      });
+    };
   }, [mesasPlano, isDraggingInvitado]);
 
   // Efecto para hacer arrastrables los invitados sin mesa (con clon flotante)
@@ -446,13 +531,6 @@ const MapaMesas = () => {
             minimumMovement: 2,
             onPress: function(e) {
               if (e && e.preventDefault) e.preventDefault();
-              actualizarSnapshot();
-              Object.values(mesaRefs.current).forEach(ref => {
-                const mesaEl = ref.current;
-                if (mesaEl) {
-                  gsap.set(mesaEl, { x: 0, y: 0 });
-                }
-              });
               setIsDraggingInvitado(true);
               const clone = el.cloneNode(true);
               const rect = el.getBoundingClientRect();
@@ -677,17 +755,13 @@ const MapaMesas = () => {
                   mesaEl._draggable.disable();
                 }
               });
-              // Guardar snapshot de las posiciones de las mesas (copia profunda)
-              actualizarSnapshot();
-              // Resetear transformaciones de GSAP en todas las mesas para el snapshot
+              // Resetear transformaciones de GSAP en todas las mesas
               Object.values(mesaRefs.current).forEach(ref => {
                 const mesaEl = ref.current;
                 if (mesaEl) {
                   gsap.set(mesaEl, { x: 0, y: 0 });
                 }
               });
-              console.log('SNAPSHOT MESAS:', snapshotMesasPlano.current);
-              setIsDraggingInvitado(true);
               // Crear clon flotante
               const rect = el.getBoundingClientRect();
               const offsetX = e.clientX - rect.left;
@@ -1010,9 +1084,9 @@ const MapaMesas = () => {
     if (mesa.tipo === 'redonda') {
       const radio = mesaWidth/2 + 30;
       bolitas = invitadosMesa.map((inv, idx) => {
-        const ang = (2 * Math.PI * idx) / invitadosMesa.length - Math.PI/2;
-        const bx = width/2 + Math.cos(ang) * radio - 13;
-        const by = height/2 + Math.sin(ang) * radio - 13;
+        const ang = (2 * Math.PI * idx) / Math.max(1, invitadosMesa.length) - Math.PI/2;
+        const bx = Math.cos(ang) * radio;
+        const by = Math.sin(ang) * radio;
         const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
         const colorGrupo = grupoColorMap[grupo] || '#6366f1';
         return (
@@ -1020,8 +1094,10 @@ const MapaMesas = () => {
             key={inv.id}
             className="mapa-invitado-bolita"
             style={{ 
-              left: bx, 
-              top: by, 
+              position: 'absolute',
+              left: '50%',
+              top: '50%',
+              transform: `translate(calc(-50% + ${bx}px), calc(-50% + ${by}px))`,
               background: colorGrupo,
               width: '26px',
               height: '26px',
@@ -1049,8 +1125,8 @@ const MapaMesas = () => {
         const lado = idx < perLado ? 'top' : 'bottom';
         const pos = idx % perLado;
         const espacio = largoImperial / (perLado + 1);
-        const bx = width/2 - mesaWidth/2 + espacio * (pos + 1) - 13;
-        const by = lado === 'top' ? height/2 - mesaHeight/2 - 25 : height/2 + mesaHeight/2 - 10;
+        const bx = -largoImperial/2 + espacio * (pos + 1);
+        const by = lado === 'top' ? -anchoImperial/2 - 25 : anchoImperial/2 + 25;
         const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
         const colorGrupo = grupoColorMap[grupo] || '#f59e42';
         return (
@@ -1058,8 +1134,10 @@ const MapaMesas = () => {
             key={inv.id}
             className="mapa-invitado-bolita imperial"
             style={{ 
-              left: bx, 
-              top: by, 
+              position: 'absolute',
+              left: '50%',
+              top: '50%',
+              transform: `translate(calc(-50% + ${bx}px), calc(-50% + ${by}px))`,
               background: colorGrupo,
               width: '26px',
               height: '26px',
@@ -1081,17 +1159,32 @@ const MapaMesas = () => {
         );
       });
     }
+
     return (
       <div
         key={mesa.id}
         className="mapa-mesa-contenedor"
-        style={{ width, height, position: 'absolute' }}
+        style={{ 
+          width, 
+          height, 
+          position: 'absolute',
+          left: `${mesa.x - width/2}px`,
+          top: `${mesa.y - height/2}px`
+        }}
         ref={getMesaRef(mesa.id)}
       >
         <div
           id={'mesa-' + mesa.id}
           className={claseMesa}
-          style={{ width: mesaWidth, height: mesaHeight, background: getMesaBackground(mesa), position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
+          style={{ 
+            width: mesaWidth, 
+            height: mesaHeight, 
+            background: getMesaBackground(mesa), 
+            position: 'absolute', 
+            left: '50%', 
+            top: '50%', 
+            transform: 'translate(-50%, -50%)' 
+          }}
           onClick={() => setMesaDetalle(mesa)}
         >
           <span className="mapa-mesa-label">{label}</span>
@@ -1185,52 +1278,12 @@ const MapaMesas = () => {
         </div>
 
         <button className="mapa-mesas-btn-add" onClick={()=>setShowAddMesa(true)}>Añadir mesa</button>
-        <button
-          className="mapa-mesas-btn-backup"
-          onClick={() => {
-            const data = localStorage.getItem('mesasPosiciones') || '{}';
-            const blob = new Blob([data], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'mesas-backup.json';
-            a.click();
-            URL.revokeObjectURL(url);
-          }}
-        >Descargar backup</button>
-        <input
-          type="file"
-          accept="application/json"
-          style={{ display: 'none' }}
-          id="input-backup-mesas"
-          onChange={e => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-              try {
-                const data = JSON.parse(ev.target.result);
-                localStorage.setItem('mesasPosiciones', JSON.stringify(data));
-                setMesasPlano(prev => prev.map(m => data[m.id] ? { ...m, x: data[m.id].x, y: data[m.id].y } : m));
-                alert('Backup restaurado correctamente.');
-              } catch {
-                alert('Archivo de backup no válido.');
-              }
-            };
-            reader.readAsText(file);
-            e.target.value = '';
-          }}
-        />
-        <button
-          className="mapa-mesas-btn-restore"
-          onClick={() => document.getElementById('input-backup-mesas').click()}
-        >Restaurar backup</button>
       </aside>
       
       {/* Plano central */}
       <main ref={planoRef} className="mapa-mesas-main">
         <div className="mapa-mesas-area">
-          {(isDraggingInvitado ? snapshotMesasPlano.current : mesasPlano).map(mesa => renderMesaDiv(mesa))}
+          {mesasPlano.map(mesa => renderMesaDiv(mesa))}
         </div>
         {/* Modal para añadir mesa */}
         {showAddMesa && (
