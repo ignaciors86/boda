@@ -188,4 +188,30 @@
       font-size: 1.1rem;
     }
   }
+
+  &-btn-pdf {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.6em 1.2em;
+    background: #fff0f0;
+    color: #c0392b;
+    border: 1.5px solid #c0392b;
+    border-radius: 6px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border 0.2s;
+    box-shadow: 0 1px 4px #0001;
+  }
+
+  &-btn-pdf:hover, &-btn-pdf:focus {
+    background: #c0392b;
+    color: #fff;
+    border-color: #a93226;
+  }
+
+  &-btn-pdf svg {
+    font-size: 1.2em;
+  }
 } 

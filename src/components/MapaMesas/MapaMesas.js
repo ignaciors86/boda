@@ -6,6 +6,8 @@ import Modal from './components/Modal/Modal';
 import PanelLateral from './components/PanelLateral/PanelLateral';
 import { FaPlus, FaEdit, FaHashtag, FaUsers, FaCrown, FaUserFriends, FaBorderAll, FaMagnet, FaLock, FaCompress, FaExpand, FaFileExcel } from 'react-icons/fa';
 import ExcelJS from 'exceljs';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 gsap.registerPlugin(Draggable);
 
 const urlstrapi =
@@ -1864,12 +1866,40 @@ const MapaMesas = () => {
         ];
 
         // Estilo para el encabezado
-        sheet.getRow(1).font = { bold: true };
+        sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Segoe UI', size: 13 };
         sheet.getRow(1).fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFE0E0E0' }
+          fgColor: { argb: 'FF4F8A8B' } // turquesa suave
         };
+        sheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+        sheet.getRow(1).border = {
+          bottom: { style: 'medium', color: { argb: 'FF357376' } }
+        };
+
+        // Estilo para filas alternas y bordes suaves
+        sheet.eachRow((row, rowNumber) => {
+          if (rowNumber === 1) return; // Saltar cabecera
+          row.font = { name: 'Segoe UI', size: 12 };
+          row.alignment = { vertical: 'middle', horizontal: 'left' };
+          row.height = 25;
+          row.border = {
+            bottom: { style: 'thin', color: { argb: 'FFB8D8D8' } }
+          };
+          if (rowNumber % 2 === 0) {
+            row.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF6F6F6' } // gris muy claro
+            };
+          } else {
+            row.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFFFFFFF' } // blanco
+            };
+          }
+        });
 
         // Filtrar invitados de la mesa actual usando los datos locales
         let invitadosMesa = invitados.filter(inv => String(inv.mesaId) === String(mesa.id));
@@ -1986,6 +2016,82 @@ const MapaMesas = () => {
     }
   };
 
+  // Función reutilizable para obtener los datos de mesas e invitados ordenados
+  function getMesasYInvitadosOrdenados(mesasPlano, invitados, mesaNumbers) {
+    return [...mesasPlano].sort((a, b) => {
+      const numA = mesaNumbers[a.id] || 0;
+      const numB = mesaNumbers[b.id] || 0;
+      return numA - numB;
+    }).map(mesa => {
+      // Filtrar y ordenar invitados según mapaMesasData.ordenInvitados
+      let invitadosMesa = invitados.filter(inv => String(inv.mesaId) === String(mesa.id));
+      const ordenInvitados = mesa.mapaMesasData?.ordenInvitados;
+      if (ordenInvitados) {
+        invitadosMesa = [...invitadosMesa].sort((a, b) => {
+          const ordenA = ordenInvitados[a.id] ?? 0;
+          const ordenB = ordenInvitados[b.id] ?? 0;
+          return ordenA - ordenB;
+        });
+      }
+      return { ...mesa, invitados: invitadosMesa };
+    });
+  }
+
+  // Función para generar PDF para el cátering
+  const generarInformePDFCatering = () => {
+    try {
+      const mesasOrdenadas = getMesasYInvitadosOrdenados(mesasPlano, invitados, mesaNumbers);
+      const doc = new jsPDF();
+      let first = true;
+      mesasOrdenadas.forEach((mesa, idx) => {
+        if (!first) doc.addPage();
+        first = false;
+        doc.setFontSize(18);
+        doc.setTextColor('#2E4057');
+        doc.text(`Mesa ${mesaNumbers[mesa.id] || ''}: ${mesa.nombre}`, 14, 18);
+        // Definir columnas a mostrar
+        const columns = [
+          { header: 'Nombre', dataKey: 'nombre' },
+          { header: 'Menú', dataKey: 'menu' }
+        ];
+        // Preparar datos
+        const rows = mesa.invitados.map(inv => ({
+          nombre: inv.nombre || '',
+          menu: inv.menu || ''
+        }));
+        // Tabla con colores distintos al Excel
+        autoTable(doc, {
+          startY: 24,
+          head: [columns.map(col => col.header)],
+          body: rows.map(row => columns.map(col => row[col.dataKey])),
+          styles: {
+            font: 'helvetica',
+            fontSize: 12,
+            cellPadding: 3,
+            textColor: '#222',
+            lineColor: '#B2C9D6',
+            lineWidth: 0.2
+          },
+          headStyles: {
+            fillColor: [46, 64, 87], // azul oscuro
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            fontSize: 13
+          },
+          alternateRowStyles: {
+            fillColor: [230, 240, 255] // azul muy claro
+          },
+          rowPageBreak: 'avoid',
+          margin: { left: 12, right: 12 }
+        });
+      });
+      doc.save(`Mesas_Catering_${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (error) {
+      console.error('Error al generar el PDF:', error);
+      alert('Error al generar el PDF. Revisa la consola para más detalles.');
+    }
+  };
+
   if (cargando) return <p>Cargando datos de invitados...</p>;
   if (error) return <p>{error}</p>;
 
@@ -2006,6 +2112,7 @@ const MapaMesas = () => {
         STRAPI_TOKEN={STRAPI_TOKEN}
         generarInformeExcel={generarInformeExcel}
         actualizarInvitado={actualizarInvitado}
+        generarInformePDFCatering={generarInformePDFCatering}
       />
       
       {/* Plano central */}

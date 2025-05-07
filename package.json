@@ -12,6 +12,8 @@
     "firebase": "^11.6.1",
     "gsap": "npm:@gsap/shockingly@^3.12.5",
     "jquery": "^3.7.1",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
     "mobile-detect": "^1.4.5",
     "prop-types": "^15.8.1",
     "qrcode.react": "^4.2.0",

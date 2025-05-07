@@ -1,6 +1,7 @@
 import React from 'react';
 import './PanelLateral.scss';
-import { FaFileExcel } from 'react-icons/fa';
+import { FaFileExcel, FaFilePdf } from 'react-icons/fa';
+import { FaPlus } from 'react-icons/fa';
 
 const PanelLateral = ({
   isPanelOpen,
@@ -14,7 +15,8 @@ const PanelLateral = ({
   urlstrapi,
   STRAPI_TOKEN,
   generarInformeExcel,
-  actualizarInvitado
+  actualizarInvitado,
+  generarInformePDFCatering
 }) => {
   const handleDragStart = (e, inv) => {
     if (!inv.documentId) {
@@ -102,18 +104,26 @@ const PanelLateral = ({
         ))}
 
         <div className="panel-lateral-buttons">
-          <button 
-            className="panel-lateral-btn-add" 
+          <button
+            className="panel-lateral-btn-add"
+            title="Añadir mesa"
             onClick={() => setShowAddMesa(true)}
           >
-            Añadir mesa
+            <FaPlus /> Añadir mesa
           </button>
-          <button 
-            className="panel-lateral-btn-excel" 
-            onClick={generarInformeExcel}
+          <button
+            className="panel-lateral-btn-excel"
             title="Generar informe Excel"
+            onClick={generarInformeExcel}
           >
-            <FaFileExcel /> Informe Excel
+            <FaFileExcel style={{ marginRight: 6 }} /> Informe completo
+          </button>
+          <button
+            className="panel-lateral-btn-pdf"
+            title="Generar PDF para cátering"
+            onClick={generarInformePDFCatering}
+          >
+            <FaFilePdf style={{ marginRight: 6 }} /> PDF cátering
           </button>
         </div>
       </aside>
