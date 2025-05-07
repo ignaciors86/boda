@@ -42,6 +42,8 @@ const MapaMesas = () => {
   const [isDraggingMesa, setIsDraggingMesa] = useState(false);
   const DISTANCIA_SCALE = 7; // Factor de escala para las distancias en dvh
   const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const [mesaNumbers, setMesaNumbers] = useState({});
+  const [isUpdatingNumbers, setIsUpdatingNumbers] = useState(false);
 
   // Paleta de colores para grupos de origen
   const coloresGrupos = [
@@ -167,6 +169,50 @@ const MapaMesas = () => {
       }
 
       console.log(`[MAPA-MESAS] Posición actualizada en Strapi para mesa ${mesaId}:`, { x, y });
+
+      // Actualizar mesaPositions
+      mesaPositions.current[mesaId] = { x, y };
+
+      // Forzar actualización de mesasPlano y lanzar animación
+      setMesasPlano(prev => {
+        const nuevas = prev.map(m => m.id === mesaId ? { ...m, x, y } : m);
+        return nuevas;
+      });
+
+      // Lanzar animación de números
+      setIsUpdatingNumbers(true);
+      const numerosActuales = document.querySelectorAll('.mapa-mesa-numero');
+      numerosActuales.forEach(num => {
+        gsap.to(num, {
+          scale: 0,
+          opacity: 0,
+          duration: 0.3,
+          ease: "power2.in",
+          onComplete: () => {
+            // Calcular nuevos números
+            const nuevosNumeros = calcularOrdenMesas(mesasPlano);
+            setMesaNumbers(nuevosNumeros);
+            
+            // Animar la aparición de los nuevos números
+            requestAnimationFrame(() => {
+              const nuevosNumerosElementos = document.querySelectorAll('.mapa-mesa-numero');
+              nuevosNumerosElementos.forEach(num => {
+                gsap.fromTo(num, 
+                  { scale: 0, opacity: 0 },
+                  { 
+                    scale: 1, 
+                    opacity: 1, 
+                    duration: 0.4,
+                    ease: "elastic.out(1, 0.5)",
+                    onComplete: () => setIsUpdatingNumbers(false)
+                  }
+                );
+              });
+            });
+          }
+        });
+      });
+
     } catch (error) {
       console.error('[MAPA-MESAS] Error al actualizar posición en Strapi:', error);
     }
@@ -1021,6 +1067,39 @@ const MapaMesas = () => {
     });
   }, [mesasPlano]);
 
+  // Función para calcular el orden de las mesas
+  const calcularOrdenMesas = (mesas) => {
+    // Ordenar mesas por posición (arriba a abajo, izquierda a derecha)
+    const mesasOrdenadas = [...mesas].sort((a, b) => {
+      const posA = mesaPositions.current[a.id] || { x: a.x, y: a.y };
+      const posB = mesaPositions.current[b.id] || { x: b.x, y: b.y };
+      
+      // Primero comparar por Y (arriba a abajo)
+      if (Math.abs(posA.y - posB.y) > 50) {
+        return posA.y - posB.y;
+      }
+      // Si están aproximadamente en la misma altura, comparar por X (izquierda a derecha)
+      return posA.x - posB.x;
+    });
+
+    // Crear nuevo objeto de números
+    const nuevosNumeros = {};
+    mesasOrdenadas.forEach((mesa, idx) => {
+      nuevosNumeros[mesa.id] = idx + 1;
+    });
+
+    return nuevosNumeros;
+  };
+
+  // Efecto para actualizar números cuando cambian las posiciones
+  useEffect(() => {
+    if (!mesasPlano.length || isDraggingMesa) return;
+
+    // Solo calcular números iniciales
+    const nuevosNumeros = calcularOrdenMesas(mesasPlano);
+    setMesaNumbers(nuevosNumeros);
+  }, [mesasPlano, isDraggingMesa]);
+
   function renderMesa(mesa) {
     // Obtener invitados de la mesa (por id)
     const invitadosMesa = mesa.invitados || [];
@@ -1404,6 +1483,29 @@ const MapaMesas = () => {
             }}
           >
             <span className="mapa-mesa-nombre">{mesa.nombre}</span>
+          </div>
+          {/* Añadir el número de mesa */}
+          <div 
+            className="mapa-mesa-numero"
+            style={{
+              position: 'absolute',
+              top: '10%',
+              right: '10%',
+              background: '#fff',
+              color: '#18181b',
+              width: '2.4dvh',
+              height: '2.4dvh',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '1.8dvh',
+              fontWeight: 700,
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              zIndex: 3
+            }}
+          >
+            {mesaNumbers[mesa.id] || ''}
           </div>
         </div>
         {bolitas}
