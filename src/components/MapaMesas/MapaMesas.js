@@ -15,6 +15,44 @@ const urlstrapi =
     ? 'http://localhost:1337'
     : 'https://boda-strapi-production.up.railway.app';
 const STRAPI_TOKEN = process.env.REACT_APP_STRAPI_TOKEN || "40f652de7eb40915bf1bf58a58144c1c9c55de06e2941007ff28a54d236179c4bd24147d27a985afba0e5027535da5b3577db7b850c72507e112e75d6bf4a41711b67e904d1c4e192252070f10d8a7efd72bec1e071c8ca50e5035347935f7ea6e760d727c0695285392a75bcb5e93d44bd395e0cd83fe748350f69e49aa24ca";
+
+// Mapeo de menús a etiquetas más cortas y colores
+const menuMap = {
+  'normal': { label: 'Normal', color: '#10b981' }, // verde
+  'vegano': { label: 'Vegano', color: '#84cc16' }, // verde lima
+  'vegetariano': { label: 'Vegetariano', color: '#22c55e' }, // verde esmeralda
+  'menú celíaco': { label: 'Celíaco', color: '#f59e0b' }, // ámbar
+  'infantil': { label: 'Infantil', color: '#f43f5e' }, // rosa
+  'alergia al marisco y/o crustáceos': { label: 'Sin marisco', color: '#6366f1' }, // índigo
+  'alergia a la fruta cruda y marisco (solo crustáceos, sí come moluscos)': { label: 'Sin fruta cruda/crustáceos', color: '#8b5cf6' }, // violeta
+  'alimentación antiinflamatoria. No ajo, cebolla, gluten, lactosa, fritos... Sí carne magra o pescado/marisco a la plancha/brasa/horno; calabacín, patata, arroz...': { label: 'Antiinflamatorio', color: '#ec4899' } // rosa
+};
+
+// Helper para formatear el menú
+const formatearMenu = (menu) => {
+  if (!menu) return 'No especificado';
+  
+  const menuInfo = menuMap[menu] || { label: menu, color: '#64748b' }; // gris por defecto
+
+  return (
+    <span 
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        padding: '0.2rem 0.6rem',
+        borderRadius: '1rem',
+        fontSize: '0.875rem',
+        fontWeight: 500,
+        backgroundColor: `${menuInfo.color}15`,
+        color: menuInfo.color,
+        border: `1px solid ${menuInfo.color}30`
+      }}
+    >
+      {menuInfo.label}
+    </span>
+  );
+};
+
 const MapaMesas = () => {
   const [invitados, setInvitados] = useState([]);
   const [porGrupoOrigen, setPorGrupoOrigen] = useState({});
@@ -125,22 +163,16 @@ const MapaMesas = () => {
 
   // Función para actualizar la posición de una mesa en Strapi
   const actualizarPosicionMesa = async (mesaId, x, y) => {
-    console.log('[MAPA-MESAS] Iniciando actualización de posición para mesa:', mesaId);
     try {
-      // Obtener el documentId de la mesa
       const mesa = mesasPlano.find(m => String(m.id) === String(mesaId));
-      if (!mesa) {
-        console.error('[MAPA-MESAS] No se encontró la mesa:', mesaId);
-        return;
-      }
+      if (!mesa) return;
 
-      // Convertir coordenadas de píxeles a vw para X y dvh para Y
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
       const xVw = (x / viewportWidth) * 100;
       const yDvh = (y / viewportHeight) * 100;
 
-      // Primero obtener los datos actuales de la mesa
+      // Obtener datos actuales de la mesa
       const getResponse = await fetch(`${urlstrapi}/api/mesas/${mesa.documentId}`, {
         headers: {
           'Authorization': `Bearer ${STRAPI_TOKEN}`
@@ -152,9 +184,6 @@ const MapaMesas = () => {
       }
 
       const mesaData = await getResponse.json();
-      console.log('Datos de la mesa:', mesaData);
-      
-      // Obtener mapaMesasData actual o crear uno nuevo
       const mapaMesasDataActual = mesaData.data?.attributes?.mapaMesasData || {};
 
       // Actualizar manteniendo los datos existentes
@@ -178,16 +207,13 @@ const MapaMesas = () => {
         throw new Error(`Error HTTP al actualizar: ${response.status}`);
       }
 
-      console.log(`[MAPA-MESAS] Posición actualizada en Strapi para mesa ${mesaId}:`, { x: xVw, y: yDvh });
-
       // Actualizar mesaPositions
       mesaPositions.current[mesaId] = { x: xVw, y: yDvh };
 
-      // Forzar actualización de mesasPlano y lanzar animación
-      setMesasPlano(prev => {
-        const nuevas = prev.map(m => m.id === mesaId ? { ...m, x: xVw, y: yDvh } : m);
-        return nuevas;
-      });
+      // Actualizar solo la mesa específica en el estado
+      setMesasPlano(prev => prev.map(m => 
+        m.id === mesaId ? { ...m, x: xVw, y: yDvh } : m
+      ));
 
       // Lanzar animación de números
       setIsUpdatingNumbers(true);
@@ -224,7 +250,7 @@ const MapaMesas = () => {
       });
 
     } catch (error) {
-      console.error('[MAPA-MESAS] Error al actualizar posición en Strapi:', error);
+      console.error('Error al actualizar posición en Strapi:', error);
     }
   };
 
@@ -274,7 +300,7 @@ const MapaMesas = () => {
     fetch(`${urlstrapi}/api/mesas?populate=*`)
       .then(response => response.json())
       .then(mesasData => {
-        console.log('Mesas de Strapi:', mesasData);
+        // console.log('Mesas de Strapi:', mesasData);
         // Calcular posiciones para las que no tienen posición guardada
         let sinPosicionIdx = 0;
         const startX = 1200;
@@ -282,7 +308,7 @@ const MapaMesas = () => {
         const spacing = 180;
         const todasLasMesas = mesasData.data.map((mesa, idx) => {
           // Log completo para depuración
-          console.log('Mesa recibida de Strapi:', mesa);
+          // console.log('Mesa recibida de Strapi:', mesa);
           // Leer posición correctamente del JSON de Strapi
           let x = 0;
           let y = 0;
@@ -296,13 +322,13 @@ const MapaMesas = () => {
             x = mesa.mapaMesasData.posicion.x;
             y = mesa.mapaMesasData.posicion.y;
             tienePosicion = true;
-            console.log(`Mesa ${mesa.id} posición encontrada en Strapi:`, x, y);
+            // console.log(`Mesa ${mesa.id} posición encontrada en Strapi:`, x, y);
           } else {
             // Asignar posición en fila abajo a la derecha
             x = startX + sinPosicionIdx * spacing;
             y = startY;
             sinPosicionIdx++;
-            console.log(`Mesa ${mesa.id} SIN posición guardada en Strapi, usando fila:`, x, y);
+            // console.log(`Mesa ${mesa.id} SIN posición guardada en Strapi, usando fila:`, x, y);
           }
           return {
             id: mesa.id,
@@ -342,10 +368,15 @@ const MapaMesas = () => {
               alojamiento: invitado?.alojamiento,
               dedicatoria: invitado?.dedicatoria || ""
             }));
+            
+            // Añadir console.log temporal para analizar valores únicos de menu
+            const menusUnicos = [...new Set(invitadosData.map(inv => inv.menu))].filter(Boolean);
+            console.log('Valores únicos del campo menu:', menusUnicos);
+            
             setInvitados(invitadosData);
-            console.log('Invitados tras fetch inicial:', invitadosData);
-            console.log('===== DATOS COMPLETOS DE INVITADOS TRAS FETCH =====');
-            console.log(JSON.stringify(invitadosData, null, 2));
+            // console.log('Invitados tras fetch inicial:', invitadosData);
+            // console.log('===== DATOS COMPLETOS DE INVITADOS TRAS FETCH =====');
+            // console.log(JSON.stringify(invitadosData, null, 2));
 
             // Organizar por grupo de origen
             const grupos = {};
@@ -398,9 +429,9 @@ const MapaMesas = () => {
               }
             });
 
-            console.log('Mesas con invitados:', mesasConInvitados);
-            console.log('Mesas sin invitados:', mesasSinInvitados);
-            console.log('Todas las mesas de Strapi:', todasLasMesas);
+            // console.log('Mesas con invitados:', mesasConInvitados);
+            // console.log('Mesas sin invitados:', mesasSinInvitados);
+            // console.log('Todas las mesas de Strapi:', todasLasMesas);
 
             // Posicionar mesas con invitados
             const mesasIniciales = mesasConInvitados.map((mesa, idx) => {
@@ -447,7 +478,7 @@ const MapaMesas = () => {
               });
             });
 
-            console.log('Mesas iniciales finales:', mesasIniciales);
+            // console.log('Mesas iniciales finales:', mesasIniciales);
             setMesasPlano(mesasIniciales);
             setCargando(false);
 
@@ -462,7 +493,7 @@ const MapaMesas = () => {
           });
       })
       .catch((err) => {
-        console.error('Error al obtener datos:', err);
+        // console.error('Error al obtener datos:', err);
         setError("Error al obtener los datos");
         setCargando(false);
       });
@@ -543,7 +574,6 @@ const MapaMesas = () => {
             window.isDraggingMesa = true;
           },
           onDrag: function() {
-            // Mantener la posición relativa al contenedor
             const rect = el.getBoundingClientRect();
             const planoRect = planoRef.current.getBoundingClientRect();
             const newX = rect.left - planoRect.left;
@@ -557,15 +587,7 @@ const MapaMesas = () => {
             const newX = rect.left - planoRect.left + el.offsetWidth / 2;
             const newY = rect.top - planoRect.top + el.offsetHeight / 2;
             
-            // Actualizar el estado solo si la posición ha cambiado
-            if (newX !== mesa.x || newY !== mesa.y) {
-              setMesasPlano(prev => {
-                const nuevas = prev.map(m => m.id === mesa.id ? { ...m, x: newX, y: newY } : m);
-                return nuevas;
-              });
-              actualizarPosicionMesa(mesa.id, newX, newY);
-            }
-
+            actualizarPosicionMesa(mesa.id, newX, newY);
             setIsDraggingMesa(false);
             window.isDraggingMesa = false;
           }
@@ -707,7 +729,6 @@ const MapaMesas = () => {
                         return res.json();
                       })
                       .then((data) => {
-                        console.log('Datos actualizados recibidos:', data);
                         const invitadosData = data?.data.map((invitado) => ({
                           id: invitado.id,
                           documentId: invitado.documentId,
@@ -767,7 +788,18 @@ const MapaMesas = () => {
                           }
                           return { ...m, invitados: [] };
                         }));
-                        setInvitadoDetalle(null);
+
+                        // Actualizar el invitado detalle si está abierto
+                        if (invitadoDetalle) {
+                          const invitadoActualizado = invitadosData.find(inv => inv.id === invitadoDetalle.id);
+                          if (invitadoActualizado) {
+                            // Forzar una actualización completa del estado
+                            setInvitadoDetalle(null);
+                            setTimeout(() => {
+                              setInvitadoDetalle(invitadoActualizado);
+                            }, 0);
+                          }
+                        }
                       })
                       .catch(error => {
                         console.error('Error en el proceso de actualización:', error);
@@ -1810,7 +1842,7 @@ const MapaMesas = () => {
 
   const generarInformeExcel = async () => {
     try {
-      console.log('Iniciando generación de informe Excel...');
+      // console.log('Iniciando generación de informe Excel...');
       
       // Obtener todas las mesas ordenadas por número
       const mesasOrdenadas = [...mesasPlano].sort((a, b) => {
@@ -1819,7 +1851,7 @@ const MapaMesas = () => {
         return numA - numB;
       });
 
-      console.log('Mesas ordenadas:', mesasOrdenadas);
+      // console.log('Mesas ordenadas:', mesasOrdenadas);
 
       // Crear un nuevo libro de Excel
       const workbook = new ExcelJS.Workbook();
@@ -1893,7 +1925,7 @@ const MapaMesas = () => {
             return ordenA - ordenB;
           });
         }
-        console.log(`Invitados para mesa ${mesa.id}:`, invitadosMesa);
+        // console.log(`Invitados para mesa ${mesa.id}:`, invitadosMesa);
 
         // Helper para valores booleanos
         const getBooleanValue = (value) => {
@@ -1905,7 +1937,7 @@ const MapaMesas = () => {
           const row = {
             nombre: inv.nombre || 'Sin nombre',
             grupoOrigen: inv.grupoOrigen || 'Sin grupo',
-            menu: inv.menu || 'No especificado',
+            menu: menuMap[inv.menu]?.label || inv.menu || 'No especificado',
             alergias: inv.alergias || 'No especificado',
             asistira: getBooleanValue(inv.asistira),
             preboda: getBooleanValue(inv.preboda),
@@ -1935,10 +1967,10 @@ const MapaMesas = () => {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      console.log('Informe Excel generado exitosamente');
+      // console.log('Informe Excel generado exitosamente');
 
     } catch (error) {
-      console.error('Error detallado al generar el informe:', error);
+      // console.error('Error detallado al generar el informe:', error);
       alert('Error al generar el informe. Por favor, revisa la consola para más detalles.');
     }
   };
@@ -2038,7 +2070,7 @@ const MapaMesas = () => {
         // Preparar datos
         const rows = mesa.invitados.map(inv => ({
           nombre: inv.nombre || '',
-          menu: inv.menu || ''
+          menu: menuMap[inv.menu]?.label || inv.menu || 'No especificado'
         }));
         // Tabla con colores distintos al Excel
         autoTable(doc, {
@@ -2104,25 +2136,6 @@ const MapaMesas = () => {
 
     actualizarPosicionMesa(mesaId, x, y);
   };
-
-  useEffect(() => {
-    if (mesasPlano.length > 0) {
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-
-      mesasPlano.forEach(mesa => {
-        const mesaRef = mesaRefs.current[mesa.id]?.current;
-        if (mesaRef) {
-          const rect = mesaRef.getBoundingClientRect();
-          // Convertir coordenadas de píxeles a vw para x y dvh para y
-          const xVw = (rect.left + rect.width / 2) / viewportWidth * 100;
-          const yDvh = (rect.top + rect.height / 2) / viewportHeight * 100;
-          
-          mesaPositions.current[mesa.id] = { x: xVw, y: yDvh };
-        }
-      });
-    }
-  }, [mesasPlano]);
 
   if (cargando) return <p>Cargando datos de invitados...</p>;
   if (error) return <p>{error}</p>;
@@ -2679,7 +2692,14 @@ const MapaMesas = () => {
             if (!invitadoCompleto) return <div style={{padding:'2rem',color:'#fff'}}>No se han encontrado datos completos de este invitado.</div>;
             return (
               <div className="mapa-mesas-modal-invitado-detalle-content">
-                <div className="mapa-mesas-modal-invitado-avatar" style={{ background: grupoColorMap[invitadoCompleto?.grupoOrigen] || '#6366f1' }}>
+                <div 
+                  className="mapa-mesas-modal-invitado-avatar" 
+                  style={{ 
+                    background: invitadoCompleto?.imagen 
+                      ? `url(${invitadoCompleto.imagen}) center/cover` 
+                      : grupoColorMap[invitadoCompleto?.grupoOrigen] || '#6366f1'
+                  }}
+                >
                   {invitadoCompleto?.nombre?.[0]}
                 </div>
                 <div className="mapa-mesas-modal-invitado-info">
@@ -2700,7 +2720,7 @@ const MapaMesas = () => {
                   </div>
                   <div className="mapa-mesas-modal-invitado-info-row">
                     <b>Menú</b>
-                    <span>{mostrarCampoTexto(invitadoCompleto?.menu)}</span>
+                    <span>{formatearMenu(invitadoCompleto?.menu)}</span>
                   </div>
                   <div className="mapa-mesas-modal-invitado-info-row">
                     <b>Alergias</b>
@@ -2725,34 +2745,6 @@ const MapaMesas = () => {
                   <div className="mapa-mesas-modal-invitado-info-row">
                     <b>Alojamiento</b>
                     <span>{invitadoCompleto?.alojamiento === true ? 'Sí' : invitadoCompleto?.alojamiento === false ? 'No' : 'No especificado'}</span>
-                  </div>
-                  <div className="mapa-mesas-modal-invitado-info-row">
-                    <b>Dedicatoria</b>
-                    <span>{mostrarCampoTexto(invitadoCompleto?.dedicatoria, '(vacío)', 'Sin dedicatoria')}</span>
-                  </div>
-                  <div className="mapa-mesas-modal-invitado-info-row">
-                    <b>Imagen</b>
-                    <span>{invitadoCompleto?.imagen ? 'Sí' : 'No'}</span>
-                  </div>
-                  <div className="mapa-mesas-modal-invitado-info-row">
-                    <b>ID</b>
-                    <span>{invitadoCompleto?.id}</span>
-                  </div>
-                  <div className="mapa-mesas-modal-invitado-info-row">
-                    <b>Document ID</b>
-                    <span>{invitadoCompleto?.documentId}</span>
-                  </div>
-                  <div className="mapa-mesas-modal-invitado-info-row">
-                    <b>Mesa ID</b>
-                    <span>{invitadoCompleto?.mesaId || 'Sin asignar'}</span>
-                  </div>
-                  <div className="mapa-mesas-modal-invitado-info-row">
-                    <b>Mesa Document ID</b>
-                    <span>{invitadoCompleto?.mesaDocumentId || 'Sin asignar'}</span>
-                  </div>
-                  <div className="mapa-mesas-modal-invitado-info-row">
-                    <b>Grupo ID</b>
-                    <span>{invitadoCompleto?.grupoOrigenId || 'Sin asignar'}</span>
                   </div>
                 </div>
               </div>
