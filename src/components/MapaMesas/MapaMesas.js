@@ -324,11 +324,11 @@ const MapaMesas = () => {
             tienePosicion = true;
             // console.log(`Mesa ${mesa.id} posición encontrada en Strapi:`, x, y);
           } else {
-            // Asignar posición en fila abajo a la derecha
-            x = startX + sinPosicionIdx * spacing;
-            y = startY;
-            sinPosicionIdx++;
-            // console.log(`Mesa ${mesa.id} SIN posición guardada en Strapi, usando fila:`, x, y);
+            // Usar valores por defecto cuando mapaMesasData está vacío
+            x = 10;
+            y = 20;
+            tienePosicion = true;
+            // console.log(`Mesa ${mesa.id} SIN posición guardada en Strapi, usando valores por defecto:`, x, y);
           }
           return {
             id: mesa.id,
