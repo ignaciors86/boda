@@ -134,6 +134,12 @@ const MapaMesas = () => {
         return;
       }
 
+      // Convertir coordenadas de píxeles a vw para X y dvh para Y
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const xVw = (x / viewportWidth) * 100;
+      const yDvh = (y / viewportHeight) * 100;
+
       // Primero obtener los datos actuales de la mesa
       const getResponse = await fetch(`${urlstrapi}/api/mesas/${mesa.documentId}`, {
         headers: {
@@ -162,7 +168,7 @@ const MapaMesas = () => {
           data: {
             mapaMesasData: {
               ...mapaMesasDataActual,
-              posicion: { x, y }
+              posicion: { x: xVw, y: yDvh }
             }
           }
         })
@@ -172,14 +178,14 @@ const MapaMesas = () => {
         throw new Error(`Error HTTP al actualizar: ${response.status}`);
       }
 
-      console.log(`[MAPA-MESAS] Posición actualizada en Strapi para mesa ${mesaId}:`, { x, y });
+      console.log(`[MAPA-MESAS] Posición actualizada en Strapi para mesa ${mesaId}:`, { x: xVw, y: yDvh });
 
       // Actualizar mesaPositions
-      mesaPositions.current[mesaId] = { x, y };
+      mesaPositions.current[mesaId] = { x: xVw, y: yDvh };
 
       // Forzar actualización de mesasPlano y lanzar animación
       setMesasPlano(prev => {
-        const nuevas = prev.map(m => m.id === mesaId ? { ...m, x, y } : m);
+        const nuevas = prev.map(m => m.id === mesaId ? { ...m, x: xVw, y: yDvh } : m);
         return nuevas;
       });
 
@@ -231,8 +237,10 @@ const MapaMesas = () => {
       if (el) {
         const width = el.offsetWidth;
         const height = el.offsetHeight;
-        el.style.left = `${mesa.x - width/2}px`;
-        el.style.top = `${mesa.y - height/2}px`;
+        
+        // Ajustar la posición para que coincida con el punto medio
+        el.style.left = `calc(${mesa.x}vw - ${width/2}px)`;
+        el.style.top = `calc(${mesa.y}dvh - ${height/2}px)`;
         el.style.transform = 'none';
         mesaPositions.current[mesa.id] = { x: mesa.x, y: mesa.y };
       }
@@ -247,10 +255,17 @@ const MapaMesas = () => {
     if (mesaEl) {
       const width = mesaEl.offsetWidth;
       const height = mesaEl.offsetHeight;
-      mesaEl.style.left = `${x - width/2}px`;
-      mesaEl.style.top = `${y - height/2}px`;
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      
+      // Convertir a vw y dvh
+      const xVw = (x / viewportWidth) * 100;
+      const yDvh = (y / viewportHeight) * 100;
+      
+      mesaEl.style.left = `${xVw}vw`;
+      mesaEl.style.top = `${yDvh}dvh`;
       mesaEl.style.transform = 'none';
-      mesaPositions.current[mesaId] = { x, y };
+      mesaPositions.current[mesaId] = { x: xVw, y: yDvh };
     }
   };
 
@@ -1438,8 +1453,8 @@ const MapaMesas = () => {
           width, 
           height, 
           position: 'absolute',
-          left: `${posicionActual.x - width/2}px`,
-          top: `${posicionActual.y - height/2}px`,
+          left: `calc(${posicionActual.x}vw - ${width}/2)`,
+          top: `calc(${posicionActual.y}dvh - ${height}/2)`,
           transform: 'none',
           willChange: 'transform'
         }}
@@ -2074,6 +2089,40 @@ const MapaMesas = () => {
     // Si no está en ninguna mesa, buscar en el array plano
     return invitados.find(i => i.id === idInvitado);
   }
+
+  const handleDragEnd = (e, mesaId) => {
+    const mesaRef = mesaRefs.current[mesaId];
+    if (!mesaRef) return;
+
+    const rect = mesaRef.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    // Convertir coordenadas de píxeles a vw
+    const x = (rect.left + rect.width / 2) / viewportWidth * 100;
+    const y = (rect.top + rect.height / 2) / viewportHeight * 100;
+
+    actualizarPosicionMesa(mesaId, x, y);
+  };
+
+  useEffect(() => {
+    if (mesasPlano.length > 0) {
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      mesasPlano.forEach(mesa => {
+        const mesaRef = mesaRefs.current[mesa.id]?.current;
+        if (mesaRef) {
+          const rect = mesaRef.getBoundingClientRect();
+          // Convertir coordenadas de píxeles a vw para x y dvh para y
+          const xVw = (rect.left + rect.width / 2) / viewportWidth * 100;
+          const yDvh = (rect.top + rect.height / 2) / viewportHeight * 100;
+          
+          mesaPositions.current[mesa.id] = { x: xVw, y: yDvh };
+        }
+      });
+    }
+  }, [mesasPlano]);
 
   if (cargando) return <p>Cargando datos de invitados...</p>;
   if (error) return <p>{error}</p>;
