@@ -18,6 +18,7 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
   const [showUpload, setShowUpload] = useState(false);
   const [hasNewImage, setHasNewImage] = useState(false);
   const [isRevealed, setIsRevealed] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   // Controla el grosor del pincel (en dvh)
   const brushSizeInDvh = 8;
@@ -405,6 +406,10 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
     }
   };
 
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
   return (
     <>
       <div className="rasca">
@@ -414,6 +419,7 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
           src={url}
           alt="Premio oculto"
           onClick={handleImageClick}
+          onError={handleImageError}
         />
         
         <h3 className="rasca__loading-text">Subiendo imagen</h3>
@@ -423,12 +429,22 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
           src={url2}
           alt="Imagen subida"
           onClick={handleImageClick}
+          onError={handleImageError}
           style={{ 
             visibility: hasNewImage ? 'visible' : 'hidden',
             opacity: hasNewImage ? 1 : 0,
             zIndex: 0
           }}
         />
+        
+        {imageError && (
+          <div className="rasca__error">
+            <div className="rasca__error-icon">⚡</div>
+            <div className="rasca__error-message">
+              Hubo un error al cargar la imagen. Por favor, contacta con Gonzalo.
+            </div>
+          </div>
+        )}
         
         {/* Capa gris interactiva */}
         <canvas

@@ -22,13 +22,15 @@ const CartaInvitado = ({ weedding, invitado, currentImageUrl, setCurrentImageUrl
 
     const personajeUrl = urlstrapi + (invitado?.personaje?.imagen?.url || '');
     const imagenUrl = currentImageUrl || urlstrapi + (invitado?.imagen?.url || '');
+    const tieneImagen = Boolean(currentImageUrl || invitado?.imagen?.url);
     
     console.log('URLs construidas:', {
         personajeUrl,
         imagenUrl,
         urlstrapi,
         personajeImagenUrl: invitado?.personaje?.imagen?.url,
-        invitadoImagenUrl: invitado?.imagen?.url
+        invitadoImagenUrl: invitado?.imagen?.url,
+        tieneImagen
     });
 
     const resultado = <>
@@ -46,7 +48,7 @@ const CartaInvitado = ({ weedding, invitado, currentImageUrl, setCurrentImageUrl
                 url={personajeUrl}
                 url2={imagenUrl}
                 setCurrentImageUrl={setCurrentImageUrl}
-                resultado={resultado}
+                resultado={tieneImagen ? resultado : null}
                 invitadoId={invitado?.documentId} 
             />
         </div><button className="back orange" onClick={() => setActiveCard("sobre")} /></> : <Loading />
