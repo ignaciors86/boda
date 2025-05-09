@@ -82,6 +82,7 @@ const MapaMesas = () => {
   const mesaPositions = useRef({});
   const [isDraggingInvitado, setIsDraggingInvitado] = useState(false);
   const [isDraggingMesa, setIsDraggingMesa] = useState(false);
+  const [isDraggingToMesa, setIsDraggingToMesa] = useState(false);
   const DISTANCIA_SCALE = 7; // Factor de escala para las distancias en dvh
   const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [mesaNumbers, setMesaNumbers] = useState({});
@@ -672,6 +673,7 @@ const MapaMesas = () => {
                     });
 
                     if (mesaDrop) {
+                      setIsDraggingToMesa(true);
                       const mesaElement = mesaDrop.querySelector('.mapa-mesa-div');
                       if (!mesaElement) return;
 
@@ -789,11 +791,10 @@ const MapaMesas = () => {
                           return { ...m, invitados: [] };
                         }));
 
-                        // Actualizar el invitado detalle si está abierto
-                        if (invitadoDetalle) {
+                        // Actualizar el invitado detalle si está abierto y no estamos arrastrando a una mesa
+                        if (invitadoDetalle && !isDraggingToMesa) {
                           const invitadoActualizado = invitadosData.find(inv => inv.id === invitadoDetalle.id);
                           if (invitadoActualizado) {
-                            // Forzar una actualización completa del estado
                             setInvitadoDetalle(null);
                             setTimeout(() => {
                               setInvitadoDetalle(invitadoActualizado);
@@ -803,6 +804,9 @@ const MapaMesas = () => {
                       })
                       .catch(error => {
                         console.error('Error en el proceso de actualización:', error);
+                      })
+                      .finally(() => {
+                        setIsDraggingToMesa(false);
                       });
                     }
 
@@ -860,6 +864,12 @@ const MapaMesas = () => {
                 })[0];
                 tempDraggable.startDrag(e);
                 return false;
+              },
+              onClick: function(e) {
+                // Solo abrir el modal si no estamos arrastrando
+                if (!isDraggingInvitado && !window.isDraggingInvitadoOrBolita) {
+                  setInvitadoDetalle(inv);
+                }
               }
             })[0];
           }
@@ -1026,13 +1036,7 @@ const MapaMesas = () => {
                               invitados: []
                             };
                           }
-                          mesas[inv.mesaId].invitados.push({
-                            id: inv.id,
-                            documentId: inv.documentId,
-                            nombre: inv.nombre,
-                            imagen: inv.imagen,
-                            grupoOrigen: inv.grupoOrigen
-                          });
+                          mesas[inv.mesaId].invitados.push(inv); // Guarda el objeto invitado completo
                         });
                         setMesasOrganizadas(mesas);
 
