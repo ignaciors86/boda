@@ -3,7 +3,9 @@ import { gsap } from 'gsap'; // Importamos GSAP
 import './Rasca.scss';
 import Typewriter from "typewriter-effect";
 
-const urlstrapi = "https://boda-strapi-production.up.railway.app";
+const urlstrapi = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+  ? 'http://localhost:1337'
+  : 'https://boda-strapi-production.up.railway.app';
 const STRAPI_TOKEN = "40f652de7eb40915bf1bf58a58144c1c9c55de06e2941007ff28a54d236179c4bd24147d27a985afba0e5027535da5b3577db7b850c72507e112e75d6bf4a41711b67e904d1c4e192252070f10d8a7efd72bec1e071c8ca50e5035347935f7ea6e760d727c0695285392a75bcb5e93d44bd395e0cd83fe748350f69e49aa24ca";
 
 const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
@@ -250,8 +252,7 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
             'Authorization': `Bearer ${STRAPI_TOKEN}`
           },
           body: formData,
-          mode: 'cors',
-          credentials: 'include'
+          mode: 'cors'
         });
 
         if (!uploadResponse.ok) {

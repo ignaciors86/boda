@@ -4,7 +4,9 @@ import { useDragContext } from "../../DragContext";
 import Rasca from "components/Rasca/Rasca";
 import Loading from "components/Timeline/Loading";
 
-const urlstrapi = "https://boda-strapi-production.up.railway.app";
+const urlstrapi = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+  ? 'http://localhost:1337'
+  : 'https://boda-strapi-production.up.railway.app';
 
 const CartaInvitado = ({ weedding, invitado, currentImageUrl, setCurrentImageUrl }) => {
     const { activeCard, setActiveCard } = useDragContext();
@@ -16,6 +18,17 @@ const CartaInvitado = ({ weedding, invitado, currentImageUrl, setCurrentImageUrl
         imagen: invitado?.imagen,
         personaje: invitado?.personaje,
         currentImageUrl
+    });
+
+    const personajeUrl = urlstrapi + (invitado?.personaje?.imagen?.url || '');
+    const imagenUrl = currentImageUrl || urlstrapi + (invitado?.imagen?.url || '');
+    
+    console.log('URLs construidas:', {
+        personajeUrl,
+        imagenUrl,
+        urlstrapi,
+        personajeImagenUrl: invitado?.personaje?.imagen?.url,
+        invitadoImagenUrl: invitado?.imagen?.url
     });
 
     const resultado = <>
@@ -30,8 +43,8 @@ const CartaInvitado = ({ weedding, invitado, currentImageUrl, setCurrentImageUrl
     return (
         activeCard === "invitado" ? <><div className="cartaInvitado seccion">
             <Rasca 
-                url={urlstrapi + (invitado?.personaje?.imagen?.url || '')} 
-                url2={currentImageUrl || urlstrapi + (invitado?.imagen?.url || '')}
+                url={personajeUrl}
+                url2={imagenUrl}
                 setCurrentImageUrl={setCurrentImageUrl}
                 resultado={resultado}
                 invitadoId={invitado?.documentId} 

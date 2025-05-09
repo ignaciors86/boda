@@ -294,4 +294,65 @@
 
 .panel-lateral-grupo-contenido .panel-lateral-invitado:last-child {
   border-bottom: none;
+}
+
+.panel-lateral-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 0 20px;
+
+  button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    width: 100%;
+
+    svg {
+      margin-right: 8px;
+    }
+
+    &.panel-lateral-btn-add {
+      background: #22c55e;
+      color: white;
+
+      &:hover {
+        background: #16a34a;
+      }
+    }
+
+    &.panel-lateral-btn-personajes {
+      background: #3b82f6;
+      color: white;
+
+      &:hover {
+        background: #2563eb;
+      }
+    }
+
+    &.panel-lateral-btn-excel {
+      background: #10b981;
+      color: white;
+
+      &:hover {
+        background: #059669;
+      }
+    }
+
+    &.panel-lateral-btn-pdf {
+      background: #ef4444;
+      color: white;
+
+      &:hover {
+        background: #dc2626;
+      }
+    }
+  }
 } 

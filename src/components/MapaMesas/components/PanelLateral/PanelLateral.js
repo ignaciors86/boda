@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import './PanelLateral.scss';
-import { FaFileExcel, FaFilePdf } from 'react-icons/fa';
-import { FaPlus } from 'react-icons/fa';
+import { FaFileExcel, FaFilePdf, FaPlus, FaUser } from 'react-icons/fa';
 
 const PanelLateral = ({
   isPanelOpen,
@@ -16,7 +15,8 @@ const PanelLateral = ({
   STRAPI_TOKEN,
   generarInformeExcel,
   actualizarInvitado,
-  generarInformePDFCatering
+  generarInformePDFCatering,
+  setIsPanelPersonajesOpen
 }) => {
   const [gruposAbiertos, setGruposAbiertos] = useState({});
   const toggleGrupo = (nombre) => {
@@ -140,6 +140,13 @@ const PanelLateral = ({
             onClick={() => setShowAddMesa(true)}
           >
             <FaPlus /> Añadir mesa
+          </button>
+          <button
+            className="panel-lateral-btn-personajes"
+            title="Administrar personajes"
+            onClick={() => setIsPanelPersonajesOpen(true)}
+          >
+            <FaUser /> Personajes
           </button>
           <button
             className="panel-lateral-btn-excel"

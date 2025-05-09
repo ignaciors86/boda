@@ -4,6 +4,7 @@ import { Draggable } from "gsap/Draggable";
 import './MapaMesas.scss';
 import Modal from './components/Modal/Modal';
 import PanelLateral from './components/PanelLateral/PanelLateral';
+import PanelPersonajes from './components/PanelPersonajes/PanelPersonajes';
 import { FaPlus, FaEdit, FaHashtag, FaUsers, FaCrown, FaUserFriends, FaBorderAll, FaMagnet, FaLock, FaCompress, FaExpand, FaFileExcel } from 'react-icons/fa';
 import ExcelJS from 'exceljs';
 import jsPDF from 'jspdf';
@@ -87,6 +88,7 @@ const MapaMesas = () => {
   const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [mesaNumbers, setMesaNumbers] = useState({});
   const [isUpdatingNumbers, setIsUpdatingNumbers] = useState(false);
+  const [isPanelPersonajesOpen, setIsPanelPersonajesOpen] = useState(false);
 
   // Paleta de colores para grupos de origen
   const coloresGrupos = [
@@ -2162,6 +2164,13 @@ const MapaMesas = () => {
         generarInformeExcel={generarInformeExcel}
         actualizarInvitado={actualizarInvitado}
         generarInformePDFCatering={generarInformePDFCatering}
+        setIsPanelPersonajesOpen={setIsPanelPersonajesOpen}
+      />
+      <PanelPersonajes
+        isPanelOpen={isPanelPersonajesOpen}
+        setIsPanelOpen={setIsPanelPersonajesOpen}
+        urlstrapi={urlstrapi}
+        STRAPI_TOKEN={STRAPI_TOKEN}
       />
       
       {/* Plano central */}
