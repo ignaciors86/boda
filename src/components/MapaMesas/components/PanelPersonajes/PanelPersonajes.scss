@@ -770,4 +770,54 @@
   background: #2a2a2a;
   border-radius: 1rem;
   margin: 1rem 0;
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  margin-bottom: 2dvh;
+  padding: 1dvh 1vw;
+  background: linear-gradient(45deg, #2a2a2a, #333);
+  border-radius: 0.5vw;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+  h2 {
+    font-size: 1.5vw;
+    font-weight: 600;
+    color: #fff;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05vw;
+  }
+
+  .counter-fraction {
+    display: flex;
+    align-items: center;
+    gap: 0.5vw;
+    margin-left: auto;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.5vw 1.5vw;
+    border-radius: 0.5vw;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+
+    .numerator {
+      font-size: 1.5vw;
+      font-weight: 700;
+      color: #6366f1;
+      text-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
+    }
+
+    .divider {
+      font-size: 1.5vw;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .denominator {
+      font-size: 1.5vw;
+      font-weight: 700;
+      color: #fff;
+    }
+  }
 } 

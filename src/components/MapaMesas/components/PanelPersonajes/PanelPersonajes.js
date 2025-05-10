@@ -313,6 +313,14 @@ const PanelPersonajes = ({
             <FaTimes />
           </button>
           <div className="form-section">
+            <div className="panel-title">
+              <h2>PERSONAJES</h2>
+              <div className="counter-fraction">
+                <span className="numerator">{personajes.length}</span>
+                <span className="divider">/</span>
+                <span className="denominator">{invitadosSinPersonaje.length}</span>
+              </div>
+            </div>
             <form className="panel-personajes-form" onSubmit={handleSubmit}>
               <div className="form-group">
                 <label>Invitado</label>
@@ -649,7 +657,7 @@ const PanelPersonajes = ({
             </form>
           </div>
           <div className="list-section">
-            <h3>Personajes</h3>
+            <h3>PERSONAJES</h3>
             <div className="search-container" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <input
                 type="text"
