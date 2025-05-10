@@ -8,6 +8,11 @@ const urlstrapi = (typeof window !== 'undefined' && (window.location.hostname ==
   : 'https://boda-strapi-production.up.railway.app';
 const STRAPI_TOKEN = "40f652de7eb40915bf1bf58a58144c1c9c55de06e2941007ff28a54d236179c4bd24147d27a985afba0e5027535da5b3577db7b850c72507e112e75d6bf4a41711b67e904d1c4e192252070f10d8a7efd72bec1e071c8ca50e5035347935f7ea6e760d727c0695285392a75bcb5e93d44bd395e0cd83fe748350f69e49aa24ca";
 
+// Añadir credenciales de Cloudinary para invitados
+const CLOUDINARY_CLOUD_NAME = 'boda-baile';
+const CLOUDINARY_API_KEY = '851314221741213';
+const CLOUDINARY_UPLOAD_PRESET = 'invitados';
+
 const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
   const canvasRef = useRef(null);
   const contenidoRef = useRef(null); // Referencia al elemento .cartaInvitado__contenido
@@ -240,37 +245,24 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
       setIsUploading(true);
 
       try {
-        console.log('Iniciando subida de imagen...');
-        
-        // Subir imagen a Strapi
-        const formData = new FormData();
-        formData.append('files', file);
-        
-        console.log('Subiendo imagen a Strapi...');
-        const uploadResponse = await fetch(`${urlstrapi}/api/upload`, {
+        // Subir imagen a Cloudinary
+        const formDataCloud = new FormData();
+        formDataCloud.append('file', file);
+        formDataCloud.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+        formDataCloud.append('api_key', CLOUDINARY_API_KEY);
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${STRAPI_TOKEN}`
-          },
-          body: formData,
-          mode: 'cors'
+          body: formDataCloud
         });
+        const data = await res.json();
+        if (!data.secure_url) throw new Error('Error al subir la imagen a Cloudinary');
 
-        if (!uploadResponse.ok) {
-          throw new Error('Error al subir la imagen');
-        }
-
-        const uploadResult = await uploadResponse.json();
-        console.log('Imagen subida correctamente:', uploadResult[0].url);
-
-        // Actualizar invitado en Strapi
+        // Actualizar invitado en Strapi con la URL de Cloudinary
         const updateData = {
           data: {
-            imagen: uploadResult[0].id
+            imagen_url: data.secure_url
           }
         };
-
-        console.log('Actualizando invitado en Strapi...');
         const updateResponse = await fetch(`${urlstrapi}/api/invitados/${invitadoId}`, {
           method: 'PUT',
           headers: {
@@ -279,29 +271,20 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
           },
           body: JSON.stringify(updateData)
         });
-
-        if (!updateResponse.ok) {
-          throw new Error('Error al actualizar el invitado');
-        }
-
-        console.log('Invitado actualizado correctamente');
+        if (!updateResponse.ok) throw new Error('Error al actualizar el invitado');
 
         // Actualizar el contexto con la nueva URL
-        const newImageUrl = `${urlstrapi}${uploadResult[0].url}`;
-        setCurrentImageUrl(newImageUrl);
+        setCurrentImageUrl(data.secure_url);
         setHasNewImage(true);
         setIsUploading(false);
-        
-        console.log('Esperando a que la nueva imagen se cargue...');
+
         // Esperar a que la nueva imagen se cargue
-        const newImage = new Image();
-        newImage.src = newImageUrl;
-        
+        const newImage = new window.Image();
+        newImage.src = data.secure_url;
         await new Promise((resolve) => {
           newImage.onload = resolve;
         });
-        
-        console.log('Nueva imagen cargada, iniciando animación...');
+
         // Quitar efectos de loading antes de mostrar la nueva imagen
         document.querySelector('.rasca__original-image').classList.remove('loading');
         document.querySelector('.rasca__loading-text').classList.remove('visible');
@@ -328,16 +311,10 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
             ease: "power2.out",
             onComplete: () => setShowUpload(true)
           });
-
       } catch (error) {
-        console.error('Error en el proceso de subida/actualización:', error);
         setIsUploading(false);
-        
-        // Quitar efectos de loading en caso de error
         document.querySelector('.rasca__original-image').classList.remove('loading');
         document.querySelector('.rasca__loading-text').classList.remove('visible');
-        
-        // Si hay error, volver a la posición original
         const errorTimeline = gsap.timeline();
         errorTimeline
           .to(".rasca__original-image", {
