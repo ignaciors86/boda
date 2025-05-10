@@ -20,7 +20,7 @@ const CartaInvitado = ({ weedding, invitado, currentImageUrl, setCurrentImageUrl
         currentImageUrl
     });
 
-    const personajeUrl = urlstrapi + (invitado?.personaje?.imagen?.url || '');
+    const personajeUrl = invitado?.personaje?.imagen_url || '';
     const imagenUrl = currentImageUrl || urlstrapi + (invitado?.imagen?.url || '');
     const tieneImagen = Boolean(currentImageUrl || invitado?.imagen?.url);
     
