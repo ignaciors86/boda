@@ -2329,7 +2329,23 @@ const MapaMesas = () => {
                         const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
                         const colorGrupo = grupoColorMap[grupo] || '#f59e42';
                         rendered.push(
-                          <div key={inv.id} data-invitado-id={inv.id} className="mapa-mesas-modal-invitado" style={{ left: `${x}dvh`, top: `${y}dvh`, width: `${invitadoSize}dvh`, height: `${invitadoSize}dvh`, position: 'absolute', background: '#222b3a', border: `0.2dvh solid ${colorGrupo}`, fontSize: '2.2dvh' }}>{inv.nombre[0]}</div>
+                          <div 
+                            key={inv.id} 
+                            data-invitado-id={inv.id} 
+                            className="mapa-mesas-modal-invitado" 
+                            style={{ 
+                              left: `${x}dvh`, 
+                              top: `${y}dvh`, 
+                              width: `${invitadoSize}dvh`, 
+                              height: `${invitadoSize}dvh`, 
+                              position: 'absolute', 
+                              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : '#222b3a', 
+                              border: inv.imagen_url ? `2px solid ${colorGrupo}` : '0.2dvh solid #fff', 
+                              fontSize: '2.2dvh' 
+                            }}
+                          >
+                            {!inv.imagen_url && inv.nombre[0]}
+                          </div>
                         );
                       });
                       lados[1].forEach((inv, i) => {
@@ -2339,7 +2355,23 @@ const MapaMesas = () => {
                         const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
                         const colorGrupo = grupoColorMap[grupo] || '#f59e42';
                         rendered.push(
-                          <div key={inv.id} data-invitado-id={inv.id} className="mapa-mesas-modal-invitado" style={{ left: `${x}dvh`, top: `${y}dvh`, width: `${invitadoSize}dvh`, height: `${invitadoSize}dvh`, position: 'absolute', background: '#222b3a', border: `0.2dvh solid ${colorGrupo}`, fontSize: '2.2dvh' }}>{inv.nombre[0]}</div>
+                          <div 
+                            key={inv.id} 
+                            data-invitado-id={inv.id} 
+                            className="mapa-mesas-modal-invitado" 
+                            style={{ 
+                              left: `${x}dvh`, 
+                              top: `${y}dvh`, 
+                              width: `${invitadoSize}dvh`, 
+                              height: `${invitadoSize}dvh`, 
+                              position: 'absolute', 
+                              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : '#222b3a', 
+                              border: inv.imagen_url ? `2px solid ${colorGrupo}` : '0.2dvh solid #fff', 
+                              fontSize: '2.2dvh' 
+                            }}
+                          >
+                            {!inv.imagen_url && inv.nombre[0]}
+                          </div>
                         );
                       });
                       lados[2].forEach((inv, i) => {
@@ -2349,7 +2381,23 @@ const MapaMesas = () => {
                         const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
                         const colorGrupo = grupoColorMap[grupo] || '#f59e42';
                         rendered.push(
-                          <div key={inv.id} data-invitado-id={inv.id} className="mapa-mesas-modal-invitado" style={{ left: `${x}dvh`, top: `${y}dvh`, width: `${invitadoSize}dvh`, height: `${invitadoSize}dvh`, position: 'absolute', background: '#222b3a', border: `0.2dvh solid ${colorGrupo}`, fontSize: '2.2dvh' }}>{inv.nombre[0]}</div>
+                          <div 
+                            key={inv.id} 
+                            data-invitado-id={inv.id} 
+                            className="mapa-mesas-modal-invitado" 
+                            style={{ 
+                              left: `${x}dvh`, 
+                              top: `${y}dvh`, 
+                              width: `${invitadoSize}dvh`, 
+                              height: `${invitadoSize}dvh`, 
+                              position: 'absolute', 
+                              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : '#222b3a', 
+                              border: inv.imagen_url ? `2px solid ${colorGrupo}` : '0.2dvh solid #fff', 
+                              fontSize: '2.2dvh' 
+                            }}
+                          >
+                            {!inv.imagen_url && inv.nombre[0]}
+                          </div>
                         );
                       });
                       lados[3].forEach((inv, i) => {
@@ -2359,7 +2407,23 @@ const MapaMesas = () => {
                         const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
                         const colorGrupo = grupoColorMap[grupo] || '#f59e42';
                         rendered.push(
-                          <div key={inv.id} data-invitado-id={inv.id} className="mapa-mesas-modal-invitado" style={{ left: `${x}dvh`, top: `${y}dvh`, width: `${invitadoSize}dvh`, height: `${invitadoSize}dvh`, position: 'absolute', background: '#222b3a', border: `0.2dvh solid ${colorGrupo}`, fontSize: '2.2dvh' }}>{inv.nombre[0]}</div>
+                          <div 
+                            key={inv.id} 
+                            data-invitado-id={inv.id} 
+                            className="mapa-mesas-modal-invitado" 
+                            style={{ 
+                              left: `${x}dvh`, 
+                              top: `${y}dvh`, 
+                              width: `${invitadoSize}dvh`, 
+                              height: `${invitadoSize}dvh`, 
+                              position: 'absolute', 
+                              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : '#222b3a', 
+                              border: inv.imagen_url ? `2px solid ${colorGrupo}` : '0.2dvh solid #fff', 
+                              fontSize: '2.2dvh' 
+                            }}
+                          >
+                            {!inv.imagen_url && inv.nombre[0]}
+                          </div>
                         );
                       });
                       return (
