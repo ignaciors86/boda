@@ -346,7 +346,7 @@ const MapaMesas = () => {
         
         // Luego obtener los invitados
         return fetch(
-          `${urlstrapi}/api/invitados?populate[personaje][populate]=imagen&populate[mesa][populate]=*&populate[grupo_origen][populate]=*`
+          `${urlstrapi}/api/invitados?populate[personaje][populate]=*&populate[mesa][populate]=*&populate[grupo_origen][populate]=*`
         )
           .then((response) => response.json())
           .then((data) => {
@@ -354,9 +354,7 @@ const MapaMesas = () => {
               id: invitado.id,
               documentId: invitado.documentId,
               nombre: invitado?.nombre,
-              imagen: invitado?.personaje
-                ? `https://boda-strapi-production.up.railway.app${invitado?.personaje?.imagen?.url}`
-                : "",
+              imagen_url: invitado?.personaje?.imagen_url || "",
               mesaId: invitado?.mesa?.id || 0,
               mesaDocumentId: invitado?.mesa?.documentId || "",
               mesa: invitado?.mesa?.nombre || "",
@@ -722,7 +720,7 @@ const MapaMesas = () => {
                       .then(() => {
                         console.log('Obteniendo datos actualizados...');
                         return fetch(
-                          `${urlstrapi}/api/invitados?populate[personaje][populate]=imagen&populate[mesa][populate]=*&populate[grupo_origen][populate]=*`
+                          `${urlstrapi}/api/invitados?populate[personaje][populate]=*&populate[mesa][populate]=*&populate[grupo_origen][populate]=*`
                         );
                       })
                       .then(res => {
@@ -737,9 +735,7 @@ const MapaMesas = () => {
                           id: invitado.id,
                           documentId: invitado.documentId,
                           nombre: invitado?.nombre,
-                          imagen: invitado?.personaje
-                            ? `https://boda-strapi-production.up.railway.app${invitado?.personaje?.imagen?.url}`
-                            : "",
+                          imagen_url: invitado?.personaje?.imagen_url || "",
                           mesaId: invitado?.mesa?.id || 0,
                           mesaDocumentId: invitado?.mesa?.documentId || "",
                           mesa: invitado?.mesa?.nombre || "",
@@ -986,7 +982,7 @@ const MapaMesas = () => {
                       .then(res => res.json())
                       .then(() => {
                         return fetch(
-                          `${urlstrapi}/api/invitados?populate[personaje][populate]=imagen&populate[mesa][populate]=*&populate[grupo_origen][populate]=*`
+                          `${urlstrapi}/api/invitados?populate[personaje][populate]=*&populate[mesa][populate]=*&populate[grupo_origen][populate]=*`
                         );
                       })
                       .then(res => res.json())
@@ -995,9 +991,7 @@ const MapaMesas = () => {
                           id: invitado.id,
                           documentId: invitado.documentId,
                           nombre: invitado?.nombre,
-                          imagen: invitado?.personaje
-                            ? `https://boda-strapi-production.up.railway.app${invitado?.personaje?.imagen?.url}`
-                            : "",
+                          imagen_url: invitado?.personaje?.imagen_url || "",
                           mesaId: invitado?.mesa?.id || 0,
                           mesaDocumentId: invitado?.mesa?.documentId || "",
                           mesa: invitado?.mesa?.nombre || "",
@@ -1218,9 +1212,12 @@ const MapaMesas = () => {
           <div
             key={inv.id}
             className="mapa-invitado-bolita imperial"
-            style={{ 
+            style={{
               transform: `translate(calc(-50% + ${bx}dvh), calc(-50% + ${by}dvh))`,
-              background: colorGrupo
+              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : colorGrupo,
+              width: '2.8dvh',
+              height: '2.8dvh',
+              border: inv.imagen_url ? `2px solid ${colorGrupo}` : 'none'
             }}
             ref={bolitaRefs.current[`${mesa.id}-${inv.id}`]}
             onMouseDown={e => {
@@ -1230,8 +1227,11 @@ const MapaMesas = () => {
                 el._draggableBolita.startDrag(e);
               }
             }}
-            onClick={() => setInvitadoDetalle(inv)}
-          >{inv.nombre[0]}</div>
+            onClick={(e) => {
+              e.stopPropagation();
+              setInvitadoDetalle(inv);
+            }}
+          >{!inv.imagen_url && inv.nombre[0]}</div>
         );
       });
     }
@@ -1310,7 +1310,8 @@ const MapaMesas = () => {
             className="mapa-invitado-bolita"
             style={{ 
               transform: `translate(calc(-50% + ${bx}), calc(-50% + ${by}))`,
-              background: colorGrupo
+              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : colorGrupo,
+              border: inv.imagen_url ? `2px solid ${colorGrupo}` : 'none'
             }}
             ref={bolitaRefs.current[`${mesa.id}-${inv.id}`]}
             onMouseDown={e => {
@@ -1324,7 +1325,7 @@ const MapaMesas = () => {
               e.stopPropagation();
               setInvitadoDetalle(inv);
             }}
-          >{inv.nombre[0]}</div>
+          >{!inv.imagen_url && inv.nombre[0]}</div>
         );
       });
     } else if (mesa.tipo === 'imperial') {
@@ -1366,9 +1367,10 @@ const MapaMesas = () => {
             className="mapa-invitado-bolita imperial"
             style={{
               transform: `translate(calc(-50% + ${bx}dvh), calc(-50% + ${by}dvh))`,
-              background: colorGrupo,
+              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : colorGrupo,
               width: `${invitadoSize}dvh`,
-              height: `${invitadoSize}dvh`
+              height: `${invitadoSize}dvh`,
+              border: inv.imagen_url ? `2px solid ${colorGrupo}` : 'none'
             }}
             ref={bolitaRefs.current[`${mesa.id}-${inv.id}`]}
             onMouseDown={e => {
@@ -1382,7 +1384,7 @@ const MapaMesas = () => {
               e.stopPropagation();
               setInvitadoDetalle(inv);
             }}
-          >{inv.nombre[0]}</div>
+          >{!inv.imagen_url && inv.nombre[0]}</div>
         );
       });
       // Derecha
@@ -1398,9 +1400,10 @@ const MapaMesas = () => {
             className="mapa-invitado-bolita imperial"
             style={{
               transform: `translate(calc(-50% + ${bx}dvh), calc(-50% + ${by}dvh))`,
-              background: colorGrupo,
+              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : colorGrupo,
               width: `${invitadoSize}dvh`,
-              height: `${invitadoSize}dvh`
+              height: `${invitadoSize}dvh`,
+              border: inv.imagen_url ? `2px solid ${colorGrupo}` : 'none'
             }}
             ref={bolitaRefs.current[`${mesa.id}-${inv.id}`]}
             onMouseDown={e => {
@@ -1414,7 +1417,7 @@ const MapaMesas = () => {
               e.stopPropagation();
               setInvitadoDetalle(inv);
             }}
-          >{inv.nombre[0]}</div>
+          >{!inv.imagen_url && inv.nombre[0]}</div>
         );
       });
       // Inferior
@@ -1430,9 +1433,10 @@ const MapaMesas = () => {
             className="mapa-invitado-bolita imperial"
             style={{
               transform: `translate(calc(-50% + ${bx}dvh), calc(-50% + ${by}dvh))`,
-              background: colorGrupo,
+              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : colorGrupo,
               width: `${invitadoSize}dvh`,
-              height: `${invitadoSize}dvh`
+              height: `${invitadoSize}dvh`,
+              border: inv.imagen_url ? `2px solid ${colorGrupo}` : 'none'
             }}
             ref={bolitaRefs.current[`${mesa.id}-${inv.id}`]}
             onMouseDown={e => {
@@ -1446,7 +1450,7 @@ const MapaMesas = () => {
               e.stopPropagation();
               setInvitadoDetalle(inv);
             }}
-          >{inv.nombre[0]}</div>
+          >{!inv.imagen_url && inv.nombre[0]}</div>
         );
       });
       // Izquierda
@@ -1462,9 +1466,10 @@ const MapaMesas = () => {
             className="mapa-invitado-bolita imperial"
             style={{
               transform: `translate(calc(-50% + ${bx}dvh), calc(-50% + ${by}dvh))`,
-              background: colorGrupo,
+              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : colorGrupo,
               width: `${invitadoSize}dvh`,
-              height: `${invitadoSize}dvh`
+              height: `${invitadoSize}dvh`,
+              border: inv.imagen_url ? `2px solid ${colorGrupo}` : 'none'
             }}
             ref={bolitaRefs.current[`${mesa.id}-${inv.id}`]}
             onMouseDown={e => {
@@ -1478,7 +1483,7 @@ const MapaMesas = () => {
               e.stopPropagation();
               setInvitadoDetalle(inv);
             }}
-          >{inv.nombre[0]}</div>
+          >{!inv.imagen_url && inv.nombre[0]}</div>
         );
       });
     }
@@ -2196,12 +2201,15 @@ const MapaMesas = () => {
                     <div
                       key={inv.id}
                       className="mapa-mesas-pendiente-bolita"
-                      style={{background: colorGrupo}}
+                      style={{
+                        background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : colorGrupo,
+                        border: inv.imagen_url ? `2px solid ${colorGrupo}` : 'none'
+                      }}
                       ref={getInvitadoRef(inv.id)}
                       draggable={true}
                       onClick={() => setInvitadoDetalle(inv)}
                     >
-                      {inv.nombre[0]}
+                      {!inv.imagen_url && inv.nombre[0]}
                       <span className="mapa-mesas-pendiente-nombre">{inv.nombre}</span>
                     </div>
                   );
@@ -2274,6 +2282,8 @@ const MapaMesas = () => {
                             const ang = (2 * Math.PI * idx) / invitados.length - Math.PI / 2;
                             const bx = cx + Math.cos(ang) * radio - invitadoSize / 2;
                             const by = cy + Math.sin(ang) * radio - invitadoSize / 2;
+                            const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
+                            const colorGrupo = grupoColorMap[grupo] || '#6366f1';
                             return (
                               <div
                                 key={inv.id}
@@ -2285,12 +2295,12 @@ const MapaMesas = () => {
                                   width: `${invitadoSize}dvh`,
                                   height: `${invitadoSize}dvh`,
                                   position: 'absolute',
-                                  background: '#222b3a',
-                                  border: '0.2dvh solid #fff',
+                                  background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : '#222b3a',
+                                  border: inv.imagen_url ? `2px solid ${colorGrupo}` : '0.2dvh solid #fff',
                                   fontSize: '2.2dvh'
                                 }}
                               >
-                                {inv.nombre[0]}
+                                {!inv.imagen_url && inv.nombre[0]}
                               </div>
                             );
                           })}
@@ -2316,32 +2326,40 @@ const MapaMesas = () => {
                         const gap = mesaW / (lados[0].length + 1);
                         const x = leftX + gap * (i + 1) - invitadoSize / 2;
                         const y = topY - offset - invitadoSize / 2;
+                        const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
+                        const colorGrupo = grupoColorMap[grupo] || '#f59e42';
                         rendered.push(
-                          <div key={inv.id} data-invitado-id={inv.id} className="mapa-mesas-modal-invitado" style={{ left: `${x}dvh`, top: `${y}dvh`, width: `${invitadoSize}dvh`, height: `${invitadoSize}dvh`, position: 'absolute', background: '#222b3a', border: '0.2dvh solid #fff', fontSize: '2.2dvh' }}>{inv.nombre[0]}</div>
+                          <div key={inv.id} data-invitado-id={inv.id} className="mapa-mesas-modal-invitado" style={{ left: `${x}dvh`, top: `${y}dvh`, width: `${invitadoSize}dvh`, height: `${invitadoSize}dvh`, position: 'absolute', background: '#222b3a', border: `0.2dvh solid ${colorGrupo}`, fontSize: '2.2dvh' }}>{inv.nombre[0]}</div>
                         );
                       });
                       lados[1].forEach((inv, i) => {
                         const gap = mesaH / (lados[1].length + 1);
                         const x = rightX + offset - invitadoSize / 2;
                         const y = topY + gap * (i + 1) - invitadoSize / 2;
+                        const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
+                        const colorGrupo = grupoColorMap[grupo] || '#f59e42';
                         rendered.push(
-                          <div key={inv.id} data-invitado-id={inv.id} className="mapa-mesas-modal-invitado" style={{ left: `${x}dvh`, top: `${y}dvh`, width: `${invitadoSize}dvh`, height: `${invitadoSize}dvh`, position: 'absolute', background: '#222b3a', border: '0.2dvh solid #fff', fontSize: '2.2dvh' }}>{inv.nombre[0]}</div>
+                          <div key={inv.id} data-invitado-id={inv.id} className="mapa-mesas-modal-invitado" style={{ left: `${x}dvh`, top: `${y}dvh`, width: `${invitadoSize}dvh`, height: `${invitadoSize}dvh`, position: 'absolute', background: '#222b3a', border: `0.2dvh solid ${colorGrupo}`, fontSize: '2.2dvh' }}>{inv.nombre[0]}</div>
                         );
                       });
                       lados[2].forEach((inv, i) => {
                         const gap = mesaW / (lados[2].length + 1);
                         const x = leftX + gap * (i + 1) - invitadoSize / 2;
                         const y = bottomY + offset - invitadoSize / 2;
+                        const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
+                        const colorGrupo = grupoColorMap[grupo] || '#f59e42';
                         rendered.push(
-                          <div key={inv.id} data-invitado-id={inv.id} className="mapa-mesas-modal-invitado" style={{ left: `${x}dvh`, top: `${y}dvh`, width: `${invitadoSize}dvh`, height: `${invitadoSize}dvh`, position: 'absolute', background: '#222b3a', border: '0.2dvh solid #fff', fontSize: '2.2dvh' }}>{inv.nombre[0]}</div>
+                          <div key={inv.id} data-invitado-id={inv.id} className="mapa-mesas-modal-invitado" style={{ left: `${x}dvh`, top: `${y}dvh`, width: `${invitadoSize}dvh`, height: `${invitadoSize}dvh`, position: 'absolute', background: '#222b3a', border: `0.2dvh solid ${colorGrupo}`, fontSize: '2.2dvh' }}>{inv.nombre[0]}</div>
                         );
                       });
                       lados[3].forEach((inv, i) => {
                         const gap = mesaH / (lados[3].length + 1);
                         const x = leftX - offset - invitadoSize / 2;
                         const y = topY + gap * (i + 1) - invitadoSize / 2;
+                        const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
+                        const colorGrupo = grupoColorMap[grupo] || '#f59e42';
                         rendered.push(
-                          <div key={inv.id} data-invitado-id={inv.id} className="mapa-mesas-modal-invitado" style={{ left: `${x}dvh`, top: `${y}dvh`, width: `${invitadoSize}dvh`, height: `${invitadoSize}dvh`, position: 'absolute', background: '#222b3a', border: '0.2dvh solid #fff', fontSize: '2.2dvh' }}>{inv.nombre[0]}</div>
+                          <div key={inv.id} data-invitado-id={inv.id} className="mapa-mesas-modal-invitado" style={{ left: `${x}dvh`, top: `${y}dvh`, width: `${invitadoSize}dvh`, height: `${invitadoSize}dvh`, position: 'absolute', background: '#222b3a', border: `0.2dvh solid ${colorGrupo}`, fontSize: '2.2dvh' }}>{inv.nombre[0]}</div>
                         );
                       });
                       return (
@@ -2391,61 +2409,61 @@ const MapaMesas = () => {
                       return (
                         <li 
                           key={inv.id}
-                            draggable={!isSavingOrder}
+                          draggable={!isSavingOrder}
                           onDragStart={(e) => {
-                              if (isSavingOrder) {
-                                e.preventDefault();
-                                return;
-                              }
+                            if (isSavingOrder) {
+                              e.preventDefault();
+                              return;
+                            }
                             e.dataTransfer.setData('text/plain', inv.id);
                             e.target.classList.add('dragging');
                             e.target.closest('.mapa-mesas-modal-invitados').classList.add('dragging-active');
-                              
-                              // Crear clon flotante
-                              const rect = e.target.getBoundingClientRect();
-                              const clone = e.target.cloneNode(true);
-                              clone.style.position = 'fixed';
-                              clone.style.width = rect.width + 'px';
-                              clone.style.height = rect.height + 'px';
-                              clone.style.left = rect.left + 'px';
-                              clone.style.top = rect.top + 'px';
-                              clone.style.pointerEvents = 'none';
-                              clone.style.zIndex = 9999;
-                              clone.style.opacity = 0.95;
-                              clone.classList.add('drag-clone');
-                              document.body.appendChild(clone);
-                              
-                              // Animar el elemento original
-                              gsap.to(e.target, {
-                                opacity: 0.5,
-                                scale: 0.95,
-                                duration: 0.2
-                              });
+                            
+                            // Crear clon flotante
+                            const rect = e.target.getBoundingClientRect();
+                            const clone = e.target.cloneNode(true);
+                            clone.style.position = 'fixed';
+                            clone.style.width = rect.width + 'px';
+                            clone.style.height = rect.height + 'px';
+                            clone.style.left = rect.left + 'px';
+                            clone.style.top = rect.top + 'px';
+                            clone.style.pointerEvents = 'none';
+                            clone.style.zIndex = 9999;
+                            clone.style.opacity = 0.95;
+                            clone.classList.add('drag-clone');
+                            document.body.appendChild(clone);
+                            
+                            // Animar el elemento original
+                            gsap.to(e.target, {
+                              opacity: 0.5,
+                              scale: 0.95,
+                              duration: 0.2
+                            });
                           }}
                           onDragEnd={(e) => {
-                              if (isSavingOrder) return;
-                              
+                            if (isSavingOrder) return;
+                            
                             e.target.classList.remove('dragging');
                             const container = e.target.closest('.mapa-mesas-modal-invitados');
                             container.classList.remove('dragging-active');
-                              
-                              // Remover clon flotante
-                              const clone = document.querySelector('.drag-clone');
-                              if (clone) {
-                                gsap.to(clone, {
-                                  opacity: 0,
-                                  scale: 0.8,
-                                  duration: 0.2,
-                                  onComplete: () => clone.remove()
-                                });
-                              }
-                              
-                              // Animar el elemento original de vuelta
-                              gsap.to(e.target, {
-                                opacity: 1,
-                                scale: 1,
-                                duration: 0.2
+                            
+                            // Remover clon flotante
+                            const clone = document.querySelector('.drag-clone');
+                            if (clone) {
+                              gsap.to(clone, {
+                                opacity: 0,
+                                scale: 0.8,
+                                duration: 0.2,
+                                onComplete: () => clone.remove()
                               });
+                            }
+                            
+                            // Animar el elemento original de vuelta
+                            gsap.to(e.target, {
+                              opacity: 1,
+                              scale: 1,
+                              duration: 0.2
+                            });
                             
                             // Obtener el orden final de todos los elementos
                             const items = [...container.querySelectorAll('li')];
@@ -2459,7 +2477,7 @@ const MapaMesas = () => {
                             actualizarOrdenInvitados(mesaDetalle.id, newOrder);
                           }}
                           onDragOver={(e) => {
-                              if (isSavingOrder) return;
+                            if (isSavingOrder) return;
                             e.preventDefault();
                             const draggingItem = document.querySelector('.dragging');
                             if (!draggingItem || draggingItem === e.target) return;
@@ -2473,214 +2491,220 @@ const MapaMesas = () => {
 
                             const afterElement = getDragAfterElement(container, e.clientY);
                             if (afterElement) {
-                                // Crear marcador visual
-                                const marker = document.createElement('div');
-                                marker.className = 'drop-marker';
-                                
-                                // Posicionar marcador
-                                const rect = afterElement.getBoundingClientRect();
-                                const containerRect = container.getBoundingClientRect();
-                                marker.style.top = `${rect.top - containerRect.top}px`;
-                                
-                                // Insertar marcador
-                                container.insertBefore(marker, afterElement);
-                                
-                                // Animar el marcador
-                                requestAnimationFrame(() => {
-                                    marker.classList.add('visible');
-                                });
+                              // Crear marcador visual
+                              const marker = document.createElement('div');
+                              marker.className = 'drop-marker';
+                              
+                              // Posicionar marcador
+                              const rect = afterElement.getBoundingClientRect();
+                              const containerRect = container.getBoundingClientRect();
+                              marker.style.top = `${rect.top - containerRect.top}px`;
+                              
+                              // Insertar marcador
+                              container.insertBefore(marker, afterElement);
+                              
+                              // Animar el marcador
+                              requestAnimationFrame(() => {
+                                marker.classList.add('visible');
+                              });
                             } else {
-                                // Si no hay elemento después, crear marcador al final
-                                const marker = document.createElement('div');
-                                marker.className = 'drop-marker';
-                                marker.style.top = `${container.scrollHeight}px`;
-                                container.appendChild(marker);
-                                
-                                requestAnimationFrame(() => {
-                                    marker.classList.add('visible');
-                                });
+                              // Si no hay elemento después, crear marcador al final
+                              const marker = document.createElement('div');
+                              marker.className = 'drop-marker';
+                              marker.style.top = `${container.scrollHeight}px`;
+                              container.appendChild(marker);
+                              
+                              requestAnimationFrame(() => {
+                                marker.classList.add('visible');
+                              });
                             }
                           }}
                           onDrop={(e) => {
-                              e.preventDefault();
-                              const container = e.target.closest('ul');
-                              if (!container) return;
+                            e.preventDefault();
+                            const container = e.target.closest('ul');
+                            if (!container) return;
+                            
+                            // Remover marcadores
+                            const markers = container.querySelectorAll('.drop-marker');
+                            markers.forEach(marker => {
+                              marker.classList.remove('visible');
+                              setTimeout(() => marker.remove(), 200);
+                            });
+                            
+                            const draggingItem = document.querySelector('.dragging');
+                            if (!draggingItem) return;
+                            
+                            const afterElement = getDragAfterElement(container, e.clientY);
+                            if (afterElement) {
+                              // Animar la inserción
+                              const rect = afterElement.getBoundingClientRect();
+                              const containerRect = container.getBoundingClientRect();
+                              const finalY = rect.top - containerRect.top;
                               
-                              // Remover marcadores
-                              const markers = container.querySelectorAll('.drop-marker');
-                              markers.forEach(marker => {
-                                  marker.classList.remove('visible');
-                                  setTimeout(() => marker.remove(), 200);
-                              });
-                              
-                              const draggingItem = document.querySelector('.dragging');
-                              if (!draggingItem) return;
-                              
-                              const afterElement = getDragAfterElement(container, e.clientY);
-                              if (afterElement) {
-                                  // Animar la inserción
-                                  const rect = afterElement.getBoundingClientRect();
-                                  const containerRect = container.getBoundingClientRect();
-                                  const finalY = rect.top - containerRect.top;
+                              gsap.to(draggingItem, {
+                                y: finalY,
+                                duration: 0.3,
+                                ease: "power2.out",
+                                onComplete: () => {
+                                  container.insertBefore(draggingItem, afterElement);
+                                  gsap.set(draggingItem, { y: 0 });
                                   
-                                  gsap.to(draggingItem, {
-                                      y: finalY,
-                                      duration: 0.3,
-                                      ease: "power2.out",
-                                      onComplete: () => {
-                                          container.insertBefore(draggingItem, afterElement);
-                                          gsap.set(draggingItem, { y: 0 });
-                                          
-                                          // Actualizar orden
-                                          const items = [...container.querySelectorAll('li')];
-                                          const newOrder = {};
-                                          items.forEach((item, index) => {
-                                              const id = item.getAttribute('data-id');
-                                              if (id) newOrder[id] = index;
-                                          });
+                                  // Actualizar orden
+                                  const items = [...container.querySelectorAll('li')];
+                                  const newOrder = {};
+                                  items.forEach((item, index) => {
+                                    const id = item.getAttribute('data-id');
+                                    if (id) newOrder[id] = index;
+                                  });
 
-                                          // Animar las bolitas en el dibujo
-                                          const mesaId = mesaDetalle.id;
-                                          const invitados = mesaDetalle.invitados || [];
-                                          const ordenActual = invitadosOrdenados[mesaId] || {};
-                                          const invitadosOrdenadosLista = [...invitados].sort((a, b) => {
-                                            const ordenA = ordenActual[a.id] || 0;
-                                            const ordenB = ordenActual[b.id] || 0;
-                                            return ordenA - ordenB;
-                                          });
+                                  // Animar las bolitas en el dibujo
+                                  const mesaId = mesaDetalle.id;
+                                  const invitados = mesaDetalle.invitados || [];
+                                  const ordenActual = invitadosOrdenados[mesaId] || {};
+                                  const invitadosOrdenadosLista = [...invitados].sort((a, b) => {
+                                    const ordenA = ordenActual[a.id] || 0;
+                                    const ordenB = ordenActual[b.id] || 0;
+                                    return ordenA - ordenB;
+                                  });
 
-                                          // Obtener el contenedor del dibujo
-                                          const dibujoContainer = document.querySelector('.mapa-mesas-modal-mesa-dibujo');
-                                          if (!dibujoContainer) return;
+                                  // Obtener el contenedor del dibujo
+                                  const dibujoContainer = document.querySelector('.mapa-mesas-modal-mesa-dibujo');
+                                  if (!dibujoContainer) return;
 
-                                          // Calcular nuevas posiciones
-                                          if (mesaDetalle.tipo === 'redonda') {
-                                            const areaW = 64;
-                                            const areaH = 48;
-                                            const cx = areaW / 2;
-                                            const cy = areaH / 2;
-                                            const radio = 22;
-                                            const invitadoSize = 5.5;
+                                  // Calcular nuevas posiciones
+                                  if (mesaDetalle.tipo === 'redonda') {
+                                    const areaW = 64;
+                                    const areaH = 48;
+                                    const cx = areaW / 2;
+                                    const cy = areaH / 2;
+                                    const radio = 22;
+                                    const invitadoSize = 5.5;
 
-                                            // Animar cada bolita a su nueva posición
-                                            invitadosOrdenadosLista.forEach((inv, idx) => {
-                                              const ang = (2 * Math.PI * idx) / invitados.length - Math.PI / 2;
-                                              const bx = cx + Math.cos(ang) * radio - invitadoSize / 2;
-                                              const by = cy + Math.sin(ang) * radio - invitadoSize / 2;
-                                              
-                                              const bolita = dibujoContainer.querySelector(`[data-invitado-id="${inv.id}"]`);
-                                              if (bolita) {
-                                                gsap.to(bolita, {
-                                                  left: `${bx}dvh`,
-                                                  top: `${by}dvh`,
-                                                  duration: 0.5,
-                                                  ease: "elastic.out(1, 0.5)",
-                                                  onStart: () => {
-                                                    bolita.style.zIndex = "2";
-                                                  },
-                                                  onComplete: () => {
-                                                    bolita.style.zIndex = "1";
-                                                  }
-                                                });
-                                              }
-                                            });
-                                          } else if (mesaDetalle.tipo === 'imperial') {
-                                            const areaW = 64;
-                                            const areaH = 48;
-                                            const cx = areaW / 2;
-                                            const cy = areaH / 2;
-                                            const mesaW = 48;
-                                            const mesaH = 24;
-                                            const invitadoSize = 6;
-                                            const offset = 4;
-                                            const leftX = cx - mesaW / 2;
-                                            const rightX = cx + mesaW / 2;
-                                            const topY = cy - mesaH / 2;
-                                            const bottomY = cy + mesaH / 2;
-
-                                            // Distribuir en lados
-                                            const lados = [[], [], [], []];
-                                            let idx = 0;
-                                            for (let i = 0; i < invitados.length; i++) {
-                                              lados[idx % 4].push(invitadosOrdenadosLista[i]);
-                                              idx++;
-                                            }
-
-                                            // Animar cada bolita a su nueva posición
-                                            lados.forEach((lado, ladoIdx) => {
-                                              lado.forEach((inv, posIdx) => {
-                                                let bx = 0, by = 0;
-                                                switch (ladoIdx) {
-                                                  case 0: // Superior
-                                                    const gapTop = mesaW / (lado.length + 1);
-                                                    bx = leftX + gapTop * (posIdx + 1) - invitadoSize / 2;
-                                                    by = topY - offset - invitadoSize / 2;
-                                                    break;
-                                                  case 1: // Derecha
-                                                    const gapRight = mesaH / (lado.length + 1);
-                                                    bx = rightX + offset - invitadoSize / 2;
-                                                    by = topY + gapRight * (posIdx + 1) - invitadoSize / 2;
-                                                    break;
-                                                  case 2: // Inferior
-                                                    const gapBottom = mesaW / (lado.length + 1);
-                                                    bx = leftX + gapBottom * (posIdx + 1) - invitadoSize / 2;
-                                                    by = bottomY + offset - invitadoSize / 2;
-                                                    break;
-                                                  case 3: // Izquierda
-                                                    const gapLeft = mesaH / (lado.length + 1);
-                                                    bx = leftX - offset - invitadoSize / 2;
-                                                    by = topY + gapLeft * (posIdx + 1) - invitadoSize / 2;
-                                                    break;
-                                                }
-
-                                                const bolita = dibujoContainer.querySelector(`[data-invitado-id="${inv.id}"]`);
-                                                if (bolita) {
-                                                  gsap.to(bolita, {
-                                                    left: `${bx}dvh`,
-                                                    top: `${by}dvh`,
-                                                    duration: 0.5,
-                                                    ease: "elastic.out(1, 0.5)",
-                                                    onStart: () => {
-                                                      bolita.style.zIndex = "2";
-                                                    },
-                                                    onComplete: () => {
-                                                      bolita.style.zIndex = "1";
-                                                    }
-                                                  });
-                                                }
-                                              });
-                                            });
+                                    // Animar cada bolita a su nueva posición
+                                    invitadosOrdenadosLista.forEach((inv, idx) => {
+                                      const ang = (2 * Math.PI * idx) / invitados.length - Math.PI / 2;
+                                      const bx = cx + Math.cos(ang) * radio - invitadoSize / 2;
+                                      const by = cy + Math.sin(ang) * radio - invitadoSize / 2;
+                                      
+                                      const bolita = dibujoContainer.querySelector(`[data-invitado-id="${inv.id}"]`);
+                                      if (bolita) {
+                                        gsap.to(bolita, {
+                                          left: `${bx}dvh`,
+                                          top: `${by}dvh`,
+                                          duration: 0.5,
+                                          ease: "elastic.out(1, 0.5)",
+                                          onStart: () => {
+                                            bolita.style.zIndex = "2";
+                                          },
+                                          onComplete: () => {
+                                            bolita.style.zIndex = "1";
                                           }
+                                        });
+                                      }
+                                    });
+                                  } else if (mesaDetalle.tipo === 'imperial') {
+                                    const areaW = 64;
+                                    const areaH = 48;
+                                    const cx = areaW / 2;
+                                    const cy = areaH / 2;
+                                    const mesaW = 48;
+                                    const mesaH = 24;
+                                    const invitadoSize = 6;
+                                    const offset = 4;
+                                    const leftX = cx - mesaW / 2;
+                                    const rightX = cx + mesaW / 2;
+                                    const topY = cy - mesaH / 2;
+                                    const bottomY = cy + mesaH / 2;
 
-                                          actualizarOrdenInvitados(mesaDetalle.id, newOrder);
-                                      }
-                                  });
-                              } else {
-                                  // Animar al final
-                                  gsap.to(draggingItem, {
-                                      y: container.scrollHeight,
-                                      duration: 0.3,
-                                      ease: "power2.out",
-                                      onComplete: () => {
-                                          container.appendChild(draggingItem);
-                                          gsap.set(draggingItem, { y: 0 });
-                                          
-                                          // Actualizar orden
-                                          const items = [...container.querySelectorAll('li')];
-                                          const newOrder = {};
-                                          items.forEach((item, index) => {
-                                              const id = item.getAttribute('data-id');
-                                              if (id) newOrder[id] = index;
+                                    // Distribuir en lados
+                                    const lados = [[], [], [], []];
+                                    let idx = 0;
+                                    for (let i = 0; i < invitados.length; i++) {
+                                      lados[idx % 4].push(invitadosOrdenadosLista[i]);
+                                      idx++;
+                                    }
+
+                                    // Animar cada bolita a su nueva posición
+                                    lados.forEach((lado, ladoIdx) => {
+                                      lado.forEach((inv, posIdx) => {
+                                        let bx = 0, by = 0;
+                                        switch (ladoIdx) {
+                                          case 0: // Superior
+                                            const gapTop = mesaW / (lado.length + 1);
+                                            bx = leftX + gapTop * (posIdx + 1) - invitadoSize / 2;
+                                            by = topY - offset - invitadoSize / 2;
+                                            break;
+                                          case 1: // Derecha
+                                            const gapRight = mesaH / (lado.length + 1);
+                                            bx = rightX + offset - invitadoSize / 2;
+                                            by = topY + gapRight * (posIdx + 1) - invitadoSize / 2;
+                                            break;
+                                          case 2: // Inferior
+                                            const gapBottom = mesaW / (lado.length + 1);
+                                            bx = leftX + gapBottom * (posIdx + 1) - invitadoSize / 2;
+                                            by = bottomY + offset - invitadoSize / 2;
+                                            break;
+                                          case 3: // Izquierda
+                                            const gapLeft = mesaH / (lado.length + 1);
+                                            bx = leftX - offset - invitadoSize / 2;
+                                            by = topY + gapLeft * (posIdx + 1) - invitadoSize / 2;
+                                            break;
+                                        }
+
+                                        const bolita = dibujoContainer.querySelector(`[data-invitado-id="${inv.id}"]`);
+                                        if (bolita) {
+                                          gsap.to(bolita, {
+                                            left: `${bx}dvh`,
+                                            top: `${by}dvh`,
+                                            duration: 0.5,
+                                            ease: "elastic.out(1, 0.5)",
+                                            onStart: () => {
+                                              bolita.style.zIndex = "2";
+                                            },
+                                            onComplete: () => {
+                                              bolita.style.zIndex = "1";
+                                            }
                                           });
-                                          actualizarOrdenInvitados(mesaDetalle.id, newOrder);
-                                      }
+                                        }
+                                      });
+                                    });
+                                  }
+
+                                  actualizarOrdenInvitados(mesaDetalle.id, newOrder);
+                                }
+                              });
+                            } else {
+                              // Animar al final
+                              gsap.to(draggingItem, {
+                                y: container.scrollHeight,
+                                duration: 0.3,
+                                ease: "power2.out",
+                                onComplete: () => {
+                                  container.appendChild(draggingItem);
+                                  gsap.set(draggingItem, { y: 0 });
+                                  
+                                  // Actualizar orden
+                                  const items = [...container.querySelectorAll('li')];
+                                  const newOrder = {};
+                                  items.forEach((item, index) => {
+                                    const id = item.getAttribute('data-id');
+                                    if (id) newOrder[id] = index;
                                   });
-                              }
+                                  actualizarOrdenInvitados(mesaDetalle.id, newOrder);
+                                }
+                              });
+                            }
                           }}
                           data-id={inv.id}
                         >
-                          <span className="mapa-mesas-modal-invitado-bolita" style={{background: colorGrupo}}>
-                            {inv.nombre[0]}
+                          <span 
+                            className="mapa-mesas-modal-invitado-bolita" 
+                            style={{
+                              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : colorGrupo,
+                              border: inv.imagen_url ? `2px solid ${colorGrupo}` : 'none'
+                            }}
+                          >
+                            {!inv.imagen_url && inv.nombre[0]}
                           </span>
                           <span className="mapa-mesas-modal-invitado-nombre">{inv.nombre}</span>
                           <span className="mapa-mesas-modal-invitado-orden">#{idx + 1}</span>
@@ -2708,8 +2732,8 @@ const MapaMesas = () => {
                 <div 
                   className="mapa-mesas-modal-invitado-avatar" 
                   style={{ 
-                    background: invitadoCompleto?.imagen 
-                      ? `url(${invitadoCompleto.imagen}) center/cover` 
+                    background: invitadoCompleto?.imagen_url 
+                      ? `url(${invitadoCompleto.imagen_url}) center/cover` 
                       : grupoColorMap[invitadoCompleto?.grupoOrigen] || '#6366f1'
                   }}
                 >
