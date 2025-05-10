@@ -24,7 +24,8 @@ const PanelPersonajes = ({
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
-    imagen: null
+    imagen: null,
+    invitadoId: null
   });
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -36,10 +37,14 @@ const PanelPersonajes = ({
   const [isSearching, setIsSearching] = useState(false);
   const fileInputRef = useRef();
   const [isListLoading, setIsListLoading] = useState(false);
+  const [invitadosSinPersonaje, setInvitadosSinPersonaje] = useState([]);
+  const [invitadoSearchTerm, setInvitadoSearchTerm] = useState('');
+  const [showInvitadosList, setShowInvitadosList] = useState(false);
 
   useEffect(() => {
     if (isPanelOpen) {
       fetchPersonajes();
+      fetchInvitadosSinPersonaje();
     }
   }, [isPanelOpen]);
 
@@ -60,6 +65,33 @@ const PanelPersonajes = ({
       console.error('Error al obtener personajes:', error);
     } finally {
       setIsListLoading(false);
+    }
+  };
+
+  const fetchInvitadosSinPersonaje = async () => {
+    try {
+      const response = await fetch(`${urlstrapi}/api/invitados?populate[personaje][populate]=*`, {
+        headers: {
+          'Authorization': `Bearer ${STRAPI_TOKEN}`
+        }
+      });
+      const data = await response.json();
+      console.log('Datos de invitados:', data);
+      if (data.data) {
+        const invitadosFormateados = data.data.map(inv => {
+          console.log('Invitado individual:', inv);
+          return {
+            id: inv.id,
+            nombre: inv.attributes?.nombre || inv.nombre || 'Sin nombre',
+            documentId: inv.attributes?.documentId || inv.documentId,
+            personajeId: inv.attributes?.personaje?.data?.id || null
+          };
+        });
+        console.log('Invitados formateados:', invitadosFormateados);
+        setInvitadosSinPersonaje(invitadosFormateados);
+      }
+    } catch (error) {
+      console.error('Error al obtener invitados:', error);
     }
   };
 
@@ -152,9 +184,11 @@ const PanelPersonajes = ({
         data: {
           nombre: formData.nombre || '',
           descripcion: formData.descripcion || '',
-          imagen_url: formData.imagen
+          imagen_url: formData.imagen,
+          invitados: formData.invitadoId ? [formData.invitadoId] : []
         }
       };
+      console.log('Enviando datos:', dataToSend);
       let response;
       if (selectedPersonaje) {
         response = await fetch(`${urlstrapi}/api/personajes/${selectedPersonaje.documentId}`, {
@@ -175,16 +209,23 @@ const PanelPersonajes = ({
           body: JSON.stringify(dataToSend)
         });
       }
+      const responseData = await response.json();
+      console.log('Respuesta del servidor:', responseData);
       if (!response.ok) {
         const errorData = await response.json();
         alert(JSON.stringify(errorData, null, 2));
         throw new Error(errorData.error?.message || 'Error al guardar el personaje');
       }
-      setFormData({ nombre: '', descripcion: '', imagen: null });
+      // Resetear todos los campos
+      setFormData({ nombre: '', descripcion: '', imagen: null, invitadoId: null });
       setSelectedPersonaje(null);
       setPreviewUrl(null);
+      setInvitadoSearchTerm('');
+      setShowInvitadosList(false);
       fetchPersonajes();
+      fetchInvitadosSinPersonaje();
     } catch (error) {
+      console.error('Error completo:', error);
       alert('Error al guardar el personaje. Por favor, intenta de nuevo.');
     }
   };
@@ -194,12 +235,33 @@ const PanelPersonajes = ({
   };
 
   const handleEdit = (personaje) => {
+    // Si el personaje ya está seleccionado, lo desmarcamos
+    if (selectedPersonaje?.id === personaje.id) {
+      setSelectedPersonaje(null);
+      setFormData({ nombre: '', descripcion: '', imagen: null, invitadoId: null });
+      setPreviewUrl(null);
+      setInvitadoSearchTerm('');
+      setShowInvitadosList(false);
+      return;
+    }
+
+    // Si es un personaje diferente, lo seleccionamos
     setSelectedPersonaje(personaje);
     setFormData({
       nombre: personaje.nombre || '',
       descripcion: personaje.descripcion || '',
-      imagen: personaje.imagen_url || null
+      imagen: personaje.imagen_url || null,
+      invitadoId: personaje.invitados?.length > 0 ? personaje.invitados[0].id : null
     });
+    // Buscar el invitado asociado y establecer su nombre en el input
+    if (personaje.invitados?.length > 0) {
+      const invitadoAsociado = invitadosSinPersonaje.find(inv => inv.id === personaje.invitados[0].id);
+      if (invitadoAsociado) {
+        setInvitadoSearchTerm(invitadoAsociado.nombre);
+      }
+    } else {
+      setInvitadoSearchTerm('');
+    }
     setPreviewUrl(personaje.imagen_url || null);
   };
 
@@ -224,7 +286,7 @@ const PanelPersonajes = ({
 
       // Limpiar el estado
       setSelectedPersonaje(null);
-      setFormData({ nombre: '', descripcion: '', imagen: null });
+      setFormData({ nombre: '', descripcion: '', imagen: null, invitadoId: null });
       setPreviewUrl(null);
       
       // Actualizar la lista
@@ -239,11 +301,161 @@ const PanelPersonajes = ({
     <>
       <div className={`panel-personajes ${isPanelOpen ? 'open' : ''}`}>
         <div className="dashboard-content">
-          <button className="close-btn" onClick={() => setIsPanelOpen(false)}>
+          <button className="close-btn" onClick={() => {
+            setIsPanelOpen(false);
+            // Resetear todos los campos al cerrar el panel
+            setFormData({ nombre: '', descripcion: '', imagen: null, invitadoId: null });
+            setSelectedPersonaje(null);
+            setPreviewUrl(null);
+            setInvitadoSearchTerm('');
+            setShowInvitadosList(false);
+          }}>
             <FaTimes />
           </button>
           <div className="form-section">
             <form className="panel-personajes-form" onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>Invitado</label>
+                <div style={{ position: 'relative' }}>
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                    <input
+                      type="text"
+                      value={invitadoSearchTerm}
+                      onChange={(e) => {
+                        setInvitadoSearchTerm(e.target.value);
+                        setShowInvitadosList(true);
+                        // Si el input está vacío, limpiamos el invitadoId
+                        if (!e.target.value) {
+                          setFormData(prev => ({ ...prev, invitadoId: null }));
+                        }
+                      }}
+                      onFocus={() => setShowInvitadosList(true)}
+                      placeholder="Buscar invitado..."
+                      style={{
+                        flex: 1,
+                        padding: '8px',
+                        borderRadius: '8px',
+                        border: '1px solid #444',
+                        background: '#18192a',
+                        color: '#fff',
+                        fontFamily: 'VCR, monospace',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05vw'
+                      }}
+                    />
+                    {formData.invitadoId && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, invitadoId: null }));
+                          setInvitadoSearchTerm('');
+                          setShowInvitadosList(false);
+                        }}
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          border: '1px solid #ef4444',
+                          background: '#ef4444',
+                          color: '#fff',
+                          cursor: 'pointer',
+                          fontFamily: 'VCR, monospace',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05vw',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'background-color 0.2s'
+                        }}
+                        onMouseOver={e => e.currentTarget.style.background = '#dc2626'}
+                        onMouseOut={e => e.currentTarget.style.background = '#ef4444'}
+                      >
+                        <FaTimes />
+                      </button>
+                    )}
+                  </div>
+                  <select
+                    value={formData.invitadoId || ''}
+                    onChange={(e) => {
+                      const invitadoId = e.target.value;
+                      const invitadoSeleccionado = invitadosSinPersonaje.find(inv => inv.id === Number(invitadoId));
+                      setFormData(prev => ({ ...prev, invitadoId: invitadoId }));
+                      setInvitadoSearchTerm(invitadoSeleccionado?.nombre || '');
+                      setShowInvitadosList(false);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      borderRadius: '8px',
+                      border: '1px solid #444',
+                      background: '#18192a',
+                      color: '#fff',
+                      display: invitadoSearchTerm ? 'none' : 'block',
+                      fontFamily: 'VCR, monospace',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05vw'
+                    }}
+                  >
+                    <option value="" style={{ fontFamily: 'VCR, monospace', textTransform: 'uppercase', letterSpacing: '0.05vw' }}>Seleccionar invitado...</option>
+                    {invitadosSinPersonaje
+                      .sort((a, b) => a.nombre.localeCompare(b.nombre))
+                      .map(inv => (
+                        <option 
+                          key={inv.id} 
+                          value={inv.id}
+                          style={{ 
+                            fontFamily: 'VCR, monospace',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05vw',
+                            background: '#18192a',
+                            color: inv.personajeId ? '#22c55e' : '#fff'
+                          }}
+                        >
+                          {inv.nombre} {inv.personajeId ? '(Ya tiene personaje)' : ''}
+                        </option>
+                    ))}
+                  </select>
+                  {showInvitadosList && invitadoSearchTerm && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      background: '#18192a',
+                      border: '1px solid #444',
+                      borderRadius: '8px',
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                      zIndex: 1000
+                    }}>
+                      {invitadosSinPersonaje
+                        .filter(inv => 
+                          inv.nombre.toLowerCase().includes(invitadoSearchTerm.toLowerCase())
+                        )
+                        .map(inv => (
+                          <div
+                            key={inv.id}
+                            onClick={() => {
+                              setFormData(prev => ({ ...prev, invitadoId: inv.id }));
+                              setInvitadoSearchTerm(inv.nombre);
+                              setShowInvitadosList(false);
+                            }}
+                            style={{
+                              padding: '8px',
+                              cursor: 'pointer',
+                              borderBottom: '1px solid #444',
+                              fontFamily: 'VCR, monospace',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.05vw',
+                              color: inv.personajeId ? '#6366f1' : '#fff'
+                            }}
+                          >
+                            {inv.nombre} {inv.personajeId ? '(Ya tiene personaje)' : ''}
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              </div>
               <div className="form-group">
                 <label>Nombre del Personaje</label>
                 <input
@@ -438,14 +650,37 @@ const PanelPersonajes = ({
           </div>
           <div className="list-section">
             <h3>Personajes</h3>
-            <div className="search-container">
+            <div className="search-container" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <input
                 type="text"
                 placeholder="Buscar personajes..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input"
+                style={{ flex: 1 }}
               />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  style={{
+                    position: 'absolute',
+                    right: 8,
+                    background: 'none',
+                    border: 'none',
+                    color: '#ef4444',
+                    fontSize: 18,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 0
+                  }}
+                  title="Limpiar búsqueda"
+                >
+                  <FaTimes />
+                </button>
+              )}
             </div>
             {isListLoading ? (
               <div style={{ textAlign: 'center', color: '#6366f1', padding: 32 }}>
@@ -467,9 +702,31 @@ const PanelPersonajes = ({
                       onClick={() => handleEdit(personaje)}
                       style={{
                         background: personaje.invitados?.length > 0 ? '#22c55e20' : 'transparent',
-                        border: personaje.invitados?.length > 0 ? '1px solid #22c55e' : '1px solid #333'
+                        border: personaje.invitados?.length > 0 ? '1px solid #22c55e' : '1px solid #333',
+                        cursor: 'pointer',
+                        position: 'relative'
                       }}
                     >
+                      {selectedPersonaje?.id === personaje.id && (
+                        <div style={{
+                          position: 'absolute',
+                          top: 8,
+                          right: 8,
+                          background: '#ef4444',
+                          color: '#fff',
+                          width: 24,
+                          height: 24,
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 14,
+                          cursor: 'pointer',
+                          zIndex: 2
+                        }}>
+                          <FaTimes />
+                        </div>
+                      )}
                       <div className="personaje-image">
                         {personaje.imagen_url ? (
                           <img
