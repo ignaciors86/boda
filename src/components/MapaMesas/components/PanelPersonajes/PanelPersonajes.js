@@ -29,7 +29,7 @@ const PanelPersonajes = ({
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [showImageModal, setShowImageModal] = useState(false);
-  const [imageTab, setImageTab] = useState('google');
+  const [imageTab, setImageTab] = useState('giphy');
   const [imageSearch, setImageSearch] = useState('');
   const [googleResults, setGoogleResults] = useState([]);
   const [giphyResults, setGiphyResults] = useState([]);
@@ -46,12 +46,13 @@ const PanelPersonajes = ({
   const fetchPersonajes = async () => {
     try {
       setIsListLoading(true);
-      const response = await fetch(`${urlstrapi}/api/personajes?populate=imagen`, {
+      const response = await fetch(`${urlstrapi}/api/personajes?populate[invitados][populate]=*`, {
         headers: {
           'Authorization': `Bearer ${STRAPI_TOKEN}`
         }
       });
       const data = await response.json();
+      console.log('Datos recibidos de Strapi:', data);
       if (data.data) {
         setPersonajes(data.data);
       }
@@ -98,12 +99,21 @@ const PanelPersonajes = ({
     e.preventDefault();
   };
 
-  const openImageModal = () => {
-    setImageSearch(formData.nombre || '');
+  const openImageModal = async () => {
+    const searchTerm = selectedPersonaje ? selectedPersonaje.nombre : formData.nombre;
+    setImageSearch(searchTerm || '');
     setShowImageModal(true);
-    setImageTab('google');
+    setImageTab('giphy');
     setGoogleResults([]);
     setGiphyResults([]);
+    
+    // Esperar a que el estado se actualice
+    await new Promise(resolve => setTimeout(resolve, 0));
+    
+    // Realizar búsqueda con el término actualizado
+    const res = await fetch(`https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(searchTerm || '')}&limit=20&rating=pg`);
+    const data = await res.json();
+    setGiphyResults(data.data.map(gif => gif.images.fixed_height.url));
   };
 
   const closeImageModal = () => {
@@ -114,6 +124,9 @@ const PanelPersonajes = ({
   const handleImageSearch = async (e) => {
     e.preventDefault();
     setIsSearching(true);
+    setGoogleResults([]);
+    setGiphyResults([]);
+    
     if (imageTab === 'google') {
       const res = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(imageSearch)}&client_id=2QwQn6Qw1QwQn6Qw1QwQn6QwQn6QwQn6QwQn6QwQn6Qw`);
       const data = await res.json();
@@ -137,8 +150,8 @@ const PanelPersonajes = ({
     try {
       const dataToSend = {
         data: {
-          nombre: formData.nombre,
-          descripcion: formData.descripcion,
+          nombre: formData.nombre || '',
+          descripcion: formData.descripcion || '',
           imagen_url: formData.imagen
         }
       };
@@ -183,40 +196,52 @@ const PanelPersonajes = ({
   const handleEdit = (personaje) => {
     setSelectedPersonaje(personaje);
     setFormData({
-      nombre: personaje.nombre,
-      descripcion: personaje.descripcion,
+      nombre: personaje.nombre || '',
+      descripcion: personaje.descripcion || '',
       imagen: personaje.imagen_url || null
     });
     setPreviewUrl(personaje.imagen_url || null);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('¿Estás seguro de que quieres eliminar este personaje?')) return;
+  const handleDelete = async () => {
+    if (!selectedPersonaje || !window.confirm('¿Estás seguro de que quieres eliminar este personaje?')) return;
+    
     try {
-      const response = await fetch(`${urlstrapi}/api/personajes/${id}`, {
+      console.log('Personaje a eliminar:', selectedPersonaje);
+      const response = await fetch(`${urlstrapi}/api/personajes/${selectedPersonaje.documentId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${STRAPI_TOKEN}`
+          'Authorization': `Bearer ${STRAPI_TOKEN}`,
+          'Content-Type': 'application/json'
         }
       });
-      if (response.ok) {
-        fetchPersonajes();
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error response:', errorData);
+        throw new Error(`Error al eliminar: ${JSON.stringify(errorData)}`);
       }
-    } catch (error) {}
+
+      // Limpiar el estado
+      setSelectedPersonaje(null);
+      setFormData({ nombre: '', descripcion: '', imagen: null });
+      setPreviewUrl(null);
+      
+      // Actualizar la lista
+      await fetchPersonajes();
+    } catch (error) {
+      console.error('Error al eliminar el personaje:', error);
+      alert('Error al eliminar el personaje. Por favor, intenta de nuevo.');
+    }
   };
 
   return (
     <>
       <div className={`panel-personajes ${isPanelOpen ? 'open' : ''}`}>
-        <div className="dashboard-header">
-          <h2>Administrar Personajes</h2>
-          <div className="header-actions">
-            <button className="close-btn" onClick={() => setIsPanelOpen(false)}>
-              <FaTimes />
-            </button>
-          </div>
-        </div>
         <div className="dashboard-content">
+          <button className="close-btn" onClick={() => setIsPanelOpen(false)}>
+            <FaTimes />
+          </button>
           <div className="form-section">
             <form className="panel-personajes-form" onSubmit={handleSubmit}>
               <div className="form-group">
@@ -364,10 +389,13 @@ const PanelPersonajes = ({
                       borderRadius: 8,
                       padding: '8px 16px',
                       fontWeight: 'bold',
-                      fontSize: 16,
+                      fontSize: '1vw',
                       cursor: 'pointer',
                       boxShadow: '0 2px 8px rgba(99,102,241,0.12)',
                       transition: 'background 0.2s',
+                      fontFamily: 'VCR, monospace',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05vw'
                     }}
                     onClick={openImageModal}
                     onMouseOver={e => e.currentTarget.style.background = '#4f46e5'}
@@ -380,10 +408,36 @@ const PanelPersonajes = ({
               <button type="submit" className="submit-btn" disabled={isUploading}>
                 {selectedPersonaje ? 'Actualizar Personaje' : 'Crear Personaje'}
               </button>
+              {selectedPersonaje && (
+                <button
+                  type="button"
+                  className="delete-btn"
+                  onClick={handleDelete}
+                  style={{
+                    marginTop: '1dvh',
+                    padding: '1.5dvh',
+                    background: '#ef4444',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '0.5vw',
+                    fontSize: '1vw',
+                    cursor: 'pointer',
+                    width: '100%',
+                    fontFamily: 'VCR, monospace',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05vw',
+                    transition: 'background-color 0.2s'
+                  }}
+                  onMouseOver={e => e.currentTarget.style.background = '#dc2626'}
+                  onMouseOut={e => e.currentTarget.style.background = '#ef4444'}
+                >
+                  Eliminar Personaje
+                </button>
+              )}
             </form>
           </div>
           <div className="list-section">
-            <h3>Personajes Existentes</h3>
+            <h3>Personajes</h3>
             <div className="search-container">
               <input
                 type="text"
@@ -409,8 +463,12 @@ const PanelPersonajes = ({
                   .map((personaje) => (
                     <div
                       key={personaje.id}
-                      className="personaje-item"
+                      className={`personaje-item ${selectedPersonaje?.id === personaje.id ? 'selected' : ''}`}
                       onClick={() => handleEdit(personaje)}
+                      style={{
+                        background: personaje.invitados?.length > 0 ? '#22c55e20' : 'transparent',
+                        border: personaje.invitados?.length > 0 ? '1px solid #22c55e' : '1px solid #333'
+                      }}
                     >
                       <div className="personaje-image">
                         {personaje.imagen_url ? (
@@ -438,21 +496,6 @@ const PanelPersonajes = ({
                       <div className="personaje-info">
                         <h4>{personaje.nombre || 'Sin nombre'}</h4>
                         <p className="descripcion">{personaje.descripcion || ''}</p>
-                        <div className="personaje-meta">
-                          <span className="fecha">Creado: {personaje.createdAt ? new Date(personaje.createdAt).toLocaleDateString() : '-'}</span>
-                          <span className="fecha">Actualizado: {personaje.updatedAt ? new Date(personaje.updatedAt).toLocaleDateString() : '-'}</span>
-                        </div>
-                        <div className="personaje-actions">
-                          <button
-                            className="delete-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(personaje.id);
-                            }}
-                          >
-                            Eliminar
-                          </button>
-                        </div>
                       </div>
                     </div>
                   ))}
