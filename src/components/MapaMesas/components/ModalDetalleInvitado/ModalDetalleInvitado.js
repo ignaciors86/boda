@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../Modal/Modal';
+import { FaTimes } from 'react-icons/fa';
 
 const ModalDetalleInvitado = ({ 
   isOpen, 
@@ -7,8 +8,36 @@ const ModalDetalleInvitado = ({
   invitado,
   grupoColorMap,
   mesasOrganizadas,
-  formatearMenu
+  formatearMenu,
+  actualizarInvitado,
+  mesasPlano
 }) => {
+  const [mesaSeleccionada, setMesaSeleccionada] = useState('');
+  const [mesaActual, setMesaActual] = useState('');
+
+  useEffect(() => {
+    if (invitado) {
+      setMesaSeleccionada(invitado.mesaId || '');
+      setMesaActual(invitado.mesa || '');
+    }
+  }, [invitado]);
+
+  const handleMesaChange = async (e) => {
+    const nuevaMesaId = e.target.value;
+    setMesaSeleccionada(nuevaMesaId);
+    try {
+      await actualizarInvitado(invitado.documentId, nuevaMesaId);
+      onClose();
+    } catch (error) {
+      console.error('Error al actualizar la mesa:', error);
+    }
+  };
+
+  // Obtener todas las mesas disponibles (con y sin invitados) y ordenarlas alfabéticamente
+  const mesasDisponibles = Array.isArray(mesasPlano) 
+    ? [...mesasPlano].sort((a, b) => a.nombre.localeCompare(b.nombre))
+    : [];
+
   const mostrarCampoTexto = (valor, vacio = '(vacío)', noEspecificado = 'No especificado') => {
     if (valor === undefined || valor === null) return noEspecificado;
     if (typeof valor === 'string' && valor.trim() === '') return vacio;
@@ -25,35 +54,44 @@ const ModalDetalleInvitado = ({
       className="mapa-mesas-modal-invitado-detalle"
     >
       <div className="mapa-mesas-modal-invitado-detalle-content">
-        <div 
-          className="mapa-mesas-modal-invitado-avatar" 
-          style={{ 
-            background: invitado?.imagen_url 
-              ? `url(${invitado.imagen_url}) center/cover` 
-              : grupoColorMap[invitado?.grupoOrigen] || '#6366f1'
-          }}
-        >
-          {invitado?.nombre?.[0]}
+        <div className="mapa-mesas-modal-invitado-avatar">
+          {invitado.imagen_url ? (
+            <img src={invitado.imagen_url} alt={invitado.nombre} />
+          ) : (
+            <div className="mapa-mesas-modal-invitado-avatar-placeholder">
+              {invitado.nombre[0]}
+            </div>
+          )}
         </div>
         <div className="mapa-mesas-modal-invitado-info">
           <div className="mapa-mesas-modal-invitado-info-row">
-            <b>Nombre</b>
-            <span>{mostrarCampoTexto(invitado?.nombre)}</span>
+            <b>Nombre:</b>
+            <span>{invitado.nombre}</span>
           </div>
           <div className="mapa-mesas-modal-invitado-info-row">
-            <b>Grupo</b>
-            <span>{mostrarCampoTexto(invitado?.grupoOrigen, '(vacío)', 'Sin grupo')}</span>
+            <b>Grupo:</b>
+            <span style={{ color: grupoColorMap[invitado.grupoOrigen] }}>
+              {invitado.grupoOrigen}
+            </span>
           </div>
           <div className="mapa-mesas-modal-invitado-info-row">
-            <b>Mesa</b>
-            <span>{(() => {
-              const mesaActual = Object.values(mesasOrganizadas).find(mesa => mesa.invitados.some(i => i.id === invitado?.id));
-              return mesaActual ? mostrarCampoTexto(mesaActual.nombre) : 'Sin asignar';
-            })()}</span>
+            <b>Menú:</b>
+            <span>{formatearMenu(invitado.menu)}</span>
           </div>
           <div className="mapa-mesas-modal-invitado-info-row">
-            <b>Menú</b>
-            <span>{formatearMenu(invitado?.menu)}</span>
+            <b>Mesa:</b>
+            <select
+              value={mesaSeleccionada}
+              onChange={handleMesaChange}
+              className="mapa-mesas-modal-invitado-select"
+            >
+              <option value="">Sin mesa asignada</option>
+              {mesasDisponibles.map(mesa => (
+                <option key={mesa.id} value={mesa.id}>
+                  {mesa.nombre} ({mesa.invitados?.length || 0} invitados)
+                </option>
+              ))}
+            </select>
           </div>
           <div className="mapa-mesas-modal-invitado-info-row">
             <b>Alergias</b>

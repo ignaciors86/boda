@@ -88,8 +88,6 @@ const MapaMesas = () => {
   const mesaPositions = useRef({});
 
   const diametroRedonda = 'var(--diametro-redonda)';
-  const largoImperial = 'var(--largo-imperial)';
-  const anchoImperial = 'var(--ancho-imperial)';
 
   // Paleta de colores para grupos de origen
   const coloresGrupos = [
@@ -304,15 +302,12 @@ const MapaMesas = () => {
     fetch(`${urlstrapi}/api/mesas?populate=*`)
       .then(response => response.json())
       .then(mesasData => {
-        // console.log('Mesas de Strapi:', mesasData);
         // Calcular posiciones para las que no tienen posición guardada
         let sinPosicionIdx = 0;
         const startX = 1200;
         const startY = 800;
         const spacing = 180;
         const todasLasMesas = mesasData.data.map((mesa, idx) => {
-          // Log completo para depuración
-          // console.log('Mesa recibida de Strapi:', mesa);
           // Leer posición correctamente del JSON de Strapi
           let x = 0;
           let y = 0;
@@ -326,13 +321,10 @@ const MapaMesas = () => {
             x = mesa.mapaMesasData.posicion.x;
             y = mesa.mapaMesasData.posicion.y;
             tienePosicion = true;
-            // console.log(`Mesa ${mesa.id} posición encontrada en Strapi:`, x, y);
           } else {
-            // Usar valores por defecto cuando mapaMesasData está vacío
             x = 10;
             y = 20;
             tienePosicion = true;
-            // console.log(`Mesa ${mesa.id} SIN posición guardada en Strapi, usando valores por defecto:`, x, y);
           }
           return {
             id: mesa.id,
@@ -341,7 +333,8 @@ const MapaMesas = () => {
             tipo: mesa.tipo || 'redonda',
             mapaMesasData: mesa.mapaMesasData || {},
             x,
-            y
+            y,
+            invitados: []
           };
         });
         
@@ -354,7 +347,7 @@ const MapaMesas = () => {
             const invitadosData = data?.data.map((invitado) => ({
               id: invitado.id,
               documentId: invitado.documentId,
-              nombre: invitado?.nombre,
+              nombre: invitado?.nombre || '',
               imagen_url: invitado?.personaje?.imagen_url || "",
               mesaId: invitado?.mesa?.id || 0,
               mesaDocumentId: invitado?.mesa?.documentId || "",
@@ -371,14 +364,7 @@ const MapaMesas = () => {
               dedicatoria: invitado?.dedicatoria || ""
             }));
             
-            // Añadir console.log temporal para analizar valores únicos de menu
-            const menusUnicos = [...new Set(invitadosData.map(inv => inv.menu))].filter(Boolean);
-            console.log('Valores únicos del campo menu:', menusUnicos);
-            
             setInvitados(invitadosData);
-            // console.log('Invitados tras fetch inicial:', invitadosData);
-            // console.log('===== DATOS COMPLETOS DE INVITADOS TRAS FETCH =====');
-            // console.log(JSON.stringify(invitadosData, null, 2));
 
             // Organizar por grupo de origen
             const grupos = {};
@@ -389,7 +375,7 @@ const MapaMesas = () => {
                   invitados: []
                 };
               }
-              grupos[inv.grupoOrigenId].invitados.push(inv); // Guarda el objeto invitado completo
+              grupos[inv.grupoOrigenId].invitados.push(inv);
             });
             setPorGrupoOrigen(grupos);
 
@@ -404,7 +390,7 @@ const MapaMesas = () => {
                   invitados: []
                 };
               }
-              mesas[inv.mesaId].invitados.push(inv); // Guarda el objeto invitado completo
+              mesas[inv.mesaId].invitados.push(inv);
             });
             setMesasOrganizadas(mesas);
 
@@ -431,17 +417,11 @@ const MapaMesas = () => {
               }
             });
 
-            // console.log('Mesas con invitados:', mesasConInvitados);
-            // console.log('Mesas sin invitados:', mesasSinInvitados);
-            // console.log('Todas las mesas de Strapi:', todasLasMesas);
-
             // Posicionar mesas con invitados
             const mesasIniciales = mesasConInvitados.map((mesa, idx) => {
-              // Usar SIEMPRE la posición guardada en Strapi
               const mesaStrapi = todasLasMesas.find(m => String(m.id) === String(mesa.id));
               let x = mesaStrapi?.x ?? 0;
               let y = mesaStrapi?.y ?? 0;
-              // Eliminar cálculo circular
               let maxInv = 11;
               if (mesa.invitados.length > 11) maxInv = 16;
               mesaDocumentIds.current[mesa.id] = mesa.documentId;
@@ -458,15 +438,10 @@ const MapaMesas = () => {
             });
 
             // Posicionar mesas sin invitados
-            const startX = 1200;
-            const startY = 800;
-            const spacing = 180;
             mesasSinInvitados.forEach((mesa, idx) => {
-              // Usar SIEMPRE la posición guardada en Strapi
               const mesaStrapi = todasLasMesas.find(m => String(m.id) === String(mesa.id));
               let x = mesaStrapi?.x ?? 0;
               let y = mesaStrapi?.y ?? 0;
-              // Eliminar cálculo alternativo
               mesaDocumentIds.current[mesa.id] = mesa.documentId;
               mesasIniciales.push({
                 id: String(mesa.id),
@@ -480,7 +455,6 @@ const MapaMesas = () => {
               });
             });
 
-            // console.log('Mesas iniciales finales:', mesasIniciales);
             setMesasPlano(mesasIniciales);
             setCargando(false);
 
@@ -495,7 +469,6 @@ const MapaMesas = () => {
           });
       })
       .catch((err) => {
-        // console.error('Error al obtener datos:', err);
         setError("Error al obtener los datos");
         setCargando(false);
       });
@@ -511,9 +484,7 @@ const MapaMesas = () => {
     let x = centroX + radioPlano * Math.cos(angulo);
     let y = centroY + radioPlano * Math.sin(angulo);
     if (mesasPlano.length === 0) { x = centroX; y = centroY; }
-    let maxInv = 7;
-    if (tipoMesa === 'redonda') maxInv = 11;
-    if (tipoMesa === 'imperial') maxInv = 16;
+    const maxInv = 11;
 
     // Crear la mesa en Strapi primero
     fetch(`${urlstrapi}/api/mesas`, {
@@ -525,7 +496,7 @@ const MapaMesas = () => {
       body: JSON.stringify({
         data: {
           nombre: `Mesa ${mesasPlano.length + 1}`,
-          tipo: tipoMesa,
+          tipo: 'redonda',
           mapaMesasData: {
             posicion: { x, y }
           }
@@ -537,7 +508,7 @@ const MapaMesas = () => {
       const nuevaMesa = {
         id: String(data.data.id),
         documentId: data.data.id,
-        tipo: tipoMesa,
+        tipo: 'redonda',
         x,
         y,
         invitados: [],
@@ -555,560 +526,277 @@ const MapaMesas = () => {
     setTipoMesa(null);
   }, [tipoMesa]);
 
+  // Función para detectar colisión entre dos mesas
+  const detectarColision = (mesa1, mesa2) => {
+    console.log('Detectando colisión entre mesas:', {
+      mesa1: mesa1.id,
+      mesa2: mesa2.id
+    });
+    
+    const rect1 = mesa1.getBoundingClientRect();
+    const rect2 = mesa2.getBoundingClientRect();
+    
+    // Añadir un margen de colisión
+    const margen = 20;
+    
+    const hayColision = !(
+      rect1.right - margen < rect2.left + margen ||
+      rect1.left + margen > rect2.right - margen ||
+      rect1.bottom - margen < rect2.top + margen ||
+      rect1.top + margen > rect2.bottom - margen
+    );
+
+    console.log('Resultado de colisión:', {
+      mesa1: {
+        left: rect1.left,
+        right: rect1.right,
+        top: rect1.top,
+        bottom: rect1.bottom
+      },
+      mesa2: {
+        left: rect2.left,
+        right: rect2.right,
+        top: rect2.top,
+        bottom: rect2.bottom
+      },
+      hayColision
+    });
+
+    return hayColision;
+  };
+
+  // Función para transformar una mesa en cuadrada
+  const transformarMesaCuadrada = async (mesaId) => {
+    try {
+      const mesa = mesasPlano.find(m => String(m.id) === String(mesaId));
+      if (!mesa) return;
+
+      // Obtener los datos actuales de la mesa
+      const getResponse = await fetch(`${urlstrapi}/api/mesas/${mesa.documentId}`, {
+        headers: {
+          'Authorization': `Bearer ${STRAPI_TOKEN}`
+        }
+      });
+
+      if (!getResponse.ok) {
+        throw new Error(`Error HTTP al obtener datos: ${getResponse.status}`);
+      }
+
+      const mesaData = await getResponse.json();
+      const mapaMesasDataActual = mesaData.data?.attributes?.mapaMesasData || {};
+
+      // Actualizar manteniendo los datos existentes
+      const response = await fetch(`${urlstrapi}/api/mesas/${mesa.documentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${STRAPI_TOKEN}`
+        },
+        body: JSON.stringify({
+          data: {
+            ...mesaData.data.attributes,
+            tipo: 'imperial',
+            mapaMesasData: {
+              ...mapaMesasDataActual,
+              posicion: mapaMesasDataActual.posicion
+            }
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error HTTP al actualizar: ${response.status}`);
+      }
+
+      // Actualizar el estado local
+      setMesasPlano(prev => prev.map(m => 
+        m.id === mesaId ? { ...m, tipo: 'imperial' } : m
+      ));
+
+      // Forzar recarga de datos
+      window.location.reload();
+
+    } catch (error) {
+      console.error('Error al transformar mesa:', error);
+    }
+  };
+
   // Efecto para hacer draggables las mesas
   useEffect(() => {
-    if (!mesasInicializadas || isDraggingInvitado) return;
+    console.log('=== INICIO SETUP DRAGGABLE MESAS ===');
+    console.log('Estado actual:', {
+      mesasInicializadas,
+      isDraggingInvitado,
+      isDraggingMesa,
+      mesasPlanoLength: mesasPlano.length
+    });
+
+    if (!mesasInicializadas || isDraggingInvitado) {
+      console.log('No se inicializan mesas:', { mesasInicializadas, isDraggingInvitado });
+      return;
+    }
 
     mesasPlano.forEach(mesa => {
       if (!mesaRefs.current[mesa.id]) {
+        console.log('Creando ref para mesa:', mesa.id);
         mesaRefs.current[mesa.id] = React.createRef();
       }
+      
       const el = mesaRefs.current[mesa.id].current;
       if (el && !el._draggable) {
+        console.log('Inicializando draggable para mesa:', mesa.id);
         el._draggable = Draggable.create(el, {
           type: 'left,top',
           bounds: planoRef.current,
           inertia: true,
           onPress: function(e) {
+            console.log('Mesa presionada:', mesa.id);
             if (window.isDraggingInvitadoOrBolita) return false;
             if (e && e.target && e.target.classList && e.target.classList.contains('mapa-invitado-bolita')) return false;
             setIsDraggingMesa(true);
             window.isDraggingMesa = true;
           },
           onDrag: function() {
-            const rect = el.getBoundingClientRect();
+            const dragRect = el.getBoundingClientRect();
             const planoRect = planoRef.current.getBoundingClientRect();
-            const newX = rect.left - planoRect.left;
-            const newY = rect.top - planoRect.top;
+            const newX = dragRect.left - planoRect.left;
+            const newY = dragRect.top - planoRect.top;
             el.style.left = `${newX}px`;
             el.style.top = `${newY}px`;
           },
           onDragEnd: function() {
-            const rect = el.getBoundingClientRect();
+            console.log('=== INICIO DRAG END ===');
+            console.log('Mesa soltada:', mesa.id);
+            
+            const endRect = el.getBoundingClientRect();
             const planoRect = planoRef.current.getBoundingClientRect();
-            const newX = rect.left - planoRect.left + el.offsetWidth / 2;
-            const newY = rect.top - planoRect.top + el.offsetHeight / 2;
+            const newX = endRect.left - planoRect.left + el.offsetWidth / 2;
+            const newY = endRect.top - planoRect.top + el.offsetHeight / 2;
+            
+            console.log('Buscando colisiones...');
+            let hayColision = false;
+            
+            // Detectar colisiones con otras mesas
+            Object.values(mesaRefs.current).forEach(ref => {
+              const otraMesa = ref.current;
+              console.log('Revisando mesa:', {
+                otraMesa,
+                id: otraMesa?.id,
+                attributes: otraMesa?.attributes,
+                dataset: otraMesa?.dataset
+              });
+              
+              if (otraMesa && otraMesa !== el) {
+                console.log('Comparando con mesa:', {
+                  mesaActual: el.id,
+                  otraMesa: otraMesa.id || otraMesa.getAttribute('id')
+                });
+                
+                if (detectarColision(el, otraMesa)) {
+                  console.log('¡COLISIÓN DETECTADA!');
+                  hayColision = true;
+                  const mesaId = mesa.id;
+                  // Intentar obtener el ID de diferentes maneras
+                  let otraMesaId = otraMesa.id;
+                  if (!otraMesaId) {
+                    otraMesaId = otraMesa.getAttribute('id');
+                  }
+                  if (!otraMesaId) {
+                    console.error('No se pudo obtener el ID de la otra mesa');
+                    return;
+                  }
+                  // Si el ID incluye 'mesa-', quitarlo
+                  otraMesaId = otraMesaId.replace('mesa-', '');
+                  
+                  console.log('Transformando mesas:', {
+                    mesaId,
+                    otraMesaId,
+                    mesaOriginal: mesa,
+                    otraMesaOriginal: otraMesa
+                  });
+                  
+                  // Transformar ambas mesas en cuadradas
+                  transformarMesaCuadrada(mesaId);
+                  transformarMesaCuadrada(otraMesaId);
+                }
+              }
+            });
             
             actualizarPosicionMesa(mesa.id, newX, newY);
             setIsDraggingMesa(false);
             window.isDraggingMesa = false;
+            console.log('=== FIN DRAG END ===');
           }
         })[0];
       }
     });
-  }, [mesasPlano, isDraggingInvitado, mesasInicializadas]);
+  }, [mesasInicializadas, isDraggingInvitado]);
 
-  // Efecto para hacer arrastrables los invitados sin mesa
+  // Efecto para hacer draggables las bolitas de invitados
   useEffect(() => {
-    if (!porGrupoOrigen || !mesasPlano) return;
+    if (!mesasInicializadas || isDraggingMesa) return;
 
-    Object.values(porGrupoOrigen).forEach(grupo => {
-      grupo.invitados.forEach(inv => {
-        if (!inv.mesaId || inv.mesaId === 0) {
-          const ref = getInvitadoRef(inv.id);
-          const el = ref.current;
-          if (el && !el._draggable) {
-            el._draggable = Draggable.create(el, {
-              type: 'left,top',
-              minimumMovement: 2,
-              onPress: function(e) {
-                if (e && e.preventDefault) e.preventDefault();
-                setIsDraggingInvitado(true);
-                window.isDraggingInvitadoOrBolita = true;
-                
-                // Matar todos los draggables de las mesas
-                Object.values(mesaRefs.current).forEach(ref => {
-                  const mesaEl = ref.current;
-                  if (mesaEl && mesaEl._draggable) {
-                    mesaEl._draggable.kill();
-                    mesaEl._draggable = null;
-                  }
-                });
-                
-                // Crear clon flotante
-                const rect = el.getBoundingClientRect();
-                const clone = el.cloneNode(true);
-                clone.style.position = 'fixed';
-                clone.style.width = rect.width + 'px';
-                clone.style.height = rect.height + 'px';
-                clone.style.left = rect.left + 'px';
-                clone.style.top = rect.top + 'px';
-                clone.style.pointerEvents = 'none';
-                clone.style.zIndex = 9999;
-                clone.style.opacity = 0.95;
-                clone.classList.add('drag-clone');
-                
-                document.body.appendChild(clone);
-                gsap.set(el, { opacity: 0 });
+    // Hacer draggables las bolitas de invitados
+    Object.values(bolitaRefs.current).forEach(ref => {
+      if (ref.current && !ref.current._draggableBolita) {
+        ref.current._draggableBolita = Draggable.create(ref.current, {
+          type: 'left,top',
+          bounds: planoRef.current,
+          inertia: true,
+          onPress: function(e) {
+            if (window.isDraggingMesa) return false;
+            setIsDraggingInvitado(true);
+            window.isDraggingInvitadoOrBolita = true;
+          },
+          onDrag: function() {
+            const dragRect = ref.current.getBoundingClientRect();
+            const planoRect = planoRef.current.getBoundingClientRect();
+            const newX = dragRect.left - planoRect.left;
+            const newY = dragRect.top - planoRect.top;
+            ref.current.style.left = `${newX}px`;
+            ref.current.style.top = `${newY}px`;
+          },
+          onDragEnd: function() {
+            setIsDraggingInvitado(false);
+            window.isDraggingInvitadoOrBolita = false;
 
-                let tempDraggable = Draggable.create(clone, {
-                  type: 'left,top',
-                  bounds: document.body,
-                  zIndexBoost: true,
-                  minimumMovement: 2,
-                  onDrag: function() {
-                    let mesaHover = null;
-                    Object.values(mesaRefs.current).forEach(ref => {
-                      const mesaEl = ref.current;
-                      if (mesaEl && Draggable.hitTest(clone, mesaEl, '50%')) {
-                        mesaHover = mesaEl;
-                      }
-                      if (mesaEl) mesaEl.style.transform = '';
-                    });
-                    if (mesaHover) {
-                      mesaHover.style.transform = 'scale(1.12)';
-                    }
-                  },
-                  onRelease: function() {
-                    Object.values(mesaRefs.current).forEach(ref => {
-                      const mesaEl = ref.current;
-                      if (mesaEl) mesaEl.style.transform = '';
-                    });
+            // Detectar colisión con mesas
+            const bolitaRect = ref.current.getBoundingClientRect();
+            let mesaColisionada = null;
+            let distanciaMinima = Infinity;
 
-                    let mesaDrop = null;
-                    Object.values(mesaRefs.current).forEach(ref => {
-                      const mesaEl = ref.current;
-                      if (mesaEl && Draggable.hitTest(clone, mesaEl, '50%')) {
-                        mesaDrop = mesaEl;
-                      }
-                    });
-
-                    if (mesaDrop) {
-                      setIsDraggingToMesa(true);
-                      const mesaElement = mesaDrop.querySelector('.mapa-mesa-div');
-                      if (!mesaElement) return;
-
-                      const mesaIdDropDom = mesaElement.id.replace('mesa-', '');
-                      if (!mesaIdDropDom) return;
-
-                      const documentId = mesaDocumentIds.current[mesaIdDropDom];
-                      if (!documentId) return;
-
-                      const idMesaStrapi = documentId;
-                      console.log('Intentando asignar invitado a mesa:', {
-                        invitadoId: inv.id,
-                        mesaId: mesaIdDropDom,
-                        mesaStrapiId: idMesaStrapi
-                      });
-
-                      // Siempre intentar guardar cuando se suelta sobre una mesa
-                      const invitadoIdStrapi = inv.documentId;
-                      console.log('Actualizando invitado:', {
-                        invitadoId: invitadoIdStrapi,
-                        mesaId: idMesaStrapi
-                      });
-
-                      fetch(`${urlstrapi}/api/invitados/${invitadoIdStrapi}`, {
-                        method: 'PUT',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          'Authorization': `Bearer ${STRAPI_TOKEN}`
-                        },
-                        body: JSON.stringify({ 
-                          data: { 
-                            mesa: idMesaStrapi
-                          } 
-                        })
-                      })
-                      .then(res => {
-                        if (!res.ok) {
-                          console.error('Error en la respuesta:', res.status, res.statusText);
-                          throw new Error('Error al actualizar invitado');
-                        }
-                        console.log('Invitado actualizado exitosamente');
-                        return res.json();
-                      })
-                      .then(() => {
-                        console.log('Obteniendo datos actualizados...');
-                        return fetch(
-                          `${urlstrapi}/api/invitados?populate[personaje][populate]=*&populate[mesa][populate]=*&populate[grupo_origen][populate]=*`
-                        );
-                      })
-                      .then(res => {
-                        if (!res.ok) {
-                          console.error('Error al obtener datos actualizados:', res.status, res.statusText);
-                          throw new Error('Error al obtener datos actualizados');
-                        }
-                        return res.json();
-                      })
-                      .then((data) => {
-                        const invitadosData = data?.data.map((invitado) => ({
-                          id: invitado.id,
-                          documentId: invitado.documentId,
-                          nombre: invitado?.nombre,
-                          imagen_url: invitado?.personaje?.imagen_url || "",
-                          mesaId: invitado?.mesa?.id || 0,
-                          mesaDocumentId: invitado?.mesa?.documentId || "",
-                          mesa: invitado?.mesa?.nombre || "",
-                          grupoOrigenId: invitado?.grupo_origen?.id || 0,
-                          grupoOrigen: invitado?.grupo_origen?.nombre || "Sin grupo",
-                          menu: invitado?.menu || "",
-                          alergias: invitado?.alergias || "",
-                          asistira: invitado?.asistira,
-                          preboda: invitado?.preboda,
-                          postboda: invitado?.postboda,
-                          autobus: invitado?.autobus,
-                          alojamiento: invitado?.alojamiento,
-                          dedicatoria: invitado?.dedicatoria || ""
-                        }));
-                        setInvitados(invitadosData);
-                        
-                        // Organizar por grupo de origen
-                        const grupos = {};
-                        invitadosData.forEach((inv) => {
-                          if (!grupos[inv.grupoOrigenId]) {
-                            grupos[inv.grupoOrigenId] = {
-                              nombre: inv.grupoOrigen,
-                              invitados: []
-                            };
-                          }
-                          grupos[inv.grupoOrigenId].invitados.push(inv); // Guarda el objeto invitado completo
-                        });
-                        setPorGrupoOrigen(grupos);
-
-                        // Organizar por mesa
-                        const mesas = {};
-                        invitadosData.forEach((inv) => {
-                          if (!mesas[inv.mesaId]) {
-                            mesas[inv.mesaId] = {
-                              id: inv.mesaId,
-                              documentId: inv.mesaDocumentId,
-                              nombre: inv.mesa,
-                              invitados: []
-                            };
-                          }
-                          mesas[inv.mesaId].invitados.push(inv); // Guarda el objeto invitado completo
-                        });
-                        setMesasOrganizadas(mesas);
-
-                        // Actualizar mesasPlano con los nuevos invitados
-                        setMesasPlano(prev => prev.map(m => {
-                          const mesaActualizada = mesas[m.id];
-                          if (mesaActualizada) {
-                            return { ...m, invitados: mesaActualizada.invitados };
-                          }
-                          return { ...m, invitados: [] };
-                        }));
-
-                        // Actualizar el invitado detalle si está abierto y no estamos arrastrando a una mesa
-                        if (invitadoDetalle && !isDraggingToMesa) {
-                          const invitadoActualizado = invitadosData.find(inv => inv.id === invitadoDetalle.id);
-                          if (invitadoActualizado) {
-                            setInvitadoDetalle(null);
-                            setTimeout(() => {
-                              setInvitadoDetalle(invitadoActualizado);
-                            }, 0);
-                          }
-                        }
-                      })
-                      .catch(error => {
-                        console.error('Error en el proceso de actualización:', error);
-                      })
-                      .finally(() => {
-                        setIsDraggingToMesa(false);
-                      });
-                    }
-
-                    if (clone && clone.parentNode) clone.parentNode.removeChild(clone);
-                    gsap.set(el, { opacity: 1, x: 0, y: 0 });
-                    if (tempDraggable && typeof tempDraggable.kill === 'function') tempDraggable.kill();
-                    setIsDraggingInvitado(false);
-                    window.isDraggingInvitadoOrBolita = false;
-
-                    // Recrear los draggables de las mesas
-                    mesasPlano.forEach(mesa => {
-                      const el = mesaRefs.current[mesa.id]?.current;
-                      if (el && !el._draggable) {
-                        el._draggable = Draggable.create(el, {
-                          type: 'left,top',
-                          bounds: planoRef.current,
-                          inertia: true,
-                          onPress: function(e) {
-                            if (window.isDraggingInvitadoOrBolita) return false;
-                            if (e && e.target && e.target.classList && e.target.classList.contains('mapa-invitado-bolita')) return false;
-                            setIsDraggingMesa(true);
-                            window.isDraggingMesa = true;
-                          },
-                          onDrag: function() {
-                            // Mantener la posición relativa al contenedor
-                            const rect = el.getBoundingClientRect();
-                            const planoRect = planoRef.current.getBoundingClientRect();
-                            const newX = rect.left - planoRect.left;
-                            const newY = rect.top - planoRect.top;
-                            el.style.left = `${newX}px`;
-                            el.style.top = `${newY}px`;
-                          },
-                          onDragEnd: function() {
-                            const rect = el.getBoundingClientRect();
-                            const planoRect = planoRef.current.getBoundingClientRect();
-                            const newX = rect.left - planoRect.left + el.offsetWidth / 2;
-                            const newY = rect.top - planoRect.top + el.offsetHeight / 2;
-                            
-                            // Actualizar el estado solo si la posición ha cambiado
-                            if (newX !== mesa.x || newY !== mesa.y) {
-                              setMesasPlano(prev => {
-                                const nuevas = prev.map(m => m.id === mesa.id ? { ...m, x: newX, y: newY } : m);
-                                return nuevas;
-                              });
-                              actualizarPosicionMesa(mesa.id, newX, newY);
-                            }
-
-                            setIsDraggingMesa(false);
-                            window.isDraggingMesa = false;
-                          }
-                        })[0];
-                      }
-                    });
-                  }
-                })[0];
-                tempDraggable.startDrag(e);
-                return false;
-              },
-              onClick: function(e) {
-                // Solo abrir el modal si no estamos arrastrando
-                if (!isDraggingInvitado && !window.isDraggingInvitadoOrBolita) {
-                  setInvitadoDetalle(inv);
-                }
+            Object.values(mesaRefs.current).forEach(mesaRef => {
+              if (!mesaRef.current) return;
+              const mesaRect = mesaRef.current.getBoundingClientRect();
+              const distancia = Math.hypot(
+                bolitaRect.left + bolitaRect.width/2 - (mesaRect.left + mesaRect.width/2),
+                bolitaRect.top + bolitaRect.height/2 - (mesaRect.top + mesaRect.height/2)
+              );
+              if (distancia < distanciaMinima) {
+                distanciaMinima = distancia;
+                mesaColisionada = mesaRef.current;
               }
-            })[0];
-          }
-        }
-      });
-    });
-  }, [porGrupoOrigen, mesasPlano]);
+            });
 
-  // Efecto para hacer draggables las bolitas de invitados en las mesas
-  useEffect(() => {
-    mesasPlano.forEach(mesa => {
-      (mesa.invitados || []).forEach(inv => {
-        const refKey = `${mesa.id}-${inv.id}`;
-        if (!bolitaRefs.current[refKey]) {
-          bolitaRefs.current[refKey] = React.createRef();
-        }
-        const el = bolitaRefs.current[refKey].current;
-        if (el && !el._draggableBolita) {
-          const mesaIdOriginal = mesa.id;
-          el._draggableBolita = Draggable.create(el, {
-            type: 'left,top',
-            minimumMovement: 2,
-            onPress: function(e) {
-              window.isDraggingInvitadoOrBolita = true;
-              setIsDraggingInvitado(true);
+            // Si hay colisión y la distancia es menor a un umbral
+            if (mesaColisionada && distanciaMinima < 100) {
+              const mesaId = mesaColisionada.id.replace('mesa-', '');
+              const invitadoId = ref.current.getAttribute('data-invitado-id');
+              const invitado = invitados.find(inv => inv.id === invitadoId);
               
-              // Matar todos los draggables de las mesas
-              Object.values(mesaRefs.current).forEach(ref => {
-                const mesaEl = ref.current;
-                if (mesaEl && mesaEl._draggable) {
-                  mesaEl._draggable.kill();
-                  mesaEl._draggable = null;
-                }
-              });
-              
-              // Crear clon flotante
-              const rect = el.getBoundingClientRect();
-              const clone = el.cloneNode(true);
-              clone.style.position = 'fixed';
-              clone.style.width = rect.width + 'px';
-              clone.style.height = rect.height + 'px';
-              clone.style.left = rect.left + 'px';
-              clone.style.top = rect.top + 'px';
-              clone.style.pointerEvents = 'none';
-              clone.style.zIndex = 9999;
-              clone.style.opacity = 0.97;
-              clone.classList.add('drag-clone');
-              
-              document.body.appendChild(clone);
-              gsap.set(el, { opacity: 0 });
-
-              let tempDraggable = Draggable.create(clone, {
-                type: 'left,top',
-                bounds: document.body,
-                zIndexBoost: true,
-                minimumMovement: 2,
-                onDrag: function() {
-                  let mesaHover = null;
-                  Object.values(mesaRefs.current).forEach(ref => {
-                    const mesaEl = ref.current;
-                    if (mesaEl && Draggable.hitTest(clone, mesaEl, '50%')) {
-                      mesaHover = mesaEl;
-                    }
-                    if (mesaEl) mesaEl.style.transform = '';
-                  });
-                  if (mesaHover) {
-                    mesaHover.style.transform = 'scale(1.12)';
-                  }
-                },
-                onRelease: function() {
-                  Object.values(mesaRefs.current).forEach(ref => {
-                    const mesaEl = ref.current;
-                    if (mesaEl) mesaEl.style.transform = '';
-                  });
-
-                  let mesaDrop = null;
-                  Object.values(mesaRefs.current).forEach(ref => {
-                    const mesaEl = ref.current;
-                    if (mesaEl && Draggable.hitTest(clone, mesaEl, '50%')) {
-                      mesaDrop = mesaEl;
-                    }
-                  });
-
-                  if (mesaDrop) {
-                    const mesaElement = mesaDrop.querySelector('.mapa-mesa-div');
-                    if (!mesaElement) return;
-
-                    const mesaIdDropDom = mesaElement.id.replace('mesa-', '');
-                    if (!mesaIdDropDom) return;
-
-                    const documentId = mesaDocumentIds.current[mesaIdDropDom];
-                    const mesaDestino = mesasPlano.find(m => String(m.id) === String(mesaIdDropDom));
-                    
-                    if (!documentId) return;
-
-                    const idMesaStrapi = documentId;
-                    
-                    if (String(mesaIdDropDom) !== String(mesaIdOriginal)) {
-                      const invitadoIdStrapi = inv.documentId;
-                      fetch(`${urlstrapi}/api/invitados/${invitadoIdStrapi}`, {
-                        method: 'PUT',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          'Authorization': `Bearer ${STRAPI_TOKEN}`
-                        },
-                        body: JSON.stringify({ 
-                          data: { 
-                            mesa: idMesaStrapi ? idMesaStrapi : null
-                          } 
-                        })
-                      })
-                      .then(res => res.json())
-                      .then(() => {
-                        return fetch(
-                          `${urlstrapi}/api/invitados?populate[personaje][populate]=*&populate[mesa][populate]=*&populate[grupo_origen][populate]=*`
-                        );
-                      })
-                      .then(res => res.json())
-                      .then((data) => {
-                        const invitadosData = data?.data.map((invitado) => ({
-                          id: invitado.id,
-                          documentId: invitado.documentId,
-                          nombre: invitado?.nombre,
-                          imagen_url: invitado?.personaje?.imagen_url || "",
-                          mesaId: invitado?.mesa?.id || 0,
-                          mesaDocumentId: invitado?.mesa?.documentId || "",
-                          mesa: invitado?.mesa?.nombre || "",
-                          grupoOrigenId: invitado?.grupo_origen?.id || 0,
-                          grupoOrigen: invitado?.grupo_origen?.nombre || "Sin grupo",
-                          menu: invitado?.menu || "",
-                          alergias: invitado?.alergias || "",
-                          asistira: invitado?.asistira,
-                          preboda: invitado?.preboda,
-                          postboda: invitado?.postboda,
-                          autobus: invitado?.autobus,
-                          alojamiento: invitado?.alojamiento,
-                          dedicatoria: invitado?.dedicatoria || ""
-                        }));
-                        setInvitados(invitadosData);
-                        
-                        // Organizar por grupo de origen
-                        const grupos = {};
-                        invitadosData.forEach((inv) => {
-                          if (!grupos[inv.grupoOrigenId]) {
-                            grupos[inv.grupoOrigenId] = {
-                              nombre: inv.grupoOrigen,
-                              invitados: []
-                            };
-                          }
-                          grupos[inv.grupoOrigenId].invitados.push(inv); // Guarda el objeto invitado completo
-                        });
-                        setPorGrupoOrigen(grupos);
-
-                        // Organizar por mesa
-                        const mesas = {};
-                        invitadosData.forEach((inv) => {
-                          if (!mesas[inv.mesaId]) {
-                            mesas[inv.mesaId] = {
-                              id: inv.mesaId,
-                              documentId: inv.mesaDocumentId,
-                              nombre: inv.mesa,
-                              invitados: []
-                            };
-                          }
-                          mesas[inv.mesaId].invitados.push(inv); // Guarda el objeto invitado completo
-                        });
-                        setMesasOrganizadas(mesas);
-
-                        // Actualizar mesasPlano
-                        setMesasPlano(prev => prev.map(m => {
-                          const mesaActualizada = mesas[m.id];
-                          if (mesaActualizada) {
-                            return { ...m, invitados: mesaActualizada.invitados };
-                          }
-                          return { ...m, invitados: [] };
-                        }));
-                      });
-                    }
-                  }
-
-                  if (clone && clone.parentNode) clone.parentNode.removeChild(clone);
-                  gsap.set(el, { opacity: 1 });
-                  if (tempDraggable && typeof tempDraggable.kill === 'function') tempDraggable.kill();
-                  setIsDraggingInvitado(false);
-                  window.isDraggingInvitadoOrBolita = false;
-
-                  // Recrear los draggables de las mesas
-                  mesasPlano.forEach(mesa => {
-                    const el = mesaRefs.current[mesa.id]?.current;
-                    if (el && !el._draggable) {
-                      el._draggable = Draggable.create(el, {
-                        type: 'left,top',
-                        bounds: planoRef.current,
-                        inertia: true,
-                        onPress: function(e) {
-                          if (window.isDraggingInvitadoOrBolita) return false;
-                          if (e && e.target && e.target.classList && e.target.classList.contains('mapa-invitado-bolita')) return false;
-                          setIsDraggingMesa(true);
-                          window.isDraggingMesa = true;
-                        },
-                        onDrag: function() {
-                          // Mantener la posición relativa al contenedor
-                          const rect = el.getBoundingClientRect();
-                          const planoRect = planoRef.current.getBoundingClientRect();
-                          const newX = rect.left - planoRect.left;
-                          const newY = rect.top - planoRect.top;
-                          el.style.left = `${newX}px`;
-                          el.style.top = `${newY}px`;
-                        },
-                        onDragEnd: function() {
-                          const rect = el.getBoundingClientRect();
-                          const planoRect = planoRef.current.getBoundingClientRect();
-                          const newX = rect.left - planoRect.left + el.offsetWidth / 2;
-                          const newY = rect.top - planoRect.top + el.offsetHeight / 2;
-                          
-                          // Actualizar el estado solo si la posición ha cambiado
-                          if (newX !== mesa.x || newY !== mesa.y) {
-                            setMesasPlano(prev => {
-                              const nuevas = prev.map(m => m.id === mesa.id ? { ...m, x: newX, y: newY } : m);
-                              return nuevas;
-                            });
-                            actualizarPosicionMesa(mesa.id, newX, newY);
-                          }
-
-                          setIsDraggingMesa(false);
-                          window.isDraggingMesa = false;
-                        }
-                      })[0];
-                    }
-                  });
-                }
-              })[0];
-              tempDraggable.startDrag(e);
-              return false;
+              if (invitado) {
+                actualizarInvitado(invitado.documentId, mesaId);
+              }
             }
-          })[0];
-        }
-      });
+
+            // Restaurar posición original
+            ref.current.style.left = '';
+            ref.current.style.top = '';
+          }
+        })[0];
+      }
     });
-  }, [mesasPlano]);
+  }, [mesasInicializadas, isDraggingMesa, invitados]);
 
   // Función para calcular el orden de las mesas
   const calcularOrdenMesas = (mesas) => {
@@ -1143,28 +831,19 @@ const MapaMesas = () => {
     setMesaNumbers(nuevosNumeros);
   }, [mesasPlano, isDraggingMesa]);
 
-  // Función para renderizar mesas como divs (ahora dentro del componente)
+  // Función para renderizar mesas como divs
   function renderMesaDiv(mesa) {
     const invitadosMesa = mesa.invitados || [];
     // Tamaños
-    let mesaWidth, mesaHeight, claseMesa, label, borderRadius;
-    if (mesa.tipo === 'redonda') {
-      mesaWidth = mesaHeight = 'var(--diametro-redonda)';
-      claseMesa = 'mapa-mesa-div mapa-mesa-redonda';
-      label = 'R';
-      borderRadius = '50%';
-    } else if (mesa.tipo === 'imperial') {
-      mesaWidth = 'var(--largo-imperial)';
-      mesaHeight = 'var(--ancho-imperial)';
-      claseMesa = 'mapa-mesa-div mapa-mesa-imperial';
-      label = 'I';
-      borderRadius = 'calc(var(--ancho-imperial) / 4)';
-    }
+    const mesaWidth = 'var(--diametro-redonda)';
+    const claseMesa = 'mapa-mesa-div mapa-mesa-redonda';
+    const label = 'R';
+    const borderRadius = '50%';
 
     // Tamaño del contenedor externo (deja margen para bolitas)
     const padding = '3dvh';
     const width = `calc(${mesaWidth} + ${padding} * 2)`;
-    const height = `calc(${mesaHeight} + ${padding} * 2)`;
+    const height = `calc(${mesaWidth} + ${padding} * 2)`;
 
     // Guardar el documentId en el ref
     mesaDocumentIds.current[mesa.id] = mesa.documentId;
@@ -1174,198 +853,39 @@ const MapaMesas = () => {
 
     // Bolitas alrededor
     let bolitas = [];
-    if (mesa.tipo === 'redonda') {
-      // Distribuir en círculo
-      const radio = 'calc(var(--diametro-redonda) / 2 + 3dvh)';
-      bolitas = invitadosMesa.map((inv, idx) => {
-        const ang = (2 * Math.PI * idx) / Math.max(1, invitadosMesa.length) - Math.PI/2;
-        const bx = `calc(${Math.cos(ang)} * var(--diametro-redonda) / 2 + ${Math.cos(ang)} * 3dvh)`;
-        const by = `calc(${Math.sin(ang)} * var(--diametro-redonda) / 2 + ${Math.sin(ang)} * 3dvh)`;
-        const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
-        const colorGrupo = grupoColorMap[grupo] || '#6366f1';
-        return (
-          <div
-            key={inv.id}
-            className="mapa-invitado-bolita"
-            style={{ 
-              transform: `translate(calc(-50% + ${bx}), calc(-50% + ${by}))`,
-              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : colorGrupo,
-              border: inv.imagen_url ? `2px solid ${colorGrupo}` : 'none'
-            }}
-            ref={bolitaRefs.current[`${mesa.id}-${inv.id}`]}
-            onMouseDown={e => {
-              e.stopPropagation();
-              const el = bolitaRefs.current[`${mesa.id}-${inv.id}`].current;
-              if (el && el._draggableBolita) {
-                el._draggableBolita.startDrag(e);
-              }
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              setInvitadoDetalle(inv);
-            }}
-          >{!inv.imagen_url && inv.nombre[0]}</div>
-        );
-      });
-    } else if (mesa.tipo === 'imperial') {
-      // Distribuir en los 4 lados del rectángulo
-      const total = invitadosMesa.length;
-      let largo = 16, ancho = 6;
-      if (typeof window !== 'undefined') {
-        const root = document.documentElement;
-        const l = getComputedStyle(root).getPropertyValue('--largo-imperial');
-        const a = getComputedStyle(root).getPropertyValue('--ancho-imperial');
-        if (l) largo = parseFloat(l);
-        if (a) ancho = parseFloat(a);
-      }
-      // Área de dibujo cuadrada para referencia
-      const area = Math.max(largo, ancho) + 8; // margen extra
-      const cx = 0;
-      const cy = 0;
-      const mesaW = largo;
-      const mesaH = ancho;
-      const invitadoSize = 2.8; // en dvh
-      const offset = 2.5; // separación desde el borde
-      // Reparto en 4 lados
-      const lados = [[], [], [], []];
-      let idx = 0;
-      for (let i = 0; i < total; i++) {
-        lados[idx % 4].push(invitadosMesa[i]);
-        idx++;
-      }
-      // Superior
-      lados[0].forEach((inv, i) => {
-        const gap = mesaW / (lados[0].length + 1);
-        const bx = gap * (i + 1) - mesaW / 2;
-        const by = -mesaH / 2 - offset;
-        const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
-        const colorGrupo = grupoColorMap[grupo] || '#f59e42';
-        bolitas.push(
-          <div
-            key={inv.id}
-            className="mapa-invitado-bolita imperial"
-            style={{
-              transform: `translate(calc(-50% + ${bx}dvh), calc(-50% + ${by}dvh))`,
-              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : colorGrupo,
-              width: `${invitadoSize}dvh`,
-              height: `${invitadoSize}dvh`,
-              border: inv.imagen_url ? `2px solid ${colorGrupo}` : 'none'
-            }}
-            ref={bolitaRefs.current[`${mesa.id}-${inv.id}`]}
-            onMouseDown={e => {
-              e.stopPropagation();
-              const el = bolitaRefs.current[`${mesa.id}-${inv.id}`].current;
-              if (el && el._draggableBolita) {
-                el._draggableBolita.startDrag(e);
-              }
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              setInvitadoDetalle(inv);
-            }}
-          >{!inv.imagen_url && inv.nombre[0]}</div>
-        );
-      });
-      // Derecha
-      lados[1].forEach((inv, i) => {
-        const gap = mesaH / (lados[1].length + 1);
-        const bx = mesaW / 2 + offset;
-        const by = gap * (i + 1) - mesaH / 2;
-        const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
-        const colorGrupo = grupoColorMap[grupo] || '#f59e42';
-        bolitas.push(
-          <div
-            key={inv.id}
-            className="mapa-invitado-bolita imperial"
-            style={{
-              transform: `translate(calc(-50% + ${bx}dvh), calc(-50% + ${by}dvh))`,
-              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : colorGrupo,
-              width: `${invitadoSize}dvh`,
-              height: `${invitadoSize}dvh`,
-              border: inv.imagen_url ? `2px solid ${colorGrupo}` : 'none'
-            }}
-            ref={bolitaRefs.current[`${mesa.id}-${inv.id}`]}
-            onMouseDown={e => {
-              e.stopPropagation();
-              const el = bolitaRefs.current[`${mesa.id}-${inv.id}`].current;
-              if (el && el._draggableBolita) {
-                el._draggableBolita.startDrag(e);
-              }
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              setInvitadoDetalle(inv);
-            }}
-          >{!inv.imagen_url && inv.nombre[0]}</div>
-        );
-      });
-      // Inferior
-      lados[2].forEach((inv, i) => {
-        const gap = mesaW / (lados[2].length + 1);
-        const bx = mesaW / 2 - gap * (i + 1);
-        const by = mesaH / 2 + offset;
-        const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
-        const colorGrupo = grupoColorMap[grupo] || '#f59e42';
-        bolitas.push(
-          <div
-            key={inv.id}
-            className="mapa-invitado-bolita imperial"
-            style={{
-              transform: `translate(calc(-50% + ${bx}dvh), calc(-50% + ${by}dvh))`,
-              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : colorGrupo,
-              width: `${invitadoSize}dvh`,
-              height: `${invitadoSize}dvh`,
-              border: inv.imagen_url ? `2px solid ${colorGrupo}` : 'none'
-            }}
-            ref={bolitaRefs.current[`${mesa.id}-${inv.id}`]}
-            onMouseDown={e => {
-              e.stopPropagation();
-              const el = bolitaRefs.current[`${mesa.id}-${inv.id}`].current;
-              if (el && el._draggableBolita) {
-                el._draggableBolita.startDrag(e);
-              }
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              setInvitadoDetalle(inv);
-            }}
-          >{!inv.imagen_url && inv.nombre[0]}</div>
-        );
-      });
-      // Izquierda
-      lados[3].forEach((inv, i) => {
-        const gap = mesaH / (lados[3].length + 1);
-        const bx = -mesaW / 2 - offset;
-        const by = mesaH / 2 - gap * (i + 1);
-        const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
-        const colorGrupo = grupoColorMap[grupo] || '#f59e42';
-        bolitas.push(
-          <div
-            key={inv.id}
-            className="mapa-invitado-bolita imperial"
-            style={{
-              transform: `translate(calc(-50% + ${bx}dvh), calc(-50% + ${by}dvh))`,
-              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : colorGrupo,
-              width: `${invitadoSize}dvh`,
-              height: `${invitadoSize}dvh`,
-              border: inv.imagen_url ? `2px solid ${colorGrupo}` : 'none'
-            }}
-            ref={bolitaRefs.current[`${mesa.id}-${inv.id}`]}
-            onMouseDown={e => {
-              e.stopPropagation();
-              const el = bolitaRefs.current[`${mesa.id}-${inv.id}`].current;
-              if (el && el._draggableBolita) {
-                el._draggableBolita.startDrag(e);
-              }
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              setInvitadoDetalle(inv);
-            }}
-          >{!inv.imagen_url && inv.nombre[0]}</div>
-        );
-      });
-    }
+    // Distribuir en círculo
+    const radio = 'calc(var(--diametro-redonda) / 2 + 3dvh)';
+    bolitas = invitadosMesa.map((inv, idx) => {
+      const ang = (2 * Math.PI * idx) / Math.max(1, invitadosMesa.length) - Math.PI/2;
+      const bx = `calc(${Math.cos(ang)} * var(--diametro-redonda) / 2 + ${Math.cos(ang)} * 3dvh)`;
+      const by = `calc(${Math.sin(ang)} * var(--diametro-redonda) / 2 + ${Math.sin(ang)} * 3dvh)`;
+      const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
+      const colorGrupo = grupoColorMap[grupo] || '#6366f1';
+      return (
+        <div
+          key={inv.id}
+          className="mapa-invitado-bolita"
+          data-invitado-id={inv.id}
+          style={{ 
+            transform: `translate(calc(-50% + ${bx}), calc(-50% + ${by}))`,
+            background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : colorGrupo,
+            border: inv.imagen_url ? `2px solid ${colorGrupo}` : 'none'
+          }}
+          ref={bolitaRefs.current[`${mesa.id}-${inv.id}`]}
+          onMouseDown={e => {
+            e.stopPropagation();
+            const el = bolitaRefs.current[`${mesa.id}-${inv.id}`].current;
+            if (el && el._draggableBolita) {
+              el._draggableBolita.startDrag(e);
+            }
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            setInvitadoDetalle(inv);
+          }}
+        >{!inv.imagen_url && inv.nombre[0]}</div>
+      );
+    });
 
     return (
       <div
@@ -1387,7 +907,7 @@ const MapaMesas = () => {
           className={claseMesa}
           style={{ 
             width: mesaWidth, 
-            height: mesaHeight, 
+            height: mesaWidth, 
             background: getMesaBackground(mesa),
             borderRadius: borderRadius,
             position: 'relative'
@@ -1416,7 +936,6 @@ const MapaMesas = () => {
           >
             <span className="mapa-mesa-nombre">{mesa.nombre}</span>
           </div>
-          {/* Añadir el número de mesa */}
           <div 
             className="mapa-mesa-numero"
             style={{
@@ -1888,26 +1407,33 @@ const MapaMesas = () => {
       const data = await response.json();
       const invitadoActualizado = data.data;
       
+      // Actualizar invitados
       setInvitados(prev => prev.map(inv => 
         inv.documentId === invitadoId 
           ? { 
               ...inv, 
               mesaId: mesaId,
-              mesa: invitadoActualizado.attributes.mesa?.data?.attributes?.nombre || ''
+              mesa: invitadoActualizado.attributes?.mesa?.data?.attributes?.nombre || ''
             }
           : inv
       ));
 
       // Actualizar mesasPlano
       setMesasPlano(prev => prev.map(mesa => {
-        if (mesa.id === mesaId) {
+        if (String(mesa.id) === String(mesaId)) {
+          // Añadir el invitado a la mesa destino
+          const invitado = invitados.find(inv => inv.documentId === invitadoId);
+          if (invitado) {
+            return {
+              ...mesa,
+              invitados: [...mesa.invitados, invitado]
+            };
+          }
+        } else {
+          // Quitar el invitado de la mesa origen
           return {
             ...mesa,
-            invitados: [...mesa.invitados, {
-              id: invitadoActualizado.id,
-              documentId: invitadoActualizado.attributes.documentId,
-              nombre: invitadoActualizado.attributes.nombre
-            }]
+            invitados: mesa.invitados.filter(inv => inv.documentId !== invitadoId)
           };
         }
         return mesa;
@@ -2123,6 +1649,8 @@ const MapaMesas = () => {
             grupoColorMap={grupoColorMap}
             mesasOrganizadas={mesasOrganizadas}
             formatearMenu={formatearMenu}
+            actualizarInvitado={actualizarInvitado}
+            mesasPlano={mesasPlano}
           />
         )}
       </main>
