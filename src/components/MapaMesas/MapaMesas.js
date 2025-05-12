@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from "react";
 import { gsap } from "gsap";
 import { Draggable } from "gsap/Draggable";
 import './MapaMesas.scss';
-import Modal from './components/Modal/Modal';
 import PanelLateral from './components/PanelLateral/PanelLateral';
 import PanelPersonajes from './components/PanelPersonajes/PanelPersonajes';
 import { FaPlus, FaEdit, FaHashtag, FaUsers, FaCrown, FaUserFriends, FaBorderAll, FaMagnet, FaLock, FaCompress, FaExpand, FaFileExcel } from 'react-icons/fa';
