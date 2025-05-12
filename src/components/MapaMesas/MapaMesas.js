@@ -9,6 +9,10 @@ import { FaPlus, FaEdit, FaHashtag, FaUsers, FaCrown, FaUserFriends, FaBorderAll
 import ExcelJS from 'exceljs';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import ModalAddMesa from './components/ModalAddMesa/ModalAddMesa';
+import ModalDetalleMesa from './components/ModalDetalleMesa/ModalDetalleMesa';
+import ModalDetalleInvitado from './components/ModalDetalleInvitado/ModalDetalleInvitado';
+import { v4 as uuidv4 } from 'uuid';
 gsap.registerPlugin(Draggable);
 
 const urlstrapi =
@@ -68,27 +72,25 @@ const MapaMesas = () => {
   const [invitadoDetalle, setInvitadoDetalle] = useState(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [invitadosOrdenados, setInvitadosOrdenados] = useState({});
-  const diametroRedonda = 'var(--diametro-redonda)';
-  const largoImperial = 'var(--largo-imperial)';
-  const anchoImperial = 'var(--ancho-imperial)';
-  // Refs para cada mesa
-  const mesaRefs = useRef({});
-  // Refs para invitados sin mesa
-  const invitadoRefs = useRef({});
-  // Refs para bolitas
-  const bolitaRefs = useRef({});
-  // Ref para almacenar los documentIds de las mesas
-  const mesaDocumentIds = useRef({});
-  const [mesasInicializadas, setMesasInicializadas] = useState(false);
-  const mesaPositions = useRef({});
   const [isDraggingInvitado, setIsDraggingInvitado] = useState(false);
   const [isDraggingMesa, setIsDraggingMesa] = useState(false);
   const [isDraggingToMesa, setIsDraggingToMesa] = useState(false);
-  const DISTANCIA_SCALE = 7; // Factor de escala para las distancias en dvh
   const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [mesaNumbers, setMesaNumbers] = useState({});
   const [isUpdatingNumbers, setIsUpdatingNumbers] = useState(false);
   const [isPanelPersonajesOpen, setIsPanelPersonajesOpen] = useState(false);
+  const [mesasInicializadas, setMesasInicializadas] = useState(false);
+
+  // Refs
+  const mesaRefs = useRef({});
+  const invitadoRefs = useRef({});
+  const bolitaRefs = useRef({});
+  const mesaDocumentIds = useRef({});
+  const mesaPositions = useRef({});
+
+  const diametroRedonda = 'var(--diametro-redonda)';
+  const largoImperial = 'var(--largo-imperial)';
+  const anchoImperial = 'var(--ancho-imperial)';
 
   // Paleta de colores para grupos de origen
   const coloresGrupos = [
@@ -1142,128 +1144,6 @@ const MapaMesas = () => {
     setMesaNumbers(nuevosNumeros);
   }, [mesasPlano, isDraggingMesa]);
 
-  function renderMesa(mesa) {
-    // Obtener invitados de la mesa (por id)
-    const invitadosMesa = mesa.invitados || [];
-    // Bolitas de invitados
-    let bolitas = [];
-    if (mesa.tipo === 'redonda') {
-      // Distribuir en círculo
-      const radio = 'calc(var(--diametro-redonda) / 2 + 2dvh)';
-      bolitas = invitadosMesa.map((inv, idx) => {
-        const ang = (2 * Math.PI * idx) / invitadosMesa.length - Math.PI/2;
-        const bx = Math.cos(ang) * parseFloat(radio);
-        const by = Math.sin(ang) * parseFloat(radio);
-        const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
-        const colorGrupo = grupoColorMap[grupo] || '#6366f1';
-        return (
-          <g key={inv.id} transform={`translate(${bx},${by})`} style={{cursor: 'pointer'}} onClick={() => setInvitadoDetalle(inv)}>
-            <circle r={13} fill={colorGrupo} stroke="#fff" strokeWidth={1.5} />
-            <text x={0} y={4} textAnchor="middle" fontSize={10} fill="#fff" fontWeight={600}>{inv.nombre.length > 6 ? inv.nombre.slice(0,6)+'…' : inv.nombre}</text>
-          </g>
-        );
-      });
-    } else if (mesa.tipo === 'imperial') {
-      // Distribuir invitados en un patrón organizado alrededor de la mesa imperial
-      const total = invitadosMesa.length;
-      // Leer largo y ancho en dvh desde las variables CSS
-      let largo = 16, ancho = 6;
-      if (typeof window !== 'undefined') {
-        const root = document.documentElement;
-        const l = getComputedStyle(root).getPropertyValue('--largo-imperial');
-        const a = getComputedStyle(root).getPropertyValue('--ancho-imperial');
-        if (l) largo = parseFloat(l);
-        if (a) ancho = parseFloat(a);
-      }
-
-      // Calcular el número de invitados por lado
-      const invitadosPorLado = Math.ceil(total / 4);
-      const espacioLateral = largo / (invitadosPorLado + 1);
-      const espacioVertical = ancho / (invitadosPorLado + 1);
-      const offset = 4; // Separación de la mesa
-
-      bolitas = invitadosMesa.map((inv, idx) => {
-        let bx = 0, by = 0;
-        const lado = Math.floor(idx / invitadosPorLado);
-        const posicionEnLado = idx % invitadosPorLado;
-
-        switch (lado) {
-          case 0: // Lado superior
-            bx = -largo/2 + espacioLateral * (posicionEnLado + 1);
-            by = -ancho/2 - offset;
-            break;
-          case 1: // Lado derecho
-            bx = largo/2 + offset;
-            by = -ancho/2 + espacioVertical * (posicionEnLado + 1);
-            break;
-          case 2: // Lado inferior
-            bx = largo/2 - espacioLateral * (posicionEnLado + 1);
-            by = ancho/2 + offset;
-            break;
-          case 3: // Lado izquierdo
-            bx = -largo/2 - offset;
-            by = ancho/2 - espacioVertical * (posicionEnLado + 1);
-            break;
-        }
-
-        const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
-        const colorGrupo = grupoColorMap[grupo] || '#f59e42';
-        return (
-          <div
-            key={inv.id}
-            className="mapa-invitado-bolita imperial"
-            style={{
-              transform: `translate(calc(-50% + ${bx}dvh), calc(-50% + ${by}dvh))`,
-              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : colorGrupo,
-              width: '2.8dvh',
-              height: '2.8dvh',
-              border: inv.imagen_url ? `2px solid ${colorGrupo}` : 'none'
-            }}
-            ref={bolitaRefs.current[`${mesa.id}-${inv.id}`]}
-            onMouseDown={e => {
-              e.stopPropagation();
-              const el = bolitaRefs.current[`${mesa.id}-${inv.id}`].current;
-              if (el && el._draggableBolita) {
-                el._draggableBolita.startDrag(e);
-              }
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              setInvitadoDetalle(inv);
-            }}
-          >{!inv.imagen_url && inv.nombre[0]}</div>
-        );
-      });
-    }
-    // Mesa
-    if (mesa.tipo === 'redonda') {
-      return (
-        <g key={mesa.id} id={'mesa-' + mesa.id} style={{cursor:'grab'}} transform={`translate(${mesa.x},${mesa.y})`}>
-          <circle r="calc(var(--diametro-redonda) / 2)" fill="#f3f4f6" stroke="#6366f1" strokeWidth={5} filter="url(#mesaShadow)" />
-          <text x={0} y={0} textAnchor="middle" dy=".3em" fontSize={22} fill="#18181b" fontWeight={700} style={{textShadow:'0 2px 8px #fff, 0 1px 0 #0008'}}>R</text>
-          <g>
-            <rect x={-35} y={34} width={70} height={18} rx={6} fill="#fff" fillOpacity={0.85} />
-            <text x={0} y={46} textAnchor="middle" fontSize="2.2dvh" fill="#18181b" fontWeight={700} style={{textShadow:'0 2px 8px #fff, 0 1px 0 #0008', letterSpacing:0.5}}>{mesa.nombre}</text>
-          </g>
-          {bolitas}
-        </g>
-      );
-    }
-    if (mesa.tipo === 'imperial') {
-      return (
-        <g key={mesa.id} id={'mesa-' + mesa.id} style={{cursor:'grab'}} transform={`translate(${mesa.x},${mesa.y})`}>
-          <rect x="calc(var(--largo-imperial) / -2)" y="calc(var(--ancho-imperial) / -2)" width="var(--largo-imperial)" height="var(--ancho-imperial)" rx={16} fill="#f3f4f6" stroke="#f59e42" strokeWidth={5} filter="url(#mesaShadow)" />
-          <text x={0} y={0} textAnchor="middle" dy=".3em" fontSize={22} fill="#18181b" fontWeight={700} style={{textShadow:'0 2px 8px #fff, 0 1px 0 #0008'}}>I</text>
-          <g>
-            <rect x={-45} y={34} width={90} height={18} rx={6} fill="#fff" fillOpacity={0.85} />
-            <text x={0} y={46} textAnchor="middle" fontSize="2.2dvh" fill="#18181b" fontWeight={700} style={{textShadow:'0 2px 8px #fff, 0 1px 0 #0008', letterSpacing:0.5}}>{mesa.nombre}</text>
-          </g>
-          {bolitas}
-        </g>
-      );
-    }
-  }
-
   // Función para renderizar mesas como divs (ahora dentro del componente)
   function renderMesaDiv(mesa) {
     const invitadosMesa = mesa.invitados || [];
@@ -2133,19 +2013,15 @@ const MapaMesas = () => {
     return invitados.find(i => i.id === idInvitado);
   }
 
-  const handleDragEnd = (e, mesaId) => {
-    const mesaRef = mesaRefs.current[mesaId];
-    if (!mesaRef) return;
+  // Función para manejar la adición de una mesa
+  const handleAddMesa = (tipo) => {
+    setTipoMesa(tipo);
+    setShowAddMesa(false);
+  };
 
-    const rect = mesaRef.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-
-    // Convertir coordenadas de píxeles a vw
-    const x = (rect.left + rect.width / 2) / viewportWidth * 100;
-    const y = (rect.top + rect.height / 2) / viewportHeight * 100;
-
-    actualizarPosicionMesa(mesaId, x, y);
+  // Función para manejar la actualización del orden de invitados
+  const handleUpdateOrder = (mesaId, nuevoOrden) => {
+    actualizarOrdenInvitados(mesaId, nuevoOrden);
   };
 
   if (cargando) return <p>Cargando datos de invitados...</p>;
@@ -2220,638 +2096,36 @@ const MapaMesas = () => {
         </div>
         {/* Modal para añadir mesa */}
         {showAddMesa && (
-          <Modal
-            isOpen={showAddMesa}
+          <ModalAddMesa 
+            isOpen={showAddMesa} 
             onClose={() => setShowAddMesa(false)}
-            title="Tipo de mesa"
-            className="mapa-mesas-modal"
-          >
-            <button onClick={()=>{setTipoMesa('redonda');setShowAddMesa(false);}}>Redonda (máx. 11)</button>
-            <button onClick={()=>{setTipoMesa('imperial');setShowAddMesa(false);}}>Imperial (máx. 16)</button>
-            <button onClick={()=>setShowAddMesa(false)}>Cancelar</button>
-          </Modal>
+            onSelectTipo={handleAddMesa}
+          />
         )}
         {/* Modal de detalle de mesa */}
         {mesaDetalle && (
-          <Modal
+          <ModalDetalleMesa
             isOpen={!!mesaDetalle}
             onClose={() => setMesaDetalle(null)}
-            title={mesaDetalle?.nombre}
-            className="mapa-mesas-modal-detalle"
-          >
-            <div className="modal-content">
-              <div className="mapa-mesas-modal-mesa">
-                <div className="mapa-mesas-modal-mesa-container">
-                  {(() => {
-                    const invitados = mesaDetalle?.invitados || [];
-                    const ordenActual = invitadosOrdenados[mesaDetalle?.id] || {};
-                    const invitadosOrdenadosLista = [...invitados].sort((a, b) => {
-                      const ordenA = ordenActual[a.id] || 0;
-                      const ordenB = ordenActual[b.id] || 0;
-                      return ordenA - ordenB;
-                    });
-                    const areaW = 64;
-                    const areaH = 48;
-                    const cx = areaW / 2;
-                    const cy = areaH / 2;
-                    if (mesaDetalle?.tipo === 'redonda') {
-                      const radio = 22;
-                      const invitadoSize = 5.5;
-                      return (
-                        <div className="mapa-mesas-modal-mesa-dibujo" style={{ width: `${areaW}dvh`, height: `${areaH}dvh`, position: 'relative' }}>
-                          <div
-                            className="mapa-mesas-modal-mesa-div"
-                            style={{
-                              width: '32dvh',
-                              height: '32dvh',
-                              background: getMesaBackground(mesaDetalle),
-                              border: `0.4dvh solid #6366f1`,
-                              position: 'absolute',
-                              left: '50%',
-                              top: '50%',
-                              transform: 'translate(-50%, -50%)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              borderRadius: '50%'
-                            }}
-                          >
-                            <span style={{fontSize: '2.6dvh', fontWeight: 700, color: '#fff', textShadow: '0 2px 4px #0008'}}>{mesaDetalle?.nombre}</span>
-                          </div>
-                          {invitadosOrdenadosLista.map((inv, idx) => {
-                            const ang = (2 * Math.PI * idx) / invitados.length - Math.PI / 2;
-                            const bx = cx + Math.cos(ang) * radio - invitadoSize / 2;
-                            const by = cy + Math.sin(ang) * radio - invitadoSize / 2;
-                            const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
-                            const colorGrupo = grupoColorMap[grupo] || '#6366f1';
-                            return (
-                              <div
-                                key={inv.id}
-                                data-invitado-id={inv.id}
-                                className="mapa-mesas-modal-invitado"
-                                style={{
-                                  left: `${bx}dvh`,
-                                  top: `${by}dvh`,
-                                  width: `${invitadoSize}dvh`,
-                                  height: `${invitadoSize}dvh`,
-                                  position: 'absolute',
-                                  background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : '#222b3a',
-                                  border: inv.imagen_url ? `2px solid ${colorGrupo}` : '0.2dvh solid #fff',
-                                  fontSize: '2.2dvh'
-                                }}
-                              >
-                                {!inv.imagen_url && inv.nombre[0]}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    } else if (mesaDetalle?.tipo === 'imperial') {
-                      const mesaW = 48;
-                      const mesaH = 24;
-                      const invitadoSize = 6;
-                      const offset = 4;
-                      const leftX = cx - mesaW / 2;
-                      const rightX = cx + mesaW / 2;
-                      const topY = cy - mesaH / 2;
-                      const bottomY = cy + mesaH / 2;
-                      const lados = [[], [], [], []];
-                      let idx = 0;
-                      for (let i = 0; i < invitados.length; i++) {
-                        lados[idx % 4].push(invitadosOrdenadosLista[i]);
-                        idx++;
-                      }
-                      let rendered = [];
-                      lados[0].forEach((inv, i) => {
-                        const gap = mesaW / (lados[0].length + 1);
-                        const x = leftX + gap * (i + 1) - invitadoSize / 2;
-                        const y = topY - offset - invitadoSize / 2;
-                        const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
-                        const colorGrupo = grupoColorMap[grupo] || '#f59e42';
-                        rendered.push(
-                          <div 
-                            key={inv.id} 
-                            data-invitado-id={inv.id} 
-                            className="mapa-mesas-modal-invitado" 
-                            style={{ 
-                              left: `${x}dvh`, 
-                              top: `${y}dvh`, 
-                              width: `${invitadoSize}dvh`, 
-                              height: `${invitadoSize}dvh`, 
-                              position: 'absolute', 
-                              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : '#222b3a', 
-                              border: inv.imagen_url ? `2px solid ${colorGrupo}` : '0.2dvh solid #fff', 
-                              fontSize: '2.2dvh' 
-                            }}
-                          >
-                            {!inv.imagen_url && inv.nombre[0]}
-                          </div>
-                        );
-                      });
-                      lados[1].forEach((inv, i) => {
-                        const gap = mesaH / (lados[1].length + 1);
-                        const x = rightX + offset - invitadoSize / 2;
-                        const y = topY + gap * (i + 1) - invitadoSize / 2;
-                        const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
-                        const colorGrupo = grupoColorMap[grupo] || '#f59e42';
-                        rendered.push(
-                          <div 
-                            key={inv.id} 
-                            data-invitado-id={inv.id} 
-                            className="mapa-mesas-modal-invitado" 
-                            style={{ 
-                              left: `${x}dvh`, 
-                              top: `${y}dvh`, 
-                              width: `${invitadoSize}dvh`, 
-                              height: `${invitadoSize}dvh`, 
-                              position: 'absolute', 
-                              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : '#222b3a', 
-                              border: inv.imagen_url ? `2px solid ${colorGrupo}` : '0.2dvh solid #fff', 
-                              fontSize: '2.2dvh' 
-                            }}
-                          >
-                            {!inv.imagen_url && inv.nombre[0]}
-                          </div>
-                        );
-                      });
-                      lados[2].forEach((inv, i) => {
-                        const gap = mesaW / (lados[2].length + 1);
-                        const x = leftX + gap * (i + 1) - invitadoSize / 2;
-                        const y = bottomY + offset - invitadoSize / 2;
-                        const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
-                        const colorGrupo = grupoColorMap[grupo] || '#f59e42';
-                        rendered.push(
-                          <div 
-                            key={inv.id} 
-                            data-invitado-id={inv.id} 
-                            className="mapa-mesas-modal-invitado" 
-                            style={{ 
-                              left: `${x}dvh`, 
-                              top: `${y}dvh`, 
-                              width: `${invitadoSize}dvh`, 
-                              height: `${invitadoSize}dvh`, 
-                              position: 'absolute', 
-                              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : '#222b3a', 
-                              border: inv.imagen_url ? `2px solid ${colorGrupo}` : '0.2dvh solid #fff', 
-                              fontSize: '2.2dvh' 
-                            }}
-                          >
-                            {!inv.imagen_url && inv.nombre[0]}
-                          </div>
-                        );
-                      });
-                      lados[3].forEach((inv, i) => {
-                        const gap = mesaH / (lados[3].length + 1);
-                        const x = leftX - offset - invitadoSize / 2;
-                        const y = topY + gap * (i + 1) - invitadoSize / 2;
-                        const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
-                        const colorGrupo = grupoColorMap[grupo] || '#f59e42';
-                        rendered.push(
-                          <div 
-                            key={inv.id} 
-                            data-invitado-id={inv.id} 
-                            className="mapa-mesas-modal-invitado" 
-                            style={{ 
-                              left: `${x}dvh`, 
-                              top: `${y}dvh`, 
-                              width: `${invitadoSize}dvh`, 
-                              height: `${invitadoSize}dvh`, 
-                              position: 'absolute', 
-                              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : '#222b3a', 
-                              border: inv.imagen_url ? `2px solid ${colorGrupo}` : '0.2dvh solid #fff', 
-                              fontSize: '2.2dvh' 
-                            }}
-                          >
-                            {!inv.imagen_url && inv.nombre[0]}
-                          </div>
-                        );
-                      });
-                      return (
-                        <div className="mapa-mesas-modal-mesa-dibujo" style={{ width: `${areaW}dvh`, height: `${areaH}dvh`, position: 'relative' }}>
-                          <div
-                            className="mapa-mesas-modal-mesa-div"
-                            style={{
-                              width: `${mesaW}dvh`,
-                              height: `${mesaH}dvh`,
-                              background: getMesaBackground(mesaDetalle),
-                              border: `0.4dvh solid #f59e42`,
-                              position: 'absolute',
-                              left: '50%',
-                              top: '50%',
-                              transform: 'translate(-50%, -50%)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              borderRadius: '2dvh'
-                            }}
-                          >
-                            <span style={{fontSize: '2.8dvh', fontWeight: 700, color: '#fff', textShadow: '0 2px 4px #0008'}}>{mesaDetalle?.nombre}</span>
-                          </div>
-                          {rendered}
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
-                </div>
-              </div>
-              <div className={`mapa-mesas-modal-invitados ${isSavingOrder ? 'saving' : ''}`}>
-                <b>Invitados:</b>
-                <ul>
-                  {(() => {
-                    const invitados = mesaDetalle?.invitados || [];
-                    const ordenActual = invitadosOrdenados[mesaDetalle?.id] || {};
-                    const invitadosOrdenadosLista = [...invitados].sort((a, b) => {
-                      const ordenA = ordenActual[a.id] || 0;
-                      const ordenB = ordenActual[b.id] || 0;
-                      return ordenA - ordenB;
-                    });
-
-                    return invitadosOrdenadosLista.map((inv, idx) => {
-                      const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
-                      const colorGrupo = grupoColorMap[grupo] || '#6366f1';
-                      return (
-                        <li 
-                          key={inv.id}
-                          draggable={!isSavingOrder}
-                          onDragStart={(e) => {
-                            if (isSavingOrder) {
-                              e.preventDefault();
-                              return;
-                            }
-                            e.dataTransfer.setData('text/plain', inv.id);
-                            e.target.classList.add('dragging');
-                            e.target.closest('.mapa-mesas-modal-invitados').classList.add('dragging-active');
-                            
-                            // Crear clon flotante
-                            const rect = e.target.getBoundingClientRect();
-                            const clone = e.target.cloneNode(true);
-                            clone.style.position = 'fixed';
-                            clone.style.width = rect.width + 'px';
-                            clone.style.height = rect.height + 'px';
-                            clone.style.left = rect.left + 'px';
-                            clone.style.top = rect.top + 'px';
-                            clone.style.pointerEvents = 'none';
-                            clone.style.zIndex = 9999;
-                            clone.style.opacity = 0.95;
-                            clone.classList.add('drag-clone');
-                            document.body.appendChild(clone);
-                            
-                            // Animar el elemento original
-                            gsap.to(e.target, {
-                              opacity: 0.5,
-                              scale: 0.95,
-                              duration: 0.2
-                            });
-                          }}
-                          onDragEnd={(e) => {
-                            if (isSavingOrder) return;
-                            
-                            e.target.classList.remove('dragging');
-                            const container = e.target.closest('.mapa-mesas-modal-invitados');
-                            container.classList.remove('dragging-active');
-                            
-                            // Remover clon flotante
-                            const clone = document.querySelector('.drag-clone');
-                            if (clone) {
-                              gsap.to(clone, {
-                                opacity: 0,
-                                scale: 0.8,
-                                duration: 0.2,
-                                onComplete: () => clone.remove()
-                              });
-                            }
-                            
-                            // Animar el elemento original de vuelta
-                            gsap.to(e.target, {
-                              opacity: 1,
-                              scale: 1,
-                              duration: 0.2
-                            });
-                            
-                            // Obtener el orden final de todos los elementos
-                            const items = [...container.querySelectorAll('li')];
-                            const newOrder = {};
-                            items.forEach((item, index) => {
-                              const id = item.getAttribute('data-id');
-                              if (id) newOrder[id] = index;
-                            });
-                            
-                            // Actualizar el orden solo al finalizar el drag
-                            actualizarOrdenInvitados(mesaDetalle.id, newOrder);
-                          }}
-                          onDragOver={(e) => {
-                            if (isSavingOrder) return;
-                            e.preventDefault();
-                            const draggingItem = document.querySelector('.dragging');
-                            if (!draggingItem || draggingItem === e.target) return;
-                            
-                            const container = e.target.closest('ul');
-                            if (!container) return;
-
-                            // Remover marcadores anteriores
-                            const oldMarkers = container.querySelectorAll('.drop-marker');
-                            oldMarkers.forEach(marker => marker.remove());
-
-                            const afterElement = getDragAfterElement(container, e.clientY);
-                            if (afterElement) {
-                              // Crear marcador visual
-                              const marker = document.createElement('div');
-                              marker.className = 'drop-marker';
-                              
-                              // Posicionar marcador
-                              const rect = afterElement.getBoundingClientRect();
-                              const containerRect = container.getBoundingClientRect();
-                              marker.style.top = `${rect.top - containerRect.top}px`;
-                              
-                              // Insertar marcador
-                              container.insertBefore(marker, afterElement);
-                              
-                              // Animar el marcador
-                              requestAnimationFrame(() => {
-                                marker.classList.add('visible');
-                              });
-                            } else {
-                              // Si no hay elemento después, crear marcador al final
-                              const marker = document.createElement('div');
-                              marker.className = 'drop-marker';
-                              marker.style.top = `${container.scrollHeight}px`;
-                              container.appendChild(marker);
-                              
-                              requestAnimationFrame(() => {
-                                marker.classList.add('visible');
-                              });
-                            }
-                          }}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            const container = e.target.closest('ul');
-                            if (!container) return;
-                            
-                            // Remover marcadores
-                            const markers = container.querySelectorAll('.drop-marker');
-                            markers.forEach(marker => {
-                              marker.classList.remove('visible');
-                              setTimeout(() => marker.remove(), 200);
-                            });
-                            
-                            const draggingItem = document.querySelector('.dragging');
-                            if (!draggingItem) return;
-                            
-                            const afterElement = getDragAfterElement(container, e.clientY);
-                            if (afterElement) {
-                              // Animar la inserción
-                              const rect = afterElement.getBoundingClientRect();
-                              const containerRect = container.getBoundingClientRect();
-                              const finalY = rect.top - containerRect.top;
-                              
-                              gsap.to(draggingItem, {
-                                y: finalY,
-                                duration: 0.3,
-                                ease: "power2.out",
-                                onComplete: () => {
-                                  container.insertBefore(draggingItem, afterElement);
-                                  gsap.set(draggingItem, { y: 0 });
-                                  
-                                  // Actualizar orden
-                                  const items = [...container.querySelectorAll('li')];
-                                  const newOrder = {};
-                                  items.forEach((item, index) => {
-                                    const id = item.getAttribute('data-id');
-                                    if (id) newOrder[id] = index;
-                                  });
-
-                                  // Animar las bolitas en el dibujo
-                                  const mesaId = mesaDetalle.id;
-                                  const invitados = mesaDetalle.invitados || [];
-                                  const ordenActual = invitadosOrdenados[mesaId] || {};
-                                  const invitadosOrdenadosLista = [...invitados].sort((a, b) => {
-                                    const ordenA = ordenActual[a.id] || 0;
-                                    const ordenB = ordenActual[b.id] || 0;
-                                    return ordenA - ordenB;
-                                  });
-
-                                  // Obtener el contenedor del dibujo
-                                  const dibujoContainer = document.querySelector('.mapa-mesas-modal-mesa-dibujo');
-                                  if (!dibujoContainer) return;
-
-                                  // Calcular nuevas posiciones
-                                  if (mesaDetalle.tipo === 'redonda') {
-                                    const areaW = 64;
-                                    const areaH = 48;
-                                    const cx = areaW / 2;
-                                    const cy = areaH / 2;
-                                    const radio = 22;
-                                    const invitadoSize = 5.5;
-
-                                    // Animar cada bolita a su nueva posición
-                                    invitadosOrdenadosLista.forEach((inv, idx) => {
-                                      const ang = (2 * Math.PI * idx) / invitados.length - Math.PI / 2;
-                                      const bx = cx + Math.cos(ang) * radio - invitadoSize / 2;
-                                      const by = cy + Math.sin(ang) * radio - invitadoSize / 2;
-                                      
-                                      const bolita = dibujoContainer.querySelector(`[data-invitado-id="${inv.id}"]`);
-                                      if (bolita) {
-                                        gsap.to(bolita, {
-                                          left: `${bx}dvh`,
-                                          top: `${by}dvh`,
-                                          duration: 0.5,
-                                          ease: "elastic.out(1, 0.5)",
-                                          onStart: () => {
-                                            bolita.style.zIndex = "2";
-                                          },
-                                          onComplete: () => {
-                                            bolita.style.zIndex = "1";
-                                          }
-                                        });
-                                      }
-                                    });
-                                  } else if (mesaDetalle.tipo === 'imperial') {
-                                    const areaW = 64;
-                                    const areaH = 48;
-                                    const cx = areaW / 2;
-                                    const cy = areaH / 2;
-                                    const mesaW = 48;
-                                    const mesaH = 24;
-                                    const invitadoSize = 6;
-                                    const offset = 4;
-                                    const leftX = cx - mesaW / 2;
-                                    const rightX = cx + mesaW / 2;
-                                    const topY = cy - mesaH / 2;
-                                    const bottomY = cy + mesaH / 2;
-
-                                    // Distribuir en lados
-                                    const lados = [[], [], [], []];
-                                    let idx = 0;
-                                    for (let i = 0; i < invitados.length; i++) {
-                                      lados[idx % 4].push(invitadosOrdenadosLista[i]);
-                                      idx++;
-                                    }
-
-                                    // Animar cada bolita a su nueva posición
-                                    lados.forEach((lado, ladoIdx) => {
-                                      lado.forEach((inv, posIdx) => {
-                                        let bx = 0, by = 0;
-                                        switch (ladoIdx) {
-                                          case 0: // Superior
-                                            const gapTop = mesaW / (lado.length + 1);
-                                            bx = leftX + gapTop * (posIdx + 1) - invitadoSize / 2;
-                                            by = topY - offset - invitadoSize / 2;
-                                            break;
-                                          case 1: // Derecha
-                                            const gapRight = mesaH / (lado.length + 1);
-                                            bx = rightX + offset - invitadoSize / 2;
-                                            by = topY + gapRight * (posIdx + 1) - invitadoSize / 2;
-                                            break;
-                                          case 2: // Inferior
-                                            const gapBottom = mesaW / (lado.length + 1);
-                                            bx = leftX + gapBottom * (posIdx + 1) - invitadoSize / 2;
-                                            by = bottomY + offset - invitadoSize / 2;
-                                            break;
-                                          case 3: // Izquierda
-                                            const gapLeft = mesaH / (lado.length + 1);
-                                            bx = leftX - offset - invitadoSize / 2;
-                                            by = topY + gapLeft * (posIdx + 1) - invitadoSize / 2;
-                                            break;
-                                        }
-
-                                        const bolita = dibujoContainer.querySelector(`[data-invitado-id="${inv.id}"]`);
-                                        if (bolita) {
-                                          gsap.to(bolita, {
-                                            left: `${bx}dvh`,
-                                            top: `${by}dvh`,
-                                            duration: 0.5,
-                                            ease: "elastic.out(1, 0.5)",
-                                            onStart: () => {
-                                              bolita.style.zIndex = "2";
-                                            },
-                                            onComplete: () => {
-                                              bolita.style.zIndex = "1";
-                                            }
-                                          });
-                                        }
-                                      });
-                                    });
-                                  }
-
-                                  actualizarOrdenInvitados(mesaDetalle.id, newOrder);
-                                }
-                              });
-                            } else {
-                              // Animar al final
-                              gsap.to(draggingItem, {
-                                y: container.scrollHeight,
-                                duration: 0.3,
-                                ease: "power2.out",
-                                onComplete: () => {
-                                  container.appendChild(draggingItem);
-                                  gsap.set(draggingItem, { y: 0 });
-                                  
-                                  // Actualizar orden
-                                  const items = [...container.querySelectorAll('li')];
-                                  const newOrder = {};
-                                  items.forEach((item, index) => {
-                                    const id = item.getAttribute('data-id');
-                                    if (id) newOrder[id] = index;
-                                  });
-                                  actualizarOrdenInvitados(mesaDetalle.id, newOrder);
-                                }
-                              });
-                            }
-                          }}
-                          data-id={inv.id}
-                        >
-                          <span 
-                            className="mapa-mesas-modal-invitado-bolita" 
-                            style={{
-                              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : colorGrupo,
-                              border: inv.imagen_url ? `2px solid ${colorGrupo}` : 'none'
-                            }}
-                          >
-                            {!inv.imagen_url && inv.nombre[0]}
-                          </span>
-                          <span className="mapa-mesas-modal-invitado-nombre">{inv.nombre}</span>
-                          <span className="mapa-mesas-modal-invitado-orden">#{idx + 1}</span>
-                        </li>
-                      );
-                    });
-                  })()}
-                </ul>
-              </div>
-            </div>
-          </Modal>
+            mesa={mesaDetalle}
+            invitadosOrdenados={invitadosOrdenados}
+            grupoColorMap={grupoColorMap}
+            isSavingOrder={isSavingOrder}
+            onUpdateOrder={handleUpdateOrder}
+            getDragAfterElement={getDragAfterElement}
+          />
         )}
         {/* Modal de detalle de invitado */}
-        <Modal
-          isOpen={!!invitadoDetalle}
-          onClose={() => setInvitadoDetalle(null)}
-          title={invitadoDetalle?.nombre}
-          className="mapa-mesas-modal-invitado-detalle"
-        >
-          {(() => {
-            const invitadoCompleto = invitadoDetalle ? getInvitadoCompleto(invitadoDetalle.id) : null;
-            if (!invitadoCompleto) return <div style={{padding:'2rem',color:'#fff'}}>No se han encontrado datos completos de este invitado.</div>;
-            return (
-              <div className="mapa-mesas-modal-invitado-detalle-content">
-                <div 
-                  className="mapa-mesas-modal-invitado-avatar" 
-                  style={{ 
-                    background: invitadoCompleto?.imagen_url 
-                      ? `url(${invitadoCompleto.imagen_url}) center/cover` 
-                      : grupoColorMap[invitadoCompleto?.grupoOrigen] || '#6366f1'
-                  }}
-                >
-                  {invitadoCompleto?.nombre?.[0]}
-                </div>
-                <div className="mapa-mesas-modal-invitado-info">
-                  <div className="mapa-mesas-modal-invitado-info-row">
-                    <b>Nombre</b>
-                    <span>{mostrarCampoTexto(invitadoCompleto?.nombre)}</span>
-                  </div>
-                  <div className="mapa-mesas-modal-invitado-info-row">
-                    <b>Grupo</b>
-                    <span>{mostrarCampoTexto(invitadoCompleto?.grupoOrigen, '(vacío)', 'Sin grupo')}</span>
-                  </div>
-                  <div className="mapa-mesas-modal-invitado-info-row">
-                    <b>Mesa</b>
-                    <span>{(() => {
-                      const mesaActual = Object.values(mesasOrganizadas).find(mesa => mesa.invitados.some(i => i.id === invitadoCompleto?.id));
-                      return mesaActual ? mostrarCampoTexto(mesaActual.nombre) : 'Sin asignar';
-                    })()}</span>
-                  </div>
-                  <div className="mapa-mesas-modal-invitado-info-row">
-                    <b>Menú</b>
-                    <span>{formatearMenu(invitadoCompleto?.menu)}</span>
-                  </div>
-                  <div className="mapa-mesas-modal-invitado-info-row">
-                    <b>Alergias</b>
-                    <span>{mostrarCampoTexto(invitadoCompleto?.alergias)}</span>
-                  </div>
-                  <div className="mapa-mesas-modal-invitado-info-row">
-                    <b>Asistirá</b>
-                    <span>{invitadoCompleto?.asistira === true ? 'Sí' : invitadoCompleto?.asistira === false ? 'No' : 'No especificado'}</span>
-                  </div>
-                  <div className="mapa-mesas-modal-invitado-info-row">
-                    <b>Preboda</b>
-                    <span>{invitadoCompleto?.preboda === true ? 'Sí' : invitadoCompleto?.preboda === false ? 'No' : 'No especificado'}</span>
-                  </div>
-                  <div className="mapa-mesas-modal-invitado-info-row">
-                    <b>Postboda</b>
-                    <span>{invitadoCompleto?.postboda === true ? 'Sí' : invitadoCompleto?.postboda === false ? 'No' : 'No especificado'}</span>
-                  </div>
-                  <div className="mapa-mesas-modal-invitado-info-row">
-                    <b>Autobús</b>
-                    <span>{invitadoCompleto?.autobus === true ? 'Sí' : invitadoCompleto?.autobus === false ? 'No' : 'No especificado'}</span>
-                  </div>
-                  <div className="mapa-mesas-modal-invitado-info-row">
-                    <b>Alojamiento</b>
-                    <span>{invitadoCompleto?.alojamiento === true ? 'Sí' : invitadoCompleto?.alojamiento === false ? 'No' : 'No especificado'}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-        </Modal>
+        {invitadoDetalle && (
+          <ModalDetalleInvitado
+            isOpen={!!invitadoDetalle}
+            onClose={() => setInvitadoDetalle(null)}
+            invitado={invitadoDetalle}
+            grupoColorMap={grupoColorMap}
+            mesasOrganizadas={mesasOrganizadas}
+            formatearMenu={formatearMenu}
+          />
+        )}
       </main>
     </div>
   );
