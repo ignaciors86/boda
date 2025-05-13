@@ -1,0 +1,39 @@
+.galeria-persecucion {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.8s ease-in-out;
+
+  &.visible {
+    opacity: 1;
+  }
+}
+
+.galeria-contenedor {
+  width: 60vh;
+  height: 60vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.galeria-imagen {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  transition: opacity 0.8s ease-in-out;
+
+  .visible & {
+    opacity: 1;
+  }
+} 

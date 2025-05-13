@@ -5,6 +5,7 @@ import KITT from "components/KITT/KITT";
 import Textos from "components/Textos/Textos";
 import "./Creditos.scss";
 import gsap from "gsap";
+import GaleriaPersecucion from './GaleriaPersecucion';
 
 const Creditos = () => {
   const audioRef = useRef(null);
@@ -49,6 +50,8 @@ const Creditos = () => {
   const TIEMPO_INICIO_INVITADOS = 50;
   const TIEMPO_FIN_INVITADOS = TIEMPO_CAMBIO_VELOCIDAD; // 4:30 minutos
   const TIEMPO_PARON = 341.5;
+  const TIEMPO_INICIO_GALERIA = 266; // 3:44.5 minutos
+  const TIEMPO_FIN_GALERIA = 481.5; // 5:41.5 minutos
 
   // Configuración de la animación base (ajustada al BPM de Opus)
   const BPM_OPUS = 128;
@@ -1426,6 +1429,11 @@ const Creditos = () => {
               />
             </div>
           </div>
+          <GaleriaPersecucion 
+            audioRef={audioRef}
+            startTime={TIEMPO_INICIO_GALERIA}
+            endTime={TIEMPO_FIN_GALERIA}
+          />
         </>
       )}
     </div>
