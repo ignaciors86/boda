@@ -398,7 +398,7 @@ const Creditos = () => {
 
   useEffect(() => {
     fetch(
-      "https://boda-strapi-production.up.railway.app/api/invitados?populate[personaje][populate]=imagen&populate[mesa][populate]=*"
+      "https://boda-strapi-production.up.railway.app/api/invitados?populate[personaje][populate]=*&populate[mesa][populate]=*"
     )
       .then((response) => response.json())
       .then((data) => {
@@ -406,9 +406,7 @@ const Creditos = () => {
           .map((invitado) => ({
             id: invitado.id,
             nombre: invitado?.nombre,
-            imagen: invitado?.personaje
-              ? `https://boda-strapi-production.up.railway.app${invitado?.personaje?.imagen?.url}`
-              : "",
+            imagen: invitado?.personaje?.imagen_url || "",
             mesaId: invitado?.mesa?.id || 0,
             mesa: invitado?.mesa?.nombre || ""
           }))
