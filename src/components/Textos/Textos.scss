@@ -1,185 +1,157 @@
 .textos {
     position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 100;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    z-index: 1000;
     pointer-events: none;
     overflow: hidden;
+}
 
-    .bloque-texto {
-        text-align: center;
-        width: 100%;
-        margin: 0 auto;
-        position: relative;
-        padding: 5dvh;
-        box-sizing: border-box;
+.bloque-texto {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 1200px;
+    text-align: center;
+    opacity: 0;
+    will-change: opacity, transform;
+
+    &.visible {
+        opacity: 1;
+        animation: scroll-up var(--duracion-animacion) linear forwards;
+    }
+
+    &.kamehameha {
+        top: 50%;
+        bottom: auto;
+        transform: translate(-50%, -50%) scale(0);
         opacity: 0;
-        transition: opacity 0.5s ease-out;
-        will-change: opacity, transform;
 
         &.visible {
-            opacity: 1;
+            animation: kamehameha-appear var(--duracion-animacion) ease-in-out forwards;
         }
 
         .frase {
-            margin: 0.5em 0;
-            color: white;
-            font-size: 7dvh;
-            font-family: 'VCR';
+            font-size: 12em;
+            color: rgba(0, 100, 255, 0.6);
+            text-shadow: 
+                -1px -1px 0 rgba(0, 0, 0, 0.8),
+                1px -1px 0 rgba(0, 0, 0, 0.8),
+                -1px 1px 0 rgba(0, 0, 0, 0.8),
+                1px 1px 0 rgba(0, 0, 0, 0.8),
+                0 0 10px rgba(255, 255, 255, 0.4),
+                0 0 20px rgba(0, 100, 255, 0.5),
+                0 0 30px rgba(0, 150, 255, 0.4),
+                0 0 40px rgba(0, 200, 255, 0.3),
+                0 0 50px rgba(0, 255, 255, 0.2);
             font-weight: bold;
-            text-align: center;
-            padding: 2dvh;
-            text-shadow: 0 0 10px rgba(0,0,255,0.8), 
-                        0 0 20px rgba(0,0,255,0.6), 
-                        0 0 30px rgba(0,0,255,0.4);
-            opacity: 0;
-            transform: scale(0.95);
-            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
-            line-height: 1;
-            will-change: transform, opacity;
-            backface-visibility: hidden;
-            transform-style: preserve-3d;
-
-            &:not(:empty) {
-                opacity: 0.8;
-                transform: scale(1);
-            }
-        }
-        
-        &.starwars {
-            perspective: 400px;
-            transform-style: preserve-3d;
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%) rotateX(25deg) translateY(100%);
-            animation: none;
-            opacity: 0;
-            
-            .frase {
-                margin: 0;
-                padding: 1rem 0;
-                opacity: 1;
-                transform: scale(1);
-            }
-
-            &.visible {
-                animation: scroll-up 60s linear;
-            }
-
-            &.fade-out {
-                animation: scroll-up-and-fade 60s linear;
-            }
-        }
-
-        &.parpadeo {
-            .frase {
-                margin: 1rem 0;
-                animation: blink 2.4s infinite;
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        &.default, &.olivetti {
-            .frase {
-                margin: 1rem 0;
-            }
+            display: inline-block;
+            background: linear-gradient(45deg, rgba(0, 100, 255, 0.6), rgba(0, 150, 255, 0.6));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 15px rgba(0, 100, 255, 0.4));
+            animation: ultra-instinto-glow 2s ease-in-out infinite alternate;
+            -webkit-text-stroke: 2px rgba(0, 0, 0, 0.8);
         }
     }
 
-    input[type="range"] {
-        width: 100%;
-        height: 20px;
-        -webkit-appearance: none;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-        outline: none;
-        padding: 0;
-        margin: 0;
+    .frase {
+        margin: 0.5em 0;
+        line-height: 1.2;
+        font-size: 4em;
+        color: white;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        will-change: opacity, transform;
+    }
 
-        &::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            background: #fff;
-            cursor: pointer;
-            transition: all 0.15s ease-in-out;
-
-            &:hover {
-                background: #d4d4d4;
-                transform: scale(1.1);
-            }
+    &.starwars {
+        .frase {
+            white-space: pre-line;
+            font-family: 'VCR', monospace;
+            font-size: 4.5em;
+            text-shadow: 0 0 10px rgba(0,0,255,0.8), 
+                        0 0 20px rgba(0,0,255,0.6), 
+                        0 0 30px rgba(0,0,255,0.4);
         }
+    }
 
-        &::-moz-range-thumb {
-            width: 25px;
-            height: 25px;
-            border: 0;
-            border-radius: 50%;
-            background: #fff;
-            cursor: pointer;
-            transition: all 0.15s ease-in-out;
-
-            &:hover {
-                background: #d4d4d4;
-                transform: scale(1.1);
-            }
+    &.olivetti {
+        .frase {
+            font-family: 'Olivetti', monospace;
+            font-size: 4.5em;
         }
+    }
+
+    &.parpadeo {
+        .frase {
+            animation: blink 1s infinite;
+            font-size: 5em;
+        }
+    }
+}
+
+@keyframes ultra-instinto-glow {
+    0% {
+        filter: drop-shadow(0 0 15px rgba(0, 100, 255, 0.4));
+    }
+    50% {
+        filter: drop-shadow(0 0 25px rgba(0, 150, 255, 0.5));
+    }
+    100% {
+        filter: drop-shadow(0 0 35px rgba(0, 200, 255, 0.6));
     }
 }
 
 @keyframes scroll-up {
     0% {
-        transform: translateX(-50%) rotateX(25deg) translateY(100%);
+        transform: translate(-50%, 100%);
         opacity: 0;
     }
     5% {
-        transform: translateX(-50%) rotateX(25deg) translateY(100%);
+        opacity: 1;
+    }
+    95% {
         opacity: 1;
     }
     100% {
-        transform: translateX(-50%) rotateX(25deg) translateY(-200%);
-        opacity: 1;
+        transform: translate(-50%, -100%);
+        opacity: 0;
     }
 }
 
-@keyframes scroll-up-and-fade {
+@keyframes kamehameha-appear {
     0% {
-        transform: translateX(-50%) rotateX(25deg) translateY(100%);
+        transform: translate(-50%, -50%) scale(0);
         opacity: 0;
     }
-    5% {
-        transform: translateX(-50%) rotateX(25deg) translateY(100%);
+    20% {
+        transform: translate(-50%, -50%) scale(1.2);
         opacity: 1;
     }
-    45% {
-        transform: translateX(-50%) rotateX(25deg) translateY(-50%);
-        opacity: 1;
+    40% {
+        transform: translate(-50%, -50%) scale(0.9);
     }
-    55% {
-        transform: translateX(-50%) rotateX(25deg) translateY(-75%);
-        opacity: 0;
+    60% {
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+    80% {
+        transform: translate(-50%, -50%) scale(0.95);
+    }
+    90% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
     }
     100% {
-        transform: translateX(-50%) rotateX(25deg) translateY(-200%);
+        transform: translate(-50%, -50%) scale(1);
         opacity: 0;
     }
 }
 
 @keyframes blink {
-    0%, 49% {
-        opacity: 0.8;
-    }
-    50%, 100% {
-        opacity: 0;
-    }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
 } 
