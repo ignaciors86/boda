@@ -236,6 +236,11 @@
   cursor: pointer;
 }
 
+.mapa-mesa-div.girada {
+  transform: translate(-50%, -50%) rotate(90deg) !important;
+  transition: transform 0.3s;
+}
+
 .mapa-mesa-redonda {
   width: var(--diametro-redonda);
   height: var(--diametro-redonda);
@@ -313,6 +318,10 @@
   border: 1.5px solid #fff;
 }
 
+.mapa-mesa-div.girada .mapa-invitado-bolita {
+  transform: none !important;
+}
+
 .drag-clone {
   position: fixed;
   pointer-events: none;
@@ -331,6 +340,10 @@
 .mapa-mesa-contenedor {
   position: absolute;
   will-change: transform;
+}
+
+.mapa-mesa-contenedor.girada {
+  transform: rotate(90deg);
 }
 
 .mapa-mesas-bolita-flotante {

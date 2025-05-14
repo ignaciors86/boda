@@ -2,7 +2,8 @@
 // Devuelve un objeto: { posiciones, areaW, areaH, mesaX, mesaY }
 
 export function getPosicionesBolitasMesaSimple({
-  numInvitados
+  numInvitados,
+  girada = false
 }) {
   // Obtener el valor real de --tamano-bolita en dvh
   const root = document.documentElement;
@@ -32,32 +33,63 @@ export function getPosicionesBolitasMesaSimple({
   const centroMesaX = centroAreaX;
 
   const posiciones = [];
-  // Invitados arriba
-  const yArriba = mesaY - invitadoSize * 4;
-  for (let i = 0; i < mitadInvitados; i++) {
-    const totalEnLado = mitadInvitados;
-    const totalWidth = totalEnLado * invitadoSize;
-    let x;
-    if (totalEnLado === 1) {
-      x = centroAreaX;
-    } else {
-      x = centroAreaX - totalWidth / 2 + i * (totalWidth - invitadoSize) / (totalEnLado - 1);
+
+  if (!girada) {
+    // Invitados arriba
+    const yArriba = mesaY - invitadoSize * 4;
+    for (let i = 0; i < mitadInvitados; i++) {
+      const totalEnLado = mitadInvitados;
+      const totalWidth = totalEnLado * invitadoSize;
+      let x;
+      if (totalEnLado === 1) {
+        x = centroAreaX;
+      } else {
+        x = centroAreaX - totalWidth / 2 + i * (totalWidth - invitadoSize) / (totalEnLado - 1);
+      }
+      posiciones.push({ x, y: yArriba, lado: 'arriba', idx: i });
     }
-    posiciones.push({ x, y: yArriba, lado: 'arriba', idx: i });
-  }
-  // Invitados abajo
-  const yAbajo = mesaY + mesaH - invitadoSize * 2;
-  for (let i = mitadInvitados; i < numInvitados; i++) {
-    const posInLado = i - mitadInvitados;
-    const totalEnLado = numInvitados - mitadInvitados;
-    const totalWidth = totalEnLado * invitadoSize;
-    let x;
-    if (totalEnLado === 1) {
-      x = centroAreaX;
-    } else {
-      x = centroAreaX - totalWidth / 2 + posInLado * (totalWidth - invitadoSize) / (totalEnLado - 1);
+    // Invitados abajo
+    const yAbajo = mesaY + mesaH - invitadoSize * 2;
+    for (let i = mitadInvitados; i < numInvitados; i++) {
+      const posInLado = i - mitadInvitados;
+      const totalEnLado = numInvitados - mitadInvitados;
+      const totalWidth = totalEnLado * invitadoSize;
+      let x;
+      if (totalEnLado === 1) {
+        x = centroAreaX;
+      } else {
+        x = centroAreaX - totalWidth / 2 + posInLado * (totalWidth - invitadoSize) / (totalEnLado - 1);
+      }
+      posiciones.push({ x, y: yAbajo, lado: 'abajo', idx: i });
     }
-    posiciones.push({ x, y: yAbajo, lado: 'abajo', idx: i });
+  } else {
+    // Izquierda y derecha (cuando está girada)
+    const nIzq = mitadInvitados;
+    const nDer = numInvitados - mitadInvitados;
+    const xIzq = mesaX - invitadoSize * 2.5;
+    const xDer = mesaX + mesaW + invitadoSize * 2.5;
+    const totalHeight = mesaW; // Usar el ancho como alto visual para la mesa girada
+    const yOffset = -invitadoSize * 3;
+    // Lado izquierdo
+    for (let i = 0; i < nIzq; i++) {
+      let y;
+      if (nIzq === 1) {
+        y = mesaY + totalHeight / 2 + yOffset;
+      } else {
+        y = mesaY + ((i + 0.5) * (totalHeight / nIzq)) + yOffset;
+      }
+      posiciones.push({ x: xIzq, y, lado: 'izquierda', idx: i });
+    }
+    // Lado derecho
+    for (let i = 0; i < nDer; i++) {
+      let y;
+      if (nDer === 1) {
+        y = mesaY + totalHeight / 2 + yOffset;
+      } else {
+        y = mesaY + ((i + 0.5) * (totalHeight / nDer)) + yOffset;
+      }
+      posiciones.push({ x: xDer, y, lado: 'derecha', idx: i });
+    }
   }
   return { posiciones, areaW, areaH, mesaX, mesaY, mesaW, mesaH, invitadoSize };
 } 

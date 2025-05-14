@@ -218,6 +218,39 @@ const MapaMesas = () => {
         m.id === mesaId ? { ...m, x: xVw, y: yDvh } : m
       ));
 
+      // --- Lógica de giro usando hitTest de GSAP ---
+      const mesaEl = mesaRefs.current[mesaId]?.current;
+      if (mesaEl) {
+        // Obtener el valor real de --tamano-bolita en píxeles
+        const root = document.documentElement;
+        const cssBolita = getComputedStyle(root).getPropertyValue('--tamano-bolita').trim();
+        let bolitaNum = parseFloat(cssBolita);
+        if (cssBolita.includes('dvh')) {
+          bolitaNum = window.innerHeight * (bolitaNum / 100);
+        } else if (cssBolita.includes('vw')) {
+          bolitaNum = window.innerWidth * (bolitaNum / 100);
+        }
+        const margen = bolitaNum * 1.2; // Factor ajustable
+        Object.entries(mesaRefs.current).forEach(([otraId, ref]) => {
+          if (otraId === String(mesaId)) return;
+          const otraMesaEl = ref?.current;
+          if (!otraMesaEl) return;
+          if (Draggable.hitTest(mesaEl, otraMesaEl, margen)) {
+            // Comprobar si el contacto es vertical (bordes superior/inferior)
+            const rect1 = mesaEl.getBoundingClientRect();
+            const rect2 = otraMesaEl.getBoundingClientRect();
+            const solapanEnX = rect1.right > rect2.left && rect1.left < rect2.right;
+            const contactoSuperior = Math.abs(rect1.bottom - rect2.top) <= margen && solapanEnX;
+            const contactoInferior = Math.abs(rect1.top - rect2.bottom) <= margen && solapanEnX;
+            if (contactoSuperior || contactoInferior) {
+              // Rotar visualmente ambas mesas
+              if (mesaEl) mesaEl.classList.add('girada');
+              if (otraMesaEl) otraMesaEl.classList.add('girada');
+            }
+          }
+        });
+      }
+
       // Lanzar animación de números
       setIsUpdatingNumbers(true);
       const numerosActuales = document.querySelectorAll('.mapa-mesa-numero');
@@ -529,17 +562,13 @@ const MapaMesas = () => {
 
   // Función para detectar colisión entre dos mesas
   const detectarColision = (mesa1, mesa2) => {
-    console.log('Detectando colisión entre mesas:', {
-      mesa1: mesa1.id,
-      mesa2: mesa2.id
-    });
-    
     const rect1 = mesa1.getBoundingClientRect();
     const rect2 = mesa2.getBoundingClientRect();
     
     // Añadir un margen de colisión
     const margen = 20;
     
+    // Colisión normal (solapamiento)
     const hayColision = !(
       rect1.right - margen < rect2.left + margen ||
       rect1.left + margen > rect2.right - margen ||
@@ -547,111 +576,33 @@ const MapaMesas = () => {
       rect1.top + margen > rect2.bottom - margen
     );
 
-    console.log('Resultado de colisión:', {
-      mesa1: {
-        left: rect1.left,
-        right: rect1.right,
-        top: rect1.top,
-        bottom: rect1.bottom
-      },
-      mesa2: {
-        left: rect2.left,
-        right: rect2.right,
-        top: rect2.top,
-        bottom: rect2.bottom
-      },
-      hayColision
-    });
+    // Colisión por contacto vertical (bordes superior/inferior)
+    const solapanEnX = rect1.right > rect2.left && rect1.left < rect2.right;
+    const contactoSuperior = Math.abs(rect1.bottom - rect2.top) <= margen && solapanEnX;
+    const contactoInferior = Math.abs(rect1.top - rect2.bottom) <= margen && solapanEnX;
+    const hayColisionVertical = contactoSuperior || contactoInferior;
 
-    return hayColision;
-  };
-
-  // Función para transformar una mesa en cuadrada
-  const transformarMesaCuadrada = async (mesaId) => {
-    try {
-      const mesa = mesasPlano.find(m => String(m.id) === String(mesaId));
-      if (!mesa) return;
-
-      // Obtener los datos actuales de la mesa
-      const getResponse = await fetch(`${urlstrapi}/api/mesas/${mesa.documentId}`, {
-        headers: {
-          'Authorization': `Bearer ${STRAPI_TOKEN}`
-        }
-      });
-
-      if (!getResponse.ok) {
-        throw new Error(`Error HTTP al obtener datos: ${getResponse.status}`);
-      }
-
-      const mesaData = await getResponse.json();
-      const mapaMesasDataActual = mesaData.data?.attributes?.mapaMesasData || {};
-
-      // Actualizar manteniendo los datos existentes
-      const response = await fetch(`${urlstrapi}/api/mesas/${mesa.documentId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${STRAPI_TOKEN}`
-        },
-        body: JSON.stringify({
-          data: {
-            ...mesaData.data.attributes,
-            tipo: 'imperial',
-            mapaMesasData: {
-              ...mapaMesasDataActual,
-              posicion: mapaMesasDataActual.posicion
-            }
-          }
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error HTTP al actualizar: ${response.status}`);
-      }
-
-      // Actualizar el estado local
-      setMesasPlano(prev => prev.map(m => 
-        m.id === mesaId ? { ...m, tipo: 'imperial' } : m
-      ));
-
-      // Forzar recarga de datos
-      window.location.reload();
-
-    } catch (error) {
-      console.error('Error al transformar mesa:', error);
-    }
+    return hayColision || hayColisionVertical;
   };
 
   // Efecto para hacer draggables las mesas
   useEffect(() => {
-    console.log('=== INICIO SETUP DRAGGABLE MESAS ===');
-    console.log('Estado actual:', {
-      mesasInicializadas,
-      isDraggingInvitado,
-      isDraggingMesa,
-      mesasPlanoLength: mesasPlano.length
-    });
-
     if (!mesasInicializadas || isDraggingInvitado) {
-      console.log('No se inicializan mesas:', { mesasInicializadas, isDraggingInvitado });
       return;
     }
 
     mesasPlano.forEach(mesa => {
       if (!mesaRefs.current[mesa.id]) {
-        console.log('Creando ref para mesa:', mesa.id);
         mesaRefs.current[mesa.id] = React.createRef();
       }
       
       const el = mesaRefs.current[mesa.id].current;
       if (el && !el._draggable) {
-        console.log('Inicializando draggable para mesa:', mesa.id);
         el._draggable = Draggable.create(el, {
           type: 'left,top',
           bounds: planoRef.current,
           inertia: true,
           onPress: function(e) {
-            console.log('Mesa presionada:', mesa.id);
             if (window.isDraggingInvitadoOrBolita) return false;
             if (e && e.target && e.target.classList && e.target.classList.contains('mapa-invitado-bolita')) return false;
             setIsDraggingMesa(true);
@@ -666,9 +617,6 @@ const MapaMesas = () => {
             el.style.top = `${newY}px`;
           },
           onDragEnd: function() {
-            console.log('=== INICIO DRAG END ===');
-            console.log('Mesa soltada:', mesa.id);
-            
             const endRect = el.getBoundingClientRect();
             const planoRect = planoRef.current.getBoundingClientRect();
             const newX = endRect.left - planoRect.left + el.offsetWidth / 2;
@@ -680,24 +628,10 @@ const MapaMesas = () => {
             // Detectar colisiones con otras mesas
             Object.values(mesaRefs.current).forEach(ref => {
               const otraMesa = ref.current;
-              console.log('Revisando mesa:', {
-                otraMesa,
-                id: otraMesa?.id,
-                attributes: otraMesa?.attributes,
-                dataset: otraMesa?.dataset
-              });
-              
               if (otraMesa && otraMesa !== el) {
-                console.log('Comparando con mesa:', {
-                  mesaActual: el.id,
-                  otraMesa: otraMesa.id || otraMesa.getAttribute('id')
-                });
-                
                 if (detectarColision(el, otraMesa)) {
-                  console.log('¡COLISIÓN DETECTADA!');
-                  hayColision = true;
+                  // Transformar ambas mesas en cuadradas
                   const mesaId = mesa.id;
-                  // Intentar obtener el ID de diferentes maneras
                   let otraMesaId = otraMesa.id;
                   if (!otraMesaId) {
                     otraMesaId = otraMesa.getAttribute('id');
@@ -706,19 +640,7 @@ const MapaMesas = () => {
                     console.error('No se pudo obtener el ID de la otra mesa');
                     return;
                   }
-                  // Si el ID incluye 'mesa-', quitarlo
                   otraMesaId = otraMesaId.replace('mesa-', '');
-                  
-                  console.log('Transformando mesas:', {
-                    mesaId,
-                    otraMesaId,
-                    mesaOriginal: mesa,
-                    otraMesaOriginal: otraMesa
-                  });
-                  
-                  // Transformar ambas mesas en cuadradas
-                  transformarMesaCuadrada(mesaId);
-                  transformarMesaCuadrada(otraMesaId);
                 }
               }
             });
@@ -726,7 +648,6 @@ const MapaMesas = () => {
             actualizarPosicionMesa(mesa.id, newX, newY);
             setIsDraggingMesa(false);
             window.isDraggingMesa = false;
-            console.log('=== FIN DRAG END ===');
           }
         })[0];
       }
@@ -854,11 +775,83 @@ const MapaMesas = () => {
     // Usar la posición del ref si existe, sino usar la posición inicial
     const posicionActual = mesaPositions.current[mesa.id] || { x: mesa.x, y: mesa.y };
 
+    // Declarar variables para evitar errores de no definidas
+    let posiciones = [], areaW = 0, areaH = 0, mesaX = 0, mesaY = 0;
+    let mesaGirada = false;
+    // Detectar si la mesa está girada (clase girada en el DOM)
+    if (typeof window !== 'undefined') {
+      const mesaDiv = document.getElementById('mesa-' + mesa.id);
+      if (mesaDiv && mesaDiv.classList.contains('girada')) {
+        mesaGirada = true;
+      }
+    }
+    if (mesa.tipo === 'imperial') {
+      // Valores por defecto para imperiales (ajusta si tienes lógica especial)
+      const root = document.documentElement;
+      const cssBolita = getComputedStyle(root).getPropertyValue('--tamano-bolita').trim();
+      const invitadoSize = parseFloat(cssBolita);
+      areaW = invitadoSize * 11.6; // ajusta según el layout real
+      areaH = invitadoSize * 8; // ajusta según el layout real
+      mesaX = 0;
+      mesaY = 0;
+      posiciones = [];
+    } else {
+      const result = getPosicionesBolitasMesaSimple({
+        numInvitados: invitadosMesa.length,
+        girada: mesaGirada
+      });
+      posiciones = result.posiciones;
+      areaW = result.areaW;
+      areaH = result.areaH;
+      mesaX = result.mesaX;
+      mesaY = result.mesaY;
+    }
     // Bolitas alrededor
     let bolitas = [];
     
-    let mesaX, mesaY;
-    let posiciones, areaW, areaH;
+    bolitas = invitadosMesa.map((inv, idx) => {
+      const pos = posiciones[idx];
+      const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
+      const colorGrupo = grupoColorMap[grupo] || '#6366f1';
+      return (
+        <div
+          key={inv.id}
+          className="mapa-invitado-bolita"
+          data-invitado-id={inv.id}
+          style={{ 
+            left: `${pos.x}dvh`,
+            top: `${pos.y}dvh`,
+            position: 'absolute',
+            background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : colorGrupo,
+            border: inv.imagen_url ? `0.33em solid ${colorGrupo}` : 'none',
+            fontSize: 'calc(var(--tamano-bolita) * 0.3)'
+          }}
+          ref={bolitaRefs.current[`${mesa.id}-${inv.id}`]}
+          onMouseDown={e => {
+            e.stopPropagation();
+            const el = bolitaRefs.current[`${mesa.id}-${inv.id}`].current;
+            if (el && el._draggableBolita) {
+              el._draggableBolita.startDrag(e);
+            }
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            setInvitadoDetalle(inv);
+          }}
+        >{!inv.imagen_url && inv.nombre[0]}</div>
+      );
+    });
+    // Ajustar el área del contenedor y centrar la mesa
+    width = `${areaW}dvh`;
+    height = `${areaH}dvh`;
+    // Determinar si hay solo una bolita en la fila superior o inferior
+    const soloUnaBolitaArriba = Math.ceil(invitadosMesa.length / 2) === 1;
+    const soloUnaBolitaAbajo = (invitadosMesa.length - Math.ceil(invitadosMesa.length / 2)) === 1;
+    // Obtener el valor real de --tamano-bolita en dvh
+    const root = document.documentElement;
+    const cssBolita = getComputedStyle(root).getPropertyValue('--tamano-bolita').trim();
+    const leftBolita = `calc(${cssBolita} * 0.5)`;
+    const leftMesa = (soloUnaBolitaArriba || soloUnaBolitaAbajo) ? leftBolita : `${mesaX}dvh`;
     let mesaStyle = {};
     if (mesa.tipo === 'imperial') {
       mesaStyle = {
@@ -872,62 +865,9 @@ const MapaMesas = () => {
         justifyContent: 'center'
       };
     } else {
-      const result = getPosicionesBolitasMesaSimple({
-        numInvitados: invitadosMesa.length,
-      });
-      posiciones = result.posiciones;
-      areaW = result.areaW;
-      areaH = result.areaH;
-      mesaX = result.mesaX;
-      mesaY = result.mesaY;
-      // Depuración: mostrar el valor de mesaX
-      console.log('Render mesa', mesa.id, 'mesaX', mesaX, 'mesaY', mesaY);
-      bolitas = invitadosMesa.map((inv, idx) => {
-        const pos = posiciones[idx];
-        const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
-        const colorGrupo = grupoColorMap[grupo] || '#6366f1';
-        return (
-          <div
-            key={inv.id}
-            className="mapa-invitado-bolita"
-            data-invitado-id={inv.id}
-            style={{ 
-              left: `${pos.x}dvh`,
-              top: `${pos.y}dvh`,
-              position: 'absolute',
-              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : colorGrupo,
-              border: inv.imagen_url ? `0.33em solid ${colorGrupo}` : 'none',
-              fontSize: 'calc(var(--tamano-bolita) * 0.3)'
-            }}
-            ref={bolitaRefs.current[`${mesa.id}-${inv.id}`]}
-            onMouseDown={e => {
-              e.stopPropagation();
-              const el = bolitaRefs.current[`${mesa.id}-${inv.id}`].current;
-              if (el && el._draggableBolita) {
-                el._draggableBolita.startDrag(e);
-              }
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              setInvitadoDetalle(inv);
-            }}
-          >{!inv.imagen_url && inv.nombre[0]}</div>
-        );
-      });
-      // Ajustar el área del contenedor y centrar la mesa
-      width = `${areaW}dvh`;
-      height = `${areaH}dvh`;
-      // Determinar si hay solo una bolita en la fila superior o inferior
-      const soloUnaBolitaArriba = Math.ceil(invitadosMesa.length / 2) === 1;
-      const soloUnaBolitaAbajo = (invitadosMesa.length - Math.ceil(invitadosMesa.length / 2)) === 1;
-      // Obtener el valor real de --tamano-bolita en dvh
-      const root = document.documentElement;
-      const cssBolita = getComputedStyle(root).getPropertyValue('--tamano-bolita').trim();
-      const leftBolita = `calc(${cssBolita} * 0.5)`;
-      const leftMesa = (soloUnaBolitaArriba || soloUnaBolitaAbajo) ? leftBolita : `${mesaX}dvh`;
       mesaStyle = {
-        width: `${result.mesaW}dvh`,
-        height: `${result.mesaH}dvh`,
+        width: `${areaW}dvh`,
+        height: `${areaH}dvh`,
         background: getMesaBackground(mesa),
         borderRadius: borderRadius,
         position: 'absolute',
@@ -937,7 +877,7 @@ const MapaMesas = () => {
         alignItems: 'center',
         justifyContent: 'center',
         border: '4px solid #10b981',
-        minWidth: `${result.mesaW}dvh`
+        minWidth: `${areaW}dvh`
       };
     }
 
@@ -945,6 +885,7 @@ const MapaMesas = () => {
       <div
         key={mesa.id}
         className="mapa-mesa-contenedor"
+        id={`mesa-contenedor-${mesa.id}`}
         style={{ 
           width,
           height,
@@ -983,7 +924,14 @@ const MapaMesas = () => {
               setMesaDetalle(mesa);
             }}
           >
-            <span className="mapa-mesa-nombre">{mesa.nombre}</span>
+            <span className="mapa-mesa-nombre" style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: '100%',
+              textAlign: 'center'
+            }}>{mesa.nombre}</span>
           </div>
           <div 
             className="mapa-mesa-numero"
@@ -1300,16 +1248,12 @@ const MapaMesas = () => {
 
   const generarInformeExcel = async () => {
     try {
-      // console.log('Iniciando generación de informe Excel...');
-      
       // Obtener todas las mesas ordenadas por número
       const mesasOrdenadas = [...mesasPlano].sort((a, b) => {
         const numA = mesaNumbers[a.id] || 0;
         const numB = mesaNumbers[b.id] || 0;
         return numA - numB;
       });
-
-      // console.log('Mesas ordenadas:', mesasOrdenadas);
 
       // Crear un nuevo libro de Excel
       const workbook = new ExcelJS.Workbook();
@@ -1383,7 +1327,6 @@ const MapaMesas = () => {
             return ordenA - ordenB;
           });
         }
-        // console.log(`Invitados para mesa ${mesa.id}:`, invitadosMesa);
 
         // Helper para valores booleanos
         const getBooleanValue = (value) => {
@@ -1425,10 +1368,7 @@ const MapaMesas = () => {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      // console.log('Informe Excel generado exitosamente');
-
     } catch (error) {
-      // console.error('Error detallado al generar el informe:', error);
       alert('Error al generar el informe. Por favor, revisa la consola para más detalles.');
     }
   };
@@ -1597,6 +1537,85 @@ const MapaMesas = () => {
   const handleUpdateOrder = (mesaId, nuevoOrden) => {
     actualizarOrdenInvitados(mesaId, nuevoOrden);
   };
+
+  useEffect(() => {
+    if (!mesasInicializadas) return;
+    
+    // Obtener el valor real de --tamano-bolita en píxeles
+    const root = document.documentElement;
+    const cssBolita = getComputedStyle(root).getPropertyValue('--tamano-bolita').trim();
+    let bolitaNum = parseFloat(cssBolita);
+    if (cssBolita.includes('dvh')) {
+      bolitaNum = window.innerHeight * (bolitaNum / 100);
+    } else if (cssBolita.includes('vw')) {
+      bolitaNum = window.innerWidth * (bolitaNum / 100);
+    }
+    const margen = bolitaNum * 2;
+
+    // Limpiar giros previos
+    document.querySelectorAll('.mapa-mesa-div').forEach(mesa => {
+      mesa.classList.remove('girada');
+      mesa.style.transform = '';
+    });
+
+    // Obtener todos los contenedores de mesas
+    const contenedores = document.querySelectorAll('.mapa-mesa-contenedor');
+    const contenedoresArray = Array.from(contenedores);
+
+    // Comprobar colisiones entre todas las mesas
+    for (let i = 0; i < contenedoresArray.length; i++) {
+      const contenedorA = contenedoresArray[i];
+      const mesaA = contenedorA.querySelector('.mapa-mesa-div');
+      if (!mesaA) continue;
+
+      for (let j = i + 1; j < contenedoresArray.length; j++) {
+        const contenedorB = contenedoresArray[j];
+        const mesaB = contenedorB.querySelector('.mapa-mesa-div');
+        if (!mesaB) continue;
+
+        // Obtener los rectángulos de colisión de los contenedores
+        const rectA = contenedorA.getBoundingClientRect();
+        const rectB = contenedorB.getBoundingClientRect();
+
+        // Comprobar solapamiento en X
+        const solapanEnX = rectA.right > rectB.left && rectA.left < rectB.right;
+
+        // Comprobar distancias verticales
+        const distSuperior = Math.abs(rectA.bottom - rectB.top);
+        const distInferior = Math.abs(rectA.top - rectB.bottom);
+
+        // Solo girar si la colisión es vertical (borde superior o inferior)
+        const colisionVertical = solapanEnX && (distSuperior < margen || distInferior < margen);
+
+        if (colisionVertical) {
+          console.log('Colisión vertical detectada:', {
+            mesaA: mesaA.id,
+            mesaB: mesaB.id,
+            distSuperior,
+            distInferior,
+            margen,
+            solapanEnX,
+            rectA: {
+              top: rectA.top,
+              bottom: rectA.bottom,
+              left: rectA.left,
+              right: rectA.right
+            },
+            rectB: {
+              top: rectB.top,
+              bottom: rectB.bottom,
+              left: rectB.left,
+              right: rectB.right
+            }
+          });
+
+          // Añadir clase girada solo a las mesas implicadas en colisión vertical
+          mesaA.classList.add('girada');
+          mesaB.classList.add('girada');
+        }
+      }
+    }
+  }, [mesasInicializadas, mesasPlano]);
 
   if (cargando) return <p>Cargando datos de invitados...</p>;
   if (error) return <p>{error}</p>;

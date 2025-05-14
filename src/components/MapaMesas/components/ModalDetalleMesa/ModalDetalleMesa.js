@@ -59,117 +59,67 @@ const ModalDetalleMesa = ({
     const cx = areaW / 2;
     const cy = areaH / 2;
 
-    if (mesa.tipo === 'imperial') {
-      const mesaW = 48;
-      const mesaH = 24;
-      const invitadoSize = 6;
-      const offset = 4;
-      const leftX = cx - mesaW / 2;
-      const rightX = cx + mesaW / 2;
-      const topY = cy - mesaH / 2;
-      const bottomY = cy + mesaH / 2;
-
-      const lados = [[], [], [], []];
-      let idx = 0;
-      for (let i = 0; i < invitados.length; i++) {
-        lados[idx % 4].push(invitadosOrdenadosLista[i]);
-        idx++;
-      }
-
-      let rendered = [];
-      lados[0].forEach((inv, i) => {
-        const gap = mesaW / (lados[0].length + 1);
-        const x = leftX + gap * (i + 1) - invitadoSize / 2;
-        const y = topY - offset - invitadoSize / 2;
-        const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
-        const colorGrupo = grupoColorMap[grupo] || '#f59e42';
-        rendered.push(
-          <div 
-            key={inv.id} 
-            data-invitado-id={inv.id} 
-            className="mapa-mesas-modal-invitado" 
-            style={{ 
-              left: `${x}dvh`, 
-              top: `${y}dvh`, 
-              width: `${invitadoSize}dvh`, 
-              height: `${invitadoSize}dvh`, 
-              position: 'absolute', 
-              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : '#222b3a', 
-              border: inv.imagen_url ? `2px solid ${colorGrupo}` : '0.2dvh solid #fff', 
-              fontSize: '2.2dvh' 
-            }}
-          >
-            {!inv.imagen_url && inv.nombre[0]}
-          </div>
-        );
-      });
-      // ... resto del código para los otros lados ...
-    } else {
-      // Mesa simple - solo arriba y abajo
-      const mesaW = 32;
-      const mesaH = 32;
-      const invitadoSize = 5.5;
-      const offset = 4;
-      const areaW = 64;
-      const areaH = 48;
-      const posiciones = getPosicionesBolitasMesaSimple({
-        numInvitados: invitadosOrdenadosLista.length,
-        areaW,
-        areaH,
-        mesaW,
-        mesaH,
-        invitadoSize,
-        offset
-      });
-      return (
-        <div className="mapa-mesas-modal-mesa-dibujo" style={{ width: `${areaW}dvh`, height: `${areaH}dvh`, position: 'relative' }}>
-          <div
-            className="mapa-mesas-modal-mesa-div"
-            style={{
-              width: `${mesaW}dvh`,
-              height: `${mesaH}dvh`,
-              background: getMesaBackground(mesa),
-              border: `0.4dvh solid #10b981`,
-              position: 'absolute',
-              left: '50%',
-              top: '50%',
-              transform: 'translate(-50%, -50%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '8px'
-            }}
-          >
-            <span style={{fontSize: '2.6dvh', fontWeight: 700, color: '#fff', textShadow: '0 2px 4px #0008'}}>{mesa.nombre}</span>
-          </div>
-          {invitadosOrdenadosLista.map((inv, i) => {
-            const pos = posiciones[i];
-            if (!pos) return null;
-            const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
-            const colorGrupo = grupoColorMap[grupo] || '#10b981';
-            return (
-              <div 
-                key={inv.id} 
-                data-invitado-id={inv.id} 
-                className="mapa-mesas-modal-invitado" 
-                style={{ 
-                  left: `${pos.x}dvh`, 
-                  top: `${pos.y}dvh`, 
-                  width: `${invitadoSize}dvh`, 
-                  height: `${invitadoSize}dvh`, 
-                  position: 'absolute', 
-                  background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : '#222b3a', 
-                  border: inv.imagen_url ? `2px solid ${colorGrupo}` : '0.2dvh solid #fff', 
-                  fontSize: '2.2dvh' 
-                }}
-              >
-                {!inv.imagen_url && inv.nombre[0]}
-              </div>
-            );
-          })}
+    const mesaW = 32;
+    const mesaH = 32;
+    const invitadoSize = 5.5;
+    const offset = 4;
+    const posiciones = getPosicionesBolitasMesaSimple({
+      numInvitados: invitadosOrdenadosLista.length,
+      areaW,
+      areaH,
+      mesaW,
+      mesaH,
+      invitadoSize,
+      offset
+    });
+    return (
+      <div className="mapa-mesas-modal-mesa-dibujo" style={{ width: `${areaW}dvh`, height: `${areaH}dvh`, position: 'relative' }}>
+        <div
+          className="mapa-mesas-modal-mesa-div"
+          style={{
+            width: `${mesaW}dvh`,
+            height: `${mesaH}dvh`,
+            background: getMesaBackground(mesa),
+            border: `0.4dvh solid #10b981`,
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '8px'
+          }}
+        >
+          <span style={{fontSize: '2.6dvh', fontWeight: 700, color: '#fff', textShadow: '0 2px 4px #0008'}}>{mesa.nombre}</span>
         </div>
-      );
-    }
+        {invitadosOrdenadosLista.map((inv, i) => {
+          const pos = posiciones[i];
+          if (!pos) return null;
+          const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
+          const colorGrupo = grupoColorMap[grupo] || '#10b981';
+          return (
+            <div 
+              key={inv.id} 
+              data-invitado-id={inv.id} 
+              className="mapa-mesas-modal-invitado" 
+              style={{ 
+                left: `${pos.x}dvh`, 
+                top: `${pos.y}dvh`, 
+                width: `${invitadoSize}dvh`, 
+                height: `${invitadoSize}dvh`, 
+                position: 'absolute', 
+                background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : '#222b3a', 
+                border: inv.imagen_url ? `2px solid ${colorGrupo}` : '0.2dvh solid #fff', 
+                fontSize: '2.2dvh' 
+              }}
+            >
+              {!inv.imagen_url && inv.nombre[0]}
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   const renderListaInvitados = () => {
