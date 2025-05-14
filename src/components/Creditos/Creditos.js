@@ -47,11 +47,11 @@ const Creditos = () => {
   // Tiempos de la canción (ajustados a los momentos clave de Opus)
   const TIEMPO_INICIO_ESPIRAL = 4;
   const TIEMPO_CAMBIO_VELOCIDAD = 224.5;
-  const TIEMPO_INICIO_INVITADOS = 47;
+  const TIEMPO_INICIO_INVITADOS = 72;
   const TIEMPO_FIN_INVITADOS = TIEMPO_CAMBIO_VELOCIDAD; // 4:30 minutos
   const TIEMPO_PARON = 341.5;
   const TIEMPO_INICIO_GALERIA = 230; // 3:44.5 minutos
-  const TIEMPO_FIN_GALERIA = 481.5; // 5:41.5 minutos
+  const TIEMPO_FIN_GALERIA = 420; // 5:41.5 minutos
 
   // Configuración de la animación base (ajustada al BPM de Opus)
   const BPM_OPUS = 128;

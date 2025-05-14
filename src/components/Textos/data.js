@@ -2,63 +2,64 @@ export const BLOQUES_TEXTO = [
     {
         id: "bienvenida",
         tiempoInicio: 0, // 0:00 minutos
-        duracionEntreFrases: 25,
+        duracionEntreFrases: 120,
         frases: [
             "Esta boda está inspirada en los propios",
             "invitados y ellos son en realidad",
             "sus principales protagonistas.",
             "",
             "El verano pasado quise hacer una",
-            "invitación un poco bonita,",
+            "invitación un poco bonita",
             "y se me fue de las manos.",
-            "",
             "Y ok, se que no hacía falta tanto trabajo",
             "pero para estos dos putos dramas",
-            " el camino hasta el día de hoy ",
-            "ha sido largo, duro, y difícil...",
+            "el camino hasta el día de hoy ha sido largo, duro, y difícil, así que todo esto ha sido la distracción más próspera de mi vida.",
             "",
-            "En realidad... No necesitábamos tanto pifostio",
-            "para casarnos...",
+            "En realidad no necesitábamos tanto pifostio para casarnos...",
             "",
-            "Lo que necesitábamos era celebrar",
-            "a la gente que nos ha traído hasta aquí",
-            "con paciencia, amor y toneladas de putas risas",
-            "Pero sobre todo, por saber querer..."            
-        ],
-        tipo: "starwars",
-        velocidadOlivetti: 1, // Un carácter por pulso
-        fuente: "evelins"
-    },
-    {
-        id: "bienvenida-2",
-        tiempoInicio: 20, // 0:00 minutos
-        duracionEntreFrases: 15,
-        frases: [
+            "Lo que queríamos era celebrar a la gente que nos ha traído hasta aquí con paciencia, amor y toneladas de risas...",
+            "Sobre todo, con quienes nos han sabido querer bien...",
+            "",
+            "",
+            "",
+    //     ],
+    //     tipo: "starwars",
+    //     velocidadOlivetti: 5, // Un carácter por pulso
+    //     fuente: "evelins"
+    // },
+    // {
+    //     id: "bienvenida-2",
+    //     tiempoInicio: 20, // 0:00 minutos
+    //     duracionEntreFrases: 25,
+    //     frases: [
             "Si hemos llegado a este momento,",
             "si no se ha ido todo a la mierda",
             "a última hora, y si no",
-            "revienta esta caca programada rápido",
-            "y mal en el peor momento posible,",
-            "esperamos que con esto quede claro",
-            "que todo el día de hoy ha sido",
-            "nuestro homenaje a la familia,",
-            "a internet y a la televisión,",
-            "que empezaron siendo un refugio",
-            "y terminaron siendo mucho más de lo que este",
-            "orgulloso paleto esperaría...",
-        ],
-        tipo: "starwars",
-        velocidadOlivetti: 1, // Un carácter por pulso
-        fuente: "evelins"
-    },
-    {
-        id: "bienvenida-2",
-        tiempoInicio: 37, // 0:00 minutos
-        duracionEntreFrases: 10,
-        frases: [
-            "Si la vida de cada uno es su propia serie,",
-            "la nuestra es una serie coral,",
-            "y sus protas, los más graciosos:",
+            "revienta esta caca programada rápido y mal en el peor momento posible,",
+            "espero que con esto quede claro que todo el día de hoy también ha sido",
+            "nuestro homenaje a internet y a la televisión, que empezó siendo refugio y alivio,",
+            "aunque la familia y los amigos fuesen nuestra auténtica Casa,",
+            "y ahora van más de la mano cada día de mi vida de lo que",
+            "jamás se hubiese imaginado este paletillo de Garrido de chaval.",
+            "",
+            "Todo lo bueno de la vida (todo)",
+            "lo he aprendido de alguno de los aquí presentes. Incluso de los que no están aquí.",
+            "Así que merecéis cada puta dioptría que me haya dejado por el camino estos meses programando",
+            "Porque os quiero más que a la mejor serie del mundo...",
+    //     ],
+    //     tipo: "starwars",
+    //     velocidadOlivetti: 1, // Un carácter por pulso
+    //     fuente: "evelins"
+    // },
+    // {
+    //     id: "bienvenida-2",
+    //     tiempoInicio: 37, // 0:00 minutos
+    //     duracionEntreFrases: 10,
+    //     frases: [
+            "",
+            "",
+            "Si la vida de cada uno fuese su propia serie, la nuestra sería una serie coral,",
+            "y su elenco, el más increíble...",
         ],
         tipo: "starwars",
         velocidadOlivetti: 1, // Un carácter por pulso
