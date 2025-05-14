@@ -12,6 +12,7 @@ import ModalAddMesa from './components/ModalAddMesa/ModalAddMesa';
 import ModalDetalleMesa from './components/ModalDetalleMesa/ModalDetalleMesa';
 import ModalDetalleInvitado from './components/ModalDetalleInvitado/ModalDetalleInvitado';
 import { v4 as uuidv4 } from 'uuid';
+import { getPosicionesBolitasMesaSimple } from './components/utilsMesaDibujo';
 gsap.registerPlugin(Draggable);
 
 const urlstrapi =
@@ -836,14 +837,16 @@ const MapaMesas = () => {
     const invitadosMesa = mesa.invitados || [];
     // Tamaños
     const mesaWidth = 'var(--diametro-redonda)';
-    const claseMesa = 'mapa-mesa-div mapa-mesa-redonda';
-    const label = 'R';
-    const borderRadius = '50%';
+    const claseMesa = mesa.tipo === 'imperial' ? 'mapa-mesa-div mapa-mesa-imperial' : 'mapa-mesa-div mapa-mesa-simple';
+    const label = mesa.tipo === 'imperial' ? 'I' : 'S';
+    const borderRadius = mesa.tipo === 'imperial' ? '16px' : '8px';
 
     // Tamaño del contenedor externo (deja margen para bolitas)
-    const padding = '3dvh';
-    const width = `calc(${mesaWidth} + ${padding} * 2)`;
-    const height = `calc(${mesaWidth} + ${padding} * 2)`;
+    let paddingTop = 'calc(var(--tamano-bolita) * 1.5)';
+    let paddingBottom = 'calc(var(--tamano-bolita) * 1.5)';
+    let paddingSides = 'calc(var(--tamano-bolita) * 0.75)';
+    let width = `calc(${mesaWidth} + ${paddingSides} * 2)`;
+    let height = `calc(${mesaWidth} + ${paddingTop} + ${paddingBottom})`;
 
     // Guardar el documentId en el ref
     mesaDocumentIds.current[mesa.id] = mesa.documentId;
@@ -853,65 +856,111 @@ const MapaMesas = () => {
 
     // Bolitas alrededor
     let bolitas = [];
-    // Distribuir en círculo
-    const radio = 'calc(var(--diametro-redonda) / 2 + 3dvh)';
-    bolitas = invitadosMesa.map((inv, idx) => {
-      const ang = (2 * Math.PI * idx) / Math.max(1, invitadosMesa.length) - Math.PI/2;
-      const bx = `calc(${Math.cos(ang)} * var(--diametro-redonda) / 2 + ${Math.cos(ang)} * 3dvh)`;
-      const by = `calc(${Math.sin(ang)} * var(--diametro-redonda) / 2 + ${Math.sin(ang)} * 3dvh)`;
-      const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
-      const colorGrupo = grupoColorMap[grupo] || '#6366f1';
-      return (
-        <div
-          key={inv.id}
-          className="mapa-invitado-bolita"
-          data-invitado-id={inv.id}
-          style={{ 
-            transform: `translate(calc(-50% + ${bx}), calc(-50% + ${by}))`,
-            background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : colorGrupo,
-            border: inv.imagen_url ? `2px solid ${colorGrupo}` : 'none'
-          }}
-          ref={bolitaRefs.current[`${mesa.id}-${inv.id}`]}
-          onMouseDown={e => {
-            e.stopPropagation();
-            const el = bolitaRefs.current[`${mesa.id}-${inv.id}`].current;
-            if (el && el._draggableBolita) {
-              el._draggableBolita.startDrag(e);
-            }
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            setInvitadoDetalle(inv);
-          }}
-        >{!inv.imagen_url && inv.nombre[0]}</div>
-      );
-    });
+    
+    let mesaX, mesaY;
+    let posiciones, areaW, areaH;
+    let mesaStyle = {};
+    if (mesa.tipo === 'imperial') {
+      mesaStyle = {
+        width: mesaWidth,
+        height: mesaWidth,
+        background: getMesaBackground(mesa),
+        borderRadius: borderRadius,
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      };
+    } else {
+      const result = getPosicionesBolitasMesaSimple({
+        numInvitados: invitadosMesa.length,
+      });
+      posiciones = result.posiciones;
+      areaW = result.areaW;
+      areaH = result.areaH;
+      mesaX = result.mesaX;
+      mesaY = result.mesaY;
+      // Depuración: mostrar el valor de mesaX
+      console.log('Render mesa', mesa.id, 'mesaX', mesaX, 'mesaY', mesaY);
+      bolitas = invitadosMesa.map((inv, idx) => {
+        const pos = posiciones[idx];
+        const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
+        const colorGrupo = grupoColorMap[grupo] || '#6366f1';
+        return (
+          <div
+            key={inv.id}
+            className="mapa-invitado-bolita"
+            data-invitado-id={inv.id}
+            style={{ 
+              left: `${pos.x}dvh`,
+              top: `${pos.y}dvh`,
+              position: 'absolute',
+              background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : colorGrupo,
+              border: inv.imagen_url ? `0.33em solid ${colorGrupo}` : 'none',
+              fontSize: 'calc(var(--tamano-bolita) * 0.3)'
+            }}
+            ref={bolitaRefs.current[`${mesa.id}-${inv.id}`]}
+            onMouseDown={e => {
+              e.stopPropagation();
+              const el = bolitaRefs.current[`${mesa.id}-${inv.id}`].current;
+              if (el && el._draggableBolita) {
+                el._draggableBolita.startDrag(e);
+              }
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setInvitadoDetalle(inv);
+            }}
+          >{!inv.imagen_url && inv.nombre[0]}</div>
+        );
+      });
+      // Ajustar el área del contenedor y centrar la mesa
+      width = `${areaW}dvh`;
+      height = `${areaH}dvh`;
+      // Determinar si hay solo una bolita en la fila superior o inferior
+      const soloUnaBolitaArriba = Math.ceil(invitadosMesa.length / 2) === 1;
+      const soloUnaBolitaAbajo = (invitadosMesa.length - Math.ceil(invitadosMesa.length / 2)) === 1;
+      // Obtener el valor real de --tamano-bolita en dvh
+      const root = document.documentElement;
+      const cssBolita = getComputedStyle(root).getPropertyValue('--tamano-bolita').trim();
+      const leftBolita = `calc(${cssBolita} * 0.5)`;
+      const leftMesa = (soloUnaBolitaArriba || soloUnaBolitaAbajo) ? leftBolita : `${mesaX}dvh`;
+      mesaStyle = {
+        width: `${result.mesaW}dvh`,
+        height: `${result.mesaH}dvh`,
+        background: getMesaBackground(mesa),
+        borderRadius: borderRadius,
+        position: 'absolute',
+        left: leftMesa,
+        top: `${mesaY}dvh`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: '4px solid #10b981',
+        minWidth: `${result.mesaW}dvh`
+      };
+    }
 
     return (
       <div
         key={mesa.id}
         className="mapa-mesa-contenedor"
         style={{ 
-          width, 
-          height, 
+          width,
+          height,
           position: 'absolute',
-          left: `calc(${posicionActual.x}vw - ${width}/2)`,
-          top: `calc(${posicionActual.y}dvh - ${height}/2)`,
+          left: `calc(${posicionActual.x}vw - ${parseFloat(width)} / 2)`,
+          top: `calc(${posicionActual.y}dvh - ${parseFloat(height)} / 2)`,
           transform: 'none',
-          willChange: 'transform'
+          willChange: 'transform',
+          display: 'block'
         }}
         ref={getMesaRef(mesa.id)}
       >
         <div
           id={'mesa-' + mesa.id}
           className={claseMesa}
-          style={{ 
-            width: mesaWidth, 
-            height: mesaWidth, 
-            background: getMesaBackground(mesa),
-            borderRadius: borderRadius,
-            position: 'relative'
-          }}
+          style={mesaStyle}
         >
           <div 
             className="mapa-mesa-centro"
@@ -944,15 +993,15 @@ const MapaMesas = () => {
               right: '10%',
               background: '#fff',
               color: '#18181b',
-              width: '2.4dvh',
-              height: '2.4dvh',
+              width: 'calc(var(--tamano-bolita) * 0.4)',
+              height: 'calc(var(--tamano-bolita) * 0.4)',
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '1.8dvh',
+              fontSize: 'calc(var(--tamano-bolita) * 0.3)',
               fontWeight: 700,
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              boxShadow: '0 0.33em 0.66em rgba(0,0,0,0.1)',
               zIndex: 3
             }}
           >

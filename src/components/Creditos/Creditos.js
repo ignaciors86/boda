@@ -17,7 +17,7 @@ const Creditos = () => {
   const [audioContext, setAudioContext] = useState(null);
   const [analyser, setAnalyser] = useState(null);
   const [datosCargados, setDatosCargados] = useState(false);
-  const [imagenesCargadas, setImagenesCargadas] = useState([]);
+  const [imagenesCargadas, setImagenesCargadas] = useState({});
   const [intensidadNormalizada, setIntensidadNormalizada] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const imagenesRef = useRef([]);
@@ -43,6 +43,8 @@ const Creditos = () => {
   const progressRef = useRef(null);
   const [currentTime, setCurrentTime] = useState('0:00');
   const [isPlaying, setIsPlaying] = useState(true);
+  const [opacidadInvitados, setOpacidadInvitados] = useState(0);
+  const [rotacionEspiral, setRotacionEspiral] = useState(0);
 
   // Tiempos de la canción (ajustados a los momentos clave de Opus)
   const TIEMPO_INICIO_ESPIRAL = 4;
@@ -97,8 +99,8 @@ const Creditos = () => {
     img.onload = () => {
       console.log(`Imagen ${index} cargada correctamente`);
       setImagenesCargadas((prev) => {
-        const nuevasImagenesCargadas = [...prev];
-        nuevasImagenesCargadas[index] = true;
+        const nuevasImagenesCargadas = { ...prev };
+        nuevasImagenesCargadas[index] = img.src;
         return nuevasImagenesCargadas;
       });
       imagenesRef.current[index] = img;
@@ -108,8 +110,8 @@ const Creditos = () => {
       console.error(`Error al cargar imagen ${index}: ${url}`);
       // En lugar de reintentar, marcamos como cargada pero sin imagen
       setImagenesCargadas((prev) => {
-        const nuevasImagenesCargadas = [...prev];
-        nuevasImagenesCargadas[index] = true;
+        const nuevasImagenesCargadas = { ...prev };
+        nuevasImagenesCargadas[index] = null;
         return nuevasImagenesCargadas;
       });
       imagenesRef.current[index] = null;
@@ -1159,6 +1161,77 @@ const Creditos = () => {
       audioElement.removeEventListener("pause", () => setIsPlaying(false));
     };
   }, [audioRef.current]);
+
+  // Cargar imágenes de invitados
+  useEffect(() => {
+    const cargarImagenesInvitados = async () => {
+      const nuevasImagenes = {};
+      const errores = [];
+
+      for (const invitado of datosInvitados) {
+        if (invitado.imagen) {
+          try {
+            const img = new Image();
+            const loadPromise = new Promise((resolve, reject) => {
+              img.onload = () => resolve(img);
+              img.onerror = () => reject(new Error(`Error al cargar imagen de ${invitado.nombre}`));
+            });
+
+            img.src = invitado.imagen;
+            await loadPromise;
+            nuevasImagenes[invitado.id] = img.src;
+          } catch (error) {
+            console.error(`Error al cargar imagen de ${invitado.nombre}:`, error);
+            errores.push(invitado.id);
+          }
+        }
+      }
+
+      setImagenesCargadas(nuevasImagenes);
+      if (errores.length > 0) {
+        console.warn('Algunas imágenes no se pudieron cargar:', errores);
+      }
+    };
+
+    if (datosInvitados.length > 0) {
+      cargarImagenesInvitados();
+    }
+  }, [datosInvitados]);
+
+  // Mostrar invitados en espiral
+  useEffect(() => {
+    if (!audioRef.current || !datosInvitados.length) return;
+
+    const tiempoActual = audioRef.current.currentTime;
+    const tiempoInicio = TIEMPO_INICIO_INVITADOS;
+    const tiempoFin = TIEMPO_FIN_INVITADOS;
+    const duracionFade = DURACION_ANIMACION_BASE;
+
+    // Calcular opacidad basada en el tiempo
+    let nuevaOpacidad = 0;
+    if (tiempoActual >= tiempoInicio && tiempoActual <= tiempoFin) {
+      if (tiempoActual <= tiempoInicio + duracionFade) {
+        // Fade in
+        nuevaOpacidad = (tiempoActual - tiempoInicio) / duracionFade;
+      } else if (tiempoActual >= tiempoFin - duracionFade) {
+        // Fade out
+        nuevaOpacidad = (tiempoFin - tiempoActual) / duracionFade;
+      } else {
+        // Opacidad completa
+        nuevaOpacidad = 1;
+      }
+    }
+
+    setOpacidadInvitados(nuevaOpacidad);
+
+    // Actualizar posición de la espiral
+    if (nuevaOpacidad > 0) {
+      const tiempoDesdeInicio = tiempoActual - tiempoInicio;
+      const velocidadRotacion = 0.5; // Grados por segundo
+      const nuevaRotacion = tiempoDesdeInicio * velocidadRotacion;
+      setRotacionEspiral(nuevaRotacion);
+    }
+  }, [audioRef.current?.currentTime, datosInvitados]);
 
   return (
     <div

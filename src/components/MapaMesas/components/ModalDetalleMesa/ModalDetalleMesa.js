@@ -1,6 +1,7 @@
 import React from 'react';
 import Modal from '../Modal/Modal';
 import { gsap } from 'gsap';
+import { getPosicionesBolitasMesaSimple } from '../utilsMesaDibujo';
 
 const ModalDetalleMesa = ({ 
   isOpen, 
@@ -58,59 +59,7 @@ const ModalDetalleMesa = ({
     const cx = areaW / 2;
     const cy = areaH / 2;
 
-    if (mesa.tipo === 'redonda') {
-      const radio = 22;
-      const invitadoSize = 5.5;
-      return (
-        <div className="mapa-mesas-modal-mesa-dibujo" style={{ width: `${areaW}dvh`, height: `${areaH}dvh`, position: 'relative' }}>
-          <div
-            className="mapa-mesas-modal-mesa-div"
-            style={{
-              width: '32dvh',
-              height: '32dvh',
-              background: getMesaBackground(mesa),
-              border: `0.4dvh solid #6366f1`,
-              position: 'absolute',
-              left: '50%',
-              top: '50%',
-              transform: 'translate(-50%, -50%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '50%'
-            }}
-          >
-            <span style={{fontSize: '2.6dvh', fontWeight: 700, color: '#fff', textShadow: '0 2px 4px #0008'}}>{mesa.nombre}</span>
-          </div>
-          {invitadosOrdenadosLista.map((inv, idx) => {
-            const ang = (2 * Math.PI * idx) / invitados.length - Math.PI / 2;
-            const bx = cx + Math.cos(ang) * radio - invitadoSize / 2;
-            const by = cy + Math.sin(ang) * radio - invitadoSize / 2;
-            const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
-            const colorGrupo = grupoColorMap[grupo] || '#6366f1';
-            return (
-              <div
-                key={inv.id}
-                data-invitado-id={inv.id}
-                className="mapa-mesas-modal-invitado"
-                style={{
-                  left: `${bx}dvh`,
-                  top: `${by}dvh`,
-                  width: `${invitadoSize}dvh`,
-                  height: `${invitadoSize}dvh`,
-                  position: 'absolute',
-                  background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : '#222b3a',
-                  border: inv.imagen_url ? `2px solid ${colorGrupo}` : '0.2dvh solid #fff',
-                  fontSize: '2.2dvh'
-                }}
-              >
-                {!inv.imagen_url && inv.nombre[0]}
-              </div>
-            );
-          })}
-        </div>
-      );
-    } else if (mesa.tipo === 'imperial') {
+    if (mesa.tipo === 'imperial') {
       const mesaW = 48;
       const mesaH = 24;
       const invitadoSize = 6;
@@ -154,10 +103,24 @@ const ModalDetalleMesa = ({
           </div>
         );
       });
-
-      // ... (resto del código para los otros lados)
-      // Por brevedad, no incluyo el código repetitivo para los otros lados
-
+      // ... resto del código para los otros lados ...
+    } else {
+      // Mesa simple - solo arriba y abajo
+      const mesaW = 32;
+      const mesaH = 32;
+      const invitadoSize = 5.5;
+      const offset = 4;
+      const areaW = 64;
+      const areaH = 48;
+      const posiciones = getPosicionesBolitasMesaSimple({
+        numInvitados: invitadosOrdenadosLista.length,
+        areaW,
+        areaH,
+        mesaW,
+        mesaH,
+        invitadoSize,
+        offset
+      });
       return (
         <div className="mapa-mesas-modal-mesa-dibujo" style={{ width: `${areaW}dvh`, height: `${areaH}dvh`, position: 'relative' }}>
           <div
@@ -166,7 +129,7 @@ const ModalDetalleMesa = ({
               width: `${mesaW}dvh`,
               height: `${mesaH}dvh`,
               background: getMesaBackground(mesa),
-              border: `0.4dvh solid #f59e42`,
+              border: `0.4dvh solid #10b981`,
               position: 'absolute',
               left: '50%',
               top: '50%',
@@ -174,16 +137,39 @@ const ModalDetalleMesa = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              borderRadius: '2dvh'
+              borderRadius: '8px'
             }}
           >
-            <span style={{fontSize: '2.8dvh', fontWeight: 700, color: '#fff', textShadow: '0 2px 4px #0008'}}>{mesa.nombre}</span>
+            <span style={{fontSize: '2.6dvh', fontWeight: 700, color: '#fff', textShadow: '0 2px 4px #0008'}}>{mesa.nombre}</span>
           </div>
-          {rendered}
+          {invitadosOrdenadosLista.map((inv, i) => {
+            const pos = posiciones[i];
+            if (!pos) return null;
+            const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
+            const colorGrupo = grupoColorMap[grupo] || '#10b981';
+            return (
+              <div 
+                key={inv.id} 
+                data-invitado-id={inv.id} 
+                className="mapa-mesas-modal-invitado" 
+                style={{ 
+                  left: `${pos.x}dvh`, 
+                  top: `${pos.y}dvh`, 
+                  width: `${invitadoSize}dvh`, 
+                  height: `${invitadoSize}dvh`, 
+                  position: 'absolute', 
+                  background: inv.imagen_url ? `url(${inv.imagen_url}) center/cover` : '#222b3a', 
+                  border: inv.imagen_url ? `2px solid ${colorGrupo}` : '0.2dvh solid #fff', 
+                  fontSize: '2.2dvh' 
+                }}
+              >
+                {!inv.imagen_url && inv.nombre[0]}
+              </div>
+            );
+          })}
         </div>
       );
     }
-    return null;
   };
 
   const renderListaInvitados = () => {

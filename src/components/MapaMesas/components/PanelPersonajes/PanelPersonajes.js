@@ -21,6 +21,7 @@ const PanelPersonajes = ({
   const [personajes, setPersonajes] = useState([]);
   const [selectedPersonaje, setSelectedPersonaje] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showOnlyWithoutInvitee, setShowOnlyWithoutInvitee] = useState(false);
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
@@ -40,6 +41,17 @@ const PanelPersonajes = ({
   const [invitadosSinPersonaje, setInvitadosSinPersonaje] = useState([]);
   const [invitadoSearchTerm, setInvitadoSearchTerm] = useState('');
   const [showInvitadosList, setShowInvitadosList] = useState(false);
+
+  // Función para obtener los invitados disponibles según el contexto
+  const getInvitadosDisponibles = () => {
+    if (selectedPersonaje) {
+      // Si hay un personaje seleccionado, mostrar todos los invitados
+      return invitadosSinPersonaje;
+    } else {
+      // Si no hay personaje seleccionado, mostrar solo los que no tienen personaje
+      return invitadosSinPersonaje.filter(inv => !inv.personajeId);
+    }
+  };
 
   useEffect(() => {
     if (isPanelOpen) {
@@ -403,8 +415,10 @@ const PanelPersonajes = ({
                       letterSpacing: '0.05vw'
                     }}
                   >
-                    <option value="" style={{ fontFamily: 'VCR, monospace', textTransform: 'uppercase', letterSpacing: '0.05vw' }}>Seleccionar invitado...</option>
-                    {invitadosSinPersonaje
+                    <option value="" style={{ fontFamily: 'VCR, monospace', textTransform: 'uppercase', letterSpacing: '0.05vw' }}>
+                      {selectedPersonaje ? 'Seleccionar invitado...' : 'Seleccionar invitado sin personaje...'}
+                    </option>
+                    {getInvitadosDisponibles()
                       .sort((a, b) => a.nombre.localeCompare(b.nombre))
                       .map(inv => (
                         <option 
@@ -435,7 +449,7 @@ const PanelPersonajes = ({
                       overflowY: 'auto',
                       zIndex: 1000
                     }}>
-                      {invitadosSinPersonaje
+                      {getInvitadosDisponibles()
                         .filter(inv => 
                           inv.nombre.toLowerCase().includes(invitadoSearchTerm.toLowerCase())
                         )
@@ -658,37 +672,114 @@ const PanelPersonajes = ({
           </div>
           <div className="list-section">
             <h3>PERSONAJES</h3>
-            <div className="search-container" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <input
-                type="text"
-                placeholder="Buscar personajes..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="search-input"
-                style={{ flex: 1 }}
-              />
-              {searchTerm && (
-                <button
-                  type="button"
-                  onClick={() => setSearchTerm('')}
-                  style={{
-                    position: 'absolute',
-                    right: 8,
-                    background: 'none',
+            <div className="search-container" style={{ 
+              position: 'relative', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px',
+              marginBottom: '16px'
+            }}>
+              <div style={{ 
+                flex: 1, 
+                position: 'relative',
+                background: '#18192a',
+                borderRadius: '8px',
+                border: '1px solid #333',
+                transition: 'all 0.2s ease'
+              }}>
+                <input
+                  type="text"
+                  placeholder="Buscar personajes..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="search-input"
+                  style={{ 
+                    width: '100%',
+                    padding: '12px 40px 12px 16px',
+                    background: 'transparent',
                     border: 'none',
-                    color: '#ef4444',
-                    fontSize: 18,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: 0
+                    color: '#fff',
+                    fontSize: '0.9vw',
+                    fontFamily: 'VCR, monospace',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05vw',
+                    outline: 'none'
                   }}
-                  title="Limpiar búsqueda"
-                >
-                  <FaTimes />
-                </button>
-              )}
+                />
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm('')}
+                    style={{
+                      position: 'absolute',
+                      right: 12,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      color: '#ef4444',
+                      fontSize: 16,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 4,
+                      borderRadius: '50%',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={e => {
+                      e.currentTarget.style.background = '#ef444420';
+                      e.currentTarget.style.color = '#f87171';
+                    }}
+                    onMouseOut={e => {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = '#ef4444';
+                    }}
+                    title="Limpiar búsqueda"
+                  >
+                    <FaTimes />
+                  </button>
+                )}
+              </div>
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px', 
+                cursor: 'pointer',
+                userSelect: 'none',
+                color: '#fff',
+                fontFamily: 'VCR, monospace',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05vw',
+                fontSize: '0.8vw',
+                padding: '8px 16px',
+                background: '#18192a',
+                borderRadius: '8px',
+                border: '1px solid #333',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseOver={e => {
+                e.style.background = '#18192a';
+                e.style.borderColor = '#6366f1';
+              }}
+              onMouseOut={e => {
+                e.style.background = '#18192a';
+                e.style.borderColor = '#333';
+              }}>
+                <input
+                  type="checkbox"
+                  checked={showOnlyWithoutInvitee}
+                  onChange={(e) => setShowOnlyWithoutInvitee(e.target.checked)}
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    cursor: 'pointer',
+                    accentColor: '#6366f1',
+                    margin: 0
+                  }}
+                />
+                Sin invitado
+              </label>
             </div>
             {isListLoading ? (
               <div style={{ textAlign: 'center', color: '#6366f1', padding: 32 }}>
@@ -698,10 +789,12 @@ const PanelPersonajes = ({
             ) : (
               <div className="personajes-grid">
                 {personajes
-                  .filter(personaje =>
-                    (personaje.nombre || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (personaje.descripcion || '').toLowerCase().includes(searchTerm.toLowerCase())
-                  )
+                  .filter(personaje => {
+                    const matchesSearch = (personaje.nombre || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      (personaje.descripcion || '').toLowerCase().includes(searchTerm.toLowerCase());
+                    const matchesFilter = !showOnlyWithoutInvitee || !personaje.invitados?.length;
+                    return matchesSearch && matchesFilter;
+                  })
                   .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''))
                   .map((personaje) => (
                     <div

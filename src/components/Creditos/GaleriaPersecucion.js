@@ -6,10 +6,64 @@ const GaleriaPersecucion = ({ audioRef, startTime, endTime, analyser }) => {
   const [images, setImages] = useState([]);
   const [isVisible, setIsVisible] = useState(false);
   const [opacity, setOpacity] = useState(0);
-  const [changeSpeed, setChangeSpeed] = useState(50); // Velocidad base más rápida
+  const [speedFactor, setSpeedFactor] = useState(1); // Factor multiplicador de velocidad
+  const [pulseScale, setPulseScale] = useState(1);
+  const [pulseGlow, setPulseGlow] = useState(0);
   const energyHistoryRef = useRef([]);
   const lastChangeTimeRef = useRef(Date.now());
-  const energyHistoryLength = 5;
+  const energyHistoryLength = 3; // Reducido para más reactividad
+  const compressionCanvasRef = useRef(null);
+  const compressionContextRef = useRef(null);
+
+  // Velocidad base constante (ms)
+  const BASE_SPEED = 100;
+
+  // Función para comprimir una imagen
+  const compressImage = (imageUrl, quality = 0.7) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      img.onload = () => {
+        if (!compressionCanvasRef.current) {
+          compressionCanvasRef.current = document.createElement('canvas');
+          compressionContextRef.current = compressionCanvasRef.current.getContext('2d');
+        }
+
+        // Calcular dimensiones manteniendo la proporción
+        const maxWidth = 800; // Ancho máximo
+        const maxHeight = 600; // Alto máximo
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        // Configurar canvas
+        compressionCanvasRef.current.width = width;
+        compressionCanvasRef.current.height = height;
+
+        // Dibujar y comprimir
+        compressionContextRef.current.drawImage(img, 0, 0, width, height);
+        
+        // Convertir a base64 con compresión
+        const compressedDataUrl = compressionCanvasRef.current.toDataURL('image/jpeg', quality);
+        resolve(compressedDataUrl);
+      };
+
+      img.onerror = reject;
+      img.src = imageUrl;
+    });
+  };
 
   // Función para mezclar aleatoriamente un array
   const shuffleArray = (array) => {
@@ -21,7 +75,7 @@ const GaleriaPersecucion = ({ audioRef, startTime, endTime, analyser }) => {
     return newArray;
   };
 
-  // Cargar imágenes
+  // Cargar y comprimir imágenes
   useEffect(() => {
     try {
       const requireContext = require.context('../../components/GaticosYMonetes/galerias', true, /\.(png|jpe?g|svg)$/);
@@ -33,9 +87,19 @@ const GaleriaPersecucion = ({ audioRef, startTime, endTime, analyser }) => {
         })
         .map(key => requireContext(key));
       
-      const shuffledImages = shuffleArray(allImages);
-      console.log('Galería Persecución: Imágenes cargadas y mezcladas:', shuffledImages.length);
-      setImages(shuffledImages);
+      // Comprimir todas las imágenes
+      Promise.all(allImages.map(img => compressImage(img)))
+        .then(compressedImages => {
+          const shuffledImages = shuffleArray(compressedImages);
+          console.log('Galería Persecución: Imágenes cargadas, comprimidas y mezcladas:', shuffledImages.length);
+          setImages(shuffledImages);
+        })
+        .catch(error => {
+          console.error('Error al comprimir imágenes:', error);
+          // Si falla la compresión, usar las imágenes originales
+          const shuffledImages = shuffleArray(allImages);
+          setImages(shuffledImages);
+        });
     } catch (error) {
       console.error('Error al cargar imágenes:', error);
       setImages([]);
@@ -92,7 +156,7 @@ const GaleriaPersecucion = ({ audioRef, startTime, endTime, analyser }) => {
     };
   }, [audioRef, startTime, endTime, isVisible]);
 
-  // Analizar la música y actualizar la velocidad de cambio
+  // Analizar la música y actualizar el factor de velocidad y el pulso
   useEffect(() => {
     if (!isVisible || !analyser || images.length === 0) return;
 
@@ -102,35 +166,33 @@ const GaleriaPersecucion = ({ audioRef, startTime, endTime, analyser }) => {
     const analyzeAudio = () => {
       analyser.getByteFrequencyData(dataArray);
       
-      const totalEnergy = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
-      const now = Date.now();
-
-      // Actualizar historial de energía
-      energyHistoryRef.current.push(totalEnergy);
-      if (energyHistoryRef.current.length > energyHistoryLength) {
-        energyHistoryRef.current.shift();
-      }
-
-      const averageEnergy = energyHistoryRef.current.reduce((sum, val) => sum + val, 0) / energyHistoryRef.current.length || 1;
+      // Analizar solo las frecuencias bajas y medias para el pulso
+      const lowMidFreqs = dataArray.slice(0, bufferLength * 0.4);
+      const instantEnergy = lowMidFreqs.reduce((sum, value) => sum + value, 0) / lowMidFreqs.length;
       
-      // Calcular nueva velocidad basada en la energía - más agresivo
-      const minSpeed = 10; // Velocidad máxima (ms)
-      const maxSpeed = 100; // Velocidad mínima (ms)
-      const normalizedEnergy = Math.min(1, totalEnergy / 80); // Umbral más bajo
-      const newSpeed = Math.floor(maxSpeed - (normalizedEnergy * (maxSpeed - minSpeed)));
+      // Normalizar la energía instantánea con un umbral más bajo
+      const normalizedEnergy = Math.min(1, instantEnergy / 15);
       
-      // Suavizar el cambio de velocidad - más rápido
-      setChangeSpeed(prevSpeed => {
-        const smoothingFactor = 0.5; // Más rápido
-        return Math.floor(prevSpeed + (newSpeed - prevSpeed) * smoothingFactor);
+      // Calcular nuevo factor de velocidad
+      const newFactor = 0.2 + (normalizedEnergy * 1.8);
+      setSpeedFactor(prevFactor => {
+        const smoothingFactor = 0.3;
+        return prevFactor + (newFactor - prevFactor) * smoothingFactor;
       });
 
-      // Mecanismo de empuje adicional
-      const timeSinceLastChange = now - lastChangeTimeRef.current;
-      if (timeSinceLastChange > changeSpeed * 1.5) { // Si se atasca, forzar cambio
-        setCurrentImageIndex(prev => (prev + 1) % images.length);
-        lastChangeTimeRef.current = now;
-      }
+      // Calcular efectos de pulso - mucho más agresivo
+      const pulseIntensity = Math.pow(normalizedEnergy, 0.3); // Exponente más bajo para más contraste
+      const baseScale = 0.85; // Más pequeño en reposo
+      const maxScale = 1.4; // Más grande en picos
+      const newScale = baseScale + (pulseIntensity * (maxScale - baseScale));
+      
+      // Aplicar el pulso directamente sin suavizado
+      setPulseScale(newScale);
+
+      // Calcular brillo del pulso - más agresivo
+      const maxGlow = 150;
+      const newGlow = pulseIntensity * maxGlow;
+      setPulseGlow(newGlow);
 
       requestAnimationFrame(analyzeAudio);
     };
@@ -140,19 +202,22 @@ const GaleriaPersecucion = ({ audioRef, startTime, endTime, analyser }) => {
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isVisible, analyser, images, changeSpeed]);
+  }, [isVisible, analyser, images]);
 
   // Cambiar imágenes según la velocidad actual
   useEffect(() => {
     if (!isVisible || images.length === 0) return;
 
+    // La velocidad real es la velocidad base dividida por el factor
+    const currentSpeed = BASE_SPEED / speedFactor;
+
     const interval = setInterval(() => {
       setCurrentImageIndex(prev => (prev + 1) % images.length);
       lastChangeTimeRef.current = Date.now();
-    }, changeSpeed);
+    }, currentSpeed);
 
     return () => clearInterval(interval);
-  }, [isVisible, images, changeSpeed]);
+  }, [isVisible, images, speedFactor]);
 
   if (!isVisible || images.length === 0) return null;
 
@@ -162,12 +227,36 @@ const GaleriaPersecucion = ({ audioRef, startTime, endTime, analyser }) => {
       style={{ opacity }}
     >
       <div className="galeria-contenedor">
-        <img 
-          src={images[currentImageIndex]} 
-          alt={`Imagen ${currentImageIndex + 1}`}
-          className="galeria-imagen"
-          style={{ opacity }}
-        />
+        <div 
+          className="galeria-imagen-container"
+          style={{
+            transform: `scale(${pulseScale})`,
+            filter: `brightness(${1 + pulseGlow/100}) drop-shadow(0 0 ${pulseGlow}px rgba(0, 255, 255, 0.8))`,
+            willChange: 'transform, filter',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transformOrigin: 'center center'
+          }}
+        >
+          <img 
+            src={images[currentImageIndex]} 
+            alt={`Imagen ${currentImageIndex + 1}`}
+            className="galeria-imagen"
+            style={{ 
+              opacity,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              transform: 'scale(1.1)' // Ligeramente más grande para evitar bordes durante el pulso
+            }}
+          />
+        </div>
       </div>
     </div>
   );
