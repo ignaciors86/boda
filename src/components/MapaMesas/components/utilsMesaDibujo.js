@@ -66,10 +66,11 @@ export function getPosicionesBolitasMesaSimple({
     // Izquierda y derecha (cuando está girada)
     const nIzq = mitadInvitados;
     const nDer = numInvitados - mitadInvitados;
-    const xIzq = mesaX - invitadoSize * 2.5;
-    const xDer = mesaX + mesaW + invitadoSize * 2.5;
+    const centroMesaX = mesaX + mesaW / 2;
+    const xIzq = centroMesaX - invitadoSize * 7;
+    const xDer = centroMesaX + invitadoSize * 2;
     const totalHeight = mesaW; // Usar el ancho como alto visual para la mesa girada
-    const yOffset = -invitadoSize * 3;
+    const yOffset = -invitadoSize * 2.5;
     // Lado izquierdo
     for (let i = 0; i < nIzq; i++) {
       let y;
