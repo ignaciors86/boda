@@ -17,7 +17,7 @@ const Creditos = () => {
   const [audioContext, setAudioContext] = useState(null);
   const [analyser, setAnalyser] = useState(null);
   const [datosCargados, setDatosCargados] = useState(false);
-  const [imagenesCargadas, setImagenesCargadas] = useState({});
+  const [imagenesCargadas, setImagenesCargadas] = useState([]);
   const [intensidadNormalizada, setIntensidadNormalizada] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const imagenesRef = useRef([]);
@@ -99,8 +99,8 @@ const Creditos = () => {
     img.onload = () => {
       console.log(`Imagen ${index} cargada correctamente`);
       setImagenesCargadas((prev) => {
-        const nuevasImagenesCargadas = { ...prev };
-        nuevasImagenesCargadas[index] = img.src;
+        const nuevasImagenesCargadas = [...prev];
+        nuevasImagenesCargadas[index] = true;
         return nuevasImagenesCargadas;
       });
       imagenesRef.current[index] = img;
@@ -110,8 +110,8 @@ const Creditos = () => {
       console.error(`Error al cargar imagen ${index}: ${url}`);
       // En lugar de reintentar, marcamos como cargada pero sin imagen
       setImagenesCargadas((prev) => {
-        const nuevasImagenesCargadas = { ...prev };
-        nuevasImagenesCargadas[index] = null;
+        const nuevasImagenesCargadas = [...prev];
+        nuevasImagenesCargadas[index] = true;
         return nuevasImagenesCargadas;
       });
       imagenesRef.current[index] = null;
