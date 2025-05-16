@@ -239,6 +239,19 @@
 .mapa-mesa-div.girada {
   transform: translate(-50%, -50%) rotate(90deg) !important;
   transition: transform 0.3s;
+
+  .mapa-mesa-nombre {
+    transform: translate(-50%, -50%) rotate(-90deg) !important;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1.2dvh;
+    word-break: break-word;
+    overflow: visible;
+    white-space: normal;
+  }
 }
 
 .mapa-mesa-redonda {
@@ -288,6 +301,11 @@
   color: #18181b;
   text-shadow: 0 2px 8px #fff, 0 1px 0 #0008;
   letter-spacing: 0.5px;
+  text-align: center;
+  padding: 0 1.2dvh;
+  word-break: break-word;
+  overflow: visible;
+  white-space: normal;
 }
 
 .mapa-mesa-bolitas-area {
@@ -518,4 +536,62 @@
       cursor: grabbing;
     }
   }
+}
+
+.mapa-mesa-centro {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 95%;
+  height: 95%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  padding: 0;
+}
+
+.mapa-mesa-div.girada .mapa-mesa-centro {
+  width: 95%;
+  height: 95%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mapa-mesa-nombre {
+  width: 100%;
+  height: auto;
+  text-align: center;
+  padding: 0 1.2dvh;
+  word-break: break-word;
+  overflow: visible;
+  white-space: normal;
+  font-size: 2.2dvh;
+  font-weight: 700;
+  color: #18181b;
+  text-shadow: 0 2px 8px #fff, 0 1px 0 #0008;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mapa-mesa-div.girada .mapa-mesa-nombre {
+  transform: translate(-50%, -50%) rotate(-90deg) !important;
+  width: auto;
+  height: 95%;
+  max-width: 95vh;
+  max-height: 95%;
+  padding: 0 1.2dvh;
+  word-break: break-word;
+  overflow: visible;
+  white-space: normal;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2dvh;
 } 
