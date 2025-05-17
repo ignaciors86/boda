@@ -542,8 +542,6 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 100%;
-  height: 100%;
   transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
@@ -551,7 +549,6 @@
   justify-content: center;
   cursor: pointer;
   z-index: 2;
-  padding: 0;
 }
 
 .mapa-mesa-div.girada .mapa-mesa-centro {
@@ -563,33 +560,43 @@
 }
 
 .mapa-mesa-nombre {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   width: 100%;
-  height: auto;
   text-align: center;
-  padding: 0 1.2dvh;
-  word-break: break-word;
-  overflow: visible;
-  white-space: normal;
-  font-size: 2.2dvh;
-  font-weight: 700;
+  padding: 5%;
+}
+
+.mapa-mesa-numero {
+  position: absolute;
+  top: 10%;
+  right: 10%;
+  background: #fff;
   color: #18181b;
-  text-shadow: 0 2px 8px #fff, 0 1px 0 #0008;
-  letter-spacing: 0.5px;
+  width: calc(var(--tamano-bolita) * 0.4);
+  height: calc(var(--tamano-bolita) * 0.4);
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: calc(var(--tamano-bolita) * 0.3);
+  font-weight: 700;
+  box-shadow: 0 0.33em 0.66em rgba(0,0,0,0.1);
+  z-index: 3;
 }
 
 .mapa-mesa-div.girada .mapa-mesa-nombre {
   transform: translate(-50%, -50%) rotate(-90deg) !important;
   width: 100%;
-  height: auto;
-  font-size: 2.8dvh;
-  padding: 0 1.2dvh;
-  word-break: break-word;
-  overflow: visible;
-  white-space: normal;
+  height: 100%;
+  max-width: 100vh;
+  max-height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
+  word-break: break-word;
+  overflow: visible;
+  white-space: normal;
 } 

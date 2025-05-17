@@ -36,7 +36,7 @@ export function getPosicionesBolitasMesaSimple({
 
   if (!girada) {
     // Invitados arriba
-    const yArriba = mesaY - invitadoSize * 4;
+    const yArriba = mesaY - invitadoSize * 4.9;
     for (let i = 0; i < mitadInvitados; i++) {
       const totalEnLado = mitadInvitados;
       const totalWidth = totalEnLado * invitadoSize;
@@ -49,7 +49,7 @@ export function getPosicionesBolitasMesaSimple({
       posiciones.push({ x, y: yArriba, lado: 'arriba', idx: i });
     }
     // Invitados abajo
-    const yAbajo = mesaY + mesaH - invitadoSize * 2;
+    const yAbajo = mesaY + mesaH - invitadoSize * 1;
     for (let i = mitadInvitados; i < numInvitados; i++) {
       const posInLado = i - mitadInvitados;
       const totalEnLado = numInvitados - mitadInvitados;

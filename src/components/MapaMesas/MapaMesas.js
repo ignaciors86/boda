@@ -906,18 +906,8 @@ const MapaMesas = () => {
           <div 
             className="mapa-mesa-centro"
             style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: '60%',
-              height: '60%',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              zIndex: 2
+              width: mesaGirada ? `${areaH}dvh` : '60%',
+              height: mesaGirada ? `${areaW}dvh` : '60%'
             }}
             onClick={(e) => {
               e.stopPropagation();
@@ -925,33 +915,11 @@ const MapaMesas = () => {
             }}
           >
             <span className="mapa-mesa-nombre" style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: '100%',
-              textAlign: 'center'
+              transform: mesaGirada ? 'translate(-50%, -50%) rotate(-90deg)' : 'translate(-50%, -50%)'
             }}>{mesa.nombre}</span>
           </div>
           <div 
             className="mapa-mesa-numero"
-            style={{
-              position: 'absolute',
-              top: '10%',
-              right: '10%',
-              background: '#fff',
-              color: '#18181b',
-              width: 'calc(var(--tamano-bolita) * 0.4)',
-              height: 'calc(var(--tamano-bolita) * 0.4)',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 'calc(var(--tamano-bolita) * 0.3)',
-              fontWeight: 700,
-              boxShadow: '0 0.33em 0.66em rgba(0,0,0,0.1)',
-              zIndex: 3
-            }}
           >
             {mesaNumbers[mesa.id] || ''}
           </div>
