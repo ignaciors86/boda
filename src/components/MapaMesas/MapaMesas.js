@@ -1427,52 +1427,63 @@ const MapaMesas = () => {
   // Función para generar PDF para el cátering
   const generarInformePDFCatering = () => {
     try {
-      const mesasOrdenadas = getMesasYInvitadosOrdenados(mesasPlano, invitados, mesaNumbers);
-      const doc = new jsPDF();
-      let first = true;
-      mesasOrdenadas.forEach((mesa, idx) => {
-        if (!first) doc.addPage();
-        first = false;
-        doc.setFontSize(18);
-        doc.setTextColor('#2E4057');
-        doc.text(`Mesa ${mesaNumbers[mesa.id] || ''}: ${mesa.nombre}`, 14, 18);
-        // Definir columnas a mostrar
-        const columns = [
-          { header: 'Nombre', dataKey: 'nombre' },
-          { header: 'Menú', dataKey: 'menu' }
-        ];
-        // Preparar datos
-        const rows = mesa.invitados.map(inv => ({
-          nombre: inv.nombre || '',
-          menu: menuMap[inv.menu]?.label || inv.menu || 'No especificado'
-        }));
-        // Tabla con colores distintos al Excel
-        autoTable(doc, {
-          startY: 24,
-          head: [columns.map(col => col.header)],
-          body: rows.map(row => columns.map(col => row[col.dataKey])),
-          styles: {
-            font: 'helvetica',
-            fontSize: 12,
-            cellPadding: 3,
-            textColor: '#222',
-            lineColor: '#B2C9D6',
-            lineWidth: 0.2
-          },
-          headStyles: {
-            fillColor: [46, 64, 87], // azul oscuro
-            textColor: [255, 255, 255],
-            fontStyle: 'bold',
-            fontSize: 13
-          },
-          alternateRowStyles: {
-            fillColor: [230, 240, 255] // azul muy claro
-          },
-          rowPageBreak: 'avoid',
-          margin: { left: 12, right: 12 }
-        });
+      // Filtrar invitados con menú especial (distinto de 'normal')
+      const invitadosEspeciales = invitados.filter(inv => inv.menu && inv.menu.toLowerCase() !== 'normal');
+      // Agrupar por tipo de menú
+      const menus = {};
+      invitadosEspeciales.forEach(inv => {
+        const key = inv.menu;
+        if (!menus[key]) menus[key] = [];
+        menus[key].push(inv);
       });
-      doc.save(`Mesas_Catering_${new Date().toISOString().split('T')[0]}.pdf`);
+      const doc = new jsPDF();
+      let currentY = 18;
+      Object.entries(menus).forEach(([menu, invitadosMenu], idx) => {
+        if (idx > 0) currentY += 12; // Espacio extra entre menús
+        doc.setFontSize(16);
+        doc.setTextColor('#2E4057');
+        const menuInfo = menuMap[menu] || { label: menu, color: '#64748b' };
+        doc.text(`Menú: ${menuInfo.label}`, 14, currentY);
+        currentY += 8;
+        doc.setFontSize(11);
+        doc.setTextColor('#444');
+        doc.text(`Descripción: ${menu}`, 14, currentY);
+        currentY += 6;
+        doc.setFontSize(12);
+        doc.setTextColor('#2E4057');
+        doc.text(`Total comensales: ${invitadosMenu.length}`, 14, currentY);
+        currentY += 7;
+        doc.setFontSize(11);
+        doc.setTextColor('#222');
+        doc.text('Invitados:', 14, currentY);
+        currentY += 6;
+        // Listar nombres de invitados (en varias columnas si hay muchos)
+        const nombres = invitadosMenu.map(inv => inv.nombre);
+        const maxPorColumna = 35;
+        let col = 0;
+        let rowInCol = 0;
+        const colWidth = 60;
+        const startX = 20;
+        let x = startX;
+        let y = currentY;
+        nombres.forEach((nombre, i) => {
+          if (rowInCol >= maxPorColumna) {
+            col++;
+            rowInCol = 0;
+            x = startX + col * colWidth;
+            y = currentY;
+          }
+          doc.text(`- ${nombre}`, x, y);
+          y += 5;
+          rowInCol++;
+        });
+        currentY = y + 5;
+        if (currentY > 260) { // Si se pasa de página, saltar a la siguiente
+          doc.addPage();
+          currentY = 18;
+        }
+      });
+      doc.save(`Resumen_Menus_Especiales_${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (error) {
       console.error('Error al generar el PDF:', error);
       alert('Error al generar el PDF. Revisa la consola para más detalles.');

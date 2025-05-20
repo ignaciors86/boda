@@ -377,7 +377,13 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
 
   const handleImageError = () => {
     setImageError(true);
-    console.error('Error al cargar la imagen');
+    console.error('Error al cargar la imagen:', {
+      url,
+      url2,
+      isImageLoaded,
+      isImage2Loaded,
+      hasNewImage
+    });
   };
 
   const handleImageLoad = () => {

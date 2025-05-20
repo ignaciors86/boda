@@ -21,7 +21,7 @@ const CartaInvitado = ({ weedding, invitado, currentImageUrl, setCurrentImageUrl
     });
 
     const personajeUrl = invitado?.personaje?.imagen_url || '';
-    const imagenUrl = currentImageUrl || urlstrapi + (invitado?.imagen?.url || '');
+    const imagenUrl = currentImageUrl || invitado?.imagen?.url || '';
     const tieneImagen = Boolean(currentImageUrl || invitado?.imagen?.url);
     
     console.log('URLs construidas:', {
