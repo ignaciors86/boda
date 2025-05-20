@@ -26,6 +26,7 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
   const [imageError, setImageError] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isImage2Loaded, setIsImage2Loaded] = useState(false);
+  const [imageLoadAttempts, setImageLoadAttempts] = useState({});
 
   // Controla el grosor del pincel (en dvh)
   const brushSizeInDvh = 8;
@@ -404,18 +405,33 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
   };
 
   const handleImageError = (e) => {
-    setImageError(true);
-    console.error('Error al cargar la imagen:', e.target.src);
+    const imgSrc = e.target.src;
+    const attempts = imageLoadAttempts[imgSrc] || 0;
     
-    // Intentar recargar la imagen después de un breve retraso
-    setTimeout(() => {
-      const img = e.target;
-      const originalSrc = img.src;
-      img.src = '';
+    // Solo intentar recargar una vez
+    if (attempts < 1) {
+      setImageLoadAttempts(prev => ({
+        ...prev,
+        [imgSrc]: attempts + 1
+      }));
+      
+      setImageError(true);
+      console.error('Error al cargar la imagen:', imgSrc);
+      
+      // Intentar recargar la imagen después de un breve retraso
       setTimeout(() => {
-        img.src = originalSrc;
-      }, 100);
-    }, 1000);
+        const img = e.target;
+        const originalSrc = img.src;
+        img.src = '';
+        setTimeout(() => {
+          img.src = originalSrc;
+        }, 100);
+      }, 1000);
+    } else {
+      // Si ya se intentó recargar, mostrar el error definitivamente
+      setImageError(true);
+      console.error('Error definitivo al cargar la imagen después de reintentos:', imgSrc);
+    }
   };
 
   const handleImageLoad = () => {
@@ -444,7 +460,7 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
         {/* Imagen de fondo */}
         <img
           className="rasca__original-image"
-          src={url}
+          src={getImageWithHeaders(url)}
           alt="Premio oculto"
           onClick={handleImageClick}
           onError={handleImageError}
@@ -457,7 +473,7 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
         
         <img
           className="rasca__uploaded-image"
-          src={url2}
+          src={getImageWithHeaders(url2)}
           alt="Imagen subida"
           onClick={handleImageClick}
           onError={handleImageError}
