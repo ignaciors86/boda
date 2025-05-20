@@ -358,26 +358,47 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
   useEffect(() => {
     isOpen !== null && gsap.killTweensOf(".prompt.inicial");
     const tlCierre = gsap.timeline();
-    isOpen !== null && tlCierre.to(".link-fino", {
-      opacity: 1, left: isOpen ? 0 : "45%", bottom: isOpen ? "0" : "80dvh",
-      ease: CustomEase.create("custom", "M0,0,C0.126,0.382,0.282,0.674,0.44,0.822,0.632,1.002,0.818,1.001,1,1"),
-      transform: "translateX(-50%)", duration: 4, zIndex: 5, delay: 2,
-    }, 0);
-    isOpen !== null && tlCierre
+    
+    // Verificar si los elementos existen antes de animarlos
+    const promptFinal = document.querySelector(".prompt.final");
+    const myCanvas = document.querySelector("#myCanvas");
+    const linkFino = document.querySelector(".link-fino");
+    
+    if (isOpen !== null) {
+      if (linkFino) {
+        tlCierre.to(linkFino, {
+          opacity: 1,
+          left: isOpen ? 0 : "45%",
+          bottom: isOpen ? "0" : "80dvh",
+          ease: CustomEase.create("custom", "M0,0,C0.126,0.382,0.282,0.674,0.44,0.822,0.632,1.002,0.818,1.001,1,1"),
+          transform: "translateX(-50%)",
+          duration: 4,
+          zIndex: 5,
+          delay: 2,
+        }, 0);
+      }
 
-      .to(".prompt.final", { zIndex: 3, duration: 0, opacity: 0, }, 0)
-      .to("#myCanvas", {
-        opacity: isOpen ? 0.2 : 0.7,
-        duration: 5,
-        delay: 0,
-        ease: "ease",
-      }, ">")
-      .to(".prompt.final", { y: "0vh", duration: 1, opacity: 1, }, "<")
+      if (promptFinal && myCanvas) {
+        tlCierre
+          .set(promptFinal, { zIndex: 3, duration: 0, opacity: 0 }, 0)
+          .to(myCanvas, {
+            opacity: isOpen ? 0.2 : 0.7,
+            duration: 5,
+            delay: 0,
+            ease: "ease",
+          }, ">")
+          .to(promptFinal, { y: "0vh", duration: 1, opacity: 1 }, "<");
+      }
+    }
 
-    isOpen && setTimeout(() => {
-      const sello = document.querySelector('.wax-seal');
-      sello.classList.add('cierrame');
-    }, 60000);
+    if (isOpen) {
+      setTimeout(() => {
+        const sello = document.querySelector('.wax-seal');
+        if (sello) {
+          sello.classList.add('cierrame');
+        }
+      }, 60000);
+    }
   }, [isOpen]);
 
 

@@ -15,7 +15,7 @@ const CLOUDINARY_UPLOAD_PRESET = 'invitados';
 
 const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
   const canvasRef = useRef(null);
-  const contenidoRef = useRef(null); // Referencia al elemento .cartaInvitado__contenido
+  const contenidoRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 0, height: 0 });
   const [revealPercentage, setRevealPercentage] = useState(0);
@@ -24,6 +24,8 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
   const [hasNewImage, setHasNewImage] = useState(false);
   const [isRevealed, setIsRevealed] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [isImage2Loaded, setIsImage2Loaded] = useState(false);
 
   // Controla el grosor del pincel (en dvh)
   const brushSizeInDvh = 8;
@@ -31,11 +33,15 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
     // Ajustar las dimensiones del canvas al tamaño del contenedor
     const updateCanvasDimensions = () => {
       const container = canvas.parentElement;
+      if (!container) return;
+
       const width = container.offsetWidth;
       const height = container.offsetHeight;
       setCanvasDimensions({ width, height });
@@ -43,7 +49,7 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
       canvas.height = height;
 
       // Dibujar la capa gris inicial
-      ctx.fillStyle = '#b0b0b0'; // Color gris
+      ctx.fillStyle = '#b0b0b0';
       ctx.fillRect(0, 0, width, height);
     };
 
@@ -112,9 +118,12 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
 
   const autoReveal = () => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     let remaining = 100 - revealPercentage;
-    const squareSize = Math.min(canvas.width, canvas.height) / 15; // Tamaño de los cuadritos
+    const squareSize = Math.min(canvas.width, canvas.height) / 15;
+    
     const interval = setInterval(() => {
       for (let i = 0; i < 5; i++) {
         const x = Math.random() * canvas.width;
@@ -122,13 +131,13 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
 
         ctx.globalCompositeOperation = 'destination-out';
         ctx.fillStyle = '#000';
-        ctx.fillRect(x, y, squareSize, squareSize); // Revelar un cuadrito
+        ctx.fillRect(x, y, squareSize, squareSize);
       }
 
       remaining -= 2;
       if (remaining <= 0) {
         clearInterval(interval);
-        ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpia todo al final
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         
         const timeline = gsap.timeline();
         
@@ -153,7 +162,7 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
             ease: "power2.out"
           });
       }
-    }, 50); // Intervalo de 50ms para simular rapidez
+    }, 50);
   };
 
   const animateContenido = () => {
@@ -383,6 +392,24 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
     }
   };
 
+  const handleImageLoad = () => {
+    setIsImageLoaded(true);
+    // Iniciar animaciones solo cuando la imagen esté cargada
+    if (contenidoRef.current) {
+      gsap.set(contenidoRef.current, { zIndex: 1 });
+      gsap.to(contenidoRef.current, {
+        opacity: 1,
+        duration: 1.5,
+        delay: 0.5,
+        ease: "power2.out"
+      });
+    }
+  };
+
+  const handleImage2Load = () => {
+    setIsImage2Loaded(true);
+  };
+
   const handleImageError = () => {
     setImageError(true);
     console.error('Error al cargar la imagen:', url);
@@ -409,7 +436,9 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
           alt="Premio oculto"
           onClick={handleImageClick}
           onError={handleImageError}
+          onLoad={handleImageLoad}
           crossOrigin="anonymous"
+          style={{ opacity: isImageLoaded ? 1 : 0 }}
         />
         
         <h3 className="rasca__loading-text">Subiendo imagen</h3>
@@ -420,9 +449,10 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
           alt="Imagen subida"
           onClick={handleImageClick}
           onError={handleImageError}
+          onLoad={handleImage2Load}
           style={{ 
-            visibility: hasNewImage ? 'visible' : 'hidden',
-            opacity: hasNewImage ? 1 : 0,
+            visibility: hasNewImage && isImage2Loaded ? 'visible' : 'hidden',
+            opacity: hasNewImage && isImage2Loaded ? 1 : 0,
             zIndex: 0
           }}
           crossOrigin="anonymous"
@@ -443,11 +473,11 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp} // Para detener el dibujo si el puntero sale del canvas
-          onTouchStart={handleTouchStart} // Manejar toque en dispositivos móviles
-          onTouchMove={handleTouchMove} // Mover el dedo
-          onTouchEnd={handleTouchEnd} // Terminar el toque
-          onTouchCancel={handleTouchEnd} // Cancelar el toque
+          onMouseLeave={handleMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
         ></canvas>
         
         <div className={`rasca__upload-container ${showUpload ? 'rasca__upload-container--visible' : ''}`}>
@@ -472,9 +502,8 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
             }}
             options={{
               autoStart: true,
-              loop: false, // No repetir la animación
-              delay: 25, // Velocidad de escritura
-              // cursor: "", // Elimina el cursor al finalizar
+              loop: false,
+              delay: 25,
             }}
           />
         </div>
@@ -484,6 +513,7 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
       <div
         ref={contenidoRef}
         className="cartaInvitado__contenido"
+        style={{ opacity: 0 }}
       >
         {resultado}
       </div>
