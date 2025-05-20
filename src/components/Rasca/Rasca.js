@@ -392,8 +392,35 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
     }
   };
 
+  const getImageWithHeaders = (imageUrl) => {
+    if (!imageUrl) return '';
+    
+    // Si es una URL de Strapi, añadir el token de autorización
+    if (imageUrl.includes('strapi') || imageUrl.includes('railway')) {
+      return `${imageUrl}?token=${STRAPI_TOKEN}`;
+    }
+    
+    return imageUrl;
+  };
+
+  const handleImageError = (e) => {
+    setImageError(true);
+    console.error('Error al cargar la imagen:', e.target.src);
+    
+    // Intentar recargar la imagen después de un breve retraso
+    setTimeout(() => {
+      const img = e.target;
+      const originalSrc = img.src;
+      img.src = '';
+      setTimeout(() => {
+        img.src = originalSrc;
+      }, 100);
+    }, 1000);
+  };
+
   const handleImageLoad = () => {
     setIsImageLoaded(true);
+    setImageError(false);
     // Iniciar animaciones solo cuando la imagen esté cargada
     if (contenidoRef.current) {
       gsap.set(contenidoRef.current, { zIndex: 1 });
@@ -408,22 +435,7 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
 
   const handleImage2Load = () => {
     setIsImage2Loaded(true);
-  };
-
-  const handleImageError = () => {
-    setImageError(true);
-    console.error('Error al cargar la imagen:', url);
-  };
-
-  const getImageWithHeaders = (imageUrl) => {
-    if (!imageUrl) return '';
-    
-    // Si es una URL de Strapi, añadir el token de autorización
-    if (imageUrl.includes('strapi') || imageUrl.includes('railway')) {
-      return `${imageUrl}?token=${STRAPI_TOKEN}`;
-    }
-    
-    return imageUrl;
+    setImageError(false);
   };
 
   return (
@@ -432,7 +444,7 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
         {/* Imagen de fondo */}
         <img
           className="rasca__original-image"
-          src={getImageWithHeaders(url)}
+          src={url}
           alt="Premio oculto"
           onClick={handleImageClick}
           onError={handleImageError}
@@ -445,7 +457,7 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
         
         <img
           className="rasca__uploaded-image"
-          src={getImageWithHeaders(url2)}
+          src={url2}
           alt="Imagen subida"
           onClick={handleImageClick}
           onError={handleImageError}
