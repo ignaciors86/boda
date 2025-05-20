@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { gsap } from 'gsap'; // Importamos GSAP
+import { gsap } from 'gsap';
 import './Rasca.scss';
 import Typewriter from "typewriter-effect";
 
@@ -26,7 +26,6 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
   const [imageError, setImageError] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isImage2Loaded, setIsImage2Loaded] = useState(false);
-  const [imageLoadAttempts, setImageLoadAttempts] = useState({});
 
   // Controla el grosor del pincel (en dvh)
   const brushSizeInDvh = 8;
@@ -65,19 +64,19 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
   const handleMouseDown = (e) => {
     e.preventDefault();
     setIsDrawing(true);
-    draw(e); // Empezar a rascar al hacer clic
+    draw(e);
   };
 
   const handleMouseUp = () => {
     setIsDrawing(false);
-    calculateRevealPercentage(); // Recalcular el porcentaje al finalizar el trazo
+    calculateRevealPercentage();
   };
 
   const handleMouseMove = (e) => {
     if (!isDrawing) return;
-    gsap.to(".explicacion", { opacity: 0, duration: 0.5, delay: 0, });
+    gsap.to(".explicacion", { opacity: 0, duration: 0.5, delay: 0 });
     draw(e);
-    calculateRevealPercentage(); // Actualizar el porcentaje mientras se rasca
+    calculateRevealPercentage();
   };
 
   const draw = (e) => {
@@ -87,10 +86,9 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // Estilo del "pincel"
-    ctx.globalCompositeOperation = 'destination-out'; // Eliminar la capa gris al rascar
+    ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
-    ctx.arc(x, y, brushSize(), 0, 2 * Math.PI); // Grosor definido por brushSize()
+    ctx.arc(x, y, brushSize(), 0, 2 * Math.PI);
     ctx.fill();
   };
 
@@ -194,22 +192,21 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
     }
   };
 
-  // Manejar los eventos táctiles
   const handleTouchStart = (e) => {
     e.preventDefault();
     setIsDrawing(true);
-    drawTouch(e); // Empezar a rascar al tocar
+    drawTouch(e);
   };
 
   const handleTouchEnd = () => {
     setIsDrawing(false);
-    calculateRevealPercentage(); // Recalcular el porcentaje al finalizar el trazo
+    calculateRevealPercentage();
   };
 
   const handleTouchMove = (e) => {
     if (!isDrawing) return;
     drawTouch(e);
-    calculateRevealPercentage(); // Actualizar el porcentaje mientras se rasca
+    calculateRevealPercentage();
   };
 
   const drawTouch = (e) => {
@@ -219,24 +216,21 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
 
-    // Estilo del "pincel"
-    ctx.globalCompositeOperation = 'destination-out'; // Eliminar la capa gris al rascar
+    ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
-    ctx.arc(x, y, brushSize(), 0, 2 * Math.PI); // Grosor definido por brushSize()
+    ctx.arc(x, y, brushSize(), 0, 2 * Math.PI);
     ctx.fill();
   };
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Ocultar el contenedor de subida
       gsap.to(".rasca__upload-container", {
         opacity: 0,
         duration: 0.3,
         onComplete: () => setShowUpload(false)
       });
 
-      // Mostrar la imagen del personaje a tamaño completo y aplicar efectos de loading
       const timeline = gsap.timeline();
       timeline
         .to(".rasca__original-image", {
@@ -255,7 +249,6 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
       setIsUploading(true);
 
       try {
-        // Subir imagen a Cloudinary
         const formDataCloud = new FormData();
         formDataCloud.append('file', file);
         formDataCloud.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
@@ -267,7 +260,6 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
         const data = await res.json();
         if (!data.secure_url) throw new Error('Error al subir la imagen a Cloudinary');
 
-        // Actualizar invitado en Strapi con la URL de Cloudinary
         const updateData = {
           data: {
             imagen_url: data.secure_url
@@ -283,23 +275,13 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
         });
         if (!updateResponse.ok) throw new Error('Error al actualizar el invitado');
 
-        // Actualizar el contexto con la nueva URL
         setCurrentImageUrl(data.secure_url);
         setHasNewImage(true);
         setIsUploading(false);
 
-        // Esperar a que la nueva imagen se cargue
-        const newImage = new window.Image();
-        newImage.src = data.secure_url;
-        await new Promise((resolve) => {
-          newImage.onload = resolve;
-        });
-
-        // Quitar efectos de loading antes de mostrar la nueva imagen
         document.querySelector('.rasca__original-image').classList.remove('loading');
         document.querySelector('.rasca__loading-text').classList.remove('visible');
 
-        // Animación cuando la imagen está lista
         const finalTimeline = gsap.timeline();
         finalTimeline
           .to(".rasca__uploaded-image", {
@@ -393,51 +375,14 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
     }
   };
 
-  const getImageWithHeaders = (imageUrl) => {
-    if (!imageUrl) return '';
-    
-    // Si es una URL de Strapi, añadir el token de autorización
-    if (imageUrl.includes('strapi') || imageUrl.includes('railway')) {
-      return `${imageUrl}?token=${STRAPI_TOKEN}`;
-    }
-    
-    return imageUrl;
-  };
-
-  const handleImageError = (e) => {
-    const imgSrc = e.target.src;
-    const attempts = imageLoadAttempts[imgSrc] || 0;
-    
-    // Solo intentar recargar una vez
-    if (attempts < 1) {
-      setImageLoadAttempts(prev => ({
-        ...prev,
-        [imgSrc]: attempts + 1
-      }));
-      
-      setImageError(true);
-      console.error('Error al cargar la imagen:', imgSrc);
-      
-      // Intentar recargar la imagen después de un breve retraso
-      setTimeout(() => {
-        const img = e.target;
-        const originalSrc = img.src;
-        img.src = '';
-        setTimeout(() => {
-          img.src = originalSrc;
-        }, 100);
-      }, 1000);
-    } else {
-      // Si ya se intentó recargar, mostrar el error definitivamente
-      setImageError(true);
-      console.error('Error definitivo al cargar la imagen después de reintentos:', imgSrc);
-    }
+  const handleImageError = () => {
+    setImageError(true);
+    console.error('Error al cargar la imagen');
   };
 
   const handleImageLoad = () => {
     setIsImageLoaded(true);
     setImageError(false);
-    // Iniciar animaciones solo cuando la imagen esté cargada
     if (contenidoRef.current) {
       gsap.set(contenidoRef.current, { zIndex: 1 });
       gsap.to(contenidoRef.current, {
@@ -457,15 +402,13 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
   return (
     <>
       <div className="rasca">
-        {/* Imagen de fondo */}
         <img
           className="rasca__original-image"
-          src={getImageWithHeaders(url)}
+          src={url}
           alt="Premio oculto"
           onClick={handleImageClick}
           onError={handleImageError}
           onLoad={handleImageLoad}
-          crossOrigin="anonymous"
           style={{ opacity: isImageLoaded ? 1 : 0 }}
         />
         
@@ -473,7 +416,7 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
         
         <img
           className="rasca__uploaded-image"
-          src={getImageWithHeaders(url2)}
+          src={url2}
           alt="Imagen subida"
           onClick={handleImageClick}
           onError={handleImageError}
@@ -483,7 +426,6 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
             opacity: hasNewImage && isImage2Loaded ? 1 : 0,
             zIndex: 0
           }}
-          crossOrigin="anonymous"
         />
         
         {imageError && (
@@ -495,7 +437,6 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
           </div>
         )}
         
-        {/* Capa gris interactiva */}
         <canvas
           ref={canvasRef}
           onMouseDown={handleMouseDown}
@@ -537,7 +478,6 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
         </div>
       </div>
 
-      {/* Elemento resultado (oculto al inicio) */}
       <div
         ref={contenidoRef}
         className="cartaInvitado__contenido"
