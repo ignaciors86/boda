@@ -24,6 +24,10 @@ import CartaInvitado from './Tarjetas/CartaInvitado';
 import QEQ from 'components/Timeline/QEQ';
 import ClubSecreto from './Tarjetas/ClubSecreto';
 
+const urlstrapi = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+  ? 'http://localhost:1337'
+  : 'https://boda-strapi-production.up.railway.app';
+
 const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) => {
 
   weedding && document.documentElement.style.setProperty('--tipo', 'VCR');
@@ -448,8 +452,10 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
   }, [fullScreen]);
 
   const handleImageUpdate = (url) => {
-    setCurrentImageUrl(url);
-    localStorage.setItem('invitadoImageUrl', url);
+    if (url && url !== urlstrapi) {
+      setCurrentImageUrl(url);
+      localStorage.setItem('invitadoImageUrl', url);
+    }
   };
 
   return (
@@ -516,7 +522,7 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
                     <CartaInvitado 
                       weedding={weedding} 
                       invitado={invitado} 
-                      currentImageUrl={currentImageUrl}
+                      currentImageUrl={currentImageUrl === urlstrapi ? null : currentImageUrl}
                       setCurrentImageUrl={handleImageUpdate}
                     /> :
                     <Asistencia weedding={weedding} />
