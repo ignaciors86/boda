@@ -256,7 +256,7 @@ const QEQ = ({ mesas, invitado }) => {
             //console.log("pincha");
             correctCircleRef?.current?.classList?.add('hover');
             correctCircleRef?.current?.classList?.add('inTouch');
-            setCircleBgImage(invitado.personaje?.imagen?.url ? urlstrapi + invitado.personaje.imagen.url : dummyImage);
+            setCircleBgImage(invitado.personaje?.imagen_url || dummyImage);
             gsap.to(invitadoRef, {
               opacity: 0,
               duration: 0.5,
@@ -447,10 +447,9 @@ const QEQ = ({ mesas, invitado }) => {
             >
               <img
                 style={{ backgroundColor: generatePastelColor() }}
-                src={invitado.personaje?.imagen?.url ? urlstrapi + invitado.personaje.imagen.url : dummyImage}
+                src={invitado.personaje?.imagen_url || dummyImage}
                 alt={invitado.nombre}
               />
-              {/* <span>{invitado.nombre}</span> */}
               <div className="invitado-info">
                 {(
                   <p className="primero" style={{ backgroundColor: generatePastelColor() }}>
