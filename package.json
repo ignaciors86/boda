@@ -16,6 +16,7 @@
     "jspdf-autotable": "^5.0.2",
     "mobile-detect": "^1.4.5",
     "prop-types": "^15.8.1",
+    "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
     "react-color": "^2.19.3",

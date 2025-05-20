@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './PanelLateral.scss';
-import { FaFileExcel, FaFilePdf, FaPlus, FaUser } from 'react-icons/fa';
+import { FaFileExcel, FaFilePdf, FaPlus, FaUser, FaQrcode } from 'react-icons/fa';
 
 const PanelLateral = ({
   isPanelOpen,
@@ -16,7 +16,8 @@ const PanelLateral = ({
   generarInformeExcel,
   actualizarInvitado,
   generarInformePDFCatering,
-  setIsPanelPersonajesOpen
+  setIsPanelPersonajesOpen,
+  generarQRs
 }) => {
   const [gruposAbiertos, setGruposAbiertos] = useState({});
   const toggleGrupo = (nombre) => {
@@ -161,6 +162,13 @@ const PanelLateral = ({
             onClick={generarInformePDFCatering}
           >
             <FaFilePdf style={{ marginRight: 6 }} /> PDF cátering
+          </button>
+          <button
+            className="panel-lateral-btn-qr"
+            title="Generar QRs para invitados"
+            onClick={generarQRs}
+          >
+            <FaQrcode style={{ marginRight: 6 }} /> Generar QRs
           </button>
         </div>
       </aside>

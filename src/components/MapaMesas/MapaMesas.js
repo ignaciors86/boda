@@ -4,7 +4,7 @@ import { Draggable } from "gsap/Draggable";
 import './MapaMesas.scss';
 import PanelLateral from './components/PanelLateral/PanelLateral';
 import PanelPersonajes from './components/PanelPersonajes/PanelPersonajes';
-import { FaPlus, FaEdit, FaHashtag, FaUsers, FaCrown, FaUserFriends, FaBorderAll, FaMagnet, FaLock, FaCompress, FaExpand, FaFileExcel } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaHashtag, FaUsers, FaCrown, FaUserFriends, FaBorderAll, FaMagnet, FaLock, FaCompress, FaExpand, FaFileExcel, FaQrcode } from 'react-icons/fa';
 import ExcelJS from 'exceljs';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -13,6 +13,7 @@ import ModalDetalleMesa from './components/ModalDetalleMesa/ModalDetalleMesa';
 import ModalDetalleInvitado from './components/ModalDetalleInvitado/ModalDetalleInvitado';
 import { v4 as uuidv4 } from 'uuid';
 import { getPosicionesBolitasMesaSimple } from './components/utilsMesaDibujo';
+import QRCode from 'qrcode';
 gsap.registerPlugin(Draggable);
 
 const urlstrapi =
@@ -810,7 +811,7 @@ const MapaMesas = () => {
     let bolitas = [];
     
     bolitas = invitadosMesa.map((inv, idx) => {
-      const pos = posiciones[idx];
+      const pos = posiciones[idx] || { x: 0, y: 0 }; // Añadir valor por defecto
       const grupo = inv.grupoOrigen || inv.grupo_origen || inv.grupo;
       const colorGrupo = grupoColorMap[grupo] || '#6366f1';
       return (
@@ -1585,6 +1586,91 @@ const MapaMesas = () => {
     }
   }, [mesasInicializadas, mesasPlano]);
 
+  // Función para generar QRs
+  const generarQRs = async () => {
+    try {
+      // Crear un nuevo libro de Excel
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'Boda App';
+      workbook.lastModifiedBy = 'Boda App';
+      workbook.created = new Date();
+      workbook.modified = new Date();
+
+      // Crear una hoja para los QRs
+      const sheet = workbook.addWorksheet('QRs');
+      
+      // Configurar columnas
+      sheet.columns = [
+        { header: 'Nombre', key: 'nombre', width: 30 },
+        { header: 'URL', key: 'url', width: 50 },
+        { header: 'QR', key: 'qr', width: 20 }
+      ];
+
+      // Estilo para el encabezado
+      sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Segoe UI', size: 13 };
+      sheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4F8A8B' }
+      };
+      sheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+      // Generar QRs para cada invitado
+      for (const invitado of invitados) {
+        const url = `https://boda-umber.vercel.app/${invitado.documentId}`;
+        const qrDataUrl = await QRCode.toDataURL(url, {
+          width: 200,
+          margin: 1,
+          color: {
+            dark: '#000000',
+            light: '#ffffff'
+          }
+        });
+
+        // Añadir fila con datos
+        const row = sheet.addRow({
+          nombre: invitado.nombre,
+          url: url,
+          qr: 'QR'
+        });
+
+        // Añadir el QR como imagen
+        const imageId = workbook.addImage({
+          base64: qrDataUrl.split(',')[1],
+          extension: 'png',
+        });
+
+        // Insertar la imagen en la celda
+        sheet.addImage(imageId, {
+          tl: { col: 2, row: row.number - 1 },
+          br: { col: 3, row: row.number }
+        });
+
+        // Ajustar altura de la fila para acomodar el QR
+        row.height = 150;
+      }
+
+      // Ajustar anchura de columnas
+      sheet.getColumn('qr').width = 30;
+
+      // Generar el archivo
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `QRs_Invitados_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+    } catch (error) {
+      console.error('Error al generar QRs:', error);
+      alert('Error al generar los QRs. Por favor, revisa la consola para más detalles.');
+    }
+  };
+
   if (cargando) return <p>Cargando datos de invitados...</p>;
   if (error) return <p>{error}</p>;
 
@@ -1607,6 +1693,7 @@ const MapaMesas = () => {
         actualizarInvitado={actualizarInvitado}
         generarInformePDFCatering={generarInformePDFCatering}
         setIsPanelPersonajesOpen={setIsPanelPersonajesOpen}
+        generarQRs={generarQRs}
       />
       <PanelPersonajes
         isPanelOpen={isPanelPersonajesOpen}
