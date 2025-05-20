@@ -146,20 +146,37 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
             visibility: "visible",
             opacity: 1,
             zIndex: 0
-          })
-          .to(".rasca__original-image", {
-            scale: 0.3,
-            x: "36%",
-            y: "-5%",
-            duration: 0.5,
-            ease: "power2.out",
-            transformOrigin: "center center"
-          })
-          .to(".rasca__upload-container", {
+          });
+
+        // Solo reducir la imagen del personaje y mostrar contenido si hay una imagen de invitado válida
+        if (url2 && isImage2Loaded) {
+          timeline
+            .to(".rasca__original-image", {
+              scale: 0.3,
+              x: "36%",
+              y: "-5%",
+              duration: 0.5,
+              ease: "power2.out",
+              transformOrigin: "center center"
+            })
+            .to(contenidoRef.current, {
+              opacity: 1,
+              duration: 1.5,
+              ease: "power2.out"
+            }, "-=0.3")
+            .to(".rasca__upload-container", {
+              opacity: 1,
+              duration: 0.3,
+              ease: "power2.out"
+            });
+        } else {
+          // Si no hay imagen de invitado, solo mostrar el botón de subir
+          timeline.to(".rasca__upload-container", {
             opacity: 1,
             duration: 0.3,
             ease: "power2.out"
           });
+        }
       }
     }, 50);
   };
@@ -389,20 +406,31 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
   const handleImageLoad = () => {
     setIsImageLoaded(true);
     setImageError(false);
-    if (contenidoRef.current) {
-      gsap.set(contenidoRef.current, { zIndex: 1 });
-      gsap.to(contenidoRef.current, {
-        opacity: 1,
-        duration: 1.5,
-        delay: 0.5,
-        ease: "power2.out"
-      });
-    }
   };
 
   const handleImage2Load = () => {
     setIsImage2Loaded(true);
     setImageError(false);
+    
+    // Si la imagen del invitado se carga después de que se haya revelado,
+    // animar la reducción de la imagen del personaje y mostrar el contenido
+    if (isRevealed) {
+      const timeline = gsap.timeline();
+      timeline
+        .to(".rasca__original-image", {
+          scale: 0.3,
+          x: "36%",
+          y: "-5%",
+          duration: 0.5,
+          ease: "power2.out",
+          transformOrigin: "center center"
+        })
+        .to(contenidoRef.current, {
+          opacity: 1,
+          duration: 1.5,
+          ease: "power2.out"
+        }, "-=0.3");
+    }
   };
 
   return (
@@ -487,9 +515,17 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
       <div
         ref={contenidoRef}
         className="cartaInvitado__contenido"
-        style={{ opacity: 0 }}
+        style={{ 
+          opacity: 0,
+          width: '100%',
+          fontFamily: 'Evelins',
+          fontSize: '1.2rem',
+          textAlign: 'center',
+          padding: '1rem',
+          display: url2 && isImage2Loaded ? 'block' : 'none'
+        }}
       >
-        {resultado}
+        {resultado || "¡Disfruta!"}
       </div>
     </>
   );

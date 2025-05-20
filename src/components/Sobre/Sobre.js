@@ -49,10 +49,7 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
   const escala = 1.1;
   const md = new MobileDetect(window.navigator.userAgent);
   const [animationKey, setAnimationKey] = useState(1);
-  const [currentImageUrl, setCurrentImageUrl] = useState(() => {
-    const savedUrl = localStorage.getItem('invitadoImageUrl');
-    return savedUrl || null;
-  });
+  const [currentImageUrl, setCurrentImageUrl] = useState(null);
 
   const toggle = () => {
     const cards = document.querySelectorAll('.card');
@@ -454,15 +451,14 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
   const handleImageUpdate = (url) => {
     if (url && url !== urlstrapi) {
       setCurrentImageUrl(url);
-      localStorage.setItem('invitadoImageUrl', url);
     }
   };
 
   return (
     <>
       <Bubbles />
-      {isOpen === null && !invitado && <Espiral weedding={weedding} isOpen={isOpen} uri={uri} />}
-      {isOpen === false && !invitado && <Espiral weedding={weedding} isOpen={isOpen} option2={true} />}
+      {isOpen === null && !invitado && <Espiral casandonos={casandonos} weedding={weedding} isOpen={isOpen} uri={uri} />}
+      {isOpen === false && !invitado && <Espiral casandonos={casandonos} weedding={weedding} isOpen={isOpen} option2={true} />}
       <div className={`sobre closed ${weedding ? "weedding" : ""}`} ref={sobreRef}>
 
         <div alt="Nosotros" className="nosotros-jpg" >

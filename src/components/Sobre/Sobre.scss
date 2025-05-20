@@ -140,6 +140,7 @@
     }
     h3 {
         font-size: calc(var(--size-unit)* 0.4) !important;
+        line-height: calc(var(--size-unit) * 0.4) !important;
     }
     &-body {
         position: absolute;

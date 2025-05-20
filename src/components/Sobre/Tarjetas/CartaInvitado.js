@@ -21,15 +21,15 @@ const CartaInvitado = ({ weedding, invitado, currentImageUrl, setCurrentImageUrl
     });
 
     const personajeUrl = invitado?.personaje?.imagen_url || '';
-    const imagenUrl = currentImageUrl || invitado?.imagen?.url || '';
-    const tieneImagen = Boolean(currentImageUrl || invitado?.imagen?.url);
+    const imagenUrl = currentImageUrl || invitado?.imagen_url || '';
+    const tieneImagen = Boolean(currentImageUrl || invitado?.imagen_url);
     
     console.log('URLs construidas:', {
         personajeUrl,
         imagenUrl,
         urlstrapi,
-        personajeImagenUrl: invitado?.personaje?.imagen?.url,
-        invitadoImagenUrl: invitado?.imagen?.url,
+        personajeImagenUrl: invitado?.personaje?.imagen_url,
+        invitadoImagenUrl: invitado?.imagen_url,
         tieneImagen
     });
 
