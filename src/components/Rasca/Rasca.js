@@ -385,6 +385,18 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
 
   const handleImageError = () => {
     setImageError(true);
+    console.error('Error al cargar la imagen:', url);
+  };
+
+  const getImageWithHeaders = (imageUrl) => {
+    if (!imageUrl) return '';
+    
+    // Si es una URL de Strapi, añadir el token de autorización
+    if (imageUrl.includes('strapi') || imageUrl.includes('railway')) {
+      return `${imageUrl}?token=${STRAPI_TOKEN}`;
+    }
+    
+    return imageUrl;
   };
 
   return (
@@ -393,17 +405,18 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
         {/* Imagen de fondo */}
         <img
           className="rasca__original-image"
-          src={url}
+          src={getImageWithHeaders(url)}
           alt="Premio oculto"
           onClick={handleImageClick}
           onError={handleImageError}
+          crossOrigin="anonymous"
         />
         
         <h3 className="rasca__loading-text">Subiendo imagen</h3>
         
         <img
           className="rasca__uploaded-image"
-          src={url2}
+          src={getImageWithHeaders(url2)}
           alt="Imagen subida"
           onClick={handleImageClick}
           onError={handleImageError}
@@ -412,6 +425,7 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
             opacity: hasNewImage ? 1 : 0,
             zIndex: 0
           }}
+          crossOrigin="anonymous"
         />
         
         {imageError && (
