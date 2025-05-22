@@ -211,16 +211,21 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
 
   const handleTouchStart = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDrawing(true);
     drawTouch(e);
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsDrawing(false);
     calculateRevealPercentage();
   };
 
   const handleTouchMove = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (!isDrawing) return;
     drawTouch(e);
     calculateRevealPercentage();
@@ -230,8 +235,9 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     const rect = canvas.getBoundingClientRect();
-    const x = e.touches[0].clientX - rect.left;
-    const y = e.touches[0].clientY - rect.top;
+    const touch = e.touches[0];
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
 
     ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
@@ -481,6 +487,12 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchEnd}
+          style={{ 
+            touchAction: 'none',
+            WebkitTouchCallout: 'none',
+            WebkitUserSelect: 'none',
+            userSelect: 'none'
+          }}
         ></canvas>
         
         <div className={`rasca__upload-container ${showUpload ? 'rasca__upload-container--visible' : ''}`}>
