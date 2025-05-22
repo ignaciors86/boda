@@ -502,10 +502,12 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
               }>
                 <h2>{invitado ? "Quién Es Quién" : "Agenda"}</h2>
               </Card>
-              <Card seccion="regalo" onClick={() => handleClick("regalo")} trasera={
-                invitado ? <ClubSecreto invitado={invitado} /> : <Regalo />}>
-                <h2>{invitado ? "Grassjika" : "Regalo"}</h2>
-              </Card>
+              {invitado?.weedding && (
+                <Card seccion="regalo" onClick={() => handleClick("regalo")} trasera={
+                  invitado ? <ClubSecreto invitado={invitado} /> : <Regalo />}>
+                  <h2>{invitado ? "Grassjika" : "Regalo"}</h2>
+                </Card>
+              )}
               { !invitado && <Card seccion="ubicaciones" onClick={() => handleClick("ubicaciones")} trasera={
                 <Lugar weedding={weedding} hosteado={hosteado} />}>                
                 <h2>{invitado ? "Lugar" : "Lugar"}</h2>
