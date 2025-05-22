@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { gsap } from "gsap";
-import { Draggable } from "gsap/Draggable";
+import Draggable from "gsap/Draggable";
 import './MapaMesas.scss';
 import PanelLateral from './components/PanelLateral/PanelLateral';
 import PanelPersonajes from './components/PanelPersonajes/PanelPersonajes';
@@ -14,7 +14,22 @@ import ModalDetalleInvitado from './components/ModalDetalleInvitado/ModalDetalle
 import { v4 as uuidv4 } from 'uuid';
 import { getPosicionesBolitasMesaSimple } from './components/utilsMesaDibujo';
 import QRCode from 'qrcode';
+import html2canvas from 'html2canvas';
 gsap.registerPlugin(Draggable);
+
+// Añadir la fuente Evelins
+const addFont = () => {
+  const style = document.createElement('style');
+  style.textContent = `
+    @font-face {
+      font-family: 'Evelins';
+      src: url('/assets/fonts/evelins/Evelins.otf') format('opentype');
+      font-weight: normal;
+      font-style: normal;
+    }
+  `;
+  document.head.appendChild(style);
+};
 
 const urlstrapi =
   (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
@@ -1600,85 +1615,223 @@ const MapaMesas = () => {
   // Función para generar QRs
   const generarQRs = async () => {
     try {
-      // Crear un nuevo libro de Excel
-      const workbook = new ExcelJS.Workbook();
-      workbook.creator = 'Boda App';
-      workbook.lastModifiedBy = 'Boda App';
-      workbook.created = new Date();
-      workbook.modified = new Date();
-
-      // Crear una hoja para los QRs
-      const sheet = workbook.addWorksheet('QRs');
+      console.log('Iniciando generación de QRs...');
       
-      // Configurar columnas
-      sheet.columns = [
-        { header: 'Nombre', key: 'nombre', width: 30 },
-        { header: 'URL', key: 'url', width: 50 },
-        { header: 'QR', key: 'qr', width: 20 }
-      ];
+      // Mostrar indicador de carga
+      const loadingAlert = document.createElement('div');
+      loadingAlert.style.position = 'fixed';
+      loadingAlert.style.top = '50%';
+      loadingAlert.style.left = '50%';
+      loadingAlert.style.transform = 'translate(-50%, -50%)';
+      loadingAlert.style.background = 'rgba(0, 0, 0, 0.8)';
+      loadingAlert.style.color = 'white';
+      loadingAlert.style.padding = '20px';
+      loadingAlert.style.borderRadius = '10px';
+      loadingAlert.style.zIndex = '9999';
+      loadingAlert.textContent = 'Generando tarjetas...';
+      document.body.appendChild(loadingAlert);
+      
+      // Asegurar que la fuente esté cargada
+      const fontStyle = document.createElement('style');
+      fontStyle.textContent = `
+        @font-face {
+          font-family: 'Evelins';
+          src: url('/assets/fonts/evelins/Evelins.otf') format('opentype');
+          font-weight: normal;
+          font-style: normal;
+        }
+      `;
+      document.head.appendChild(fontStyle);
+      
+      // Esperar a que la fuente se cargue
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Crear un contenedor temporal para las tarjetas
+      const container = document.createElement('div');
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      container.style.top = '-9999px';
+      document.body.appendChild(container);
 
-      // Estilo para el encabezado
-      sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' }, name: 'Segoe UI', size: 13 };
-      sheet.getRow(1).fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FF4F8A8B' }
-      };
-      sheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+      // Crear el PDF
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
 
-      // Generar QRs para cada invitado
-      for (const invitado of invitados) {
-        const url = `https://boda-umber.vercel.app/${invitado.documentId}`;
-        const qrDataUrl = await QRCode.toDataURL(url, {
-          width: 200,
-          margin: 1,
-          color: {
-            dark: '#000000',
-            light: '#ffffff'
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const cardWidth = 85; // mm
+      const cardHeight = 54; // mm (tamaño de tarjeta de crédito)
+      const margin = 10; // mm
+      const cardsPerRow = 3;
+      const cardsPerColumn = 3; // 3 filas
+      const spacingX = (pageWidth - (cardWidth * cardsPerRow) - (margin * 2)) / (cardsPerRow - 1);
+      const spacingY = (pageHeight - (cardHeight * cardsPerColumn) - (margin * 2)) / (cardsPerColumn - 1);
+
+      // Ordenar invitados por mesa
+      const invitadosPorMesa = {};
+      invitados.forEach(inv => {
+        const mesaId = inv.mesaId || 'sin-mesa';
+        if (!invitadosPorMesa[mesaId]) {
+          invitadosPorMesa[mesaId] = [];
+        }
+        invitadosPorMesa[mesaId].push(inv);
+      });
+
+      // Ordenar las mesas por número
+      const mesasOrdenadas = Object.keys(invitadosPorMesa).sort((a, b) => {
+        if (a === 'sin-mesa') return 1;
+        if (b === 'sin-mesa') return -1;
+        return mesaNumbers[a] - mesaNumbers[b];
+      });
+
+      let currentPage = 1;
+      let currentRow = 0;
+      let currentCol = 0;
+
+      // Generar tarjetas para cada invitado, ordenados por mesa
+      for (const mesaId of mesasOrdenadas) {
+        const invitadosMesa = invitadosPorMesa[mesaId];
+        
+        for (let i = 0; i < invitadosMesa.length; i++) {
+          const invitado = invitadosMesa[i];
+          console.log(`Generando tarjeta ${i + 1}/${invitadosMesa.length} para ${invitado.nombre}`);
+          
+          // Actualizar indicador de carga
+          loadingAlert.textContent = `Generando tarjeta ${i + 1} de ${invitadosMesa.length} para mesa ${mesaId === 'sin-mesa' ? 'sin asignar' : mesaNumbers[mesaId]}...`;
+
+          // Crear la tarjeta
+          const card = document.createElement('div');
+          card.style.width = `${cardWidth}mm`;
+          card.style.height = `${cardHeight}mm`;
+          card.style.background = 'white';
+          card.style.position = 'relative';
+          card.style.fontFamily = 'Evelins, Arial, sans-serif';
+          card.style.display = 'flex';
+          card.style.flexDirection = 'column';
+          card.style.alignItems = 'center';
+          card.style.justifyContent = 'center';
+          card.style.padding = '4mm';
+          card.style.border = 'none';
+          card.style.outline = 'none';
+          card.style.boxShadow = 'none';
+
+          // Nombre del invitado
+          const name = document.createElement('div');
+          name.style.fontSize = '8mm';
+          name.style.color = '#1f2937';
+          name.style.textAlign = 'center';
+          name.style.fontFamily = 'Evelins, Arial, sans-serif';
+          name.style.marginBottom = '3mm';
+          name.style.lineHeight = '1.2';
+          name.style.border = 'none';
+          name.style.outline = 'none';
+          name.textContent = invitado.nombre;
+          card.appendChild(name);
+
+          // QR
+          const qrContainer = document.createElement('div');
+          qrContainer.style.width = '32mm';
+          qrContainer.style.height = '32mm';
+          qrContainer.style.background = 'white';
+          qrContainer.style.display = 'flex';
+          qrContainer.style.alignItems = 'center';
+          qrContainer.style.justifyContent = 'center';
+          qrContainer.style.border = 'none';
+          qrContainer.style.outline = 'none';
+
+          const url = `https://boda-umber.vercel.app/${invitado.documentId}`;
+          console.log('Generando QR para URL:', url);
+          
+          const qrDataUrl = await QRCode.toDataURL(url, {
+            width: 256,
+            margin: 1,
+            color: {
+              dark: '#000000',
+              light: '#ffffff'
+            }
+          });
+
+          const qrImage = document.createElement('img');
+          qrImage.src = qrDataUrl;
+          qrImage.style.width = '100%';
+          qrImage.style.height = '100%';
+          qrImage.style.border = 'none';
+          qrImage.style.outline = 'none';
+          qrContainer.appendChild(qrImage);
+          card.appendChild(qrContainer);
+
+          // Texto de ayuda
+          const helpText = document.createElement('div');
+          helpText.style.fontSize = '3mm';
+          helpText.style.color = '#6b7280';
+          helpText.style.textAlign = 'center';
+          helpText.style.fontFamily = 'Arial, sans-serif';
+          helpText.style.marginTop = '2mm';
+          helpText.style.border = 'none';
+          helpText.style.outline = 'none';
+          helpText.textContent = 'Apunta con la cámara de tu móvil';
+          card.appendChild(helpText);
+
+          container.appendChild(card);
+
+          // Convertir la tarjeta a imagen
+          console.log('Convirtiendo tarjeta a imagen...');
+          const canvas = await html2canvas(card, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            removeContainer: true
+          });
+
+          // Calcular posición en la página
+          const x = margin + (currentCol * (cardWidth + spacingX));
+          const y = margin + (currentRow * (cardHeight + spacingY));
+
+          // Añadir la imagen al PDF
+          console.log('Añadiendo imagen al PDF...');
+          pdf.addImage(
+            canvas.toDataURL('image/png'),
+            'PNG',
+            x,
+            y,
+            cardWidth,
+            cardHeight
+          );
+
+          // Actualizar contadores
+          currentCol++;
+          if (currentCol >= cardsPerRow) {
+            currentCol = 0;
+            currentRow++;
+            if (currentRow >= cardsPerColumn) {
+              currentRow = 0;
+              if (i < invitadosMesa.length - 1 || mesaId !== mesasOrdenadas[mesasOrdenadas.length - 1]) {
+                pdf.addPage();
+                currentPage++;
+              }
+            }
           }
-        });
 
-        // Añadir fila con datos
-        const row = sheet.addRow({
-          nombre: invitado.nombre,
-          url: url,
-          qr: 'QR'
-        });
-
-        // Añadir el QR como imagen
-        const imageId = workbook.addImage({
-          base64: qrDataUrl.split(',')[1],
-          extension: 'png',
-        });
-
-        // Insertar la imagen en la celda
-        sheet.addImage(imageId, {
-          tl: { col: 2, row: row.number - 1 },
-          br: { col: 3, row: row.number }
-        });
-
-        // Ajustar altura de la fila para acomodar el QR
-        row.height = 150;
+          // Limpiar el contenedor
+          container.removeChild(card);
+        }
       }
 
-      // Ajustar anchura de columnas
-      sheet.getColumn('qr').width = 30;
-
-      // Generar el archivo
-      const buffer = await workbook.xlsx.writeBuffer();
-      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `QRs_Invitados_${new Date().toISOString().split('T')[0]}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      // Limpiar y descargar
+      console.log('Guardando PDF...');
+      document.body.removeChild(container);
+      document.body.removeChild(loadingAlert);
+      pdf.save(`Tarjetas_Invitacion_${new Date().toISOString().split('T')[0]}.pdf`);
+      console.log('PDF generado y guardado correctamente');
 
     } catch (error) {
-      console.error('Error al generar QRs:', error);
-      alert('Error al generar los QRs. Por favor, revisa la consola para más detalles.');
+      console.error('Error al generar tarjetas:', error);
+      alert('Error al generar las tarjetas. Por favor, revisa la consola para más detalles.');
     }
   };
 
