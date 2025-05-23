@@ -23,19 +23,16 @@ const ClubSecreto = ({invitado}) => {
             onInit={(typewriter) => {
                 typewriter
                     .typeString(
-                        "Número de socio: " + invitado?.id
+                        "Pásate cuando quieras. Terraza de la casa blanca."
                     )
-                    .pauseFor(500) // Pausa después de escribir una parte
-                    .typeString("<br /><br />Pásate cuando quieras. Terraza de la casa grande de madera.")
-                    .pauseFor(500) // Pausa después de escribir una parte
-                    .typeString("<br /><br />Durante el Tercer Tiempo (al acabar el baile), visita la casita del fondo para probar las delicias de MonkeyCakes")
+                    .pauseFor(500)
+                    .typeString("<br /><br />Especialmente en elTercer Tiempo (al acabar el baile)")
                     .start();
             }}
             options={{
                 autoStart: true,
-                loop: false, // No repetir la animación
-                delay: 25, // Velocidad de escritura
-                // cursor: "", // Elimina el cursor al finalizar
+                loop: false,
+                delay: 25,
             }}
         />
     );
@@ -43,8 +40,14 @@ const ClubSecreto = ({invitado}) => {
     return (
         <>
             <div className="regalo seccion clubSecreto">
-                {visible ? TypewriterContent() : null}
-                <a target="_blank" href="https://chat.whatsapp.com/IEL7BQUSRtzFiF1N5sGUxO">Grupo de whatsApp</a>
+                {/* <div style={{fontSize: '2.2em', marginBottom: '0.2em'}}>🌿</div> */}
+                <div className="numero-socio">
+                    Número de socio: {invitado?.id}
+                </div>
+                {visible ? <div className="typewriter"><TypewriterContent /></div> : null}
+                <a target="_blank" href="https://chat.whatsapp.com/IEL7BQUSRtzFiF1N5sGUxO" rel="noopener noreferrer">
+                    <span role="img" aria-label="whatsapp">💬</span> Grupo de WhatsApp
+                </a>
             </div>
             <button className="back" onClick={() => setActiveCard("sobre")} />
         </>
