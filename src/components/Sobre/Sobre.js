@@ -525,7 +525,7 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
                   trasera={invitado ? <ClubSecreto invitado={invitado} /> : <Regalo />}
                   className={isCardDisabled("regalo") ? "disabled" : ""}
                 >
-                  <h2>{invitado ? "Grassjika" : "Regalo"}</h2>
+                  <h2>{invitado ? "Top Secret" : "Regalo"}</h2>
                 </Card>
               )}
               {!invitado && (
