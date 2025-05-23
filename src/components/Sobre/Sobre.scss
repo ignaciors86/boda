@@ -211,6 +211,22 @@
                 height: calc(var(--size-unit)* 2.9);
                 transform: rotateZ(51deg);
             }
+
+            &.disabled {
+                opacity: 0.5;
+                pointer-events: none;
+                cursor: not-allowed;
+                filter: grayscale(100%);
+                transition: all 0.3s ease;
+
+                &:hover {
+                    transform: none;
+                }
+
+                .card-front, .card-back {
+                    cursor: not-allowed;
+                }
+            }
         }
     }
 

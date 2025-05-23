@@ -1742,10 +1742,10 @@ const MapaMesas = () => {
           qrContainer.style.border = 'none';
           qrContainer.style.outline = 'none';
 
-          const url = `https://boda-umber.vercel.app/${invitado.documentId}`;
-          console.log('Generando QR para URL:', url);
+          const invitadoUrl = `https://boda-umber.vercel.app/${invitado.documentId}`;
+          console.log('Generando QR para URL:', invitadoUrl);
           
-          const qrDataUrl = await QRCode.toDataURL(url, {
+          const qrDataUrl = await QRCode.toDataURL(invitadoUrl, {
             width: 256,
             margin: 1,
             color: {
@@ -1802,6 +1802,12 @@ const MapaMesas = () => {
             cardWidth,
             cardHeight
           );
+
+          // Añadir enlace clickeable que se abre en nueva pestaña
+          pdf.link(x, y, cardWidth, cardHeight, { 
+            url: invitadoUrl,
+            target: '_blank'
+          });
 
           // Actualizar contadores
           currentCol++;

@@ -50,6 +50,7 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
   const md = new MobileDetect(window.navigator.userAgent);
   const [animationKey, setAnimationKey] = useState(1);
   const [currentImageUrl, setCurrentImageUrl] = useState(null);
+  const [isImageUploaded, setIsImageUploaded] = useState(false);
 
   const toggle = () => {
     const cards = document.querySelectorAll('.card');
@@ -448,10 +449,24 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
     toggleFullScreen();
   }, [fullScreen]);
 
+  useEffect(() => {
+    // Si hay una imagen actual o el invitado ya tiene una imagen, marcar como subida
+    if (currentImageUrl || invitado?.imagen_url) {
+      setIsImageUploaded(true);
+    }
+  }, [currentImageUrl, invitado?.imagen_url]);
+
   const handleImageUpdate = (url) => {
     if (url && url !== urlstrapi) {
       setCurrentImageUrl(url);
+      setIsImageUploaded(true);
     }
+  };
+
+  const isCardDisabled = (seccion) => {
+    if (!casandonos) return false;
+    if (seccion === "invitado") return false;
+    return !isImageUploaded;
   };
 
   return (
@@ -477,54 +492,66 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
           <div className="envelope-flap-bg"></div>
           <div className="envelope-body">
             <div className="envelope-content">
-              <Card seccion="invitacion"
-                onClick={() => handleClick("invitacion")}
-                trasera={<Invitacion invitado={invitado} />}>
-                {
-                  invitado ? <>
-                    <img src={invitacion} alt="Invitacion" />
-                    <span className='nombres'>{invitado?.nombre}</span>
-                    <span className="fecha"><strong>Los</strong>Entremesas</span>
-                    <span className="lugar">hora de hacer el capullo</span>
-                  </>
-                    :
-                    <>
-                      <img src={invitacion} alt="Invitacion" />
-                      <span className='nombres'>Mario y Nacho</span>
-                      <span className="fecha">24 de Mayo<strong>2025</strong></span>
-                      <span className="lugar">Salamanca</span>
-                    </>
-                }
-
+              <Card 
+                seccion="invitacion"
+                onClick={() => !isCardDisabled("invitacion") && handleClick("invitacion")}
+                trasera={<Invitacion invitado={invitado} />}
+                className={isCardDisabled("invitacion") ? "disabled" : ""}
+              >
+                {invitado ? <>
+                  <img src={invitacion} alt="Invitacion" />
+                  <span className='nombres'>{invitado?.nombre}</span>
+                  <span className="fecha"><strong>Los</strong>Entremesas</span>
+                  <span className="lugar">hora de hacer el capullo</span>
+                </> : <>
+                  <img src={invitacion} alt="Invitacion" />
+                  <span className='nombres'>Mario y Nacho</span>
+                  <span className="fecha">24 de Mayo<strong>2025</strong></span>
+                  <span className="lugar">Salamanca</span>
+                </>}
               </Card>
-              <Card seccion="horarios" onClick={() => handleClick("horarios")} trasera={
-                invitado ? <QEQ weedding={weedding} mesas={mesas} invitado={invitado} /> : <Timeline weedding={weedding} />
-              }>
+              <Card 
+                seccion="horarios" 
+                onClick={() => !isCardDisabled("horarios") && handleClick("horarios")} 
+                trasera={invitado ? <QEQ weedding={weedding} mesas={mesas} invitado={invitado} /> : <Timeline weedding={weedding} />}
+                className={isCardDisabled("horarios") ? "disabled" : ""}
+              >
                 <h2>{invitado ? "Quién Es Quién" : "Agenda"}</h2>
               </Card>
               {invitado?.weedding && (
-                <Card seccion="regalo" onClick={() => handleClick("regalo")} trasera={
-                  invitado ? <ClubSecreto invitado={invitado} /> : <Regalo />}>
+                <Card 
+                  seccion="regalo" 
+                  onClick={() => !isCardDisabled("regalo") && handleClick("regalo")} 
+                  trasera={invitado ? <ClubSecreto invitado={invitado} /> : <Regalo />}
+                  className={isCardDisabled("regalo") ? "disabled" : ""}
+                >
                   <h2>{invitado ? "Grassjika" : "Regalo"}</h2>
                 </Card>
               )}
-              { !invitado && <Card seccion="ubicaciones" onClick={() => handleClick("ubicaciones")} trasera={
-                <Lugar weedding={weedding} hosteado={hosteado} />}>                
-                <h2>{invitado ? "Lugar" : "Lugar"}</h2>
-              </Card> }
-              <Card className={"asistencia"}
+              {!invitado && (
+                <Card 
+                  seccion="ubicaciones" 
+                  onClick={() => !isCardDisabled("ubicaciones") && handleClick("ubicaciones")} 
+                  trasera={<Lugar weedding={weedding} hosteado={hosteado} />}
+                  className={isCardDisabled("ubicaciones") ? "disabled" : ""}
+                >
+                  <h2>{invitado ? "Lugar" : "Lugar"}</h2>
+                </Card>
+              )}
+              <Card 
+                className={`asistencia ${isCardDisabled("invitado") ? "disabled" : ""}`}
                 seccion={casandonos ? "invitado" : "asistencia"}
-                onClick={() => handleClick(casandonos ? "invitado" : "asistencia")}
-                trasera={
-                  invitado ?
-                    <CartaInvitado 
-                      weedding={weedding} 
-                      invitado={invitado} 
-                      currentImageUrl={currentImageUrl === urlstrapi ? null : currentImageUrl}
-                      setCurrentImageUrl={handleImageUpdate}
-                    /> :
-                    <Asistencia weedding={weedding} />
-                }>
+                onClick={() => !isCardDisabled("invitado") && handleClick(casandonos ? "invitado" : "asistencia")}
+                trasera={invitado ? 
+                  <CartaInvitado 
+                    weedding={weedding} 
+                    invitado={invitado} 
+                    currentImageUrl={currentImageUrl === urlstrapi ? null : currentImageUrl}
+                    setCurrentImageUrl={handleImageUpdate}
+                  /> : 
+                  <Asistencia weedding={weedding} />
+                }
+              >
                 <h2>{casandonos ? "Tu personaje" : "Confirmar Asistencia"}</h2>
               </Card>
             </div>
