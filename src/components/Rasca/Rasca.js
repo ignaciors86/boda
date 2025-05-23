@@ -13,7 +13,7 @@ const CLOUDINARY_CLOUD_NAME = 'boda-baile';
 const CLOUDINARY_API_KEY = '851314221741213';
 const CLOUDINARY_UPLOAD_PRESET = 'invitados';
 
-const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
+const Rasca = ({ url, url2, setCurrentImageUrl, personaje, dedicatoria, invitadoNombre, invitadoId }) => {
   const canvasRef = useRef(null);
   const contenidoRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -442,6 +442,25 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
   return (
     <>
       <div className="rasca">
+        <div className={`rasca__upload-container ${showUpload ? 'rasca__upload-container--visible' : ''}`} style={{ 
+          position: 'absolute', 
+          top: '2rem', 
+          left: '50%', 
+          transform: 'translateX(-50%)',
+          zIndex: 100 
+        }}>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="rasca__upload-input"
+            id="upload-input"
+          />
+          <label htmlFor="upload-input" className="rasca__upload-button">
+            {isUploading ? 'Subiendo...' : 'Sube tu foto real'}
+          </label>
+        </div>
+
         <img
           className="rasca__original-image"
           src={url}
@@ -491,22 +510,15 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
             touchAction: 'none',
             WebkitTouchCallout: 'none',
             WebkitUserSelect: 'none',
-            userSelect: 'none'
+            userSelect: 'none',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            zIndex: 3
           }}
         ></canvas>
-        
-        <div className={`rasca__upload-container ${showUpload ? 'rasca__upload-container--visible' : ''}`}>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="rasca__upload-input"
-            id="upload-input"
-          />
-          <label htmlFor="upload-input" className="rasca__upload-button">
-            {isUploading ? 'Subiendo...' : 'Sube tu foto real'}
-          </label>
-        </div>
         
         <div className='explicacion'>
           <Typewriter
@@ -534,10 +546,17 @@ const Rasca = ({ url, url2, setCurrentImageUrl, resultado, invitadoId }) => {
           fontSize: '1.2rem',
           textAlign: 'center',
           padding: '1rem',
-          display: url2 && isImage2Loaded ? 'block' : 'none'
+          display: 'block'
         }}
       >
-        {resultado || "¡Disfruta!"}
+        <div style={{ marginBottom: '1rem', color: 'white', fontWeight: 'bold' }}>
+          {(url2 && isImage2Loaded)
+            ? (invitadoNombre || "Sin nombre")
+            : (personaje?.nombre || "Sin nombre")}
+        </div>
+        {url2 && isImage2Loaded
+          ? (dedicatoria || "Mil gracias por venir. Disfruta tanto como nosotros preparando todo esto.")
+          : (personaje?.descripcion || "No hubo tiempo para cargar este texto, LO SIENTO")}
       </div>
     </>
   );

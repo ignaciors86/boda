@@ -42,13 +42,18 @@ const CartaInvitado = ({ weedding, invitado, currentImageUrl, setCurrentImageUrl
         <p>{invitado?.dedicatoria || 'No asignado'}</p>
     </>
 
+    console.log('PERSONAJE:', invitado?.personaje);
+    console.log('INVITADO:', invitado);
+
     return (
         activeCard === "invitado" ? <><div className="cartaInvitado seccion">
             <Rasca 
                 url={personajeUrl}
                 url2={imagenUrl}
                 setCurrentImageUrl={setCurrentImageUrl}
-                resultado={tieneImagen ? resultado : null}
+                personaje={invitado?.personaje}
+                dedicatoria={invitado?.dedicatoria}
+                invitadoNombre={invitado?.nombre}
                 invitadoId={invitado?.documentId} 
             />
         </div><button className="back orange" onClick={() => setActiveCard("sobre")} /></> : <Loading />
