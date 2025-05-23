@@ -27,6 +27,9 @@ const Rasca = ({ url, url2, setCurrentImageUrl, personaje, dedicatoria, invitado
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isImage2Loaded, setIsImage2Loaded] = useState(false);
 
+  // Usar siempre las URLs tal cual, como en el panel de personajes
+  const invitadoImagenUrl = url2;
+
   // Controla el grosor del pincel (en dvh)
   const brushSizeInDvh = 8;
   const brushSize = () => canvasDimensions.height * (brushSizeInDvh / 100);
@@ -442,51 +445,23 @@ const Rasca = ({ url, url2, setCurrentImageUrl, personaje, dedicatoria, invitado
   return (
     <>
       <div className="rasca">
-        <div className={`rasca__upload-container ${showUpload ? 'rasca__upload-container--visible' : ''}`} style={{ 
-          position: 'absolute', 
-          top: '2rem', 
-          left: '50%', 
-          transform: 'translateX(-50%)',
-          zIndex: 100 
-        }}>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="rasca__upload-input"
-            id="upload-input"
-          />
-          <label htmlFor="upload-input" className="rasca__upload-button">
-            {isUploading ? 'Subiendo...' : 'Sube tu foto real'}
-          </label>
-        </div>
-
         <img
           className="rasca__original-image"
-          src={url}
+          src={personaje?.imagen_url}
           alt="Premio oculto"
           onClick={handleImageClick}
           onError={handleImageError}
           onLoad={handleImageLoad}
-          style={{ opacity: isImageLoaded ? 1 : 0 }}
         />
-        
         <h3 className="rasca__loading-text">Subiendo imagen</h3>
-        
         <img
           className="rasca__uploaded-image"
-          src={url2}
+          src={invitadoImagenUrl}
           alt="Imagen subida"
           onClick={handleImageClick}
           onError={handleImageError}
           onLoad={handleImage2Load}
-          style={{ 
-            visibility: hasNewImage && isImage2Loaded ? 'visible' : 'hidden',
-            opacity: hasNewImage && isImage2Loaded ? 1 : 0,
-            zIndex: 0
-          }}
         />
-        
         {imageError && (
           <div className="rasca__error">
             <div className="rasca__error-icon">⚡</div>
@@ -495,7 +470,6 @@ const Rasca = ({ url, url2, setCurrentImageUrl, personaje, dedicatoria, invitado
             </div>
           </div>
         )}
-        
         <canvas
           ref={canvasRef}
           onMouseDown={handleMouseDown}
@@ -506,7 +480,7 @@ const Rasca = ({ url, url2, setCurrentImageUrl, personaje, dedicatoria, invitado
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchEnd}
-          style={{ 
+          style={{
             touchAction: 'none',
             WebkitTouchCallout: 'none',
             WebkitUserSelect: 'none',
@@ -519,7 +493,18 @@ const Rasca = ({ url, url2, setCurrentImageUrl, personaje, dedicatoria, invitado
             zIndex: 3
           }}
         ></canvas>
-        
+        <div className={`rasca__upload-container ${showUpload ? 'rasca__upload-container--visible' : ''}`} style={{ position: 'absolute', top: '2rem', left: '50%', transform: 'translateX(-50%)', zIndex: 100 }}>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="rasca__upload-input"
+            id="upload-input"
+          />
+          <label htmlFor="upload-input" className="rasca__upload-button">
+            {isUploading ? 'Subiendo...' : 'Sube tu foto real'}
+          </label>
+        </div>
         <div className='explicacion'>
           <Typewriter
             onInit={(typewriter) => {
