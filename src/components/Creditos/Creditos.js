@@ -48,8 +48,8 @@ const Creditos = () => {
 
   // Tiempos de la canción (ajustados a los momentos clave de Opus)
   const TIEMPO_INICIO_ESPIRAL = 4;
-  const TIEMPO_CAMBIO_VELOCIDAD = 224.5;
-  const TIEMPO_INICIO_INVITADOS = 72;
+  const TIEMPO_CAMBIO_VELOCIDAD = 244.5;
+  const TIEMPO_INICIO_INVITADOS = 102;
   const TIEMPO_FIN_INVITADOS = TIEMPO_CAMBIO_VELOCIDAD; // 4:30 minutos
   const TIEMPO_PARON = 341.5;
   const TIEMPO_INICIO_GALERIA = 230; // 3:44.5 minutos
@@ -1079,6 +1079,15 @@ const Creditos = () => {
 
   const iniciarSecuencia = () => {
     if (!isReady || secuenciaInicial || mostrarCreditos) return;
+    // Intentar poner en pantalla completa
+    const elem = containerRef.current;
+    if (elem && elem.requestFullscreen) {
+      elem.requestFullscreen();
+    } else if (elem && elem.webkitRequestFullscreen) { // Safari
+      elem.webkitRequestFullscreen();
+    } else if (elem && elem.msRequestFullscreen) { // IE11
+      elem.msRequestFullscreen();
+    }
     setSecuenciaInicial(false);
     setMostrarCreditos(true);
     setKittFadeOut(true);

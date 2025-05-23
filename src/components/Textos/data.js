@@ -2,7 +2,7 @@ export const BLOQUES_TEXTO = [
     {
         id: "bienvenida",
         tiempoInicio: 0, // 0:00 minutos
-        duracionEntreFrases: 120,
+        duracionEntreFrases: 150,
         frases: [
             "Esta boda está inspirada en los propios",
             "invitados y ellos son en realidad",
@@ -38,7 +38,7 @@ export const BLOQUES_TEXTO = [
             "revienta esta caca programada rápido y mal en el peor momento posible,",
             "espero que con esto quede claro que todo el día de hoy también ha sido",
             "nuestro homenaje a internet y a la televisión, que empezó siendo refugio y alivio,",
-            "aunque la familia y los amigos fuesen nuestra auténtica Casa,",
+            "aunque la familia y los amigos fuesen mi auténtica Casa,",
             "y ahora van más de la mano cada día de mi vida de lo que",
             "jamás se hubiese imaginado este paletillo de Garrido de chaval.",
             "",
@@ -58,7 +58,7 @@ export const BLOQUES_TEXTO = [
     //     frases: [
             "",
             "",
-            "Si la vida de cada uno fuese su propia serie, la nuestra sería una serie coral,",
+            "Si la vida de cada uno fuese una serie individual, la nuestra sería una coral,",
             "y su elenco, el más increíble...",
         ],
         tipo: "starwars",
@@ -79,8 +79,8 @@ export const BLOQUES_TEXTO = [
     // },
     {
         id: "gracias",
-        tiempoInicio: 228, // 3:48 minutos
-        duracionEntreFrases: 20,
+        tiempoInicio: 246, // 3:48 minutos
+        duracionEntreFrases: 22,
         frases: [
             "Gracias"
         ],
@@ -90,12 +90,27 @@ export const BLOQUES_TEXTO = [
 
     {
         id: "sabanote",
-        tiempoInicio: 250, // 0:00 minutos
-        duracionEntreFrases: 60,
+        tiempoInicio: 268, // 0:00 minutos
+        duracionEntreFrases: 72,
         frases: [
             "Aquí pensaba haber puesto mogollón de movidas, pero os vais a joder, aunque más rabia me da a mi, creedme...",
-            "Son las tres de la mañana y debería estar sobando porque mañana es la preboda, pero me importa tres cojones porque si no llego a dejar esto presentable a tiempo me estaría cagando en todo durante un año o dos.",
-            "Se han quedado muchas cosas por hacer. Ni siquiera se si habrán funcionado las que estaban programadas, pero sí que tengo un trabajo precioso"
+            "Son las 4:20 de la mañana y debería estar sobando porque mañana es la preboda, pero me importa tres cojones porque si no llego a dejar esto presentable a tiempo me estaría cagando en todo durante un año o dos.",
+            "Se han quedado muchas cosas por hacer. Ni siquiera se si habrán funcionado las que estaban programadas, pero sí que tengo un trabajo precioso",
+            "Gracias de nuevo, al cien mil millones por cien, a los dos de cada tres invitados que habéis hecho que esta boda se celebre en condiciones, con vuestro esfuerzo real, y vuestro empuje en el momento más duro de mi vida.",
+            "Y por favor, no paréis de pasarlo de puta madre, vamos a seguir toda la noche de fiesta y hemos encargado churros...",
+            "Oh, y recordad: nunca pagues más de veinte duros por un videojuego... piratéatelo desde PC de tu prima, a lo mejor te cambia la vida.",
+        ],
+        tipo: "starwars",
+        velocidadOlivetti: 1, // Un carácter por pulso
+        fuente: "evelins"
+    },
+
+    {
+        id: "os-quiero",
+        tiempoInicio: 320, // 0:00 minutos
+        duracionEntreFrases: 15,
+        frases: [
+            "OS QUIERO LA PUTA HOSTIA, JODER",
         ],
         tipo: "starwars",
         velocidadOlivetti: 1, // Un carácter por pulso
@@ -105,7 +120,7 @@ export const BLOQUES_TEXTO = [
 
     {
         id: "apaga-el-ordenador",
-        tiempoInicio: 360, // 5:52.5 minutos
+        tiempoInicio: 392, // 5:52.5 minutos
         duracionEntreFrases: 300,
         frases: [
             "Apaga el ordenador y vete a la cama",
@@ -113,14 +128,4 @@ export const BLOQUES_TEXTO = [
         tipo: "apaga-el-ordenador",
         velocidadOlivetti: 1 // Un carácter por pulso
     },
-    {
-        id: "gracias-3",
-        tiempoInicio: 440, // 6:07 minutos
-        duracionEntreFrases: 6,
-        frases: [
-            "Se acaba el baile, pero no la boda",
-        ],
-        tipo: "parpadeo",
-        velocidadOlivetti: 1 // Un carácter por pulso
-    }
 ]; 
