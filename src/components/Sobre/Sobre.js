@@ -518,7 +518,7 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
               >
                 <h2>{invitado ? "Quién Es Quién" : "Agenda"}</h2>
               </Card>
-              {invitado?.weedding && (
+              {(!casandonos || invitado?.weedding) && (
                 <Card 
                   seccion="regalo" 
                   onClick={() => !isCardDisabled("regalo") && handleClick("regalo")} 
