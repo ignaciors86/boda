@@ -1079,7 +1079,14 @@ const Creditos = () => {
 
   const iniciarSecuencia = () => {
     if (!isReady || secuenciaInicial || mostrarCreditos) return;
-    setSecuenciaInicial(true);
+    setSecuenciaInicial(false);
+    setMostrarCreditos(true);
+    setKittFadeOut(true);
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        iniciarAudio();
+      });
+    }, 100);
   };
 
   useEffect(() => {

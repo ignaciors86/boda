@@ -87,15 +87,30 @@ export const BLOQUES_TEXTO = [
         tipo: "kamehameha",
         velocidadOlivetti: 1 // Un carácter por pulso
     },
+
     {
-        id: "gracias-2",
-        tiempoInicio: 352.5, // 5:52.5 minutos
-        duracionEntreFrases: 6,
+        id: "sabanote",
+        tiempoInicio: 250, // 0:00 minutos
+        duracionEntreFrases: 60,
         frases: [
-            "Porque todo cambia, menos lo que os queremos",
-            "Incluso si nos vemos poco",
+            "Aquí pensaba haber puesto mogollón de movidas, pero os vais a joder, aunque más rabia me da a mi, creedme...",
+            "Son las tres de la mañana y debería estar sobando porque mañana es la preboda, pero me importa tres cojones porque si no llego a dejar esto presentable a tiempo me estaría cagando en todo durante un año o dos.",
+            "Se han quedado muchas cosas por hacer. Ni siquiera se si habrán funcionado las que estaban programadas, pero sí que tengo un trabajo precioso"
         ],
-        tipo: "olivetti",
+        tipo: "starwars",
+        velocidadOlivetti: 1, // Un carácter por pulso
+        fuente: "evelins"
+    },
+
+
+    {
+        id: "apaga-el-ordenador",
+        tiempoInicio: 360, // 5:52.5 minutos
+        duracionEntreFrases: 300,
+        frases: [
+            "Apaga el ordenador y vete a la cama",
+        ],
+        tipo: "apaga-el-ordenador",
         velocidadOlivetti: 1 // Un carácter por pulso
     },
     {

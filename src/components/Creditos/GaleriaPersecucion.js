@@ -224,40 +224,31 @@ const GaleriaPersecucion = ({ audioRef, startTime, endTime, analyser }) => {
   return (
     <div 
       className={`galeria-persecucion ${isVisible ? 'visible' : ''}`}
-      style={{ opacity }}
+      style={{
+        opacity,
+        width: '100vw',
+        height: '100vh',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        zIndex: 0,
+        pointerEvents: 'none'
+      }}
     >
-      <div className="galeria-contenedor">
-        <div 
-          className="galeria-imagen-container"
-          style={{
-            transform: `scale(${pulseScale})`,
-            filter: `brightness(${1 + pulseGlow/100}) drop-shadow(0 0 ${pulseGlow}px rgba(0, 255, 255, 0.8))`,
-            willChange: 'transform, filter',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transformOrigin: 'center center'
-          }}
-        >
-          <img 
-            src={images[currentImageIndex]} 
-            alt={`Imagen ${currentImageIndex + 1}`}
-            className="galeria-imagen"
-            style={{ 
-              opacity,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              transform: 'scale(1.1)' // Ligeramente más grande para evitar bordes durante el pulso
-            }}
-          />
-        </div>
-      </div>
+      <img 
+        src={images[currentImageIndex]} 
+        alt={`Imagen ${currentImageIndex + 1}`}
+        className="galeria-imagen"
+        style={{ 
+          opacity: 0.5,
+          width: '100vw',
+          height: '100vh',
+          objectFit: 'cover',
+          margin: 0,
+          display: 'block',
+          borderRadius: 0
+        }}
+      />
     </div>
   );
 };

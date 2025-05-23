@@ -51,6 +51,8 @@ const BloqueTexto = ({ bloque, audioRef, analyser }) => {
                     setTextoActual(bloque.frases.join('\n'));
                 } else if (bloque.tipo === 'kamehameha') {
                     setTextoActual(bloque.frases[0]);
+                } else if (bloque.tipo === 'apaga-el-ordenador') {
+                    setTextoActual(bloque.frases[0]);
                 } else {
                     const indiceFraseCalculado = Math.floor(tiempoRelativo / bloque.duracionEntreFrases);
                     if (indiceFraseCalculado !== indiceFrase) {
