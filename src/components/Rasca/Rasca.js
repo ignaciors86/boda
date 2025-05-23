@@ -549,10 +549,21 @@ const Rasca = ({ url, url2, setCurrentImageUrl, personaje, dedicatoria, invitado
           display: 'block'
         }}
       >
-        <div style={{ marginBottom: '1rem', color: 'white', fontWeight: 'bold' }}>
-          {(url2 && isImage2Loaded)
-            ? (invitadoNombre || "Sin nombre")
-            : (personaje?.nombre || "Sin nombre")}
+        <div style={{ marginBottom: '1rem', color: 'white', textAlign: 'center' }}>
+          {(url2 && isImage2Loaded) ? (
+            <>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold', lineHeight: 1 }}>
+                {invitadoNombre}
+              </div>
+              <div style={{ fontSize: '1.1rem', opacity: 0.8 }}>
+                {personaje?.nombre}
+              </div>
+            </>
+          ) : (
+            <div style={{ fontWeight: 'bold' }}>
+              {personaje?.nombre || "Sin nombre"}
+            </div>
+          )}
         </div>
         {url2 && isImage2Loaded
           ? (dedicatoria || "Mil gracias por venir. Disfruta tanto como nosotros preparando todo esto.")
