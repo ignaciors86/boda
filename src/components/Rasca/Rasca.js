@@ -470,7 +470,7 @@ const Rasca = ({ url, url2, setCurrentImageUrl, personaje, dedicatoria, invitado
             </div>
           </div>
         )}
-        <canvas
+        {/* <canvas
           ref={canvasRef}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
@@ -492,7 +492,7 @@ const Rasca = ({ url, url2, setCurrentImageUrl, personaje, dedicatoria, invitado
             height: '100%',
             zIndex: 3
           }}
-        ></canvas>
+        ></canvas> */}
         <div className={`rasca__upload-container ${showUpload ? 'rasca__upload-container--visible' : ''}`} style={{ position: 'absolute', top: '2rem', left: '50%', transform: 'translateX(-50%)', zIndex: 100 }}>
           <input
             type="file"
