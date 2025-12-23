@@ -130,13 +130,15 @@ const AudioAnalyzer = ({ onBeat, onAudioData }) => {
         ? energyHistoryRef.current.reduce((acc, val) => acc + Math.pow(val - averageEnergy, 2), 0) / energyHistoryRef.current.length
         : 0;
 
-      // Threshold adaptativo basado en la varianza
-      const adaptiveThreshold = averageEnergy + (Math.sqrt(energyVariance) * 1.5);
+      // Threshold adaptativo basado en la varianza - AUMENTADO para ser menos sensible
+      // Multiplicador más alto = menos sensible (requiere más energía para detectar beat)
+      const adaptiveThreshold = averageEnergy + (Math.sqrt(energyVariance) * 2.5);
 
       // Detección de beats mejorada
       const now = Date.now();
       const timeSinceLastBeat = now - lastBeatTimeRef.current;
-      const beatDetected = bassEnergy > adaptiveThreshold && timeSinceLastBeat > 100;
+      // Aumentar el tiempo mínimo entre beats de 100ms a 200ms para reducir frecuencia
+      const beatDetected = bassEnergy > adaptiveThreshold && timeSinceLastBeat > 200;
       
       if (beatDetected) {
         const beatInfo = {
