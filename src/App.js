@@ -14,6 +14,7 @@ import DrumHero from 'components/DrumHero/DrumHero';
 import Kudos from './components/GaticosYMonetes/Kudos';
 import Controles from './components/GaticosYMonetes/Controles';
 import SimpleWebRTCTest from './components/SimpleWebRTCTest';
+import Croquetas25 from './components/Croquetas25/Croquetas25';
 
 const App = () => {
   const tlApp = gsap.timeline();
@@ -188,6 +189,7 @@ const App = () => {
             <Route path="/gaticos-y-monetes/enar" element={<DrumHero />} />
             <Route path="/gaticos-y-monetes/kudos" element={<Kudos />} />
             <Route path="/gaticos-y-monetes/controles" element={<Controles />} />
+            <Route path="/croquetas-25" element={<Croquetas25 />} />
             <Route path="/emitter" element={<SimpleWebRTCTest isEmitting={true} />} />
             <Route path="/receiver" element={<SimpleWebRTCTest isEmitting={false} />} />
             <Route path="/:documentId" element={<LoadInvitado />} />
