@@ -1,0 +1,122 @@
+.seek {
+  position: fixed;
+  bottom: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2%;
+  z-index: 1000;
+  padding: 1.5% 2%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 3vw;
+  width: 60%;
+  max-width: 80vw;
+}
+
+.seek__playPause {
+  background: transparent;
+  border: none;
+  color: var(--laser-color);
+  cursor: pointer;
+  padding: 0.5%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  flex-shrink: 0;
+  width: 3vw;
+  height: 3vw;
+  min-width: 24px;
+  min-height: 24px;
+
+  &:hover {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.seek__progressContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5%;
+  min-width: 0;
+}
+
+.seek__progressBar {
+  position: relative;
+  width: 100%;
+  height: 0.3vw;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 0.15vw;
+  cursor: pointer;
+  overflow: visible;
+
+  &:hover {
+    height: 0.4vw;
+
+    .seek__progressHandle {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+.seek__progressFill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: var(--laser-color);
+  border-radius: 0.15vw;
+  transition: width 0.1s linear;
+  box-shadow: 0 0 0.7vw var(--laser-color);
+}
+
+.seek__progressHandle {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translate(-50%, -50%) scale(0);
+  width: 0.8vw;
+  height: 0.8vw;
+  background: var(--laser-color);
+  border-radius: 50%;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 0 0.6vw var(--laser-color);
+  pointer-events: auto; // Permitir interacción con el thumb
+  z-index: 2; // Asegurar que esté por encima
+
+  &:active {
+    cursor: grabbing;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+}
+
+.seek__progressBar:hover .seek__progressHandle {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.seek__time {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1vw;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: monospace;
+  margin-top: 0.5%;
+}
+
