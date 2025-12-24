@@ -359,7 +359,7 @@ const Croquetas25 = () => {
       
       {/* Overlay de selección de canción - solo cuando los tracks y las imágenes estén cargadas */}
       {!tracksLoading && !imagesLoading && !selectedTrack && (
-        <Intro tracks={tracks} onTrackSelect={handleTrackSelect} />
+        <Intro tracks={tracks} onTrackSelect={handleTrackSelect} isDirectUri={isDirectUri} />
       )}
       
       {/* Cuando se selecciona un track, cargar sus imágenes y luego iniciar audio */}
@@ -433,6 +433,7 @@ const Croquetas25 = () => {
           tracks={tracks} 
           onTrackSelect={handleTrackSelect}
           selectedTrackId={selectedTrack?.id || selectedTrack?.name?.toLowerCase().replace(/\s+/g, '-') || "cachitos25"}
+          isDirectUri={isDirectUri}
         />
       )}
     </div>

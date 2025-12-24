@@ -3,7 +3,7 @@ import gsap from 'gsap';
 import Croqueta from '../Croqueta/Croqueta';
 import './Intro.scss';
 
-const Intro = ({ tracks, onTrackSelect, selectedTrackId = null }) => {
+const Intro = ({ tracks, onTrackSelect, selectedTrackId = null, isDirectUri = false }) => {
   const titleRef = useRef(null);
   const buttonsRef = useRef([]);
   const buttonsContainerRef = useRef(null);
@@ -11,7 +11,13 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null }) => {
   const overlayRef = useRef(null);
   const croquetasDataRef = useRef([]);
   const animationFrameRef = useRef(null);
+  const [croquetasUnlocked, setCroquetasUnlocked] = useState(false);
 
+  // Resetear estado de desbloqueo cuando cambia selectedTrackId
+  useEffect(() => {
+    setCroquetasUnlocked(false);
+  }, [selectedTrackId]);
+  
   // Animación de entrada cuando el componente se monta
   useEffect(() => {
     // Inicializar elementos con opacidad 0 y scale 0
@@ -157,9 +163,9 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null }) => {
 
           // Obtener el track correspondiente a este botón
           const track = tracks[index];
-          const isMainCroqueta = selectedTrackId && (
-            track?.id === selectedTrackId || 
-            track?.name.toLowerCase().replace(/\s+/g, '-') === selectedTrackId.toLowerCase().replace(/\s+/g, '-')
+          const isMainCroqueta = selectedTrackId && track && (
+            track.id === selectedTrackId || 
+            (track.name && selectedTrackId && track.name.toLowerCase().replace(/\s+/g, '-') === selectedTrackId.toLowerCase().replace(/\s+/g, '-'))
           );
           
           // Distribución uniforme: todas las croquetas se distribuyen, pero la principal va al centro
@@ -169,49 +175,87 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null }) => {
           let x, y, baseScale, minScale, maxScale;
           
           if (isMainCroqueta) {
-            // Croqueta principal siempre en el centro
+            // Croqueta principal siempre en el centro exacto
             x = containerWidth / 2;
             y = containerHeight / 2;
-            minScale = 1.0;
-            maxScale = 1.2;
-            baseScale = 1.1;
+            // Si es activa por URI, hacerla un poco más grande
+            if (isDirectUri) {
+              minScale = 1.8;
+              maxScale = 2.0;
+              baseScale = 1.9; // Un poco más grande cuando es activa por URI
+            } else {
+              minScale = 1.6;
+              maxScale = 1.8;
+              baseScale = 1.7; // 1.5 veces mayor que las otras
+            }
           } else {
-            // Distribución uniforme para las demás en una cuadrícula
-            const cols = Math.ceil(Math.sqrt(otherButtons));
-            const rows = Math.ceil(otherButtons / cols);
+            // Distribución uniforme para las demás en una cuadrícula, evitando el centro
+            const cols = Math.ceil(Math.sqrt(otherButtons + 1)); // +1 para espacio de la principal
+            const rows = Math.ceil((otherButtons + 1) / cols);
             const cellWidth = (containerWidth - 2 * margin) / cols;
             const cellHeight = (containerHeight - 2 * margin) / rows;
             
             // Calcular índice relativo (excluyendo la principal)
-            let relativeIndex = index;
-            if (selectedTrackId) {
-              // Si hay una principal, ajustar el índice
-              const mainIndex = tracks.findIndex(t => 
-                t?.id === selectedTrackId || 
-                t?.name.toLowerCase().replace(/\s+/g, '-') === selectedTrackId.toLowerCase().replace(/\s+/g, '-')
-              );
-              if (index > mainIndex) {
-                relativeIndex = index - 1;
-              }
+            let relativeIndex = 0;
+            const mainIndex = tracks.findIndex(t => 
+              t && selectedTrackId && (
+                t.id === selectedTrackId || 
+                (t.name && t.name.toLowerCase().replace(/\s+/g, '-') === selectedTrackId.toLowerCase().replace(/\s+/g, '-'))
+              )
+            );
+            
+            for (let i = 0; i < tracks.length; i++) {
+              if (i === mainIndex) continue; // Saltar la principal
+              if (i === index) break; // Llegamos a la actual
+              relativeIndex++;
             }
             
-            const col = relativeIndex % cols;
-            const row = Math.floor(relativeIndex / cols);
+            // Ajustar para evitar el centro (donde está la principal)
+            const centerCol = Math.floor(cols / 2);
+            const centerRow = Math.floor(rows / 2);
+            
+            let col = relativeIndex % cols;
+            let row = Math.floor(relativeIndex / cols);
+            
+            // Si está en el centro, desplazarlo
+            if (col === centerCol && row === centerRow) {
+              // Mover a una posición adyacente
+              if (relativeIndex % 2 === 0) {
+                col = centerCol - 1;
+              } else {
+                col = centerCol + 1;
+              }
+            }
             
             // Posición base en el centro de la celda
             const baseX = margin + col * cellWidth + cellWidth / 2;
             const baseY = margin + row * cellHeight + cellHeight / 2;
             
-            // Añadir variación aleatoria pequeña
-            const variationX = (Math.random() - 0.5) * cellWidth * 0.3;
-            const variationY = (Math.random() - 0.5) * cellHeight * 0.3;
+            // Añadir variación aleatoria más pequeña para evitar que se pisen
+            const variationX = (Math.random() - 0.5) * cellWidth * 0.2;
+            const variationY = (Math.random() - 0.5) * cellHeight * 0.2;
             
-            // Asegurar que no se salgan de los márgenes
-            x = Math.max(margin + svgWidth / 2, Math.min(containerWidth - margin - svgWidth / 2, baseX + variationX));
-            y = Math.max(margin + svgHeight / 2, Math.min(containerHeight - margin - svgHeight / 2, baseY + variationY));
+            // Asegurar que no se salgan de los márgenes y que no se acerquen demasiado al centro
+            const minDistanceFromCenter = Math.min(containerWidth, containerHeight) * 0.25; // 25% del tamaño menor
+            const centerX = containerWidth / 2;
+            const centerY = containerHeight / 2;
+            
+            let finalX = baseX + variationX;
+            let finalY = baseY + variationY;
+            
+            // Asegurar distancia mínima del centro
+            const distFromCenter = Math.sqrt(Math.pow(finalX - centerX, 2) + Math.pow(finalY - centerY, 2));
+            if (distFromCenter < minDistanceFromCenter) {
+              const angle = Math.atan2(finalY - centerY, finalX - centerX);
+              finalX = centerX + Math.cos(angle) * minDistanceFromCenter;
+              finalY = centerY + Math.sin(angle) * minDistanceFromCenter;
+            }
+            
+            x = Math.max(margin + svgWidth / 2, Math.min(containerWidth - margin - svgWidth / 2, finalX));
+            y = Math.max(margin + svgHeight / 2, Math.min(containerHeight - margin - svgHeight / 2, finalY));
 
-            minScale = 1.2;
-            maxScale = 1.5;
+            minScale = 1.0;
+            maxScale = 1.3;
             baseScale = Math.random() * (maxScale - minScale) + minScale;
           }
           const angle = Math.random() * Math.PI * 2;
@@ -236,10 +280,16 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null }) => {
             svgSize,
             containerLeft, // Guardar offset del contenedor
             containerTop,
+            isMainCroqueta, // Guardar si es la principal
           };
           croquetasData.push(croquetaObj);
+          
+          // Aplicar opacidad reducida si está bloqueada
+          const isLocked = isDirectUri && !croquetasUnlocked && !isMainCroqueta;
+          const opacity = isLocked ? 0.3 : 1;
+          
           // Posicionar relativo al contenedor (GSAP usa coordenadas absolutas)
-          gsap.set(buttonRef, { x: containerLeft + x, y: containerTop + y, scale: baseScale });
+          gsap.set(buttonRef, { x: containerLeft + x, y: containerTop + y, scale: baseScale, opacity });
         }
       });
       croquetasDataRef.current = croquetasData;
@@ -461,12 +511,17 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null }) => {
           // Calcular rotación en grados desde el ángulo
           const rotationDeg = croqueta.angle * 180 / Math.PI;
           // Aplicar posición absoluta sumando el offset del contenedor, con rotación suave
+          // Aplicar opacidad reducida si está bloqueada
+          const isLocked = isDirectUri && !croquetasUnlocked && !croqueta.isMainCroqueta;
+          const opacity = isLocked ? 0.3 : 1;
+          
           gsap.set(croqueta.element, { 
             x: currentContainerLeft + croqueta.x, 
             y: currentContainerTop + croqueta.y, 
             scale,
             rotation: rotationDeg,
-            transformOrigin: 'center center'
+            transformOrigin: 'center center',
+            opacity
           });
           
           // Actualizar rotación del texto también, manteniendo el centrado
@@ -530,7 +585,7 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null }) => {
         }
         window.removeEventListener('resize', adjustOnResize);
       };
-    });
+    }, [tracks, selectedTrackId, croquetasUnlocked, isDirectUri]);
   };
 
   // Cleanup del sistema de física
@@ -545,6 +600,22 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null }) => {
 
   const handleTrackSelect = (track, index) => {
     if (isAnimating) return; // Prevenir múltiples clics durante la animación
+    
+    // Si hay una croqueta activa por URI y se hace clic en ella, desbloquear todas
+    if (isDirectUri && selectedTrackId && track && (
+      track.id === selectedTrackId || 
+      (track.name && selectedTrackId && track.name.toLowerCase().replace(/\s+/g, '-') === selectedTrackId.toLowerCase().replace(/\s+/g, '-'))
+    )) {
+      setCroquetasUnlocked(true);
+    }
+    
+    // Si las croquetas están bloqueadas y no es la activa, no hacer nada
+    if (isDirectUri && !croquetasUnlocked && selectedTrackId && track && !(
+      track.id === selectedTrackId || 
+      (track.name && selectedTrackId && track.name.toLowerCase().replace(/\s+/g, '-') === selectedTrackId.toLowerCase().replace(/\s+/g, '-'))
+    )) {
+      return; // Bloquear el clic
+    }
     
     // Asegurarse de que el evento no se propague y se maneje correctamente
     setIsAnimating(true);
@@ -636,10 +707,45 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null }) => {
         <h2 ref={titleRef} className="intro__title">Coge una croqueta</h2>
         <div className="intro__buttons" ref={buttonsContainerRef}>
           {memoizedTracks.map((track, index) => {
-            const isMainCroqueta = selectedTrackId && (
-              track?.id === selectedTrackId || 
-              track?.name.toLowerCase().replace(/\s+/g, '-') === selectedTrackId.toLowerCase().replace(/\s+/g, '-')
+            const isMainCroqueta = selectedTrackId && track && (
+              track.id === selectedTrackId || 
+              (track.name && selectedTrackId && track.name.toLowerCase().replace(/\s+/g, '-') === selectedTrackId.toLowerCase().replace(/\s+/g, '-'))
             );
+            
+            // Determinar si esta croqueta está bloqueada
+            const isLocked = isDirectUri && !croquetasUnlocked && !isMainCroqueta;
+            
+            // Tamaño de la croqueta activa por URI (un poco más grande)
+            const getCroquetaSize = () => {
+              if (isMainCroqueta && isDirectUri) {
+                return {
+                  width: '24vw',
+                  height: '24vw',
+                  minWidth: '22vw',
+                  minHeight: '22vw',
+                  maxWidth: '26vw',
+                  maxHeight: '26vw',
+                };
+              } else if (isMainCroqueta) {
+                return {
+                  width: '22.5vw',
+                  height: '22.5vw',
+                  minWidth: '20vw',
+                  minHeight: '20vw',
+                  maxWidth: '25vw',
+                  maxHeight: '25vw',
+                };
+              } else {
+                return {
+                  width: '15vw',
+                  height: '15vw',
+                  minWidth: '12vw',
+                  minHeight: '12vw',
+                  maxWidth: '20vw',
+                  maxHeight: '20vw',
+                };
+              }
+            };
             
             return (
               <Croqueta
@@ -652,14 +758,10 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null }) => {
                   handleTrackSelect(track, index);
                 }}
                 rotation={0}
-                className={`intro__button ${isMainCroqueta ? 'main-croqueta' : ''}`}
+                className={`intro__button ${isMainCroqueta ? 'main-croqueta' : ''} ${isLocked ? 'croqueta-locked' : ''}`}
                 style={{
-                  width: isMainCroqueta ? '30vw' : '20vw',
-                  height: isMainCroqueta ? '30vw' : '20vw',
-                  minWidth: isMainCroqueta ? '25vw' : '18vw',
-                  minHeight: isMainCroqueta ? '25vw' : '18vw',
-                  maxWidth: isMainCroqueta ? '35vw' : '25vw',
-                  maxHeight: isMainCroqueta ? '35vw' : '25vw',
+                  ...getCroquetaSize(),
+                  pointerEvents: isLocked ? 'none' : 'auto',
                 }}
                 ref={el => {
                   // Usar callback ref más robusto
