@@ -432,7 +432,14 @@ const Croquetas25 = () => {
         <Intro 
           tracks={tracks} 
           onTrackSelect={handleTrackSelect}
-          selectedTrackId={selectedTrack?.id || selectedTrack?.name?.toLowerCase().replace(/\s+/g, '-') || "cachitos25"}
+          selectedTrackId={
+            // Si hay trackId en la URL (entrada directa), normalizarlo y usarlo
+            trackId ? trackId.toLowerCase().replace(/\s+/g, '-') : 
+            // Si no, usar el track seleccionado
+            (selectedTrack?.id || selectedTrack?.name?.toLowerCase().replace(/\s+/g, '-')) ||
+            // Solo usar "cachitos25" como fallback si no hay URI directa ni track seleccionado
+            (!isDirectUri ? "cachitos25" : null)
+          }
           isDirectUri={isDirectUri}
         />
       )}
