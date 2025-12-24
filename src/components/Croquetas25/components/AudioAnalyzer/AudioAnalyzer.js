@@ -159,12 +159,12 @@ const AudioAnalyzer = ({ onBeat, onVoice, onAudioData }) => {
         ? trebleHistoryRef.current.reduce((acc, val) => acc + Math.pow(val - averageTrebleEnergy, 2), 0) / trebleHistoryRef.current.length
         : 0;
 
-      // Detección de picos agudos para cuadros sólidos
-      // Más sensible a picos en frecuencias agudas (instrumentos brillantes, transientes)
-      const trebleSensitivity = 0.08 + (0.25 * (1 - normalizedVolume));
-      const trebleThreshold = averageTrebleEnergy + (Math.sqrt(trebleVariance) * trebleSensitivity * 0.4);
-      const trebleSpikeThreshold = 0.2 + (0.12 * (1 - normalizedVolume));
-      const trebleSpikeMultiplier = 0.7 + (0.2 * (1 - normalizedVolume));
+      // Detección de picos agudos para cuadros sólidos - MUY REDUCIDA SENSIBILIDAD
+      // Mucho menos sensible para que aparezcan muchos menos cuadros con imagen
+      const trebleSensitivity = 0.25 + (0.45 * (1 - normalizedVolume)); // Aumentado a 0.25-0.7
+      const trebleThreshold = averageTrebleEnergy + (Math.sqrt(trebleVariance) * trebleSensitivity * 0.8); // Aumentado multiplicador a 0.8
+      const trebleSpikeThreshold = 0.5 + (0.25 * (1 - normalizedVolume)); // Aumentado a 0.5-0.75
+      const trebleSpikeMultiplier = 1.0 + (0.2 * (1 - normalizedVolume)); // Aumentado a 1.0-1.2
       const recentTreble = trebleHistoryRef.current.slice(-4);
       const maxRecentTreble = recentTreble.length > 0 ? Math.max(...recentTreble) : 0;
       const trebleSpike = sharpEnergy > maxRecentTreble * trebleSpikeThreshold && sharpEnergy > averageTrebleEnergy * trebleSpikeMultiplier;

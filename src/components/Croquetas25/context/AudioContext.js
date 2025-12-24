@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useRef, useState, useEffect } from 'react';
+import './AudioContext.scss';
 
 const AudioContextReact = createContext(null);
 
@@ -301,7 +302,7 @@ export const AudioProvider = ({ children, audioSrc }) => {
         crossOrigin="anonymous"
         loop
         preload="auto"
-        style={{ display: 'none' }}
+        className="audio-context"
       />
     </AudioContextReact.Provider>
   );

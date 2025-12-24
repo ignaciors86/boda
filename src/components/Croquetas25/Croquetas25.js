@@ -4,8 +4,11 @@ import Background from './components/Background/Background';
 import AudioAnalyzer from './components/AudioAnalyzer/AudioAnalyzer';
 import Seek from './components/Seek/Seek';
 import LoadingIndicator from './components/LoadingIndicator/LoadingIndicator';
+import Intro from './components/Intro/Intro';
 import { AudioProvider, useAudio } from './context/AudioContext';
-import audioSrc from './assets/audio/lodo.mp3';
+import lodoSrc from './assets/audio/lodo.mp3';
+import opusSrc from './assets/audio/audio.mp3';
+import aotSrc from './assets/audio/rumbling.mp3';
 
 const LoadingProgressHandler = ({ onTriggerCallbackRef }) => {
   const { loadingProgress, isLoaded } = useAudio();
@@ -51,15 +54,29 @@ const LoadingProgressHandler = ({ onTriggerCallbackRef }) => {
 
 const Croquetas25 = () => {
   const [audioStarted, setAudioStarted] = useState(false);
+  const [selectedTrack, setSelectedTrack] = useState(null); // null = mostrar selector
   const triggerCallbackRef = useRef(null);
   const voiceCallbackRef = useRef(null);
   const lastSquareTimeRef = useRef(0);
   const minTimeBetweenSquares = 600; // Tiempo mínimo entre cuadros: 0.6 segundos (muy reducido para máxima frecuencia)
 
+  // Mapeo de tracks
+  const tracks = [
+    { id: 'lodo', name: 'Lodo', src: lodoSrc },
+    { id: 'opus', name: 'Opus', src: opusSrc },
+    { id: 'aot', name: 'AOT', src: aotSrc }
+  ];
+
+  const handleTrackSelect = (track) => {
+    console.log(`[Croquetas25] Track selected: ${track.name}`);
+    setSelectedTrack(track);
+    setAudioStarted(true);
+  };
+
   const handleClick = () => {
     console.log(`[Croquetas25] handleClick called | audioStarted: ${audioStarted} | triggerCallbackRef.current exists: ${!!triggerCallbackRef.current} | timestamp: ${Date.now()}`);
-    if (!audioStarted) {
-      console.log(`[Croquetas25] Setting audioStarted to true | audioSrc: ${audioSrc} | triggerCallbackRef: ${JSON.stringify({ hasCurrent: !!triggerCallbackRef.current })}`);
+    if (!audioStarted && selectedTrack) {
+      console.log(`[Croquetas25] Setting audioStarted to true | audioSrc: ${selectedTrack.src} | triggerCallbackRef: ${JSON.stringify({ hasCurrent: !!triggerCallbackRef.current })}`);
       setAudioStarted(true);
     } else {
       console.log(`[Croquetas25] Audio already started, ignoring click`);
@@ -132,10 +149,17 @@ const Croquetas25 = () => {
     }
   };
 
+  const currentAudioSrc = selectedTrack?.src || lodoSrc;
+
   return (
     <div className="croquetas25" onClick={handleClick}>
-      {audioStarted ? (
-        <AudioProvider audioSrc={audioSrc}>
+      {/* Overlay de selección de canción */}
+      {!selectedTrack && (
+        <Intro tracks={tracks} onTrackSelect={handleTrackSelect} />
+      )}
+      
+      {audioStarted && selectedTrack ? (
+        <AudioProvider audioSrc={currentAudioSrc}>
           <BackgroundWrapper onTriggerCallbackRef={triggerCallbackRef} onVoiceCallbackRef={voiceCallbackRef} />
                  <LoadingProgressHandler onTriggerCallbackRef={triggerCallbackRef} />
                  <LoadingIndicator />

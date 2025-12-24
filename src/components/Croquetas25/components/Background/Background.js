@@ -4,19 +4,11 @@ import './Background.scss';
 import Diagonales from './components/Diagonales/Diagonales';
 import { useGallery } from '../Gallery/Gallery';
 
-// Helper para convertir hex a RGB
-const hexToRgb = (hex) => {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '0, 255, 255';
-};
-
 const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitialized, onVoiceCallbackRef }) => {
   const [squares, setSquares] = useState([]);
   const squareRefs = useRef({});
   const lastProgressRef = useRef(0);
   const colorIndexRef = useRef(0);
-  const squaresWithBackgroundRef = useRef(0); // Contador de cuadros con fondo
-  const FADE_OUT_PERCENTAGE = 40; // Porcentaje de scale/avance para iniciar fade out (más temprano)
   const { getRandomImage, allImages, isLoading } = useGallery(); // Hook para obtener imágenes de la galería
   const allImagesRef = useRef([]); // Ref para mantener las imágenes disponibles
   
@@ -45,8 +37,8 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
             if (newImageUrl) {
               // Asignar posición aleatoria también
               const imagePosition = {
-                x: `${25 + Math.random() * 50}%`,
-                y: `${25 + Math.random() * 50}%`
+                x: `${5 + Math.random() * 90}%`, // Entre 5% y 95%
+                y: `${5 + Math.random() * 90}%`   // Entre 5% y 95%
               };
               console.log('[Background] Asignando imagen a cuadro:', square.id);
               return { ...square, imageUrl: newImageUrl, imagePosition };
@@ -83,10 +75,10 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
       // Obtener imagen aleatoria si es un cuadro sólido
       const imageUrl = shouldHaveBackground ? getRandomImageFromRef() : null;
       // Calcular posición aleatoria para la imagen (en porcentaje, centrada)
-      // Usamos valores entre 25% y 75% para asegurar que no sobresalga
+      // Rango amplio para que pueda llegar a los extremos
       const imagePosition = shouldHaveBackground && imageUrl ? {
-        x: `${25 + Math.random() * 50}%`, // Entre 25% y 75%
-        y: `${25 + Math.random() * 50}%`  // Entre 25% y 75%
+        x: `${5 + Math.random() * 90}%`, // Entre 5% y 95% - puede llegar cerca de los extremos
+        y: `${5 + Math.random() * 90}%`   // Entre 5% y 95% - puede llegar cerca de los extremos
       } : null;
       
       if (shouldHaveBackground && !imageUrl) {
@@ -161,10 +153,8 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
             
             // Tiempo hasta scale 0.85: 60% de la duración
             const timeToScale85 = duration * 0.6;
-            // Parón en scale 0.85: 10% de la duración
-            const pauseDuration = duration * 0.1;
-            // Fade out después del parón: 30% de la duración
-            const fadeOutDuration = duration * 0.3;
+            // Fade out después de alcanzar scale 0.85: 40% de la duración (sin parón)
+            const fadeOutDuration = duration * 0.4;
             
             // Animación hasta scale 0.85
             timeline.fromTo(el, 
@@ -183,17 +173,7 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
               }
             );
             
-            // Parón en scale 0.85
-            timeline.to(el, {
-              scale: scaleAt85,
-              z: zAtScale85,
-              opacity: 1,
-              duration: pauseDuration,
-              ease: 'none',
-              force3D: true
-            });
-            
-            // Fade out después del parón
+            // Fade out inmediatamente después de alcanzar scale 0.85 (sin parón)
             timeline.to(el, {
               opacity: 0,
               scale: 0.95,
@@ -273,8 +253,6 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
         const color2 = square.gradient?.color2 || '#00ffff';
         const angle = square.gradient?.angle || 45;
         
-        // Ya no se usa glassColor, los cuadros normales son transparentes
-        
         return (
           <div
             key={square.id}
@@ -293,19 +271,9 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
                 alt="Gallery"
                 className="square-image"
                 style={{
-                  width: 'auto',
-                  height: 'auto',
-                  maxWidth: '100%',
-                  maxHeight: '100%',
-                  objectFit: 'contain',
-                  display: 'block',
-                  position: 'absolute',
-                  // Posición aleatoria dentro del cuadro, sin sobresalir
-                  left: square.imagePosition?.x ?? `${25 + Math.random() * 50}%`,
-                  top: square.imagePosition?.y ?? `${25 + Math.random() * 50}%`,
-                  transform: `translate(-50%, -50%)`,
-                  // Asegurar que no sobresalga usando max constraints
-                  boxSizing: 'border-box'
+                  // Posición aleatoria dentro del cuadro (dinámico)
+                  left: square.imagePosition?.x ?? `${5 + Math.random() * 90}%`,
+                  top: square.imagePosition?.y ?? `${5 + Math.random() * 90}%`
                 }}
               />
             )}
