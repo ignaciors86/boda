@@ -10,6 +10,8 @@ import { AudioProvider, useAudio } from './context/AudioContext';
 import { useGallery } from './components/Gallery/Gallery';
 import { useTracks } from './hooks/useTracks';
 import Prompt from './components/Prompt/Prompt';
+import Croqueta from './components/Croqueta/Croqueta';
+import BackButton from './components/BackButton/BackButton';
 
 const LoadingProgressHandler = ({ onTriggerCallbackRef }) => {
   const { loadingProgress, isLoaded } = useAudio();
@@ -60,6 +62,7 @@ const Croquetas25 = () => {
   const [selectedTrack, setSelectedTrack] = useState(null); // null = mostrar selector
   const [isPausedByHold, setIsPausedByHold] = useState(false);
   const [showStartButton, setShowStartButton] = useState(false);
+  const [wasSelectedFromIntro, setWasSelectedFromIntro] = useState(false); // Track si fue seleccionado desde Intro
   const wasPlayingBeforeHoldRef = useRef(false);
   const startButtonRef = useRef(null);
   const triggerCallbackRef = useRef(null);
@@ -91,21 +94,21 @@ const Croquetas25 = () => {
       );
       
       if (track) {
-        console.log(`[Croquetas25] Auto-selecting track from URL: ${track.name}`);
         setSelectedTrack(track);
-        setAudioStarted(false); // No iniciar automáticamente si viene de URL
-        setShowStartButton(true); // Mostrar botón cuando se entra por URI directa
-      } else {
-        console.warn(`[Croquetas25] Track not found for trackId: ${trackId}`);
+        setAudioStarted(false);
+        // Solo mostrar botón si NO fue seleccionado desde Intro
+        if (!wasSelectedFromIntro) {
+          setShowStartButton(true);
+        }
       }
     }
   }, [trackId, tracks, selectedTrack]);
 
   const handleTrackSelect = (track) => {
-    console.log(`[Croquetas25] Track selected: ${track.name}`, track);
     setSelectedTrack(track);
     setAudioStarted(false);
     setShowStartButton(false); // No mostrar botón cuando se selecciona desde botones
+    setWasSelectedFromIntro(true); // Marcar que fue seleccionado desde Intro
     // Actualizar la URL con el trackId
     const trackIdForUrl = track.id || track.name.toLowerCase().replace(/\s+/g, '-');
     navigate(`/nachitos-de-nochevieja/${trackIdForUrl}`, { replace: true });
@@ -125,7 +128,7 @@ const Croquetas25 = () => {
           // Esperar 1.5 segundos antes de iniciar el audio
           setTimeout(() => {
             console.log(`[Croquetas25] Setting audioStarted to true after delay | audioSrc: ${selectedTrack.src}`);
-            setAudioStarted(true);
+      setAudioStarted(true);
           }, 1500);
         }
       });
@@ -327,6 +330,7 @@ const Croquetas25 = () => {
             imagesProgress={imagesProgress}
             isDirectUri={isDirectUri}
             audioStarted={audioStarted}
+            showStartButton={showStartButton}
           />
           <UnifiedContentManager
             imagesLoading={imagesLoading}
@@ -336,6 +340,7 @@ const Croquetas25 = () => {
             showStartButton={showStartButton}
             setShowStartButton={setShowStartButton}
             isDirectUri={isDirectUri}
+            wasSelectedFromIntro={wasSelectedFromIntro}
             startButtonRef={startButtonRef}
             handleClick={handleClick}
           />
@@ -351,12 +356,29 @@ const Croquetas25 = () => {
             onVoiceCallbackRef={voiceCallbackRef}
             selectedTrack={selectedTrack}
           />
-          <LoadingProgressHandler onTriggerCallbackRef={triggerCallbackRef} />
+                 <LoadingProgressHandler onTriggerCallbackRef={triggerCallbackRef} />
                  <AudioAnalyzer onBeat={handleBeat} onVoice={handleVoice} />
                  <SeekWrapper />
-          {/* Mostrar Prompt si el track tiene guion */}
-          {selectedTrack.guion && selectedTrack.guion.textos && (
+          {/* Mostrar Prompt si el track tiene guion - solo cuando el audio haya empezado */}
+          {audioStarted && selectedTrack.guion && selectedTrack.guion.textos && (
             <PromptWrapper textos={selectedTrack.guion.textos} typewriterInstanceRef={typewriterInstanceRef} isPausedByHold={isPausedByHold} />
+          )}
+          
+          {/* Botón de volver durante la reproducción */}
+          {audioStarted && (
+            <BackButton 
+              onBack={() => {
+                setAudioStarted(false);
+                setSelectedTrack(null);
+                setShowStartButton(false);
+                setWasSelectedFromIntro(false);
+              }}
+            />
+          )}
+          
+          {/* Mostrar Intro superpuesto cuando hay track seleccionado pero audio no iniciado */}
+          {selectedTrack && !audioStarted && tracks.length > 0 && (
+            <Intro tracks={tracks} onTrackSelect={handleTrackSelect} />
           )}
         </AudioProvider>
       )}
@@ -364,6 +386,11 @@ const Croquetas25 = () => {
       {/* Fondo por defecto cuando no hay track seleccionado */}
       {!selectedTrack && (
         <Background onTriggerCallbackRef={triggerCallbackRef} />
+      )}
+      
+      {/* Mostrar Intro cuando no hay track seleccionado */}
+      {!selectedTrack && tracks.length > 0 && (
+        <Intro tracks={tracks} onTrackSelect={handleTrackSelect} />
       )}
     </div>
   );
@@ -476,6 +503,7 @@ const UnifiedContentManager = ({
   showStartButton,
   setShowStartButton,
   isDirectUri,
+  wasSelectedFromIntro,
   startButtonRef,
   handleClick
 }) => {
@@ -493,34 +521,58 @@ const UnifiedContentManager = ({
       return;
     }
     
-    if (isDirectUri) {
-      // Si entramos por URI directa, mostrar botón si no está ya mostrado
-      // IMPORTANTE: NO iniciar audio automáticamente, solo mostrar botón
+    if (isDirectUri && !wasSelectedFromIntro) {
+      // Si entramos por URI directa Y NO fue seleccionado desde Intro, mostrar botón
       if (!showStartButton && !audioStarted) {
         setShowStartButton(true);
       }
     } else {
-      // Si entramos desde pantalla inicial, auto-play solo cuando TODO esté listo
+      // Si entramos desde pantalla inicial o fue seleccionado desde Intro, auto-play
+      // Y FORZAR que el botón NO se muestre
+      if (showStartButton) {
+        setShowStartButton(false);
+      }
       if (!audioStarted) {
         setAudioStarted(true);
       }
     }
-  }, [everythingReady, isDirectUri, showStartButton, audioStarted, setShowStartButton, setAudioStarted]);
+  }, [everythingReady, isDirectUri, showStartButton, audioStarted, wasSelectedFromIntro, setShowStartButton, setAudioStarted]);
   
   // Mostrar botón solo si es URI directa, todo está listo, y no ha empezado
-  // Usar useMemo para evitar re-renders innecesarios que causan parpadeo
-  const shouldShowButton = useMemo(() => {
-    return isDirectUri && everythingReady && showStartButton && !audioStarted;
-  }, [isDirectUri, everythingReady, showStartButton, audioStarted]);
+  const [buttonVisible, setButtonVisible] = useState(false);
+  const buttonRef = useRef(null);
   
-  if (!shouldShowButton) {
+  useEffect(() => {
+    // Solo mostrar si es URI directa, NO fue seleccionado desde Intro, todo está listo, y no ha empezado
+    if (isDirectUri && !wasSelectedFromIntro && everythingReady && showStartButton && !audioStarted) {
+      // Mostrar con delay para transición suave desde el loading
+      const timer = setTimeout(() => {
+        setButtonVisible(true);
+        // Animar entrada del botón
+        if (buttonRef.current) {
+          gsap.fromTo(buttonRef.current, 
+            { opacity: 0, scale: 0.8 },
+            { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.7)' }
+          );
+        }
+      }, 600);
+      return () => clearTimeout(timer);
+    } else {
+      setButtonVisible(false);
+    }
+  }, [isDirectUri, wasSelectedFromIntro, everythingReady, showStartButton, audioStarted]);
+  
+  if (!buttonVisible) {
     return null;
   }
   
   return (
     <div 
       className="croquetas25-start-button" 
-      ref={startButtonRef}
+      ref={(el) => {
+        startButtonRef.current = el;
+        buttonRef.current = el;
+      }}
       onClick={handleClick}
     >
       <div className="croquetas25-start-button__content">

@@ -1,0 +1,24 @@
+.back-button {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2000;
+  pointer-events: auto;
+}
+
+.back-button__croqueta-wrapper {
+  position: absolute;
+  top: 2dvh;
+  left: 2vw;
+  will-change: transform;
+}
+
+.back-button__croqueta {
+  width: 12vw;
+  height: 12vw;
+  min-width: 10vw;
+  min-height: 10vw;
+  max-width: 15vw;
+  max-height: 15vw;
+}
+

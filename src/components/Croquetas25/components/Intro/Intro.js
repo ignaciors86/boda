@@ -1,205 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import gsap from 'gsap';
+import Croqueta from '../Croqueta/Croqueta';
 import './Intro.scss';
-
-// Función para generar diferentes formas de croquetas
-const getCroquetaSVG = (index) => {
-  const variations = [
-    // Croqueta 1 - Forma más alargada
-    <svg 
-      key={`croqueta-${index}-1`}
-      className="intro__button-croqueta" 
-      viewBox="0 0 200 120" 
-      preserveAspectRatio="xMidYMid meet"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M 20 60 
-           Q 15 40, 20 25 
-           Q 25 15, 40 18 
-           Q 60 22, 80 20 
-           Q 100 18, 120 25 
-           Q 140 32, 155 40 
-           Q 170 48, 175 60 
-           Q 180 72, 175 85 
-           Q 170 98, 160 100 
-           Q 150 102, 140 100 
-           Q 130 98, 120 95 
-           Q 110 92, 100 88 
-           Q 90 84, 80 80 
-           Q 70 76, 60 72 
-           Q 50 68, 40 65 
-           Q 30 62, 22 60 
-           Q 20 60, 20 60 Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path d="M 50 30 Q 47 28, 50 26 Q 53 28, 50 30" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 90 25 Q 87 23, 90 21 Q 93 23, 90 25" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 130 35 Q 127 33, 130 31 Q 133 33, 130 35" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 70 75 Q 67 73, 70 71 Q 73 73, 70 75" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 110 80 Q 107 78, 110 76 Q 113 78, 110 80" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-    </svg>,
-    
-    // Croqueta 2 - Forma más redondeada
-    <svg 
-      key={`croqueta-${index}-2`}
-      className="intro__button-croqueta" 
-      viewBox="0 0 200 120" 
-      preserveAspectRatio="xMidYMid meet"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M 30 60 
-           Q 25 35, 35 20 
-           Q 45 10, 65 15 
-           Q 85 20, 100 18 
-           Q 115 16, 130 22 
-           Q 145 28, 160 35 
-           Q 175 42, 170 60 
-           Q 165 78, 155 90 
-           Q 145 102, 130 100 
-           Q 115 98, 100 95 
-           Q 85 92, 70 88 
-           Q 55 84, 45 75 
-           Q 35 66, 30 60 Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path d="M 55 28 Q 52 26, 55 24 Q 58 26, 55 28" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 85 22 Q 82 20, 85 18 Q 88 20, 85 22" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 115 30 Q 112 28, 115 26 Q 118 28, 115 30" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 145 40 Q 142 38, 145 36 Q 148 38, 145 40" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 65 72 Q 62 70, 65 68 Q 68 70, 65 72" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 95 78 Q 92 76, 95 74 Q 98 76, 95 78" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 125 82 Q 122 80, 125 78 Q 128 80, 125 82" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-    </svg>,
-    
-    // Croqueta 3 - Forma más irregular
-    <svg 
-      key={`croqueta-${index}-3`}
-      className="intro__button-croqueta" 
-      viewBox="0 0 200 120" 
-      preserveAspectRatio="xMidYMid meet"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M 25 60 
-           Q 20 42, 28 28 
-           Q 38 16, 52 18 
-           Q 68 20, 82 16 
-           Q 96 12, 110 20 
-           Q 124 28, 138 32 
-           Q 152 36, 165 45 
-           Q 178 54, 172 68 
-           Q 166 82, 155 92 
-           Q 144 102, 130 98 
-           Q 116 94, 102 90 
-           Q 88 86, 74 82 
-           Q 60 78, 48 72 
-           Q 36 66, 28 62 
-           Q 25 60, 25 60 Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path d="M 48 32 Q 45 30, 48 28 Q 51 30, 48 32" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 78 24 Q 75 22, 78 20 Q 81 22, 78 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 108 28 Q 105 26, 108 24 Q 111 26, 108 28" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 138 38 Q 135 36, 138 34 Q 141 36, 138 38" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 58 70 Q 55 68, 58 66 Q 61 68, 58 70" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 88 76 Q 85 74, 88 72 Q 91 74, 88 76" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 118 80 Q 115 78, 118 76 Q 121 78, 118 80" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 148 74 Q 145 72, 148 70 Q 151 72, 148 74" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-    </svg>,
-    
-    // Croqueta 4 - Forma más compacta
-    <svg 
-      key={`croqueta-${index}-4`}
-      className="intro__button-croqueta" 
-      viewBox="0 0 200 120" 
-      preserveAspectRatio="xMidYMid meet"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M 35 60 
-           Q 30 45, 38 30 
-           Q 46 18, 60 20 
-           Q 75 22, 90 19 
-           Q 105 16, 120 24 
-           Q 135 32, 145 42 
-           Q 155 52, 150 65 
-           Q 145 78, 135 88 
-           Q 125 98, 110 96 
-           Q 95 94, 80 90 
-           Q 65 86, 55 78 
-           Q 45 70, 38 65 
-           Q 35 60, 35 60 Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path d="M 60 32 Q 57 30, 60 28 Q 63 30, 60 32" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 90 26 Q 87 24, 90 22 Q 93 24, 90 26" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 120 34 Q 117 32, 120 30 Q 123 32, 120 34" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 70 74 Q 67 72, 70 70 Q 73 72, 70 74" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 100 80 Q 97 78, 100 76 Q 103 78, 100 80" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 130 76 Q 127 74, 130 72 Q 133 74, 130 76" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-    </svg>,
-    
-    // Croqueta 5 - Forma más asimétrica
-    <svg 
-      key={`croqueta-${index}-5`}
-      className="intro__button-croqueta" 
-      viewBox="0 0 200 120" 
-      preserveAspectRatio="xMidYMid meet"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M 28 60 
-           Q 22 38, 32 24 
-           Q 42 12, 58 16 
-           Q 74 20, 88 17 
-           Q 102 14, 116 23 
-           Q 130 32, 142 40 
-           Q 154 48, 162 60 
-           Q 170 72, 165 86 
-           Q 160 100, 148 102 
-           Q 136 104, 124 100 
-           Q 112 96, 100 91 
-           Q 88 86, 76 81 
-           Q 64 76, 54 70 
-           Q 44 64, 36 62 
-           Q 28 60, 28 60 Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path d="M 52 30 Q 49 28, 52 26 Q 55 28, 52 30" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 82 22 Q 79 20, 82 18 Q 85 20, 82 22" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 112 30 Q 109 28, 112 26 Q 115 28, 112 30" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 142 44 Q 139 42, 142 40 Q 145 42, 142 44" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 62 72 Q 59 70, 62 68 Q 65 70, 62 72" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 92 78 Q 89 76, 92 74 Q 95 76, 92 78" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 122 84 Q 119 82, 122 80 Q 125 82, 122 84" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 152 78 Q 149 76, 152 74 Q 155 76, 152 78" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-    </svg>
-  ];
-  
-  return variations[index % variations.length];
-};
 
 const Intro = ({ tracks, onTrackSelect }) => {
   const titleRef = useRef(null);
@@ -264,9 +66,56 @@ const Intro = ({ tracks, onTrackSelect }) => {
 
   // Inicializar sistema de física después de que los botones se rendericen
   useEffect(() => {
+    // Limpiar animación anterior si existe
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    
+    // Limpiar datos anteriores
+    croquetasDataRef.current = [];
+    
     if (buttonsRef.current.length === 0) return;
-    initPhysics();
+    
+    // Pequeño delay para asegurar que los elementos están renderizados
+    const timer = setTimeout(() => {
+      initPhysics();
+    }, 100);
+    
+    return () => {
+      clearTimeout(timer);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+    };
   }, [tracks]);
+  
+  // Ajustar tamaño de croquetas en resize con transición suave
+  useEffect(() => {
+    const handleResize = () => {
+      if (croquetasDataRef.current.length === 0) return;
+      
+      // Recalcular tamaños basados en viewport
+      const vw = window.innerWidth / 100;
+      const baseSize = Math.max(12 * vw, Math.min(20 * vw, 15 * vw));
+      
+      croquetasDataRef.current.forEach(croqueta => {
+        if (croqueta.element) {
+          // Animar el cambio de tamaño suavemente
+          gsap.to(croqueta.element, {
+            width: `${baseSize}px`,
+            height: `${baseSize}px`,
+            duration: 0.3,
+            ease: 'power2.out'
+          });
+        }
+      });
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Factor de velocidad ajustable (reducir para hacer más lentas)
   const SPEED_FACTOR = 0.3; // Factor global de velocidad (ajustable)
@@ -295,9 +144,9 @@ const Intro = ({ tracks, onTrackSelect }) => {
 
       const croquetasData = [];
       buttonsRef.current.forEach((buttonRef, index) => {
-        if (buttonRef) {
+        if (buttonRef && buttonRef.parentNode) {
           // Obtener el SVG dentro del botón
-          const svgElement = buttonRef.querySelector('.intro__button-croqueta');
+          const svgElement = buttonRef.querySelector('.croqueta__svg');
           if (!svgElement) return;
 
           // Obtener el bounding box del SVG (los trazos)
@@ -306,12 +155,29 @@ const Intro = ({ tracks, onTrackSelect }) => {
           const svgHeight = svgRect.height;
           const svgSize = Math.max(svgWidth, svgHeight);
 
-          // Posición inicial aleatoria dentro del contenedor (relativa al contenedor)
-          const x = margin + Math.random() * (containerWidth - 2 * margin - svgWidth);
-          const y = margin + Math.random() * (containerHeight - 2 * margin - svgHeight);
+          // Distribución uniforme en una cuadrícula
+          const totalButtons = buttonsRef.current.length;
+          const cols = Math.ceil(Math.sqrt(totalButtons));
+          const rows = Math.ceil(totalButtons / cols);
+          const cellWidth = (containerWidth - 2 * margin) / cols;
+          const cellHeight = (containerHeight - 2 * margin) / rows;
+          const col = index % cols;
+          const row = Math.floor(index / cols);
+          
+          // Posición base en el centro de la celda
+          const baseX = margin + col * cellWidth + cellWidth / 2;
+          const baseY = margin + row * cellHeight + cellHeight / 2;
+          
+          // Añadir variación aleatoria pequeña para que no estén perfectamente alineadas
+          const variationX = (Math.random() - 0.5) * cellWidth * 0.3;
+          const variationY = (Math.random() - 0.5) * cellHeight * 0.3;
+          
+          // Asegurar que no se salgan de los márgenes
+          const x = Math.max(margin + svgWidth / 2, Math.min(containerWidth - margin - svgWidth / 2, baseX + variationX));
+          const y = Math.max(margin + svgHeight / 2, Math.min(containerHeight - margin - svgHeight / 2, baseY + variationY));
 
-          const minScale = 1.0;
-          const maxScale = 1.3;
+          const minScale = 1.2;
+          const maxScale = 1.5;
           const baseScale = Math.random() * (maxScale - minScale) + minScale;
           const angle = Math.random() * Math.PI * 2;
           const speed = (Math.random() * 0.2 + 0.1) * SPEED_FACTOR; // Velocidad más lenta con factor
@@ -346,7 +212,21 @@ const Intro = ({ tracks, onTrackSelect }) => {
       // Función de animación con física y colisiones
       function animate(time) {
         const croquetas = croquetasDataRef.current;
-        if (!croquetas || croquetas.length === 0) return;
+        if (!croquetas || croquetas.length === 0) {
+          animationFrameRef.current = null;
+          return;
+        }
+        
+        // Verificar que todos los elementos aún existen
+        const validCroquetas = croquetas.filter(c => c.element && c.element.parentNode);
+        if (validCroquetas.length !== croquetas.length) {
+          // Si algunos elementos fueron removidos, actualizar la referencia
+          croquetasDataRef.current = validCroquetas;
+          if (validCroquetas.length === 0) {
+            animationFrameRef.current = null;
+            return;
+          }
+        }
 
         // Obtener el tamaño del contenedor (usar window para asegurar que funcione en landscape)
         const containerWidth = window.innerWidth;
@@ -372,46 +252,69 @@ const Intro = ({ tracks, onTrackSelect }) => {
           };
         }
 
-        // Detectar colisiones entre croquetas usando el tamaño del SVG
+        // Detectar colisiones entre croquetas usando el tamaño del SVG con repulsión suave
         for (let i = 0; i < croquetas.length; i++) {
           for (let j = i + 1; j < croquetas.length; j++) {
             const a = croquetas[i];
             const b = croquetas[j];
+            
+            // Verificar que ambos elementos existen
+            if (!a.element || !b.element || !a.element.parentNode || !b.element.parentNode) continue;
+            
             const t = (time || 0) / 1000;
             const scaleA = a.minScale + (a.maxScale - a.minScale) * 0.5 * (1 + Math.sin(a.freq * t + a.phase));
             const scaleB = b.minScale + (b.maxScale - b.minScale) * 0.5 * (1 + Math.sin(b.freq * t + b.phase));
 
             // Usar el tamaño del SVG escalado para las colisiones con factor de separación
-            const COLLISION_FACTOR = 0.85; // Factor para que reboten antes (menor = rebotan más temprano)
+            const COLLISION_FACTOR = 0.95; // Factor para que reboten antes (menor = rebotan más temprano)
+            const REPULSION_DISTANCE = 1.5; // Distancia adicional para repulsión suave (aumentado)
             const widthA = a.svgWidth * scaleA;
             const heightA = a.svgHeight * scaleA;
             const widthB = b.svgWidth * scaleB;
             const heightB = b.svgHeight * scaleB;
             const rA = (Math.max(widthA, heightA) / 2) * COLLISION_FACTOR;
             const rB = (Math.max(widthB, heightB) / 2) * COLLISION_FACTOR;
+            const minDist = (rA + rB) * REPULSION_DISTANCE;
 
             const dx = a.x - b.x;
             const dy = a.y - b.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
 
-            if (dist < rA + rB && dist > 0) {
-              // Colisión: intercambiar ángulos y separar
-              const temp = a.angle;
-              a.angle = b.angle;
-              b.angle = temp;
-              const overlap = rA + rB - dist;
+            if (dist < minDist && dist > 0) {
+              // Calcular fuerza de repulsión suave pero más fuerte
               const nx = dx / dist;
               const ny = dy / dist;
-              a.x += nx * (overlap / 2);
-              a.y += ny * (overlap / 2);
-              b.x -= nx * (overlap / 2);
-              b.y -= ny * (overlap / 2);
+              
+              // Fuerza proporcional a la cercanía (más cerca = más fuerza) - aumentada
+              const overlap = minDist - dist;
+              const repulsionForce = overlap * 0.4; // Factor de suavidad aumentado
+              
+              // Aplicar repulsión a ambas croquetas
+              a.x += nx * repulsionForce;
+              a.y += ny * repulsionForce;
+              b.x -= nx * repulsionForce;
+              b.y -= ny * repulsionForce;
+              
+              // Cambiar dirección más agresivamente para evitar mezclarse
+              const dotA = Math.cos(a.angle) * nx + Math.sin(a.angle) * ny;
+              const dotB = Math.cos(b.angle) * (-nx) + Math.sin(b.angle) * (-ny);
+              
+              // Reflejar ángulos más agresivamente
+              a.angle = a.angle - 2 * dotA * Math.atan2(ny, nx) * 0.6;
+              b.angle = b.angle - 2 * dotB * Math.atan2(-ny, -nx) * 0.6;
+              
+              // Normalizar ángulos
+              a.angle = ((a.angle % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
+              b.angle = ((b.angle % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
             }
           }
         }
 
         // Mover cada croqueta
         croquetas.forEach(croqueta => {
+          // Verificar que el elemento aún existe y está en el DOM
+          if (!croqueta.element || !croqueta.element.parentNode) return;
+          
           // Actualizar offset del contenedor en caso de resize (con corrección relativa)
           const currentContainerRect = container.getBoundingClientRect();
           const currentVw = window.innerWidth / 100;
@@ -436,8 +339,9 @@ const Intro = ({ tracks, onTrackSelect }) => {
 
           // Detectar colisión con el título
           if (titleRect) {
-            const COLLISION_FACTOR = 0.85;
-            const croquetaRadius = maxRadius * COLLISION_FACTOR;
+            const COLLISION_FACTOR = 0.95;
+            const REPULSION_DISTANCE_TITLE = 1.4;
+            const croquetaRadius = maxRadius * COLLISION_FACTOR * REPULSION_DISTANCE_TITLE;
             
             // Calcular el centro del título
             const titleCenterX = titleRect.left + titleRect.width / 2;
@@ -454,18 +358,18 @@ const Intro = ({ tracks, onTrackSelect }) => {
             const distSq = dx * dx + dy * dy;
             
             if (distSq < croquetaRadius * croquetaRadius) {
-              // Colisión con el título: rebotar
+              // Colisión con el título: rebotar con más fuerza
               const dist = Math.sqrt(distSq);
               if (dist > 0) {
                 const nx = dx / dist;
                 const ny = dy / dist;
-                // Reflejar el ángulo
+                // Reflejar el ángulo más agresivamente
                 const dot = Math.cos(croqueta.angle) * nx + Math.sin(croqueta.angle) * ny;
-                croqueta.angle = croqueta.angle - 2 * dot * Math.atan2(ny, nx);
-                // Separar la croqueta del título
+                croqueta.angle = croqueta.angle - 2 * dot * Math.atan2(ny, nx) * 0.8;
+                // Separar la croqueta del título con más fuerza
                 const overlap = croquetaRadius - dist;
-                newX += nx * overlap;
-                newY += ny * overlap;
+                newX += nx * overlap * 1.5;
+                newY += ny * overlap * 1.5;
               }
             }
           }
@@ -488,8 +392,29 @@ const Intro = ({ tracks, onTrackSelect }) => {
 
           croqueta.x = newX;
           croqueta.y = newY;
-          // Aplicar posición absoluta sumando el offset del contenedor
-          gsap.set(croqueta.element, { x: currentContainerLeft + croqueta.x, y: currentContainerTop + croqueta.y, scale });
+          // Calcular rotación en grados desde el ángulo
+          const rotationDeg = croqueta.angle * 180 / Math.PI;
+          // Aplicar posición absoluta sumando el offset del contenedor, con rotación suave
+          gsap.set(croqueta.element, { 
+            x: currentContainerLeft + croqueta.x, 
+            y: currentContainerTop + croqueta.y, 
+            scale,
+            rotation: rotationDeg,
+            transformOrigin: 'center center'
+          });
+          
+          // Actualizar rotación del texto también, manteniendo el centrado
+          const textElement = croqueta.element?.querySelector('.croqueta__text');
+          if (textElement) {
+            // Aplicar rotación manteniendo el translate para centrado
+            // Usar xPercent e yPercent para mantener el centrado mientras rotamos
+            gsap.set(textElement, {
+              rotation: rotationDeg,
+              xPercent: -50,
+              yPercent: -50,
+              transformOrigin: 'center center'
+            });
+          }
         });
 
         animationFrameRef.current = requestAnimationFrame(animate);
@@ -628,23 +553,43 @@ const Intro = ({ tracks, onTrackSelect }) => {
   return (
     <div className="intro-overlay" ref={overlayRef}>
       <div className="intro">
-        <h2 ref={titleRef} className="intro__title">Selecciona una canción</h2>
+        <h2 ref={titleRef} className="intro__title">Coge una croqueta</h2>
         <div className="intro__buttons" ref={buttonsContainerRef}>
-          {tracks.map((track, index) => (
-            <button
-              key={track.id}
-              ref={el => buttonsRef.current[index] = el}
-              className="intro__button"
-              data-croqueta-index={index}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleTrackSelect(track, index);
-              }}
-            >
-              {getCroquetaSVG(index)}
-              <span className="intro__button-text">{track.name}</span>
-            </button>
-          ))}
+          {tracks.map((track, index) => {
+            return (
+              <Croqueta
+                key={track.id}
+                index={index}
+                text={track.name}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleTrackSelect(track, index);
+                }}
+                rotation={0}
+                className="intro__button"
+                style={{
+                  width: '20vw',
+                  height: '20vw',
+                  minWidth: '18vw',
+                  minHeight: '18vw',
+                  maxWidth: '25vw',
+                  maxHeight: '25vw',
+                }}
+                ref={el => {
+                  // Usar callback ref más robusto
+                  if (el) {
+                    buttonsRef.current[index] = el;
+                  } else {
+                    // Si el elemento se desmonta, limpiar el ref
+                    const idx = buttonsRef.current.indexOf(el);
+                    if (idx !== -1) {
+                      buttonsRef.current[idx] = null;
+                    }
+                  }
+                }}
+              />
+            );
+          })}
         </div>
       </div>
     </div>
