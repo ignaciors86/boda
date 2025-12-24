@@ -4,12 +4,12 @@ import './Background.scss';
 import Diagonales from './components/Diagonales/Diagonales';
 import { useGallery } from '../Gallery/Gallery';
 
-const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitialized, onVoiceCallbackRef }) => {
+const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitialized, onVoiceCallbackRef, selectedTrack }) => {
   const [squares, setSquares] = useState([]);
   const squareRefs = useRef({});
   const lastProgressRef = useRef(0);
   const colorIndexRef = useRef(0);
-  const { getRandomImage, allImages, isLoading } = useGallery(); // Hook para obtener imágenes de la galería
+  const { getRandomImage, allImages, isLoading } = useGallery(selectedTrack); // Hook para obtener imágenes de la galería del track seleccionado
   const allImagesRef = useRef([]); // Ref para mantener las imágenes disponibles
   
   // Función helper para obtener imagen aleatoria

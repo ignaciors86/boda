@@ -7,9 +7,7 @@ import LoadingIndicator from './components/LoadingIndicator/LoadingIndicator';
 import Intro from './components/Intro/Intro';
 import { AudioProvider, useAudio } from './context/AudioContext';
 import { useGallery } from './components/Gallery/Gallery';
-import lodoSrc from './assets/audio/lodo.mp3';
-import opusSrc from './assets/audio/audio.mp3';
-import aotSrc from './assets/audio/rumbling.mp3';
+import { useTracks } from './hooks/useTracks';
 
 const LoadingProgressHandler = ({ onTriggerCallbackRef }) => {
   const { loadingProgress, isLoaded } = useAudio();
@@ -61,21 +59,28 @@ const Croquetas25 = () => {
   const lastSquareTimeRef = useRef(0);
   const minTimeBetweenSquares = 600; // Tiempo mínimo entre cuadros: 0.6 segundos (muy reducido para máxima frecuencia)
   
-  // Precargar imágenes antes de mostrar el selector
-  const { isLoading: imagesLoading, preloadProgress } = useGallery();
+  // Cargar tracks automáticamente desde carpetas
+  const { tracks, isLoading: tracksLoading } = useTracks();
+  
+  // Precargar imágenes del track seleccionado (o todas si no hay track seleccionado)
+  const { isLoading: imagesLoading, preloadProgress } = useGallery(selectedTrack);
 
-  // Mapeo de tracks
-  const tracks = [
-    { id: 'lodo', name: 'Lodo', src: lodoSrc },
-    { id: 'opus', name: 'Opus', src: opusSrc },
-    { id: 'aot', name: 'AOT', src: aotSrc }
-  ];
+  // Calcular el src del audio del track seleccionado
+  const currentAudioSrc = selectedTrack?.src;
 
   const handleTrackSelect = (track) => {
-    console.log(`[Croquetas25] Track selected: ${track.name}`);
+    console.log(`[Croquetas25] Track selected: ${track.name}`, track);
     setSelectedTrack(track);
-    setAudioStarted(true);
+    // El audio se iniciará automáticamente cuando las imágenes estén cargadas
   };
+
+  // Iniciar audio automáticamente cuando las imágenes del track estén cargadas
+  useEffect(() => {
+    if (selectedTrack && !imagesLoading && currentAudioSrc && !audioStarted) {
+      console.log(`[Croquetas25] Imágenes cargadas, iniciando audio para: ${selectedTrack.name}`);
+      setAudioStarted(true);
+    }
+  }, [selectedTrack, imagesLoading, currentAudioSrc, audioStarted]);
 
   const handleClick = () => {
     console.log(`[Croquetas25] handleClick called | audioStarted: ${audioStarted} | triggerCallbackRef.current exists: ${!!triggerCallbackRef.current} | timestamp: ${Date.now()}`);
@@ -153,12 +158,19 @@ const Croquetas25 = () => {
     }
   };
 
-  const currentAudioSrc = selectedTrack?.src || lodoSrc;
-
   return (
     <div className="croquetas25" onClick={handleClick}>
+      {/* Mostrar indicador de carga mientras se cargan los tracks */}
+      {tracksLoading && (
+        <div className="image-preloader">
+          <div className="image-preloader__content">
+            <div className="image-preloader__text">Cargando canciones...</div>
+          </div>
+        </div>
+      )}
+      
       {/* Mostrar indicador de carga mientras se precargan las imágenes */}
-      {imagesLoading && (
+      {!tracksLoading && imagesLoading && (
         <div className="image-preloader">
           <div className="image-preloader__content">
             <div className="image-preloader__text">Cargando imágenes...</div>
@@ -175,20 +187,28 @@ const Croquetas25 = () => {
         </div>
       )}
       
-      {/* Overlay de selección de canción - solo cuando las imágenes estén cargadas */}
-      {!imagesLoading && !selectedTrack && (
+      {/* Overlay de selección de canción - solo cuando los tracks y las imágenes estén cargadas */}
+      {!tracksLoading && !imagesLoading && !selectedTrack && (
         <Intro tracks={tracks} onTrackSelect={handleTrackSelect} />
       )}
       
-      {audioStarted && selectedTrack ? (
+      {/* Cuando se selecciona un track, cargar sus imágenes y luego iniciar audio */}
+      {selectedTrack && !imagesLoading && currentAudioSrc && (
         <AudioProvider audioSrc={currentAudioSrc}>
-          <BackgroundWrapper onTriggerCallbackRef={triggerCallbackRef} onVoiceCallbackRef={voiceCallbackRef} />
-                 <LoadingProgressHandler onTriggerCallbackRef={triggerCallbackRef} />
-                 <LoadingIndicator />
-                 <AudioAnalyzer onBeat={handleBeat} onVoice={handleVoice} />
-                 <SeekWrapper />
+          <BackgroundWrapper 
+            onTriggerCallbackRef={triggerCallbackRef} 
+            onVoiceCallbackRef={voiceCallbackRef}
+            selectedTrack={selectedTrack}
+          />
+          <LoadingProgressHandler onTriggerCallbackRef={triggerCallbackRef} />
+          <LoadingIndicator />
+          <AudioAnalyzer onBeat={handleBeat} onVoice={handleVoice} />
+          <SeekWrapper />
         </AudioProvider>
-      ) : (
+      )}
+      
+      {/* Fondo por defecto cuando no hay track seleccionado */}
+      {!selectedTrack && (
         <Background onTriggerCallbackRef={triggerCallbackRef} />
       )}
     </div>
@@ -196,7 +216,7 @@ const Croquetas25 = () => {
 };
 
 // Wrapper para Background que tiene acceso al contexto de audio
-const BackgroundWrapper = ({ onTriggerCallbackRef, onVoiceCallbackRef }) => {
+const BackgroundWrapper = ({ onTriggerCallbackRef, onVoiceCallbackRef, selectedTrack }) => {
   const { analyserRef, dataArrayRef, isInitialized } = useAudio();
   
   return (
@@ -206,6 +226,7 @@ const BackgroundWrapper = ({ onTriggerCallbackRef, onVoiceCallbackRef }) => {
       analyserRef={analyserRef}
       dataArrayRef={dataArrayRef}
       isInitialized={isInitialized}
+      selectedTrack={selectedTrack}
     />
   );
 };

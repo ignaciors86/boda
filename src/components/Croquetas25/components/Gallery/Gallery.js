@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
-// Hook para cargar imágenes de las galerías
-export const useGallery = () => {
+// Hook para cargar imágenes de las galerías del track seleccionado
+export const useGallery = (selectedTrack = null) => {
   const [allImages, setAllImages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [preloadProgress, setPreloadProgress] = useState(0);
@@ -9,26 +9,35 @@ export const useGallery = () => {
   useEffect(() => {
     const loadImages = async () => {
       try {
-        // Cargar todas las imágenes de las galerías de GaticosYMonetes
-        // Por ahora usamos la misma carpeta, luego se moverá a Croquetas25
-        // Ruta desde Gallery.js (src/components/Croquetas25/components/Gallery/):
-        // ../../../ nos lleva a src/components/
-        const context = require.context('../../../GaticosYMonetes/galerias', true, /\.(jpg|jpeg|png|gif|webp)$/);
-        const files = context.keys();
-        
-        const imagesList = [];
+        let imagesList = [];
 
-        // Procesar cada archivo encontrado
-        files.forEach(file => {
-          const imagePath = context(file);
-          imagesList.push(imagePath);
-        });
-
-        console.log('Gallery: Total de imágenes encontradas:', imagesList.length);
+        if (selectedTrack && selectedTrack.images && selectedTrack.images.length > 0) {
+          // Usar las imágenes del track seleccionado
+          imagesList = selectedTrack.images;
+          console.log('Gallery: Usando imágenes del track:', selectedTrack.name, 'Total:', imagesList.length);
+        } else {
+          // Si no hay track seleccionado, cargar todas las imágenes de todos los tracks
+          // Esto es para el preloader antes de seleccionar canción
+          const context = require.context('../../assets/tracks', true, /\.(jpg|jpeg|png|gif|webp)$/);
+          const files = context.keys();
+          
+          files.forEach(file => {
+            const imagePath = context(file);
+            imagesList.push(imagePath);
+          });
+          
+          console.log('Gallery: Cargando todas las imágenes de tracks. Total:', imagesList.length);
+        }
         
         // Precargar todas las imágenes realmente
         let loadedCount = 0;
         const totalImages = imagesList.length;
+        
+        if (totalImages === 0) {
+          setIsLoading(false);
+          setPreloadProgress(100);
+          return;
+        }
         
         const preloadPromises = imagesList.map((imagePath) => {
           return new Promise((resolve) => {
@@ -66,7 +75,7 @@ export const useGallery = () => {
     };
 
     loadImages();
-  }, []);
+  }, [selectedTrack]);
 
   // Función para obtener una imagen aleatoria
   const getRandomImage = () => {
