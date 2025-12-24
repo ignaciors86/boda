@@ -3,7 +3,7 @@ import { useAudio } from '../../context/AudioContext';
 import './Seek.scss';
 
 const Seek = ({ squares }) => {
-  const { audioRef, isPlaying, togglePlayPause } = useAudio();
+  const { audioRef } = useAudio();
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const progressBarRef = useRef(null);
@@ -59,19 +59,6 @@ const Seek = ({ squares }) => {
 
   return (
     <div className="seek">
-      <button className="seek__playPause" onClick={togglePlayPause}>
-        {isPlaying ? (
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <rect x="6" y="4" width="4" height="16" fill="currentColor"/>
-            <rect x="14" y="4" width="4" height="16" fill="currentColor"/>
-          </svg>
-        ) : (
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M8 5v14l11-7z" fill="currentColor"/>
-          </svg>
-        )}
-      </button>
-      
       <div className="seek__progressContainer">
         <div 
           className="seek__progressBar"
