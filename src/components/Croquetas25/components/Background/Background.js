@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import gsap from 'gsap';
 import './Background.scss';
 import Diagonales from './components/Diagonales/Diagonales';
+import { useGallery } from '../Gallery/Gallery';
 
 // Helper para convertir hex a RGB
 const hexToRgb = (hex) => {
@@ -16,11 +17,54 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
   const colorIndexRef = useRef(0);
   const squaresWithBackgroundRef = useRef(0); // Contador de cuadros con fondo
   const FADE_OUT_PERCENTAGE = 40; // Porcentaje de scale/avance para iniciar fade out (más temprano)
+  const { getRandomImage, allImages, isLoading } = useGallery(); // Hook para obtener imágenes de la galería
+  const allImagesRef = useRef([]); // Ref para mantener las imágenes disponibles
+  
+  // Función helper para obtener imagen aleatoria
+  const getRandomImageFromRef = () => {
+    if (allImagesRef.current.length === 0) return null;
+    const randomIndex = Math.floor(Math.random() * allImagesRef.current.length);
+    return allImagesRef.current[randomIndex];
+  };
+  
+  // Mantener ref actualizado y actualizar cuadros cuando las imágenes se carguen
+  useEffect(() => {
+    if (!isLoading && allImages.length > 0) {
+      allImagesRef.current = allImages;
+      console.log('[Background] Imágenes cargadas:', allImages.length);
+      
+      // Actualizar cuadros sólidos que no tienen imagen
+      setSquares(prev => {
+        const squaresToUpdate = prev.filter(square => square.isTarget && !square.imageUrl);
+        if (squaresToUpdate.length === 0) return prev;
+        
+        console.log('[Background] Actualizando', squaresToUpdate.length, 'cuadros sin imagen');
+        return prev.map(square => {
+          if (square.isTarget && !square.imageUrl) {
+            const newImageUrl = getRandomImageFromRef();
+            if (newImageUrl) {
+              // Asignar posición aleatoria también
+              const imagePosition = {
+                x: `${25 + Math.random() * 50}%`,
+                y: `${25 + Math.random() * 50}%`
+              };
+              console.log('[Background] Asignando imagen a cuadro:', square.id);
+              return { ...square, imageUrl: newImageUrl, imagePosition };
+            }
+          }
+          return square;
+        });
+      });
+    }
+  }, [isLoading, allImages.length]);
 
+  // Recrear el callback cuando las imágenes se carguen para asegurar que funcione
   useEffect(() => {
     if (!onTriggerCallbackRef) return;
     
-    onTriggerCallbackRef.current = (type, data = {}) => {
+    // Función para crear el callback con acceso a las imágenes actuales
+    const createCallback = () => {
+      onTriggerCallbackRef.current = (type, data = {}) => {
       const id = `square-${Date.now()}-${Math.random()}`;
       const lgtbColors = [
         '#FF0080', '#FF8000', '#FFFF00', '#00FF00', '#0080FF', '#8000FF',
@@ -32,11 +76,21 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
       colorIndexRef.current++;
       
       const intensity = data?.intensity ?? 0.5;
-      // Aumentar frecuencia de cuadros target: cada 2 cuadros en lugar de cada 4
-      const shouldHaveBackground = intensity > 0.2 && (squaresWithBackgroundRef.current % 2 === 0);
+      // Determinar si debe tener fondo sólido basado en análisis musical de frecuencias agudas
+      // shouldBeSolid viene del análisis de picos en frecuencias treble/presence
+      const shouldHaveBackground = data?.shouldBeSolid ?? false;
       
-      if (shouldHaveBackground) {
-        squaresWithBackgroundRef.current++;
+      // Obtener imagen aleatoria si es un cuadro sólido
+      const imageUrl = shouldHaveBackground ? getRandomImageFromRef() : null;
+      // Calcular posición aleatoria para la imagen (en porcentaje, centrada)
+      // Usamos valores entre 25% y 75% para asegurar que no sobresalga
+      const imagePosition = shouldHaveBackground && imageUrl ? {
+        x: `${25 + Math.random() * 50}%`, // Entre 25% y 75%
+        y: `${25 + Math.random() * 50}%`  // Entre 25% y 75%
+      } : null;
+      
+      if (shouldHaveBackground && !imageUrl) {
+        console.log('[Background] Cuadro sólido sin imagen (aún cargando)');
       }
       
       const squareData = { 
@@ -45,6 +99,8 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
         data,
         timestamp: Date.now(),
         isTarget: shouldHaveBackground,
+        imageUrl: imageUrl, // Imagen para cuadros sólidos
+        imagePosition: imagePosition, // Posición aleatoria de la imagen
         gradient: {
           color1: color1,
           color2: color2,
@@ -54,7 +110,17 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
       
       setSquares(prev => [...prev, squareData]);
     };
-  }, [onTriggerCallbackRef]);
+    };
+    
+    // Crear el callback inicial
+    createCallback();
+    
+    // Recrear el callback cuando las imágenes se carguen
+    if (!isLoading && allImagesRef.current.length > 0) {
+      createCallback();
+      console.log('[Background] Callback recreado con imágenes disponibles');
+    }
+  }, [onTriggerCallbackRef, isLoading, allImages.length]);
 
   useEffect(() => {
     console.log(`[Background] Squares effect triggered | squares count: ${squares.length} | timestamp: ${Date.now()}`);
@@ -220,7 +286,30 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
               '--square-color-2': color2,
               '--square-gradient-angle': `${angle}deg`
             }}
-          />
+          >
+            {square.isTarget && square.imageUrl && (
+              <img 
+                src={square.imageUrl} 
+                alt="Gallery"
+                className="square-image"
+                style={{
+                  width: 'auto',
+                  height: 'auto',
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  objectFit: 'contain',
+                  display: 'block',
+                  position: 'absolute',
+                  // Posición aleatoria dentro del cuadro, sin sobresalir
+                  left: square.imagePosition?.x ?? `${25 + Math.random() * 50}%`,
+                  top: square.imagePosition?.y ?? `${25 + Math.random() * 50}%`,
+                  transform: `translate(-50%, -50%)`,
+                  // Asegurar que no sobresalga usando max constraints
+                  boxSizing: 'border-box'
+                }}
+              />
+            )}
+          </div>
         );
       })}
     </div>

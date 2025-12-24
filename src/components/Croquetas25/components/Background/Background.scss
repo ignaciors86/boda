@@ -4,6 +4,15 @@
   --perspective: 100vw;
   --square-rotate-x: 0deg;
   --square-rotate-y: 0deg;
+  
+  // Variable base para grosor de bordes y líneas
+  --stroke-base-width: 0.3vw;
+  
+  // Factores multiplicadores para cada zona (permite animar individualmente)
+  --stroke-factor-square-normal: 1;      // Cuadros normales
+  --stroke-factor-square-image: 0;       // Cuadros con imagen (0 = sin borde)
+  --stroke-factor-diagonal-normal: 1;     // Diagonales normales
+  --stroke-factor-diagonal-fixed: 1;      // Diagonales fijas
 }
 
 * {
@@ -36,10 +45,10 @@
   
   // Cuadros normales sin background - solo borde, transparente
   &:not(.square--target) {
-    // Fondo con efecto glass muy leve
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
+    // Sin fondo, solo borde
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     opacity: 1;
     z-index: 20; // Por encima de diagonales pero menos que los opacos
   }
@@ -52,7 +61,8 @@
   // z-index se define en cada variante
   
   // Borde con degradado de colores LGTB+ en tonos neon
-  border: 0.3vw solid;
+  // Usa calc() con factor multiplicador para permitir animación
+  border: calc(var(--stroke-base-width) * var(--stroke-factor-square-normal, 1)) solid;
   border-image: linear-gradient(
     var(--square-gradient-angle, 45deg),
     var(--square-color-1, var(--laser-color)),
@@ -73,15 +83,27 @@
     filter 0.3s ease,
     opacity 0.3s ease;
   
-  // Cuadros target (con fondo sólido) - estos sí tapan las diagonales
+  // Cuadros target (con imágenes) - estos sí tapan las diagonales
   &.square--target {
-    background: linear-gradient(
-      var(--square-gradient-angle, 45deg),
-      var(--square-color-1, var(--laser-color)),
-      var(--square-color-2, var(--laser-color))
-    );
+    // Sin fondo, solo borde e imagen
+    background: transparent;
     opacity: 1;
     z-index: 30; // Por encima de todo para tapar diagonales
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    
+    // Borde con factor 0 (sin borde por ahora)
+    border-width: calc(var(--stroke-base-width) * var(--stroke-factor-square-image, 0));
+    
+    .square-image {
+      width: auto;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      max-width: 100%;
+    }
   }
 }
 

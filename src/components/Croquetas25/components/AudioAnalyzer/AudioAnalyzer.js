@@ -8,6 +8,7 @@ const AudioAnalyzer = ({ onBeat, onVoice, onAudioData }) => {
   const lastVoiceTimeRef = useRef(0);
   const energyHistoryRef = useRef([]);
   const voiceHistoryRef = useRef([]);
+  const trebleHistoryRef = useRef([]); // Historial para detección de picos agudos (cuadros sólidos)
 
   // Rangos de frecuencias (en índices del array de frecuencias)
   // Con fftSize 2048, tenemos 1024 bins de frecuencia
@@ -122,6 +123,9 @@ const AudioAnalyzer = ({ onBeat, onVoice, onAudioData }) => {
       const midEnergy = (rangeEnergy.mid + rangeEnergy.highMid) / 2;
       const trebleEnergy = (rangeEnergy.treble + rangeEnergy.presence) / 2;
       const voiceEnergy = (midEnergy * 0.6) + (trebleEnergy * 0.4);
+      
+      // Energía aguda para detección de cuadros sólidos (picos en frecuencias altas)
+      const sharpEnergy = (rangeEnergy.treble * 0.7) + (rangeEnergy.presence * 0.3);
 
       // Historiales separados para ritmos y voces
       energyHistoryRef.current.push(rhythmEnergy);
@@ -140,12 +144,37 @@ const AudioAnalyzer = ({ onBeat, onVoice, onAudioData }) => {
       // Ajustar sensibilidad según el volumen detectado
       // Volumen normalizado (0-1) basado en la energía total
       const normalizedVolume = Math.min(totalEnergy / 255, 1); // 255 es el máximo valor de getByteFrequencyData
+
+      // Historial para detección de picos agudos (cuadros sólidos)
+      trebleHistoryRef.current.push(sharpEnergy);
+      if (trebleHistoryRef.current.length > 15) {
+        trebleHistoryRef.current.shift();
+      }
+
+      const averageTrebleEnergy = trebleHistoryRef.current.length > 0
+        ? trebleHistoryRef.current.reduce((a, b) => a + b, 0) / trebleHistoryRef.current.length
+        : 0;
+
+      const trebleVariance = trebleHistoryRef.current.length > 1
+        ? trebleHistoryRef.current.reduce((acc, val) => acc + Math.pow(val - averageTrebleEnergy, 2), 0) / trebleHistoryRef.current.length
+        : 0;
+
+      // Detección de picos agudos para cuadros sólidos
+      // Más sensible a picos en frecuencias agudas (instrumentos brillantes, transientes)
+      const trebleSensitivity = 0.08 + (0.25 * (1 - normalizedVolume));
+      const trebleThreshold = averageTrebleEnergy + (Math.sqrt(trebleVariance) * trebleSensitivity * 0.4);
+      const trebleSpikeThreshold = 0.2 + (0.12 * (1 - normalizedVolume));
+      const trebleSpikeMultiplier = 0.7 + (0.2 * (1 - normalizedVolume));
+      const recentTreble = trebleHistoryRef.current.slice(-4);
+      const maxRecentTreble = recentTreble.length > 0 ? Math.max(...recentTreble) : 0;
+      const trebleSpike = sharpEnergy > maxRecentTreble * trebleSpikeThreshold && sharpEnergy > averageTrebleEnergy * trebleSpikeMultiplier;
+      const solidSquareDetected = sharpEnergy > trebleThreshold || trebleSpike;
       
-      // Detección de ritmos para cuadros
-      const rhythmSensitivity = 0.1 + (0.5 * (1 - normalizedVolume));
-      const rhythmThreshold = averageRhythmEnergy + (Math.sqrt(rhythmVariance) * rhythmSensitivity * 0.5);
-      const rhythmSpikeThreshold = 0.3 + (0.15 * (1 - normalizedVolume));
-      const rhythmSpikeMultiplier = 0.75 + (0.2 * (1 - normalizedVolume));
+      // Detección de ritmos para cuadros - SENSIBILIDAD MUY AUMENTADA
+      const rhythmSensitivity = 0.02 + (0.2 * (1 - normalizedVolume)); // Aún más sensible: 0.02-0.22
+      const rhythmThreshold = averageRhythmEnergy + (Math.sqrt(rhythmVariance) * rhythmSensitivity * 0.2); // Reducido multiplicador a 0.2
+      const rhythmSpikeThreshold = 0.1 + (0.08 * (1 - normalizedVolume)); // Más sensible: 0.1-0.18
+      const rhythmSpikeMultiplier = 0.5 + (0.12 * (1 - normalizedVolume)); // Más sensible: 0.5-0.62
       const recentRhythm = energyHistoryRef.current.slice(-5);
       const maxRecentRhythm = Math.max(...recentRhythm);
       const rhythmSpike = rhythmEnergy > maxRecentRhythm * rhythmSpikeThreshold && rhythmEnergy > averageRhythmEnergy * rhythmSpikeMultiplier;
@@ -173,17 +202,18 @@ const AudioAnalyzer = ({ onBeat, onVoice, onAudioData }) => {
       const maxRecentVoice = Math.max(...recentVoice);
       const voiceSpike = voiceEnergy > maxRecentVoice * voiceSpikeThreshold && voiceEnergy > averageVoiceEnergy * voiceSpikeMultiplier;
 
-      // Detección de ritmos para cuadros
+      // Detección de ritmos para cuadros - MUY FRECUENTE
       const now = Date.now();
       const timeSinceLastBeat = now - lastBeatTimeRef.current;
-      const minTimeBetweenBeats = 60 + (140 * (1 - normalizedVolume));
+      const minTimeBetweenBeats = 15 + (35 * (1 - normalizedVolume)); // Muy reducido: 15-50ms para máxima frecuencia
       const rhythmDetected = (rhythmEnergy > rhythmThreshold || rhythmSpike) && timeSinceLastBeat > minTimeBetweenBeats;
       
       if (rhythmDetected) {
         lastBeatTimeRef.current = now;
         if (onBeat) {
           try {
-            onBeat(normalizedVolume);
+            // Pasar información sobre si debe ser cuadro sólido basado en análisis de frecuencias agudas
+            onBeat(normalizedVolume, solidSquareDetected);
           } catch (error) {
             console.error(`[AudioAnalyzer] ERROR in onBeat callback: ${error.message}`);
           }

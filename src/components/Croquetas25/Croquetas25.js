@@ -54,7 +54,7 @@ const Croquetas25 = () => {
   const triggerCallbackRef = useRef(null);
   const voiceCallbackRef = useRef(null);
   const lastSquareTimeRef = useRef(0);
-  const minTimeBetweenSquares = 3500; // Tiempo mínimo entre cuadros: 3.5 segundos (aumentada un poco)
+  const minTimeBetweenSquares = 600; // Tiempo mínimo entre cuadros: 0.6 segundos (muy reducido para máxima frecuencia)
 
   const handleClick = () => {
     console.log(`[Croquetas25] handleClick called | audioStarted: ${audioStarted} | triggerCallbackRef.current exists: ${!!triggerCallbackRef.current} | timestamp: ${Date.now()}`);
@@ -69,7 +69,7 @@ const Croquetas25 = () => {
   const lastDiagonalTimeRef = useRef(0);
   const minTimeBetweenDiagonals = 30000; // 30 segundos - mucho menos frecuente
 
-  const handleBeat = (intensity = 0.5) => {
+  const handleBeat = (intensity = 0.5, shouldBeSolid = false) => {
     const timestamp = Date.now();
     const timeSinceLastSquare = timestamp - lastSquareTimeRef.current;
     
@@ -77,7 +77,7 @@ const Croquetas25 = () => {
     if (timeSinceLastSquare >= minTimeBetweenSquares) {
       if (triggerCallbackRef.current) {
         try {
-          triggerCallbackRef.current('beat', { timestamp, intensity });
+          triggerCallbackRef.current('beat', { timestamp, intensity, shouldBeSolid });
           lastSquareTimeRef.current = timestamp;
         } catch (error) {
           console.error(`[Croquetas25] handleBeat ERROR: ${error.message}`);

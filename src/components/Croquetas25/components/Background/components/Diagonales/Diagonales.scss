@@ -13,7 +13,8 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 0.15vw; // Más estrechitas
+  // Usa calc() con factor multiplicador para permitir animación
+  width: calc(var(--stroke-base-width, 0.3vw) * 0.5 * var(--stroke-factor-diagonal-normal, 1)); // 0.5 para hacerlas más estrechas que los bordes
   min-width: 1px;
   height: 300dvh; // Mucho más largas para que rocen más los bordes
   opacity: 1; // Sin transparencia
@@ -27,7 +28,8 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    height: 0.15vw; // Grosor de la línea (altura cuando está horizontal)
+    // Grosor de la línea (altura cuando está horizontal) con factor multiplicador
+    height: calc(var(--stroke-base-width, 0.3vw) * 0.5 * var(--stroke-factor-diagonal-fixed, 1));
     min-height: 1px;
     opacity: 1;
     z-index: 11; // Por encima de las otras diagonales

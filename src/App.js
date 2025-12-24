@@ -190,7 +190,7 @@ const App = () => {
             <Route path="/gaticos-y-monetes/enar" element={<CocheFantastico />} />
             <Route path="/gaticos-y-monetes/kudos" element={<Kudos />} />
             <Route path="/gaticos-y-monetes/controles" element={<Controles />} />
-            <Route path="/croquetas-25" element={<Croquetas25 />} />
+            <Route path="/nachitos-de-nochevieja" element={<Croquetas25 />} />
             <Route path="/emitter" element={<SimpleWebRTCTest isEmitting={true} />} />
             <Route path="/receiver" element={<SimpleWebRTCTest isEmitting={false} />} />
             <Route path="/:documentId" element={<LoadInvitado />} />
