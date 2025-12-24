@@ -24,6 +24,10 @@ import CartaInvitado from './Tarjetas/CartaInvitado';
 import QEQ from 'components/Timeline/QEQ';
 import ClubSecreto from './Tarjetas/ClubSecreto';
 
+const urlstrapi = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+  ? 'http://localhost:1337'
+  : 'https://boda-strapi-production.up.railway.app';
+
 const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) => {
 
   weedding && document.documentElement.style.setProperty('--tipo', 'VCR');
@@ -45,10 +49,8 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
   const escala = 1.1;
   const md = new MobileDetect(window.navigator.userAgent);
   const [animationKey, setAnimationKey] = useState(1);
-  const [currentImageUrl, setCurrentImageUrl] = useState(() => {
-    const savedUrl = localStorage.getItem('invitadoImageUrl');
-    return savedUrl || null;
-  });
+  const [currentImageUrl, setCurrentImageUrl] = useState(null);
+  const [isImageUploaded, setIsImageUploaded] = useState(false);
 
   const toggle = () => {
     const cards = document.querySelectorAll('.card');
@@ -358,26 +360,47 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
   useEffect(() => {
     isOpen !== null && gsap.killTweensOf(".prompt.inicial");
     const tlCierre = gsap.timeline();
-    isOpen !== null && tlCierre.to(".link-fino", {
-      opacity: 1, left: isOpen ? 0 : "45%", bottom: isOpen ? "0" : "80dvh",
-      ease: CustomEase.create("custom", "M0,0,C0.126,0.382,0.282,0.674,0.44,0.822,0.632,1.002,0.818,1.001,1,1"),
-      transform: "translateX(-50%)", duration: 4, zIndex: 5, delay: 2,
-    }, 0);
-    isOpen !== null && tlCierre
+    
+    // Verificar si los elementos existen antes de animarlos
+    const promptFinal = document.querySelector(".prompt.final");
+    const myCanvas = document.querySelector("#myCanvas");
+    const linkFino = document.querySelector(".link-fino");
+    
+    if (isOpen !== null) {
+      if (linkFino) {
+        tlCierre.to(linkFino, {
+          opacity: 1,
+          left: isOpen ? 0 : "45%",
+          bottom: isOpen ? "0" : "80dvh",
+          ease: CustomEase.create("custom", "M0,0,C0.126,0.382,0.282,0.674,0.44,0.822,0.632,1.002,0.818,1.001,1,1"),
+          transform: "translateX(-50%)",
+          duration: 4,
+          zIndex: 5,
+          delay: 2,
+        }, 0);
+      }
 
-      .to(".prompt.final", { zIndex: 3, duration: 0, opacity: 0, }, 0)
-      .to("#myCanvas", {
-        opacity: isOpen ? 0.2 : 0.7,
-        duration: 5,
-        delay: 0,
-        ease: "ease",
-      }, ">")
-      .to(".prompt.final", { y: "0vh", duration: 1, opacity: 1, }, "<")
+      if (promptFinal && myCanvas) {
+        tlCierre
+          .set(promptFinal, { zIndex: 3, duration: 0, opacity: 0 }, 0)
+          .to(myCanvas, {
+            opacity: isOpen ? 0.2 : 0.7,
+            duration: 5,
+            delay: 0,
+            ease: "ease",
+          }, ">")
+          .to(promptFinal, { y: "0vh", duration: 1, opacity: 1 }, "<");
+      }
+    }
 
-    isOpen && setTimeout(() => {
-      const sello = document.querySelector('.wax-seal');
-      sello.classList.add('cierrame');
-    }, 60000);
+    if (isOpen) {
+      setTimeout(() => {
+        const sello = document.querySelector('.wax-seal');
+        if (sello) {
+          sello.classList.add('cierrame');
+        }
+      }, 60000);
+    }
   }, [isOpen]);
 
 
@@ -426,16 +449,31 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
     toggleFullScreen();
   }, [fullScreen]);
 
+  useEffect(() => {
+    // Si hay una imagen actual o el invitado ya tiene una imagen, marcar como subida
+    if (currentImageUrl || invitado?.imagen_url) {
+      setIsImageUploaded(true);
+    }
+  }, [currentImageUrl, invitado?.imagen_url]);
+
   const handleImageUpdate = (url) => {
-    setCurrentImageUrl(url);
-    localStorage.setItem('invitadoImageUrl', url);
+    if (url && url !== urlstrapi) {
+      setCurrentImageUrl(url);
+      setIsImageUploaded(true);
+    }
+  };
+
+  const isCardDisabled = (seccion) => {
+    if (!casandonos) return false;
+    if (seccion === "invitado") return false;
+    return !isImageUploaded;
   };
 
   return (
     <>
       <Bubbles />
-      {isOpen === null && !invitado && <Espiral weedding={weedding} isOpen={isOpen} uri={uri} />}
-      {isOpen === false && !invitado && <Espiral weedding={weedding} isOpen={isOpen} option2={true} />}
+      {isOpen === null && !invitado && <Espiral casandonos={casandonos} weedding={weedding} isOpen={isOpen} uri={uri} />}
+      {isOpen === false && !invitado && <Espiral casandonos={casandonos} weedding={weedding} isOpen={isOpen} option2={true} />}
       <div className={`sobre closed ${weedding ? "weedding" : ""}`} ref={sobreRef}>
 
         <div alt="Nosotros" className="nosotros-jpg" >
@@ -454,52 +492,66 @@ const Sobre = ({ weedding, hosteado, atajo, uri, casandonos, invitado, mesas }) 
           <div className="envelope-flap-bg"></div>
           <div className="envelope-body">
             <div className="envelope-content">
-              <Card seccion="invitacion"
-                onClick={() => handleClick("invitacion")}
-                trasera={<Invitacion invitado={invitado} />}>
-                {
-                  invitado ? <>
-                    <img src={invitacion} alt="Invitacion" />
-                    <span className='nombres'>{invitado?.nombre}</span>
-                    <span className="fecha"><strong>Los</strong>Entremesas</span>
-                    <span className="lugar">hora de hacer el capullo</span>
-                  </>
-                    :
-                    <>
-                      <img src={invitacion} alt="Invitacion" />
-                      <span className='nombres'>Mario y Nacho</span>
-                      <span className="fecha">24 de Mayo<strong>2025</strong></span>
-                      <span className="lugar">Salamanca</span>
-                    </>
-                }
-
+              <Card 
+                seccion="invitacion"
+                onClick={() => !isCardDisabled("invitacion") && handleClick("invitacion")}
+                trasera={<Invitacion invitado={invitado} />}
+                className={isCardDisabled("invitacion") ? "disabled" : ""}
+              >
+                {invitado ? <>
+                  <img src={invitacion} alt="Invitacion" />
+                  <span className='nombres'>{invitado?.nombre}</span>
+                  <span className="fecha"><strong>Los</strong>Entremesas</span>
+                  <span className="lugar">hora de hacer el capullo</span>
+                </> : <>
+                  <img src={invitacion} alt="Invitacion" />
+                  <span className='nombres'>Mario y Nacho</span>
+                  <span className="fecha">24 de Mayo<strong>2025</strong></span>
+                  <span className="lugar">Salamanca</span>
+                </>}
               </Card>
-              <Card seccion="horarios" onClick={() => handleClick("horarios")} trasera={
-                invitado ? <QEQ weedding={weedding} mesas={mesas} invitado={invitado} /> : <Timeline weedding={weedding} />
-              }>
+              <Card 
+                seccion="horarios" 
+                onClick={() => !isCardDisabled("horarios") && handleClick("horarios")} 
+                trasera={invitado ? <QEQ weedding={weedding} mesas={mesas} invitado={invitado} /> : <Timeline weedding={weedding} />}
+                className={isCardDisabled("horarios") ? "disabled" : ""}
+              >
                 <h2>{invitado ? "Quién Es Quién" : "Agenda"}</h2>
               </Card>
-              <Card seccion="regalo" onClick={() => handleClick("regalo")} trasera={
-                invitado ? <ClubSecreto invitado={invitado} /> : <Regalo />}>
-                <h2>{invitado ? "Grassjika" : "Regalo"}</h2>
-              </Card>
-              { !invitado && <Card seccion="ubicaciones" onClick={() => handleClick("ubicaciones")} trasera={
-                <Lugar weedding={weedding} hosteado={hosteado} />}>                
-                <h2>{invitado ? "Lugar" : "Lugar"}</h2>
-              </Card> }
-              <Card className={"asistencia"}
+              {(!casandonos || invitado?.weedding) && (
+                <Card 
+                  seccion="regalo" 
+                  onClick={() => !isCardDisabled("regalo") && handleClick("regalo")} 
+                  trasera={invitado ? <ClubSecreto invitado={invitado} /> : <Regalo />}
+                  className={isCardDisabled("regalo") ? "disabled" : ""}
+                >
+                  <h2>{invitado ? "Top Secret" : "Regalo"}</h2>
+                </Card>
+              )}
+              {!invitado && (
+                <Card 
+                  seccion="ubicaciones" 
+                  onClick={() => !isCardDisabled("ubicaciones") && handleClick("ubicaciones")} 
+                  trasera={<Lugar weedding={weedding} hosteado={hosteado} />}
+                  className={isCardDisabled("ubicaciones") ? "disabled" : ""}
+                >
+                  <h2>{invitado ? "Lugar" : "Lugar"}</h2>
+                </Card>
+              )}
+              <Card 
+                className={`asistencia ${isCardDisabled("invitado") ? "disabled" : ""}`}
                 seccion={casandonos ? "invitado" : "asistencia"}
-                onClick={() => handleClick(casandonos ? "invitado" : "asistencia")}
-                trasera={
-                  invitado ?
-                    <CartaInvitado 
-                      weedding={weedding} 
-                      invitado={invitado} 
-                      currentImageUrl={currentImageUrl}
-                      setCurrentImageUrl={handleImageUpdate}
-                    /> :
-                    <Asistencia weedding={weedding} />
-                }>
+                onClick={() => !isCardDisabled("invitado") && handleClick(casandonos ? "invitado" : "asistencia")}
+                trasera={invitado ? 
+                  <CartaInvitado 
+                    weedding={weedding} 
+                    invitado={invitado} 
+                    currentImageUrl={currentImageUrl === urlstrapi ? null : currentImageUrl}
+                    setCurrentImageUrl={handleImageUpdate}
+                  /> : 
+                  <Asistencia weedding={weedding} />
+                }
+              >
                 <h2>{casandonos ? "Tu personaje" : "Confirmar Asistencia"}</h2>
               </Card>
             </div>

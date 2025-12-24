@@ -140,6 +140,7 @@
     }
     h3 {
         font-size: calc(var(--size-unit)* 0.4) !important;
+        line-height: calc(var(--size-unit) * 0.4) !important;
     }
     &-body {
         position: absolute;
@@ -209,6 +210,22 @@
                 width: calc(var(--size-unit)* 2.9);
                 height: calc(var(--size-unit)* 2.9);
                 transform: rotateZ(51deg);
+            }
+
+            &.disabled {
+                opacity: 0.5;
+                pointer-events: none;
+                cursor: not-allowed;
+                filter: grayscale(100%);
+                transition: all 0.3s ease;
+
+                &:hover {
+                    transform: none;
+                }
+
+                .card-front, .card-back {
+                    cursor: not-allowed;
+                }
             }
         }
     }

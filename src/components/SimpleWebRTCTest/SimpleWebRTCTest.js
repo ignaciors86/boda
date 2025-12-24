@@ -9,7 +9,8 @@ const STRAPI_URL =
 
 const SIGNAL_SERVER_URL =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'ws://localhost:8080'
+    // ? 'ws://localhost:8080'
+    ? 'wss://boda-radio-production.up.railway.app'
     : 'wss://boda-radio-production.up.railway.app';
 
 const SimpleWebRTCTest = ({ isEmitting }) => {
@@ -27,13 +28,154 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
   const animationRef = useRef(null);
   const receiverIdRef = useRef(null);
   const peersRef = useRef(new Map());
-  const isIOS = useRef(/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream);
 
   useEffect(() => {
     return () => {
       handleStop();
     };
   }, []);
+
+  // Dibuja el ecualizador en el canvas (solo logs en receptor)
+  const drawEq = (analyser, label = '') => {
+    if (!canvasRef.current || !analyser) return;
+    
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    
+    // Dimensiones fijas del canvas
+    canvas.width = 350;
+    canvas.height = 60;
+    
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    
+    try {
+      analyser.getByteTimeDomainData(dataArray);
+    } catch (error) {
+      return;
+    }
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Estilo de la línea principal
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#00ff00';
+    ctx.beginPath();
+    
+    const sliceWidth = canvas.width / bufferLength;
+    let x = 0;
+    
+    // Factor de amplificación para hacer la onda más visible
+    const amplificationFactor = 2.5;
+    
+    // Dibujar la forma de onda
+    for (let i = 0; i < bufferLength; i++) {
+      // Normalizar y amplificar el valor
+      const normalizedValue = (dataArray[i] / 128.0) - 1; // Convertir a rango -1 a 1
+      const amplifiedValue = normalizedValue * amplificationFactor;
+      // Limitar el valor amplificado al rango -1 a 1
+      const clampedValue = Math.max(-1, Math.min(1, amplifiedValue));
+      
+      // Calcular la posición Y con más rango de movimiento
+      const y = (clampedValue * canvas.height / 2.5) + (canvas.height / 2);
+      
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        // Usar curvas bezier para suavizar la línea
+        const prevX = x - sliceWidth;
+        const prevY = i > 0 ? (((dataArray[i-1] / 128.0) - 1) * amplificationFactor * canvas.height / 2.5) + (canvas.height / 2) : y;
+        const cpX = prevX + (x - prevX) / 2;
+        ctx.quadraticCurveTo(cpX, prevY, x, y);
+      }
+      
+      x += sliceWidth;
+    }
+    
+    // Cerrar el path y dibujarlo
+    ctx.lineTo(canvas.width, canvas.height / 2);
+    ctx.stroke();
+    
+    // Efecto de brillo más pronunciado
+    ctx.strokeStyle = 'rgba(0, 255, 0, 0.15)';
+    ctx.lineWidth = 6;
+    ctx.stroke();
+    
+    ctx.strokeStyle = 'rgba(0, 255, 0, 0.1)';
+    ctx.lineWidth = 8;
+    ctx.stroke();
+    
+    // Línea central de referencia
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(0, 255, 0, 0.1)';
+    ctx.lineWidth = 1;
+    ctx.moveTo(0, canvas.height / 2);
+    ctx.lineTo(canvas.width, canvas.height / 2);
+    ctx.stroke();
+  };
+
+  // Loop de animación del ecualizador
+  const animateEq = (label) => {
+    if (analyserRef.current) {
+      drawEq(analyserRef.current, label);
+      animationRef.current = requestAnimationFrame(() => animateEq(label));
+    } else {
+      console.log(`[${label}] No se puede animar: analyser no disponible`);
+    }
+  };
+
+  // Inicializa el ecualizador para el emisor
+  const setupLocalAnalyser = (stream) => {
+    if (audioContextRef.current) {
+      try {
+        if (audioContextRef.current.state !== 'closed') {
+          audioContextRef.current.close();
+        }
+      } catch (e) {
+        console.warn('Error al cerrar AudioContext anterior:', e);
+      }
+    }
+    
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 64;
+    const source = audioCtx.createMediaStreamSource(stream);
+    source.connect(analyser);
+    analyserRef.current = analyser;
+    audioContextRef.current = audioCtx;
+    animateEq('EMISOR');
+  };
+
+  // Inicializa el ecualizador para el receptor
+  const setupRemoteAnalyser = async (audioElem) => {
+    if (audioContextRef.current) {
+      try {
+        if (audioContextRef.current.state !== 'closed') {
+          await audioContextRef.current.close();
+        }
+      } catch (e) {
+        console.warn('Error al cerrar AudioContext anterior:', e);
+      }
+    }
+    
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const analyser = audioCtx.createAnalyser();
+    
+    // Configuración ajustada para mayor sensibilidad
+    analyser.fftSize = 512; // Aumentado para más detalle
+    analyser.smoothingTimeConstant = 0.6; // Aumentado para más suavidad
+    analyser.minDecibels = -90;
+    analyser.maxDecibels = -10;
+    
+    const source = audioCtx.createMediaElementSource(audioElem);
+    source.connect(analyser);
+    analyser.connect(audioCtx.destination);
+    
+    analyserRef.current = analyser;
+    audioContextRef.current = audioCtx;
+    
+    animateEq('RECEPTOR');
+  };
 
   const sendSignal = (data) => {
     wsRef.current && wsRef.current.readyState === 1 && wsRef.current.send(JSON.stringify(data));
@@ -56,19 +198,16 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
             sampleRate: 44100
           }
         });
-        
         stream.getVideoTracks().forEach(track => {
           track.stop();
           stream.removeTrack(track);
         });
-        
         if (stream.getAudioTracks().length === 0) {
           setStatus('No se detectó audio del sistema.');
           setButtonVisible(true);
           setIsPlaying(false);
           return;
         }
-        
         localStreamRef.current = stream;
         setStatus('Audio del sistema capturado. Conectando señalización...');
         setupLocalAnalyser(stream);
@@ -79,9 +218,6 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         setIsPlaying(false);
       }
     } else {
-      if (isIOS.current) {
-        setStatus('Preparando para recibir audio...');
-      }
       startWebRTC();
     }
   };
@@ -94,8 +230,11 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
     // Limpiar WebRTC
     if (isEmitting) {
       // Si es emisor, limpiar todas las conexiones
-      peersRef.current.forEach(peer => {
-        if (peer) peer.close();
+      peersRef.current.forEach((peer, receiverId) => {
+        if (peer) {
+          console.log(`[EMISOR] Cerrando conexión con receptor ${receiverId}`);
+          peer.close();
+        }
       });
       peersRef.current.clear();
     } else {
@@ -110,6 +249,24 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
+    }
+    
+    // Limpiar animación
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+    
+    // Limpiar AudioContext
+    if (audioContextRef.current) {
+      try {
+        if (audioContextRef.current.state !== 'closed') {
+          audioContextRef.current.close();
+        }
+      } catch (e) {
+        console.warn('Error al cerrar AudioContext:', e);
+      }
+      audioContextRef.current = null;
     }
     
     // Limpiar streams
@@ -132,16 +289,28 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
           { urls: 'stun:stun.l.google.com:19302' },
           { urls: 'stun:stun1.l.google.com:19302' },
           { urls: 'stun:stun2.l.google.com:19302' },
-          {
-            urls: 'turn:openrelay.metered.ca:80',
-            username: 'openrelayproject',
-            credential: 'openrelayproject'
-          }
+          { urls: 'stun:stun3.l.google.com:19302' },
+          { urls: 'stun:stun4.l.google.com:19302' },
+          { urls: 'stun:stun.stunprotocol.org:3478' }
         ],
         iceCandidatePoolSize: 10,
         bundlePolicy: 'max-bundle',
-        rtcpMuxPolicy: 'require'
+        rtcpMuxPolicy: 'require',
+        iceTransportPolicy: 'all',
+        sdpSemantics: 'unified-plan'
       });
+
+      // Configurar timeouts y reintentos
+      peer.iceConnectionTimeout = 30000; // 30 segundos
+      
+      // Añadir más logs para diagnóstico ICE
+      peer.onicegatheringstatechange = () => {
+        console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] ICE gathering state:`, peer.iceGatheringState);
+      };
+
+      peer.onsignalingstatechange = () => {
+        console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] Signaling state:`, peer.signalingState);
+      };
 
       if (isOfferer) {
         peersRef.current.set(receiverId, peer);
@@ -151,7 +320,21 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
 
       peer.onicecandidate = (event) => {
         if (event.candidate) {
-          console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] ICE candidate encontrado:`, event.candidate);
+          console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] ICE candidate encontrado:`, event.candidate.type, event.candidate.protocol, event.candidate.address);
+          // Filtrar candidatos locales
+          if (event.candidate.type === 'host' && 
+              (event.candidate.address.includes('.local') || 
+               event.candidate.address === '127.0.0.1')) {
+            console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] Ignorando candidato local`);
+            return;
+          }
+          // Añadir más información de diagnóstico
+          console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] Enviando candidato ICE:`, {
+            type: event.candidate.type,
+            protocol: event.candidate.protocol,
+            address: event.candidate.address,
+            port: event.candidate.port
+          });
           sendSignal({ 
             type: 'candidate', 
             candidate: event.candidate,
@@ -166,32 +349,48 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
       peer.oniceconnectionstatechange = () => {
         console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] ICE connection state:`, peer.iceConnectionState);
         if (peer.iceConnectionState === 'failed') {
-          console.error('Conexión ICE fallida');
-          if (!isEmitting) {
+          console.error(`Conexión ICE fallida con receptor ${receiverId}`);
+          if (isEmitting) {
+            // Si es emisor, intentar reconectar
+            if (peersRef.current.has(receiverId)) {
+              const failedPeer = peersRef.current.get(receiverId);
+              peersRef.current.delete(receiverId);
+              failedPeer.close();
+              
+              // Aumentar el tiempo de espera para reconexión
+              setTimeout(() => {
+                console.log(`[EMISOR] Intentando reconectar con receptor ${receiverId}`);
+                createPeer(true, receiverId);
+              }, 5000); // Aumentado a 5 segundos
+            }
+          } else {
             handleStop();
           }
+        } else if (peer.iceConnectionState === 'disconnected') {
+          console.warn(`Conexión ICE desconectada con receptor ${receiverId}`);
+          // Esperar un poco antes de considerar la desconexión como fallida
+          setTimeout(() => {
+            if (peer.iceConnectionState === 'disconnected') {
+              console.error(`Conexión ICE permanece desconectada con receptor ${receiverId}`);
+              if (isEmitting) {
+                if (peersRef.current.has(receiverId)) {
+                  const failedPeer = peersRef.current.get(receiverId);
+                  peersRef.current.delete(receiverId);
+                  failedPeer.close();
+                  setTimeout(() => {
+                    console.log(`[EMISOR] Intentando reconectar con receptor ${receiverId}`);
+                    createPeer(true, receiverId);
+                  }, 5000);
+                }
+              } else {
+                handleStop();
+              }
+            }
+          }, 10000); // Esperar 10 segundos antes de considerar la desconexión como fallida
         } else if (peer.iceConnectionState === 'connected') {
           setIsConnected(true);
           setStatus('Conexión establecida');
-          console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] Conexión ICE establecida`);
-        } else if (peer.iceConnectionState === 'disconnected') {
-          console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] Conexión ICE desconectada, intentando reconectar...`);
-          // Intentar reconectar solo si no hay tracks ya añadidos
-          if (isEmitting && localStreamRef.current && peer.getSenders().length === 0) {
-            const tracks = localStreamRef.current.getAudioTracks();
-            tracks.forEach(track => {
-              peer.addTrack(track, localStreamRef.current);
-            });
-          }
         }
-      };
-
-      peer.onconnectionstatechange = () => {
-        console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] Connection state:`, peer.connectionState);
-      };
-
-      peer.onsignalingstatechange = () => {
-        console.log(`[${isEmitting ? 'EMISOR' : 'RECEPTOR'}] Signaling state:`, peer.signalingState);
       };
 
       if (!isEmitting) {
@@ -203,42 +402,70 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
             console.log('[RECEPTOR] Stream recibido:', stream);
             console.log('[RECEPTOR] Tracks en el stream:', stream.getTracks().map(t => t.kind));
             
+            // Asegurarse de que el stream se asigna correctamente
             remoteAudioRef.current.srcObject = stream;
             const tracks = stream.getAudioTracks();
             console.log(`[RECEPTOR] Tracks de audio recibidos:`, tracks.length);
             
-            // Manejo especial para iOS
-            if (isIOS.current) {
-              setStatus('Toca la pantalla para reproducir el audio');
-              const playAudio = () => {
-                remoteAudioRef.current.play()
-                  .then(() => {
-                    console.log('[RECEPTOR] Audio empezó a reproducirse en iOS');
-                    setupRemoteAnalyser(remoteAudioRef.current);
-                    setIsConnected(true);
-                    setStatus('Conexión establecida. Reproduciendo audio...');
-                  })
-                  .catch(error => {
-                    console.error('[RECEPTOR] Error al reproducir audio en iOS:', error);
-                    setStatus('Error al reproducir audio. Intenta de nuevo.');
+            // Configurar eventos del elemento de audio
+            remoteAudioRef.current.onloadedmetadata = () => {
+              console.log('[RECEPTOR] Metadata del audio cargada');
+              // Intentar reproducir automáticamente en desktop
+              if (!/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                const playPromise = remoteAudioRef.current.play();
+                if (playPromise !== undefined) {
+                  playPromise.catch(error => {
+                    console.error('[RECEPTOR] Error al reproducir audio:', error);
+                    if (error.name === 'NotAllowedError') {
+                      setStatus('Por favor, toca la pantalla para reproducir el audio');
+                    }
                   });
-              };
-              
-              // Añadimos múltiples eventos de toque para mayor fiabilidad
-              document.addEventListener('touchstart', playAudio, { once: true });
-              document.addEventListener('click', playAudio, { once: true });
-            } else {
-              remoteAudioRef.current.play().catch(error => {
-                console.error('[RECEPTOR] Error al reproducir audio:', error);
-              });
-              
-              remoteAudioRef.current.onplay = () => {
-                console.log('[RECEPTOR] Audio empezó a reproducirse');
+                }
+              }
+            };
+            
+            remoteAudioRef.current.oncanplay = () => {
+              console.log('[RECEPTOR] Audio listo para reproducir');
+              // Verificar si hay tracks activos
+              const activeTracks = stream.getAudioTracks().filter(t => t.readyState === 'live');
+              if (activeTracks.length === 0) {
+                console.warn('[RECEPTOR] No hay tracks de audio activos');
+                setStatus('No se detecta audio activo');
+              } else {
+                console.log(`[RECEPTOR] Tracks activos: ${activeTracks.length}`);
                 setupRemoteAnalyser(remoteAudioRef.current);
                 setIsConnected(true);
                 setStatus('Conexión establecida. Reproduciendo audio...');
-              };
-            }
+              }
+            };
+            
+            remoteAudioRef.current.onplay = () => {
+              console.log('[RECEPTOR] Audio empezó a reproducirse');
+              setIsConnected(true);
+              setStatus('Conexión establecida. Reproduciendo audio...');
+            };
+            
+            remoteAudioRef.current.onerror = (error) => {
+              console.error('[RECEPTOR] Error en el elemento de audio:', error);
+              setStatus('Error al reproducir audio');
+            };
+            
+            // Verificar el estado del stream periódicamente
+            const checkStreamInterval = setInterval(() => {
+              if (remoteAudioRef.current && remoteAudioRef.current.srcObject) {
+                const activeTracks = remoteAudioRef.current.srcObject.getAudioTracks().filter(t => t.readyState === 'live');
+                console.log(`[RECEPTOR] Tracks activos: ${activeTracks.length}`);
+                if (activeTracks.length === 0) {
+                  console.warn('[RECEPTOR] No hay tracks de audio activos');
+                  setStatus('No se detecta audio activo');
+                }
+              }
+            }, 5000);
+            
+            // Limpiar el intervalo cuando se detenga
+            remoteAudioRef.current.onended = () => {
+              clearInterval(checkStreamInterval);
+            };
           }
         };
       }
@@ -247,8 +474,8 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
         const tracks = localStreamRef.current.getAudioTracks();
         console.log('[EMISOR] Añadiendo tracks locales:', tracks.length);
         tracks.forEach(track => {
+          console.log('[EMISOR] Track local:', track.kind, track.readyState);
           peer.addTrack(track, localStreamRef.current);
-          console.log('[EMISOR] Track añadido:', track.label);
         });
 
         const offer = await peer.createOffer({
@@ -256,8 +483,18 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
           offerToReceiveVideo: false
         });
         
-        await peer.setLocalDescription(offer);
-        console.log('[EMISOR] Oferta creada y guardada:', offer);
+        // Modificar la oferta para usar la dirección IP pública
+        const modifiedSdp = offer.sdp
+          .replace(/o=- \d+ \d+ IN IP4 127\.0\.0\.1/, `o=- ${Math.floor(Math.random() * 1000000000)} 2 IN IP4 31.4.242.103`)
+          .replace(/c=IN IP4 0\.0\.0\.0/, 'c=IN IP4 31.4.242.103');
+        
+        const modifiedOffer = new window.RTCSessionDescription({
+          type: offer.type,
+          sdp: modifiedSdp
+        });
+        
+        await peer.setLocalDescription(modifiedOffer);
+        console.log('[EMISOR] Oferta creada y guardada:', modifiedOffer.sdp);
       }
 
       return peer;
@@ -411,137 +648,23 @@ const SimpleWebRTCTest = ({ isEmitting }) => {
     }
   };
 
-  // Dibuja el ecualizador en el canvas (solo logs en receptor)
-  const drawEq = (analyser, label = '') => {
-    if (!canvasRef.current || !analyser) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    analyser.getByteFrequencyData(dataArray);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const barWidth = (canvas.width / bufferLength) * 1.2;
-    let x = 0;
-    let max = 0;
-    for (let i = 0; i < bufferLength; i++) {
-      let barHeight = (dataArray[i] / 255) * canvas.height * 0.85;
-      barHeight = Math.max(2, barHeight);
-      max = Math.max(max, barHeight);
-      const hue = 120 - Math.round((barHeight / canvas.height) * 120);
-      ctx.fillStyle = `hsl(${hue}, 90%, 50%)`;
-      ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-      x += barWidth + 1;
-    }
-    // Solo log en receptor y solo si hay señal
-    if (label === 'RECEPTOR' && max > 2) {
-      console.log(`[RECEPTOR][EQ] Máx barra: ${Math.round(max)} | Primeros valores:`, dataArray.slice(0, 8));
-    }
-  };
-
-  // Loop de animación del ecualizador
-  const animateEq = (label) => {
-    if (analyserRef.current) {
-      drawEq(analyserRef.current, label);
-      animationRef.current = requestAnimationFrame(() => animateEq(label));
-    }
-  };
-
-  // Inicializa el ecualizador para el emisor
-  const setupLocalAnalyser = (stream) => {
-    if (audioContextRef.current) {
-      try {
-        if (audioContextRef.current.state !== 'closed') {
-          audioContextRef.current.close();
-        }
-      } catch (e) {
-        console.warn('Error al cerrar AudioContext anterior:', e);
-      }
-    }
-    
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 64;
-    const source = audioCtx.createMediaStreamSource(stream);
-    source.connect(analyser);
-    analyserRef.current = analyser;
-    audioContextRef.current = audioCtx;
-    animateEq('EMISOR');
-  };
-
-  // Inicializa el ecualizador para el receptor
-  const setupRemoteAnalyser = (audioElem) => {
-    if (audioContextRef.current) {
-      try {
-        if (audioContextRef.current.state !== 'closed') {
-          audioContextRef.current.close();
-        }
-      } catch (e) {
-        console.warn('Error al cerrar AudioContext anterior:', e);
-      }
-    }
-    
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 64;
-    const source = audioCtx.createMediaElementSource(audioElem);
-    source.connect(analyser);
-    analyser.connect(audioCtx.destination);
-    analyserRef.current = analyser;
-    audioContextRef.current = audioCtx;
-    animateEq('RECEPTOR');
-    
-    // Log de depuración útil
-    setTimeout(() => {
-      try {
-        const tracks = audioElem.srcObject ? audioElem.srcObject.getAudioTracks() : [];
-        if (tracks.length > 0) {
-          console.log('[RECEPTOR] El elemento <audio> tiene tracks:', tracks.map(t => t.label));
-        } else {
-          console.warn('[RECEPTOR] El elemento <audio> NO tiene tracks de audio.');
-        }
-      } catch (e) {
-        console.warn('[RECEPTOR] No se pudo acceder a tracks del elemento <audio>.', e);
-      }
-    }, 1000);
-  };
-
   return (
     <div className="simple-webrtc-test">
-      <div className="container">
-        <h2>{isEmitting ? 'Emitiendo audio del sistema' : 'Recibiendo audio remoto'}</h2>
-        <p>{status}</p>
-        <canvas 
-          ref={canvasRef} 
-          width={350} 
-          height={60} 
-          className="canvas"
-        />
-        <div className="buttons-container">
-          {buttonVisible && (
-            <button onClick={handlePlay} className="play">
-              {isEmitting ? 'Capturar y emitir audio' : 'Escuchar audio remoto'}
-            </button>
-          )}
-          {isPlaying && (
-            <button onClick={handleStop} className="stop">
-              Parar
-            </button>
-          )}
-        </div>
-        {!isEmitting && (
-          <audio 
-            ref={remoteAudioRef} 
-            autoPlay 
-            controls 
-            playsInline 
-          />
-        )}
-        {isEmitting && (
-          <p>
-            El audio del sistema se está emitiendo a la otra pestaña/dispositivo.
-          </p>
-        )}
-      </div>
+      <h2 style={{ fontFamily: 'VCR', color: '#fff' }}>{isEmitting ? 'Emitiendo audio del sistema' : 'Recibiendo audio remoto'}</h2>
+      <p style={{ fontFamily: 'VCR', color: '#fff' }}>{status}</p>
+      <canvas ref={canvasRef} width={350} height={60} style={{ display: 'block', margin: '16px auto', background: '#222', borderRadius: 8 }} />
+      {buttonVisible && (
+        <button onClick={handlePlay} style={{margin: '16px auto', display: 'block', padding: '12px 32px', fontSize: '1.2em', borderRadius: 8, border: 'none', background: '#222', color: '#fff', cursor: 'pointer', fontFamily: 'VCR'}}>
+          {isEmitting ? 'Capturar y emitir audio' : 'Escuchar audio remoto'}
+        </button>
+      )}
+      {isPlaying && (
+        <button onClick={handleStop} style={{margin: '16px auto', display: 'block', padding: '12px 32px', fontSize: '1.2em', borderRadius: 8, border: 'none', background: '#a00', color: '#fff', cursor: 'pointer', fontFamily: 'VCR'}}>
+          Parar
+        </button>
+      )}
+      {!isEmitting && <audio ref={remoteAudioRef} autoPlay controls playsInline style={{ width: '100%' }} />}
+      {isEmitting && <p style={{ fontFamily: 'VCR', color: '#fff' }}>El audio del sistema se está emitiendo a la otra pestaña/dispositivo.</p>}
     </div>
   );
 };

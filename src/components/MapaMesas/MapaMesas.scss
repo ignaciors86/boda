@@ -1,0 +1,602 @@
+:root {
+  --tamano-bolita: 3dvh;
+  --diametro-redonda: calc(var(--tamano-bolita) * 5.6);
+  --largo-imperial: calc(var(--tamano-bolita) * 6);
+  --ancho-imperial: var(--diametro-redonda);
+}
+
+.mapa-mesas-root {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100dvh;
+  min-width: 100vw;
+  min-height: 100dvh;
+  max-width: 100vw;
+  max-height: 100dvh;
+  display: flex;
+  background: #f8fafc;
+  overflow: hidden;
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  z-index: 1000;
+  color: #18181b;
+}
+
+.mapa-mesas-main {
+  flex: 1;
+  height: 100dvh;
+  position: relative;
+  overflow: hidden;
+}
+
+.mapa-mesas-area {
+  width: 100%;
+  height: 100dvh;
+  position: relative;
+  overflow: hidden;
+  background: #5f9ea0c9;
+}
+
+.mapa-mesas-panel {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 30dvh;
+  height: 100dvh;
+  background: #fff;
+  border-left: 1px solid #e2e8f0;
+  padding: 2dvh;
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  z-index: 10;
+  box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+
+  &.open {
+    transform: translateX(0);
+  }
+
+  h2 {
+    font-size: 2.2dvh;
+    margin-bottom: 2dvh;
+    color: #18181b;
+  }
+}
+
+.mapa-mesas-grupo {
+  margin-bottom: 1.5dvh;
+
+  summary {
+    font-size: 1.8dvh;
+    color: #18181b;
+    cursor: pointer;
+    padding: 1dvh;
+    border-radius: 8px;
+    background: #f8fafc;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #f1f5f9;
+    }
+  }
+
+  div {
+    padding: 1dvh;
+  }
+}
+
+.mapa-mesas-invitado {
+  display: flex;
+  align-items: center;
+  gap: 1dvh;
+  padding: 0.8dvh;
+  border-radius: 6px;
+  cursor: grab;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #f8fafc;
+  }
+
+  span {
+    font-size: 1.5dvh;
+  }
+}
+
+.mapa-mesas-bolita {
+  width: var(--tamano-bolita);
+  height: var(--tamano-bolita);
+  border-radius: calc(var(--tamano-bolita) * .5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8dvh;
+  font-weight: 600;
+  color: #fff;
+}
+
+.mapa-mesas-btn-add,
+.mapa-mesas-btn-backup,
+.mapa-mesas-btn-restore {
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.mapa-mesas-btn-add {
+  position: fixed;
+  bottom: 2dvh;
+  left: 2dvh;
+  padding: 1dvh 2dvh;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.5dvh;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+  &:hover {
+    background: #4f46e5;
+    transform: translateY(-1px);
+  }
+}
+
+.mapa-mesas-btn-backup {
+  background: #10b981;
+  color: #fff;
+  
+  &:hover {
+    background: #059669;
+  }
+}
+
+.mapa-mesas-btn-restore {
+  background: #f59e0b;
+  color: #fff;
+  
+  &:hover {
+    background: #d97706;
+  }
+}
+
+.mapa-mesas-main, .mapa-mesas-area {
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-width: 100vw !important;
+  min-height: 100dvh !important;
+  max-width: 100vw !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+}
+
+.mapa-mesas-main svg {
+  width: 100% !important;
+  height: 100dvh !important;
+  min-width: 0;
+  min-height: 100dvh;
+  max-width: 100%;
+  max-height: 100dvh;
+  display: block;
+  background: #23232b;
+  border-left: 2px solid #444;
+  box-shadow: 0 0 0 2px #444;
+}
+
+.mapa-mesas-area {
+  position: relative;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.mapa-mesas-area-flex {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  width: 100vw;
+  height: 100dvh;
+  position: relative;
+  z-index: 1;
+}
+
+.mapa-mesas-area-abs {
+  position: absolute;
+  left: 0; top: 0;
+  width: 100vw;
+  height: 100dvh;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.mapa-mesa-div {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  will-change: transform;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.mapa-mesa-div.girada {
+  transform: translate(-50%, -50%) rotate(90deg) !important;
+  transition: transform 0.3s;
+
+  .mapa-mesa-nombre {
+    transform: translate(-50%, -50%) rotate(-90deg) !important;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1.2dvh;
+    word-break: break-word;
+    overflow: visible;
+    white-space: normal;
+  }
+}
+
+.mapa-mesa-redonda {
+  width: var(--diametro-redonda);
+  height: var(--diametro-redonda);
+  min-width: var(--diametro-redonda);
+  min-height: var(--diametro-redonda);
+  max-width: var(--diametro-redonda);
+  max-height: var(--diametro-redonda);
+  border-radius: 50%;
+  border: 0px solid #6366f1;
+}
+
+.mapa-mesa-imperial {
+  width: var(--largo-imperial);
+  height: var(--ancho-imperial);
+  min-width: 27dvh;
+  min-height: 12dvh;
+  max-width: var(--largo-imperial);
+  max-height: var(--ancho-imperial);
+  border-radius: 16px;
+  border: 0px solid #f59e42;
+}
+
+.mapa-mesa-simple {
+  min-width: calc(var(--tamano-bolita) * 5.6);
+  min-height: var(--diametro-redonda);
+  border-radius: 8px;
+  border: 4px solid #10b981;
+}
+
+.mapa-mesa-label {
+  font-size: 3dvh;
+  font-weight: 700;
+  color: #18181b;
+  text-shadow: 0 2px 8px #fff, 0 1px 0 #0008;
+}
+
+.mapa-mesa-nombre {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  transform: translate(-50%, -50%);
+  font-size: 2.2dvh;
+  font-weight: 700;
+  color: #18181b;
+  text-shadow: 0 2px 8px #fff, 0 1px 0 #0008;
+  letter-spacing: 0.5px;
+  text-align: center;
+  padding: 0 1.2dvh;
+  word-break: break-word;
+  overflow: visible;
+  white-space: normal;
+}
+
+.mapa-mesa-bolitas-area {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.mapa-invitado-bolita {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--tamano-bolita);
+  height: var(--tamano-bolita);
+  border-radius: calc(var(--tamano-bolita) * .5);
+  font-size: 1.8dvh;
+  cursor: grab;
+  pointer-events: auto;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+  border: 1.5px solid #fff;
+}
+
+.mapa-mesa-div.girada .mapa-invitado-bolita {
+  transform: none !important;
+}
+
+.drag-clone {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.95;
+}
+
+.mapa-mesas-modal-bg,
+.mapa-mesas-modal,
+.mapa-mesas-modal-detalle,
+.mapa-mesas-modal-invitado-detalle,
+.mapa-mesas-modal-quitar-mesa {
+  // Estos estilos se han movido a Modal.scss
+}
+
+.mapa-mesa-contenedor {
+  position: absolute;
+  will-change: transform;
+}
+
+.mapa-mesa-contenedor.girada {
+  transform: rotate(90deg);
+}
+
+.mapa-mesas-bolita-flotante {
+  width: var(--tamano-bolita);
+  height: var(--tamano-bolita);
+  border-radius: calc(var(--tamano-bolita) * .5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8dvh;
+  font-weight: 600;
+  color: #fff;
+  cursor: grab;
+  border: 1.5px solid #fff;
+}
+
+.mapa-mesas-sin-mesa {
+  margin-top: 3dvh;
+  padding-top: 2dvh;
+  border-top: 1px solid #e2e8f0;
+
+  h3 {
+    font-size: 1.8dvh;
+    margin-bottom: 1.5dvh;
+    color: #18181b;
+  }
+}
+
+.mapa-mesas-bolitas-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1dvh;
+  padding: 1dvh;
+  background: #f8fafc;
+  border-radius: 8px;
+  min-height: 10dvh;
+}
+
+.mapa-mesas-pendientes {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 300px;
+  z-index: 10;
+
+  h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    color: #18181b;
+  }
+}
+
+.mapa-mesas-pendientes-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 150px;
+  overflow-y: auto;
+  padding-right: 5px;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+  }
+}
+
+.mapa-mesas-pendiente-bolita {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  cursor: grab;
+  position: relative;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: scale(1.1);
+
+    .mapa-mesas-pendiente-nombre {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .mapa-mesas-pendiente-nombre {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: all 0.2s ease;
+    pointer-events: none;
+    margin-bottom: 5px;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 4px;
+      border-style: solid;
+      border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+    }
+  }
+}
+
+.mapa-mesas-modal-invitados {
+  .drop-marker {
+    height: 2px;
+    background: #6366f1;
+    position: absolute;
+    width: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+
+    &.visible {
+      opacity: 1;
+    }
+
+    &.left {
+      left: 0;
+      transform: none;
+    }
+
+    &.right {
+      left: auto;
+      right: 0;
+      transform: none;
+    }
+  }
+
+  li {
+    position: relative;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    
+    &.dragging {
+      opacity: 0.5;
+      transform: scale(0.95);
+    }
+  }
+
+  &.dragging-active {
+    li {
+      cursor: grabbing;
+    }
+  }
+}
+
+.mapa-mesa-centro {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.mapa-mesa-div.girada .mapa-mesa-centro {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mapa-mesa-nombre {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  text-align: center;
+  padding: 5%;
+}
+
+.mapa-mesa-numero {
+  position: absolute;
+  top: 10%;
+  right: 10%;
+  background: #fff;
+  color: #18181b;
+  width: calc(var(--tamano-bolita) * 0.4);
+  height: calc(var(--tamano-bolita) * 0.4);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--tamano-bolita) * 0.3);
+  font-weight: 700;
+  box-shadow: 0 0.33em 0.66em rgba(0,0,0,0.1);
+  z-index: 3;
+}
+
+.mapa-mesa-div.girada .mapa-mesa-nombre {
+  transform: translate(-50%, -50%) rotate(-90deg) !important;
+  width: 100%;
+  height: 100%;
+  max-width: 100vh;
+  max-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  word-break: break-word;
+  overflow: visible;
+  white-space: normal;
+} 

@@ -1,191 +1,11 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import './KITT.scss';
 
-const KITT = ({ onClose, audioFile, delayPlay }) => {
-  const containerRef = useRef(null);
+const KITT = ({ analyser, imageBgColor, variant = 'kitt' }) => {
   const canvasBarsRef = useRef(null);
-  const audioRef = useRef(null);
-  const [audioContext, setAudioContext] = useState(null);
-  const [analyser, setAnalyser] = useState(null);
-  const [textoParaLeer, setTextoParaLeer] = useState('');
-  const [estaGenerandoVoz, setEstaGenerandoVoz] = useState(false);
-  const [usarAudioSistema, setUsarAudioSistema] = useState(false);
-  const mediaStreamSourceRef = useRef(null);
-  const mediaElementSourceRef = useRef(null);
   const animationRef = useRef(null);
   const previousAveragesRef = useRef([0, 0, 0]);
   const targetAveragesRef = useRef([0, 0, 0]);
-
-  const API_KEY = 'sk_8bb55581a98f6d2e7a6999f5d24bc5b8f4c4d916409d3399';
-  const VOZ_ID = '21m00Tcm4TlvDq8ikWAM';
-
-  const desconectarAudio = async () => {
-    console.log('Desconectando audio...');
-    
-    if (audioRef.current) {
-      console.log('Pausando y limpiando elemento de audio...');
-      audioRef.current.pause();
-      audioRef.current.src = '';
-      audioRef.current.load();
-    }
-
-    if (mediaStreamSourceRef.current) {
-      console.log('Desconectando mediaStreamSource...');
-      mediaStreamSourceRef.current.disconnect();
-      mediaStreamSourceRef.current = null;
-    }
-
-    if (mediaElementSourceRef.current) {
-      console.log('Desconectando mediaElementSource...');
-      mediaElementSourceRef.current.disconnect();
-      mediaElementSourceRef.current = null;
-    }
-
-    if (audioContext) {
-      if (audioContext.state !== 'closed') {
-        console.log('Cerrando contexto de audio...');
-        await audioContext.close();
-      }
-      setAudioContext(null);
-      setAnalyser(null);
-    }
-  };
-
-  const iniciarAudioSistema = async () => {
-    try {
-      await desconectarAudio();
-
-      const newAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const newAnalyser = newAudioContext.createAnalyser();
-      newAnalyser.fftSize = 256;
-
-      try {
-        const stream = await navigator.mediaDevices.getDisplayMedia({
-          video: {
-            displaySurface: "monitor",
-            logicalSurface: true,
-            cursor: "never"
-          },
-          audio: {
-            suppressLocalAudioPlayback: false,
-            autoGainControl: false,
-            echoCancellation: false,
-            noiseSuppression: false,
-            latency: 0
-          },
-          preferCurrentTab: false,
-          selfBrowserSurface: "exclude",
-          systemAudio: "include"
-        });
-
-        const audioTracks = stream.getAudioTracks();
-        if (audioTracks.length === 0) {
-          throw new Error('No se detectaron pistas de audio');
-        }
-
-        stream.getVideoTracks().forEach(track => {
-          track.stop();
-          stream.removeTrack(track);
-        });
-
-        mediaStreamSourceRef.current = newAudioContext.createMediaStreamSource(stream);
-        mediaStreamSourceRef.current.connect(newAnalyser);
-
-        stream.getAudioTracks()[0].onended = () => {
-          console.log('Compartir audio detenido por el usuario');
-          setUsarAudioSistema(false);
-        };
-
-        setAudioContext(newAudioContext);
-        setAnalyser(newAnalyser);
-
-      } catch (error) {
-        console.error('Error al acceder al audio del sistema:', error);
-        setUsarAudioSistema(false);
-      }
-    } catch (error) {
-      console.error('Error al iniciar audio del sistema:', error);
-    }
-  };
-
-  const generarVoz = async () => {
-    if (!textoParaLeer.trim() || estaGenerandoVoz) return;
-    
-    setEstaGenerandoVoz(true);
-    console.log('Iniciando generación de voz...');
-    
-    try {
-      await desconectarAudio();
-
-      const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + VOZ_ID, {
-        method: 'POST',
-        headers: {
-          'Accept': 'audio/mpeg',
-          'Content-Type': 'application/json',
-          'xi-api-key': API_KEY
-        },
-        body: JSON.stringify({
-          text: textoParaLeer,
-          model_id: "eleven_multilingual_v2",
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75
-          }
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${await response.text()}`);
-      }
-
-      console.log('Audio generado correctamente');
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      console.log('URL del audio creada:', audioUrl);
-
-      const audioElement = new Audio();
-      audioElement.src = audioUrl;
-      audioElement.crossOrigin = 'anonymous';
-
-      await new Promise((resolve, reject) => {
-        audioElement.onloadedmetadata = resolve;
-        audioElement.onerror = reject;
-        audioElement.load();
-      });
-      console.log('Audio cargado y listo para reproducir');
-
-      const newAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const newAnalyser = newAudioContext.createAnalyser();
-      newAnalyser.fftSize = 256;
-      
-      setAudioContext(newAudioContext);
-      setAnalyser(newAnalyser);
-
-      if (newAudioContext.state === 'suspended') {
-        await newAudioContext.resume();
-      }
-
-      const mediaElementSource = newAudioContext.createMediaElementSource(audioElement);
-      mediaElementSource.connect(newAnalyser);
-      newAnalyser.connect(newAudioContext.destination);
-      mediaElementSourceRef.current = mediaElementSource;
-      console.log('Audio conectado al analizador');
-
-      try {
-        await audioElement.play();
-        console.log('Audio reproduciendo');
-      } catch (playError) {
-        console.error('Error al reproducir:', playError);
-        alert('Error al reproducir el audio. Por favor, inténtalo de nuevo.');
-      }
-
-    } catch (error) {
-      console.error('Error en generarVoz:', error);
-      alert('Error al generar la voz: ' + error.message);
-    } finally {
-      setEstaGenerandoVoz(false);
-    }
-  };
 
   useEffect(() => {
     if (analyser && canvasBarsRef.current) {
@@ -197,29 +17,24 @@ const KITT = ({ onClose, audioFile, delayPlay }) => {
         animationRef.current = requestAnimationFrame(draw);
         analyser.getByteFrequencyData(dataArray);
 
+        if (!canvasBarsRef.current) return;
         const { width: barsWidth, height: barsHeight } = canvasBarsRef.current.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
         canvasBarsRef.current.width = barsWidth * dpr;
         canvasBarsRef.current.height = barsHeight * dpr;
         ctxBars.scale(dpr, dpr);
 
-        ctxBars.fillStyle = 'rgb(0, 0, 0)';
-        ctxBars.fillRect(0, 0, barsWidth, barsHeight);
-
-        // Configuración del ecualizador KITT
+        // Configuración general
         const numBars = 3;
         const numSegments = 13;
         const segmentSpacing = 2;
-        const segmentWidth = Math.min(barsWidth * 0.06, 24);
+        const segmentWidth = window.innerHeight * 0.06; // 2dvh, proporcional a la altura de la ventana
         const columnSpacing = segmentWidth * 0.8;
-        const maxHeight = barsHeight * 0.48;
+        const maxHeight = barsHeight * 0.7;
         const segmentHeight = (maxHeight / numSegments) / 2;
         const centerGap = 1;
-
-        // Calcular el ancho total y posición central
         const totalWidth = (segmentWidth * numBars) + (columnSpacing * (numBars - 1));
         const centerX = barsWidth / 2;
-        const startX = centerX - (totalWidth / 2);
         const centerY = barsHeight / 2;
 
         // Dividir el array de frecuencias en tres secciones
@@ -230,29 +45,35 @@ const KITT = ({ onClose, audioFile, delayPlay }) => {
         const calcularPromedio = (arr) => {
           const sum = arr.reduce((sum, val) => sum + val, 0);
           const rawAverage = sum / arr.length / 255;
-          return Math.pow(rawAverage, 0.25) * 255;
+          return Math.pow(rawAverage, 0.5) * 255;
         };
         
-        const rawLateral = calcularPromedio(medios) * 0.85;
+        const rawLateral = calcularPromedio(medios) * 0.7;
         const rawCentral = calcularPromedio(medios);
 
         const factorIntensidad = (valor) => {
-          if (valor < 15) return 0;
-          if (valor < 45) {
-            const factor = (valor - 15) / 30;
-            return Math.pow(factor, 0.6);
+          if (valor < 10) return 0;
+          if (valor < 35) {
+            const factor = (valor - 10) / 25;
+            return Math.pow(factor, 0.8);
           }
-          const logValue = Math.log10(((valor - 45) / 210) * 9 + 1);
-          return Math.max(logValue * 1.4, 0.4);
+          const logValue = Math.log10(((valor - 35) / 220) * 9 + 1);
+          return Math.max(logValue * 1.2, 0.3);
         };
 
-        const promedioCentral = rawCentral * 3.0 * factorIntensidad(rawCentral);
-        const promedioLateral = rawLateral * 3.0 * factorIntensidad(rawLateral);
+        // Ajuste de altura para la barra central en KARR
+        const karrHeightFactor = 0.82;
+        const centralHeightFactor = variant === 'karr' ? 0.5 : 1;
+        const lateralHeightFactor = 1;
+        const maxHeightKarr = maxHeight * (variant === 'karr' ? karrHeightFactor : 1);
+
+        const promedioCentral = rawCentral * 2.5 * factorIntensidad(rawCentral) * centralHeightFactor;
+        const promedioLateral = rawLateral * 2.5 * factorIntensidad(rawLateral) * lateralHeightFactor;
         
         const minHeight = (valor) => {
           if (valor < 2) return 0;
-          if (valor > 100) {
-            return Math.max(valor * 0.4, 40);
+          if (valor > 80) {
+            return Math.max(valor * 0.35, 30);
           }
           return valor;
         };
@@ -277,53 +98,84 @@ const KITT = ({ onClose, audioFile, delayPlay }) => {
           const isCenter = i === 1;
           const distanceFromCenter = i === 0 ? -1 : (i === 2 ? 1 : 0);
           const x = centerX + (distanceFromCenter * (segmentWidth + columnSpacing));
-          
-          let normalizedValue;
-          if (!isCenter) {
-            normalizedValue = Math.min(averages[i] / 255, 1);
-            if (averages[1] > 3 && normalizedValue * 255 >= 1) {
-              normalizedValue = Math.max(normalizedValue * 0.85, 1/numSegments);
+          let normalizedValue = Math.min(averages[i] / 255, 1);
+          if (!isCenter && averages[1] > 3 && normalizedValue * 255 >= 1) {
+            normalizedValue = Math.max(normalizedValue * 0.85, 1/numSegments);
+          }
+          if (variant === 'karr' && !isCenter) {
+            const karrBoost = 4; // Permite que las laterales lleguen más lejos
+            normalizedValue = Math.min(normalizedValue * karrBoost, 1);
+          }
+          if (variant === 'karr' && isCenter) {
+            const centralKarrBoost = 2.2; // Ajusta este valor según lo que necesites
+            normalizedValue = Math.min(normalizedValue * centralKarrBoost, 1);
+          }
+          if (normalizedValue * 255 < 3) continue;
+          // Para KARR, permitir que las barras laterales sean una sola barra desde ambos extremos
+          const totalSegments = variant === 'karr' && !isCenter
+            ? Math.floor(maxHeightKarr / (segmentHeight + segmentSpacing))
+            : numSegments;
+          const activeSegments = Math.ceil(normalizedValue * totalSegments);
+
+          // Color según variante
+          const color = variant === 'karr' ? '255, 255, 0' : '255, 0, 0';
+
+          if (variant === 'karr' && !isCenter) {
+            // Barras laterales: crecen desde arriba y abajo hacia el centro, pueden tocarse
+            const totalBarHeight = maxHeight * .75;
+            const blockTop = centerY - totalBarHeight / 2;
+            const totalSegments = Math.floor(totalBarHeight / (segmentHeight + segmentSpacing));
+            const activeSegments = Math.ceil(normalizedValue * totalSegments);
+            const topSegments = Math.ceil(activeSegments / 2);
+            const bottomSegments = Math.floor(activeSegments / 2);
+            // Desde arriba
+            for (let j = 0; j < topSegments; j++) {
+              const y = blockTop + (j * (segmentHeight + segmentSpacing));
+              // Degradado: más transparente cuanto más arriba
+              const alpha = 0.99 * (1 - j / totalSegments) + 0.01;
+              ctxBars.fillStyle = `rgba(${color}, ${alpha})`;
+              ctxBars.fillRect(x - segmentWidth / 2, y, segmentWidth, segmentHeight);
+            }
+            // Desde abajo
+            for (let j = 0; j < bottomSegments; j++) {
+              const y = blockTop + totalBarHeight - ((j + 1) * (segmentHeight + segmentSpacing));
+              // Degradado: más transparente cuanto más abajo
+              const alpha = 0.99 * (1 - j / totalSegments) + 0.01;
+              ctxBars.fillStyle = `rgba(${color}, ${alpha})`;
+              ctxBars.fillRect(x - segmentWidth / 2, y, segmentWidth, segmentHeight);
             }
           } else {
-            normalizedValue = Math.min(averages[i] / 255, 1);
-          }
-          
-          if (normalizedValue * 255 < 3) continue;
-          
-          const activeSegments = Math.ceil(normalizedValue * numSegments);
-          
-          for (let direction = -1; direction <= 1; direction += 2) {
-            for (let j = 0; j < numSegments; j++) {
-              const isActive = j < activeSegments;
-              if (!isActive) continue;
-              
-              const y = centerY + (direction * ((j * (segmentHeight + segmentSpacing)) + centerGap));
-              const segmentIntensity = Math.pow(1 - (j / numSegments), 0.7);
-              const musicIntensity = normalizedValue * 0.3;
-              const finalIntensity = segmentIntensity + musicIntensity;
-              
-              const baseIntensity = isCenter ? 0.7 : 0.8;
-              ctxBars.fillStyle = `rgba(255, 0, 0, ${baseIntensity + finalIntensity * 0.3})`;
-              
-              const barX = x - (segmentWidth / 2);
-              ctxBars.fillRect(barX, y, segmentWidth, direction * segmentHeight);
+            // Barra normal (KITT o central de KARR)
+            for (let direction = -1; direction <= 1; direction += 2) {
+              for (let j = 0; j < numSegments; j++) {
+                const isActive = j < activeSegments;
+                if (!isActive) continue;
+                const y = centerY + (direction * ((j * (segmentHeight + segmentSpacing)) + centerGap));
+                const segmentIntensity = Math.pow(1 - (j / numSegments), 0.7);
+                const musicIntensity = normalizedValue * 0.3;
+                const finalIntensity = segmentIntensity + musicIntensity;
+                const baseIntensity = isCenter ? 0.7 : 0.8;
+                // Degradado: más transparente cuanto más lejos del centro
+                const alpha = 0.99 * (1 - j / totalSegments) + 0.01;
+                ctxBars.fillStyle = `rgba(${color}, ${alpha})`;
+                const barX = x - (segmentWidth / 2);
+                ctxBars.fillRect(barX, y, segmentWidth, direction * segmentHeight);
+              }
             }
           }
         }
 
+        // Gradiente de desvanecimiento (igual para ambos)
         const totalBarHeight = (numSegments * (segmentHeight + segmentSpacing) + centerGap) * 2;
         const startY = centerY - (totalBarHeight / 2);
-        
         const fadeGradient = ctxBars.createLinearGradient(0, startY, 0, startY + totalBarHeight);
-        
-        fadeGradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
-        fadeGradient.addColorStop(0.15, 'rgba(0, 0, 0, 0.98)');
+        fadeGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        fadeGradient.addColorStop(0.15, 'rgba(0, 0, 0, 0)');
         fadeGradient.addColorStop(0.45, 'rgba(0, 0, 0, 0)');
         fadeGradient.addColorStop(0.5, 'rgba(0, 0, 0, 0)');
         fadeGradient.addColorStop(0.55, 'rgba(0, 0, 0, 0)');
-        fadeGradient.addColorStop(0.85, 'rgba(0, 0, 0, 0.98)');
-        fadeGradient.addColorStop(1, 'rgba(0, 0, 0, 1)');
-        
+        fadeGradient.addColorStop(0.85, 'rgba(0, 0, 0, 0)');
+        fadeGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
         ctxBars.save();
         ctxBars.globalCompositeOperation = 'multiply';
         ctxBars.fillStyle = fadeGradient;
@@ -339,102 +191,11 @@ const KITT = ({ onClose, audioFile, delayPlay }) => {
         }
       };
     }
-  }, [analyser]);
-
-  useEffect(() => {
-    if (usarAudioSistema) {
-      iniciarAudioSistema();
-    }
-  }, [usarAudioSistema]);
-
-  useEffect(() => {
-    return () => {
-      desconectarAudio();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (audioFile) {
-      const initAudioFile = async () => {
-        try {
-          await desconectarAudio();
-
-          const newAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-          const newAnalyser = newAudioContext.createAnalyser();
-          newAnalyser.fftSize = 256;
-          
-          const audioElement = new Audio(audioFile);
-          audioElement.crossOrigin = 'anonymous';
-          audioRef.current = audioElement;
-
-          await new Promise((resolve) => {
-            audioElement.addEventListener('canplaythrough', resolve, { once: true });
-            audioElement.load();
-          });
-
-          if (newAudioContext.state === 'suspended') {
-            await newAudioContext.resume();
-          }
-
-          const source = newAudioContext.createMediaElementSource(audioElement);
-          source.connect(newAnalyser);
-          newAnalyser.connect(newAudioContext.destination);
-
-          setAudioContext(newAudioContext);
-          setAnalyser(newAnalyser);
-
-          audioElement.addEventListener('ended', () => {
-            if (onClose) onClose();
-          });
-
-          if (!delayPlay) {
-            await audioElement.play();
-          }
-
-        } catch (error) {
-          console.error('Error al inicializar el audio:', error);
-        }
-      };
-
-      initAudioFile();
-    }
-  }, [audioFile, onClose, delayPlay]);
+  }, [analyser, variant]);
 
   return (
-    <div ref={containerRef} className={`kitt-container ${audioFile ? 'kitt-audio-only' : ''}`}>
-      <canvas ref={canvasBarsRef} className="kitt-bars" />
-      
-      {!audioFile && (
-        <>
-          <div className="kitt-controls">
-            <input
-              type="text"
-              value={textoParaLeer}
-              onChange={(e) => setTextoParaLeer(e.target.value)}
-              placeholder="Escribe algo para leer..."
-              className="kitt-input"
-            />
-            <button
-              onClick={generarVoz}
-              disabled={estaGenerandoVoz || !textoParaLeer.trim()}
-              className="kitt-button"
-            >
-              {estaGenerandoVoz ? '🎙️ Generando...' : '🎙️ Leer'}
-            </button>
-          </div>
-
-          <button
-            onClick={() => setUsarAudioSistema(!usarAudioSistema)}
-            className="kitt-mode-button"
-          >
-            {usarAudioSistema ? '🎤 Audio Sistema' : '🎙️ Sintetizador'}
-          </button>
-
-          <button onClick={onClose} className="kitt-close-button">
-            ✕
-          </button>
-        </>
-      )}
+    <div className={`kitt-container kitt-audio-only ${variant === 'karr' ? 'karr' : ''}`} >
+      <canvas ref={canvasBarsRef} className={`kitt-bars ${variant === 'karr' ? 'karr-bars' : ''}`} />
     </div>
   );
 };

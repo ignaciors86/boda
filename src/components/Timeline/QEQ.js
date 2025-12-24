@@ -40,33 +40,53 @@ const QEQ = ({ mesas, invitado }) => {
     control: (base) => ({
       ...base,
       backgroundColor: 'white',
-      border: '1px solid #ccc',
+      border: '2px solid #f59e0b',
+      borderRadius: '1dvh',
       boxShadow: 'none',
-      // zIndex: 5001, 
+      minHeight: '5dvh',
+      fontSize: 'calc(var(--size-unit) * 0.15)',
+      fontFamily: 'var(--tipo)',
       '&:hover': {
-        borderColor: '#aaa',
+        borderColor: '#d97706',
       },
     }),
     option: (base, { isFocused, isSelected }) => ({
       ...base,
-      backgroundColor: isFocused ? 'var(--orangeTransparent)' : isSelected ? 'var(--darkGray)' : 'white',
-      color: isSelected ? '#333' : '#666',
-      maxHeight: "40dvh",
+      backgroundColor: isFocused ? '#fff7ed' : isSelected ? '#f59e0b' : 'white',
+      color: isSelected ? 'white' : '#1f2937',
+      padding: '1.2dvh 2dvh',
+      cursor: 'pointer',
+      fontSize: 'calc(var(--size-unit) * 0.15)',
+      fontFamily: 'var(--tipo)',
+      '&:hover': {
+        backgroundColor: '#fff7ed',
+      },
     }),
     menu: (base) => ({
       ...base,
-      // margin: 0,
-      
+      backgroundColor: 'white',
+      borderRadius: '1dvh',
+      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+      marginTop: '0.5dvh',
+      zIndex: 9999,
     }),
     menuList: (base) => ({
       ...base,
-      width: "125%",
-      background: "#FFF",
-      borderRadius: "1dvh",
-      overflow: "hidden",
-      zIndex: 2001, // Asegura que el menú esté por encima de otros elementos
-      // margin: 0,
-      maxHeight: '40dvh', // Establece el alto máximo del contenedor de opciones
+      padding: '0.5dvh',
+      maxHeight: '40dvh',
+    }),
+    singleValue: (base) => ({
+      ...base,
+      color: '#1f2937',
+      fontSize: 'calc(var(--size-unit) * 0.15)',
+      fontFamily: 'var(--tipo)',
+      fontWeight: 500,
+    }),
+    placeholder: (base) => ({
+      ...base,
+      color: '#6b7280',
+      fontSize: 'calc(var(--size-unit) * 0.15)',
+      fontFamily: 'var(--tipo)',
     }),
   };
 
@@ -76,15 +96,15 @@ const QEQ = ({ mesas, invitado }) => {
   }));
 
   const handleMesaChange = (selectedOption) => {
-
+    if (!selectedOption) return;
+    
     gsap.to(".qeq .name-circle, .qeq .invitado", {
       opacity: 0,
       duration: .25,
       onComplete: () => {
         setSelectedMesa(selectedOption.value);
       }
-    })
-
+    });
   };
 
   const mesaSeleccionada = mesas[selectedMesa];
@@ -219,44 +239,35 @@ const QEQ = ({ mesas, invitado }) => {
               duration: 0.5,
             })
             
+          // Añadir clase visible a los textos
+          const textoPrimero = invitadoRef.querySelector("p.primero");
+          const textoSegundo = invitadoRef.querySelector("p.segundo");
+          
+          // Forzar la visibilidad de los textos cada vez que se arrastra
+          if (textoPrimero) {
+              textoPrimero.style.opacity = '0';
+              textoPrimero.classList.add('visible');
+              // Forzar un reflow para asegurar que la transición se aplique
+              void textoPrimero.offsetWidth;
+              textoPrimero.style.opacity = '1';
+          }
+          if (textoSegundo) {
+              textoSegundo.style.opacity = '0';
+              textoSegundo.classList.add('visible');
+              // Forzar un reflow para asegurar que la transición se aplique
+              void textoSegundo.offsetWidth;
+              textoSegundo.style.opacity = '1';
+          }
+          
+          // Añadir clase has-visible-text al contenedor
+          if (textoPrimero || textoSegundo) {
+              invitadoRef.classList.add('has-visible-text');
+          }
 
-
-          invitadoRef && tlondrag
-            .to(invitadoRef.querySelector("p.primero"), { // Selecciona el <p> hijo directamente
-              opacity: 1,
-              duration: 0.25,
-              ease: "power1.inOut",
-            }, 0)
-            // invitadoRef && invitado.personaje?.descripcion && tlondrag
-            .to(invitadoRef.querySelector("p.segundo"), { // Selecciona el <p> hijo directamente
-              opacity: 1,
-              duration: 0.5,
-              ease: "power1.inOut",
-            }, ">")
-            // invitadoRef && invitado.personaje?.nombre && tlondrag
-            .to(invitadoRef.querySelector("p.primero"), {
-              rotation: -6, // Gira 10 grados hacia un lado
-              duration: 3.5, // Tiempo para alcanzar la rotación
-              ease: "power1.inOut", // Animación suave
-              yoyo: true, // Vuelve al estado inicial
-              repeat: -1, // Repite infinitamente
-              y: "+=1dvh",
-              x: "+=1dvh",
-            }, "<")
-            .to(invitadoRef.querySelector("p.segundo"), {
-              rotation: -5, // Gira 10 grados hacia un lado
-              duration: 2, // Tiempo para alcanzar la rotación
-              ease: "power1.inOut", // Animación suave
-              yoyo: true, // Vuelve al estado inicial
-              repeat: -1, // Repite infinitamente
-              y: "+=1dvh",
-              y: "+=.5dvh",
-            }, "<")
           if (this.hitTest(correctCircleRef?.current)) {
-            //console.log("pincha");
             correctCircleRef?.current?.classList?.add('hover');
             correctCircleRef?.current?.classList?.add('inTouch');
-            setCircleBgImage(invitado.personaje?.imagen?.url ? urlstrapi + invitado.personaje.imagen.url : dummyImage);
+            setCircleBgImage(invitado.personaje?.imagen_url || dummyImage);
             gsap.to(invitadoRef, {
               opacity: 0,
               duration: 0.5,
@@ -282,6 +293,21 @@ const QEQ = ({ mesas, invitado }) => {
           gsap.set(".mi-select", {
             zIndex: 4001,
           })
+
+          // Quitar clase visible de los textos
+          const textoPrimero = invitadoRef.querySelector("p.primero");
+          const textoSegundo = invitadoRef.querySelector("p.segundo");
+          if (textoPrimero) {
+              textoPrimero.classList.remove('visible');
+              textoPrimero.style.opacity = '0';
+          }
+          if (textoSegundo) {
+              textoSegundo.classList.remove('visible');
+              textoSegundo.style.opacity = '0';
+          }
+          
+          // Quitar clase has-visible-text del contenedor
+          invitadoRef.classList.remove('has-visible-text');
 
           if (this.hitTest(correctCircleRef?.current)) {
             //console.log("Nombre objetivo (desde ref):", currentNameRef.current);
@@ -420,15 +446,19 @@ const QEQ = ({ mesas, invitado }) => {
     <div className={MAINCLASS}>
       {/* <Bubbles amount={10} color={generatePastelColor(true)} /> */}
       {/* <h2>Selecciona una Mesa</h2> */}
-      {mesas && <Select
-        className="mi-select"
-        styles={customStyles}
-        options={options}
-        value={options.find((option) => option.value === selectedMesa)}
-        onChange={handleMesaChange}
-        isSearchable={false} // Desactiva la búsqueda si no la necesitas
-        placeholder="Seleccione una mesa"
-      />}
+      <div className="qeq-selector">
+        <Select
+          className="mi-select"
+          styles={customStyles}
+          options={options}
+          value={options.find((option) => option.value === selectedMesa)}
+          onChange={handleMesaChange}
+          isSearchable={false}
+          placeholder="Selecciona una mesa"
+          noOptionsMessage={() => "No hay mesas disponibles"}
+          isClearable={false}
+        />
+      </div>
       {/* <select onChange={handleMesaChange} value={selectedMesa}>
         <option value="">Seleccione una mesa</option>
         {Object.keys(mesas).map((mesaKey) => (
@@ -447,10 +477,9 @@ const QEQ = ({ mesas, invitado }) => {
             >
               <img
                 style={{ backgroundColor: generatePastelColor() }}
-                src={invitado.personaje?.imagen?.url ? urlstrapi + invitado.personaje.imagen.url : dummyImage}
+                src={invitado.personaje?.imagen_url || dummyImage}
                 alt={invitado.nombre}
               />
-              {/* <span>{invitado.nombre}</span> */}
               <div className="invitado-info">
                 {(
                   <p className="primero" style={{ backgroundColor: generatePastelColor() }}>

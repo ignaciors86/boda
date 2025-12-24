@@ -7,16 +7,24 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "@use-gesture/react": "^10.3.1",
+    "exceljs": "^4.4.0",
     "express": "^4.21.2",
     "firebase": "^11.6.1",
     "gsap": "npm:@gsap/shockingly@^3.12.5",
+    "html2canvas": "^1.4.1",
     "jquery": "^3.7.1",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
     "mobile-detect": "^1.4.5",
     "prop-types": "^15.8.1",
+    "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
+    "react-color": "^2.19.3",
     "react-dom": "^18.3.1",
+    "react-dropzone": "^14.3.8",
     "react-fast-marquee": "^1.6.5",
+    "react-icons": "^5.5.0",
     "react-lazy-load-image-component": "^1.6.2",
     "react-router-dom": "^6.27.0",
     "react-scripts": "5.0.1",
@@ -56,6 +64,7 @@
     ]
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "file-loader": "^6.2.0"
   }
 }

@@ -10,11 +10,12 @@ import { items } from './components/Timeline/items'; // Asegúrate de importar c
 import Creditos from 'components/Creditos/Creditos';
 import KITT from 'components/KITT/KITT';
 import { InvitadoImageProvider } from './contexts/InvitadoImageContext';
-import DrumHero from 'components/DrumHero/DrumHero';
+import CocheFantastico from 'components/CocheFantastico/CocheFantastico';
 import Kudos from './components/GaticosYMonetes/Kudos';
 import Controles from './components/GaticosYMonetes/Controles';
 import SimpleWebRTCTest from './components/SimpleWebRTCTest';
 import Croquetas25 from './components/Croquetas25/Croquetas25';
+import MapaMesas from './components/MapaMesas/MapaMesas';
 
 const App = () => {
   const tlApp = gsap.timeline();
@@ -185,14 +186,15 @@ const App = () => {
             />
             <Route path="/fondos-baile" element={<FondosBaile />} />
             <Route path="/kitt" element={<KITT />} />
-            <Route path="/gaticos-y-monetes" element={<DrumHero />} />
-            <Route path="/gaticos-y-monetes/enar" element={<DrumHero />} />
+            <Route path="/gaticos-y-monetes" element={<CocheFantastico />} />
+            <Route path="/gaticos-y-monetes/enar" element={<CocheFantastico />} />
             <Route path="/gaticos-y-monetes/kudos" element={<Kudos />} />
             <Route path="/gaticos-y-monetes/controles" element={<Controles />} />
             <Route path="/croquetas-25" element={<Croquetas25 />} />
             <Route path="/emitter" element={<SimpleWebRTCTest isEmitting={true} />} />
             <Route path="/receiver" element={<SimpleWebRTCTest isEmitting={false} />} />
             <Route path="/:documentId" element={<LoadInvitado />} />
+            <Route path="/mapa-mesas" element={<MapaMesas />} />
           </Routes>
         </DragProvider>
       </Router>

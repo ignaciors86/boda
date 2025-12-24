@@ -5,6 +5,7 @@ import KITT from "components/KITT/KITT";
 import Textos from "components/Textos/Textos";
 import "./Creditos.scss";
 import gsap from "gsap";
+import GaleriaPersecucion from './GaleriaPersecucion';
 
 const Creditos = () => {
   const audioRef = useRef(null);
@@ -42,13 +43,17 @@ const Creditos = () => {
   const progressRef = useRef(null);
   const [currentTime, setCurrentTime] = useState('0:00');
   const [isPlaying, setIsPlaying] = useState(true);
+  const [opacidadInvitados, setOpacidadInvitados] = useState(0);
+  const [rotacionEspiral, setRotacionEspiral] = useState(0);
 
   // Tiempos de la canción (ajustados a los momentos clave de Opus)
   const TIEMPO_INICIO_ESPIRAL = 4;
-  const TIEMPO_CAMBIO_VELOCIDAD = 224.5;
-  const TIEMPO_INICIO_INVITADOS = 50;
+  const TIEMPO_CAMBIO_VELOCIDAD = 244.5;
+  const TIEMPO_INICIO_INVITADOS = 90;
   const TIEMPO_FIN_INVITADOS = TIEMPO_CAMBIO_VELOCIDAD; // 4:30 minutos
   const TIEMPO_PARON = 341.5;
+  const TIEMPO_INICIO_GALERIA = 230; // 3:44.5 minutos
+  const TIEMPO_FIN_GALERIA = 420; // 5:41.5 minutos
 
   // Configuración de la animación base (ajustada al BPM de Opus)
   const BPM_OPUS = 128;
@@ -88,22 +93,17 @@ const Creditos = () => {
   });
 
   const cargarImagen = (url, index) => {
-    console.log(`Intentando cargar imagen ${index}: ${url}`);
     const img = new Image();
     img.src = url;
     img.onload = () => {
-      console.log(`Imagen ${index} cargada correctamente`);
       setImagenesCargadas((prev) => {
         const nuevasImagenesCargadas = [...prev];
         nuevasImagenesCargadas[index] = true;
         return nuevasImagenesCargadas;
       });
       imagenesRef.current[index] = img;
-      console.log(`Imagen ${index} guardada en imagenesRef`);
     };
     img.onerror = () => {
-      console.error(`Error al cargar imagen ${index}: ${url}`);
-      // En lugar de reintentar, marcamos como cargada pero sin imagen
       setImagenesCargadas((prev) => {
         const nuevasImagenesCargadas = [...prev];
         nuevasImagenesCargadas[index] = true;
@@ -398,7 +398,7 @@ const Creditos = () => {
 
   useEffect(() => {
     fetch(
-      "https://boda-strapi-production.up.railway.app/api/invitados?populate[personaje][populate]=imagen&populate[mesa][populate]=*"
+      "https://boda-strapi-production.up.railway.app/api/invitados?populate[personaje][populate]=*&populate[mesa][populate]=*"
     )
       .then((response) => response.json())
       .then((data) => {
@@ -406,9 +406,8 @@ const Creditos = () => {
           .map((invitado) => ({
             id: invitado.id,
             nombre: invitado?.nombre,
-            imagen: invitado?.personaje
-              ? `https://boda-strapi-production.up.railway.app${invitado?.personaje?.imagen?.url}`
-              : "",
+            imagen_personaje: invitado?.personaje?.imagen_url || "",
+            imagen_invitado: invitado?.imagen_url || "",
             mesaId: invitado?.mesa?.id || 0,
             mesa: invitado?.mesa?.nombre || ""
           }))
@@ -417,7 +416,7 @@ const Creditos = () => {
 
         const colores = {};
         invitadosData.forEach(invitado => {
-          if (!invitado.imagen) {
+          if (!invitado.imagen_personaje && !invitado.imagen_invitado) {
             const hue = Math.random() * 360;
             const saturation = 30 + Math.random() * 20;
             const lightness = 85 + Math.random() * 10;
@@ -432,8 +431,8 @@ const Creditos = () => {
         setImagenesCargadas(new Array(invitadosData.length).fill(false));
 
         invitadosData.forEach((invitado, index) => {
-          if (invitado.imagen) {
-            cargarImagen(invitado.imagen, index);
+          if (invitado.imagen_personaje || invitado.imagen_invitado) {
+            cargarImagen(invitado.imagen_personaje || invitado.imagen_invitado, index);
           }
         });
       })
@@ -445,7 +444,7 @@ const Creditos = () => {
   useEffect(() => {
     const todasLasImagenesCargadas = imagenesCargadas.length > 0 &&
       imagenesCargadas.every((loaded, index) => {
-        if (!datosInvitados[index]?.imagen) return true;
+        if (!datosInvitados[index]?.imagen_personaje && !datosInvitados[index]?.imagen_invitado) return true;
         return loaded;
       });
 
@@ -484,7 +483,6 @@ const Creditos = () => {
           canvas.width = width * dpr;
           canvas.height = height * dpr;
           ctx.scale(dpr, dpr);
-          console.log('Canvas resized:', canvas.width, canvas.height);
         };
 
         requestAnimationFrame(() => {
@@ -1081,7 +1079,23 @@ const Creditos = () => {
 
   const iniciarSecuencia = () => {
     if (!isReady || secuenciaInicial || mostrarCreditos) return;
-    setSecuenciaInicial(true);
+    // Intentar poner en pantalla completa
+    const elem = containerRef.current;
+    if (elem && elem.requestFullscreen) {
+      elem.requestFullscreen();
+    } else if (elem && elem.webkitRequestFullscreen) { // Safari
+      elem.webkitRequestFullscreen();
+    } else if (elem && elem.msRequestFullscreen) { // IE11
+      elem.msRequestFullscreen();
+    }
+    setSecuenciaInicial(false);
+    setMostrarCreditos(true);
+    setKittFadeOut(true);
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        iniciarAudio();
+      });
+    }, 100);
   };
 
   useEffect(() => {
@@ -1158,6 +1172,83 @@ const Creditos = () => {
       audioElement.removeEventListener("pause", () => setIsPlaying(false));
     };
   }, [audioRef.current]);
+
+  // Cargar imágenes de invitados
+  useEffect(() => {
+    const cargarImagenesInvitados = async () => {
+      const nuevasImagenes = {};
+      const errores = [];
+
+      for (const invitado of datosInvitados) {
+        if (invitado.imagen_personaje || invitado.imagen_invitado) {
+          try {
+            const img = new Image();
+            const loadPromise = new Promise((resolve, reject) => {
+              img.onload = () => resolve(img);
+              img.onerror = () => reject(new Error(`Error al cargar imagen de ${invitado.nombre}`));
+            });
+
+            img.src = invitado.imagen_personaje || invitado.imagen_invitado;
+            await loadPromise;
+            nuevasImagenes[invitado.id] = img.src;
+          } catch (error) {
+            console.error(`Error al cargar imagen de ${invitado.nombre}:`, error);
+            errores.push(invitado.id);
+          }
+        }
+      }
+
+      setImagenesCargadas(nuevasImagenes);
+      if (errores.length > 0) {
+        console.warn('Algunas imágenes no se pudieron cargar:', errores);
+      }
+    };
+
+    if (datosInvitados.length > 0) {
+      cargarImagenesInvitados();
+    }
+  }, [datosInvitados]);
+
+  // Mostrar invitados en espiral
+  useEffect(() => {
+    if (!audioRef.current || !datosInvitados.length) return;
+
+    const tiempoActual = audioRef.current.currentTime;
+    const tiempoInicio = TIEMPO_INICIO_INVITADOS;
+    const tiempoFin = TIEMPO_FIN_INVITADOS;
+    const duracionFade = DURACION_ANIMACION_BASE;
+
+    // Calcular opacidad basada en el tiempo
+    let nuevaOpacidad = 0;
+    if (tiempoActual >= tiempoInicio && tiempoActual <= tiempoFin) {
+      if (tiempoActual <= tiempoInicio + duracionFade) {
+        // Fade in
+        nuevaOpacidad = (tiempoActual - tiempoInicio) / duracionFade;
+      } else if (tiempoActual >= tiempoFin - duracionFade) {
+        // Fade out
+        nuevaOpacidad = (tiempoFin - tiempoActual) / duracionFade;
+      } else {
+        // Opacidad completa
+        nuevaOpacidad = 1;
+      }
+    }
+
+    setOpacidadInvitados(nuevaOpacidad);
+
+    // Actualizar posición de la espiral
+    if (nuevaOpacidad > 0) {
+      const tiempoDesdeInicio = tiempoActual - tiempoInicio;
+      const velocidadRotacion = 0.5; // Grados por segundo
+      const nuevaRotacion = tiempoDesdeInicio * velocidadRotacion;
+      setRotacionEspiral(nuevaRotacion);
+    }
+  }, [audioRef.current?.currentTime, datosInvitados]);
+
+  useEffect(() => {
+    if (datosInvitados && datosInvitados.length > 0) {
+      console.log('INVITADO_DEBUG:', datosInvitados[0]);
+    }
+  }, [datosInvitados]);
 
   return (
     <div
@@ -1261,10 +1352,43 @@ const Creditos = () => {
                   pointerEvents: 'none',
                   lineHeight: 1.2,
                   boxShadow: `0 0 ${40 + intensidadNormalizada * 40}px rgba(0, 255, 255, 0.8), 0 0 ${80 + intensidadNormalizada * 80}px rgba(0, 128, 255, 0.6)`,
-                  willChange: 'transform, box-shadow'
+                  willChange: 'transform, box-shadow',
+                  overflow: 'hidden',
                 }}
               >
-                {invitadoActual.nombre}
+                {(invitadoActual.imagen_invitado
+                  ? <img
+                      src={invitadoActual.imagen_invitado}
+                      alt={invitadoActual.nombre}
+                      style={{
+                        position: 'absolute',
+                        left: 0,
+                        top: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        borderRadius: '50%',
+                        zIndex: 0
+                      }}
+                    />
+                  : invitadoActual.imagen_personaje
+                    ? <img
+                        src={invitadoActual.imagen_personaje}
+                        alt={invitadoActual.nombre}
+                        style={{
+                          position: 'absolute',
+                          left: 0,
+                          top: 0,
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          borderRadius: '50%',
+                          zIndex: 0
+                        }}
+                      />
+                    : null
+                )}
+                <span style={{ position: 'relative', zIndex: 1 }}>{invitadoActual.nombre}</span>
               </div>
               <div
                 data-invitado-id={invitadoActual.id}
@@ -1277,7 +1401,7 @@ const Creditos = () => {
                   height: 'var(--ancho-invitado)',
                   borderRadius: '50%',
                   overflow: 'hidden',
-                  backgroundColor: !invitadoActual.imagen ? coloresInvitados[invitadoActual.id] : 'transparent',
+                  backgroundColor: !invitadoActual.imagen_personaje && !invitadoActual.imagen_invitado ? coloresInvitados[invitadoActual.id] : 'transparent',
                   boxSizing: 'border-box',
                   zIndex: 1000,
                   transform: 'translate(-50%, -50%)',
@@ -1287,25 +1411,17 @@ const Creditos = () => {
                   willChange: 'transform, box-shadow'
                 }}
               >
-                {invitadoActual.imagen ? (
+                {invitadoActual.imagen_personaje && (
                   <img
-                    src={invitadoActual.imagen}
+                    src={invitadoActual.imagen_personaje}
                     alt={invitadoActual.nombre}
                     style={{
                       width: '100%',
                       height: '100%',
                       objectFit: 'cover',
-                      borderRadius: '50%',
-                      filter: `brightness(${1 + intensidadNormalizada * 0.8})`
+                      borderRadius: '50%'
                     }}
                   />
-                ) : (
-                  <div style={{
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: '50%',
-                    backgroundColor: coloresInvitados[invitadoActual.id]
-                  }} />
                 )}
               </div>
             </>
@@ -1344,10 +1460,43 @@ const Creditos = () => {
                     pointerEvents: 'none',
                     lineHeight: 1.2,
                     boxShadow: `0 0 ${40 + intensidadNormalizada * 40}px rgba(0, 255, 255, 0.8), 0 0 ${80 + intensidadNormalizada * 80}px rgba(0, 128, 255, 0.6)`,
-                    willChange: 'transform, box-shadow'
+                    willChange: 'transform, box-shadow',
+                    overflow: 'hidden',
                   }}
                 >
-                  {invitado.nombre}
+                  {(invitado.imagen_invitado
+                    ? <img
+                        src={invitado.imagen_invitado}
+                        alt={invitado.nombre}
+                        style={{
+                          position: 'absolute',
+                          left: 0,
+                          top: 0,
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          borderRadius: '50%',
+                          zIndex: 0
+                        }}
+                      />
+                    : invitado.imagen_personaje
+                      ? <img
+                          src={invitado.imagen_personaje}
+                          alt={invitado.nombre}
+                          style={{
+                            position: 'absolute',
+                            left: 0,
+                            top: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            borderRadius: '50%',
+                            zIndex: 0
+                          }}
+                        />
+                      : null
+                  )}
+                  <span style={{ position: 'relative', zIndex: 1 }}>{invitado.nombre}</span>
                 </div>
                 <div
                   key={`${invitado.id}-${index}`}
@@ -1362,7 +1511,7 @@ const Creditos = () => {
                     height: 'var(--ancho-invitado)',
                     borderRadius: '50%',
                     overflow: 'hidden',
-                    backgroundColor: !invitado.imagen ? coloresInvitados[invitado.id] : 'transparent',
+                    backgroundColor: !invitado.imagen_personaje && !invitado.imagen_invitado ? coloresInvitados[invitado.id] : 'transparent',
                     boxSizing: 'border-box',
                     opacity: 1,
                     zIndex: 1000,
@@ -1371,25 +1520,17 @@ const Creditos = () => {
                     willChange: 'transform, box-shadow'
                   }}
                 >
-                  {invitado.imagen ? (
+                  {invitado.imagen_personaje && (
                     <img
-                      src={invitado.imagen}
+                      src={invitado.imagen_personaje}
                       alt={invitado.nombre}
                       style={{
                         width: '100%',
                         height: '100%',
                         objectFit: 'cover',
-                        borderRadius: '50%',
-                        filter: `brightness(${1 + intensidadNormalizada * 0.8})`
+                        borderRadius: '50%'
                       }}
                     />
-                  ) : (
-                    <div style={{
-                      width: '100%',
-                      height: '100%',
-                      borderRadius: '50%',
-                      backgroundColor: coloresInvitados[invitado.id]
-                    }} />
                   )}
                 </div>
               </React.Fragment>
@@ -1428,6 +1569,12 @@ const Creditos = () => {
               />
             </div>
           </div>
+          <GaleriaPersecucion 
+            audioRef={audioRef}
+            startTime={TIEMPO_INICIO_GALERIA}
+            endTime={TIEMPO_FIN_GALERIA}
+            analyser={analyser}
+          />
         </>
       )}
     </div>

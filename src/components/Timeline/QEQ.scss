@@ -1,6 +1,6 @@
 :root {
-    --circulo-qeq-size: calc(var(--size-unit)* .4);
-    --invitado-scale: .45;
+    --circulo-qeq-size: calc(var(--size-unit)* .35);
+    --invitado-scale: .35;
 }
 
 .qeq {
@@ -55,13 +55,13 @@
         flex-wrap: wrap;
         justify-content: space-evenly;
         align-content: center;
-        // padding: 5%;
         box-sizing: border-box;
         position: relative;
+        z-index: 1;
         .invitado {
-            width: calc(var(--circulo-qeq-size) * 5);
-            height: calc(var(--circulo-qeq-size) * 5);
-            margin: calc(var(--circulo-qeq-size) * 2.5) calc(var(--circulo-qeq-size) * -2.4) calc(var(--circulo-qeq-size) * 0.5);
+            width: calc(var(--circulo-qeq-size) * 4.5);
+            height: calc(var(--circulo-qeq-size) * 4.5);
+            margin: calc(var(--circulo-qeq-size) * 3) calc(var(--circulo-qeq-size) * -2) calc(var(--circulo-qeq-size) * 3);
             scale: var(--invitado-scale);
             display: flex;
             justify-content: center;
@@ -71,17 +71,18 @@
             box-shadow: 0 0 15dvh var(--darkGray);
             border-radius: 50%;
             opacity: 0;
+            position: relative;
+            z-index: 1;
+
+            &.has-visible-text {
+                z-index: 9999;
+            }
+
             img {
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
                 border-radius: 50%;
-            }
-
-            /* El truco del "ladrillo" se logra utilizando la propiedad grid */
-            &:nth-child(even) {
-                margin-top: 20px;
-                /* Desplazar algunos elementos en la segunda fila */
             }
 
             .invitado-info {
@@ -90,41 +91,53 @@
                 display: flex;
                 justify-content: flex-start;
                 flex-direction: column;
-
                 box-sizing: border-box;
-
-
+                z-index: 2;
+                pointer-events: none;
 
                 p {
-                    font-size: calc(var(--size-unit) * 0.2) !important;
+                    font-size: calc(var(--size-unit) * 0.15) !important;
                     font-weight: bold;
                     position: absolute;
                     background: var(--purpleTransparent);
-                    padding: calc(var(--size-unit) * .1);
-                    border-radius: calc(var(--size-unit) * .1);
+                    padding: calc(var(--size-unit) * .08);
+                    border-radius: calc(var(--size-unit) * .08);
                     color: black;
                     opacity: 0;
+                    transform: translateY(10px);
+                    transition: opacity 0.3s ease, transform 0.3s ease;
+                    z-index: 3;
+                    pointer-events: none;
 
-                    // margin-top: calc(var(--size-unit) * -.5);
-                    // margin-left: calc(var(--size-unit) * 1.5);
                     &:first-of-type {
                         rotate: 6deg;
                         top: calc(var(--size-unit) * -.25);
                         right: calc(var(--size-unit) * -1);
-                        max-width: calc(var(--size-unit)* 10);
+                        max-width: calc(var(--size-unit)* 8);
                         min-width: calc(var(--size-unit)* 1.5);
                     }
 
                     &:not(:first-of-type) {
                         width: calc(var(--size-unit) * 1);
-                        // min-width: calc(var(--size-unit)* 1.5);
                         rotate: -10deg;
                         left: calc(var(--size-unit) * -2);
                         top: calc(var(--size-unit) * .5);
                     }
+
+                    &.visible {
+                        opacity: 1;
+                        transform: translateY(0);
+                        z-index: 4;
+                        pointer-events: auto;
+                    }
                 }
             }
 
+            /* El truco del "ladrillo" se logra utilizando la propiedad grid */
+            &:nth-child(even) {
+                margin-top: calc(var(--circulo-qeq-size) * 6);
+                /* Desplazar algunos elementos en la segunda fila */
+            }
         }
     }
 
@@ -223,5 +236,39 @@
             color: var(--purpleTransparent);
         }
         
+    }
+
+    .qeq-selector {
+        position: relative;
+        width: 45dvh;
+        margin: 0 0 2dvh 0;
+        z-index: 9999;
+
+        .mi-select {
+            width: 100%;
+            font-size: calc(var(--size-unit) * 0.15);
+            font-family: var(--tipo);
+            position: relative;
+            z-index: 9999;
+        }
+    }
+}
+
+@keyframes slideUpFade {
+    0% {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    20% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    80% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-10px);
     }
 }

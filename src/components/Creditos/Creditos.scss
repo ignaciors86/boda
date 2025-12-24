@@ -499,6 +499,8 @@
         transform: translate(-50%, -50%);
         // display: none; // Desactivado temporalmente durante desarrollo
     }
+
+    cursor: auto !important;
 }
 
 .creditos::after {

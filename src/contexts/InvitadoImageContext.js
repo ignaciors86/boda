@@ -1,24 +1,14 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext } from 'react';
 
 const InvitadoImageContext = createContext();
 
 export const InvitadoImageProvider = ({ children }) => {
-    // Intentar cargar la URL desde localStorage al inicializar
-    const [currentImageUrl, setCurrentImageUrl] = useState(() => {
-        const savedUrl = localStorage.getItem('invitadoImageUrl');
-        return savedUrl || null;
-    });
-
-    const setImageUrl = (url) => {
-        setCurrentImageUrl(url);
-        // Guardar en localStorage cada vez que se actualice
-        localStorage.setItem('invitadoImageUrl', url);
-    };
+    const [currentImageUrl, setCurrentImageUrl] = useState(null);
 
     return (
         <InvitadoImageContext.Provider value={{ 
             currentImageUrl, 
-            setCurrentImageUrl: setImageUrl
+            setCurrentImageUrl
         }}>
             {children}
         </InvitadoImageContext.Provider>

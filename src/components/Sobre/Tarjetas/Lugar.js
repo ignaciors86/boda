@@ -246,7 +246,32 @@ const Lugar = ({ weedding, hosteado }) => {
                 </div>
 
                 <div className="claim perretes" ref={(el) => claimRefs.current[4] = el}>
-                    <p>Tu perrete es bienvenido (en caso de necesidad)</p>
+                    <a 
+                        href="https://chat.whatsapp.com/ImWun18DldH0HmrTcwCBB2" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '100%',
+                            height: '100%',
+                            minHeight: '90px',
+                            minWidth: '90px',
+                            borderRadius: '50%',
+                            background: '#25D366',
+                            color: 'white',
+                            fontWeight: 'bold',
+                            textDecoration: 'none',
+                            fontSize: '1.1em',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                            transition: 'background 0.2s',
+                            textAlign: 'center',
+                            padding: '0 10px',
+                        }}
+                    >
+                        Grupo de WhatsApp de la boda
+                    </a>
                 </div>
             </div>
 

@@ -1,0 +1,384 @@
+.panel-lateral {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 50dvh;
+  background: #1f2937;
+  color: #f3f4f6;
+  border-right: 0.2dvh solid #374151;
+  z-index: 1000;
+  overflow-y: auto;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease-in-out;
+
+  &.open {
+    transform: translateX(0);
+  }
+
+  &-toggle {
+    position: fixed;
+    top: 1.5dvh;
+    left: 1dvh;
+    width: 5.5dvh;
+    height: 5.5dvh;
+    background: #3a639d;
+    border: 0.2dvh solid #374151;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 1001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px #0002;
+
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      width: 2.2dvh;
+      height: 0.25dvh;
+      background: #f3f4f6;
+      transition: all 0.3s ease;
+    }
+
+    &::before {
+      transform: translateY(-0.7dvh);
+    }
+
+    &::after {
+      transform: translateY(0.7dvh);
+    }
+
+    &.open {
+      left: 0.5dvh;
+      background: #6898e6;
+
+      &::before {
+        transform: rotate(45deg);
+      }
+
+      &::after {
+        transform: rotate(-45deg);
+      }
+    }
+
+    &:hover {
+      background: #374151;
+    }
+  }
+
+  h2 {
+    color: #f3f4f6;
+    border-bottom: 0.2dvh solid #374151;
+    padding: 2dvh 2.5dvh;
+    margin: 0;
+    font-size: 3.2dvh;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+  }
+
+  &-grupo {
+    border-bottom: 1px solid #374151;
+    background-color: #111827;
+    &-summary {
+      padding: 1.2dvh 2dvh;
+      font-size: 1.7dvh;
+      color: #f3f4f6;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      &:hover {
+        background-color: #1f2937;
+      }
+    }
+    &-arrow {
+      transition: transform 0.3s;
+      font-size: 2.1dvh;
+      margin-left: 1.2dvh;
+      color: #bcd0e6;
+    }
+    &-contenido {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-evenly;
+      height: 100%;
+      background-color: #1f2937;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.45s cubic-bezier(0.4,0,0.2,1), opacity 0.35s cubic-bezier(0.4,0,0.2,1);
+      will-change: max-height, opacity;
+      padding: 0 1rem;
+      &.panel-lateral-grupo-contenido-abierto {
+        height: fit-content;
+        max-height: 30000px;
+        opacity: 1;
+      }
+      & .panel-lateral-invitado:last-child {
+        border-bottom: none;
+      }
+    }
+  }
+
+  &-invitado {
+    display: flex;
+    align-items: center;
+    padding: 0.8dvh 2dvh;
+    font-size: 1.5dvh;
+    border-bottom: 0.15dvh solid #374151;
+    gap: 1.2dvh;
+
+    &:hover {
+      background-color: #374151;
+    }
+
+    span[title="Editar en Strapi"] {
+      text-decoration: none;
+      transition: color 0.18s, background 0.18s, box-shadow 0.18s;
+      border-radius: 5px;
+      padding: 2px 6px;
+
+      &:hover {
+        background: #f3f4f6;
+        color: #1f2937;
+        box-shadow: 0 1px 4px #0001;
+      }
+    }
+  }
+
+  &-bolita {
+    width: 3.2dvh;
+    height: 3.2dvh;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3dvh;
+    font-weight: 600;
+  }
+
+  &-btn-add {
+    background-color: #374151;
+    color: #f3f4f6;
+    border: 1px solid #4b5563;
+    padding: 1.2dvh 2.2dvh;
+    border-radius: 0.7dvh;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: #4b5563;
+    }
+  }
+
+  &-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5dvh;
+    padding: 2dvh 2dvh 2dvh 2dvh;
+    border-top: 1px solid var(--border-color);
+    margin-top: auto;
+  }
+
+  &-btn-add,
+  &-btn-excel,
+  &-btn-pdf {
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    font-size: 2.5dvh;
+    padding: 1.7dvh 3.2dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.2dvh;
+    text-align: center;
+    font-weight: 600;
+  }
+
+  &-btn-add svg,
+  &-btn-excel svg,
+  &-btn-pdf svg {
+    font-size: 2.2dvh;
+  }
+
+  &-btn-add {
+    background: var(--primary-color);
+    color: white;
+
+    &:hover {
+      background: var(--primary-color-dark);
+    }
+  }
+
+  &-btn-excel {
+    background: #217346;
+    color: white;
+
+    &:hover {
+      background: #1a5c38;
+    }
+
+    svg {
+      font-size: 1.1rem;
+    }
+  }
+
+  &-btn-pdf {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 1.2dvh 2.2dvh;
+    background: #fff0f0;
+    color: #c0392b;
+    border: 1.5px solid #c0392b;
+    border-radius: 0.7dvh;
+    font-size: 1.3dvh;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border 0.2s;
+    box-shadow: 0 1px 4px #0001;
+  }
+
+  &-btn-pdf:hover, &-btn-pdf:focus {
+    background: #c0392b;
+    color: #fff;
+    border-color: #a93226;
+  }
+
+  &-btn-pdf svg {
+    font-size: 1.2em;
+  }
+}
+
+.panel-lateral-invitado span[title="Editar en Strapi"] {
+  text-decoration: none;
+  transition: color 0.18s, background 0.18s, box-shadow 0.18s;
+  border-radius: 5px;
+  padding: 2px 6px;
+}
+.panel-lateral-invitado span[title="Editar en Strapi"]:hover {
+  background: #f3f4f6;
+  color: #1f2937;
+  box-shadow: 0 1px 4px #0001;
+}
+
+.panel-lateral-btn-add,
+.panel-lateral-btn-excel,
+.panel-lateral-btn-pdf {
+  font-family: 'Segoe UI', 'Arial', sans-serif;
+  font-size: 2.5dvh;
+  padding: 1.7dvh 3.2dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2dvh;
+  text-align: center;
+  font-weight: 600;
+}
+.panel-lateral-btn-add svg,
+.panel-lateral-btn-excel svg,
+.panel-lateral-btn-pdf svg {
+  font-size: 2.2dvh;
+}
+
+.panel-lateral-grupo-contenido {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  height: 100%;
+}
+
+.panel-lateral-grupo-contenido .panel-lateral-invitado:last-child {
+  border-bottom: none;
+}
+
+.panel-lateral-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 0 20px;
+
+  button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    width: 100%;
+
+    svg {
+      margin-right: 8px;
+    }
+
+    &.panel-lateral-btn-add {
+      background: #22c55e;
+      color: white;
+
+      &:hover {
+        background: #16a34a;
+      }
+    }
+
+    &.panel-lateral-btn-personajes {
+      background: #3b82f6;
+      color: white;
+
+      &:hover {
+        background: #2563eb;
+      }
+    }
+
+    &.panel-lateral-btn-excel {
+      background: #10b981;
+      color: white;
+
+      &:hover {
+        background: #059669;
+      }
+    }
+
+    &.panel-lateral-btn-pdf {
+      background: #ef4444;
+      color: white;
+
+      &:hover {
+        background: #dc2626;
+      }
+    }
+  }
+}
+
+.panel-lateral-btn-qr {
+  font-family: 'Segoe UI', 'Arial', sans-serif;
+  font-size: 2.5dvh;
+  padding: 1.7dvh 3.2dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2dvh;
+  text-align: center;
+  font-weight: 600;
+  background-color: #6366f1;
+  color: white;
+  border: none;
+  border-radius: 0.7dvh;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: #4f46e5;
+  }
+
+  svg {
+    font-size: 2.2dvh;
+  }
+} 

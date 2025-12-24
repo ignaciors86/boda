@@ -1,4 +1,9 @@
 export const colecciones = {
+  ninguna: {
+    id: 'ninguna',
+    nombre: 'Ninguna',
+    imagenes: []
+  },
   gatos: {
     id: 'gatos',
     nombre: 'Gatitos',
