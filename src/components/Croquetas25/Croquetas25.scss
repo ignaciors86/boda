@@ -78,7 +78,7 @@
   text-shadow: 0 0 1vw #00ffff;
 }
 
-.croquetas25-start-button {
+.croquetas25-start-croqueta {
   position: fixed;
   top: 50%;
   left: 50%;
@@ -89,15 +89,13 @@
   will-change: opacity, transform;
 }
 
-.croquetas25-start-button__content {
-  padding: 2rem 4rem;
-  background: rgba(0, 0, 0, 0.8);
-  border: 3px solid #00ffff;
-  border-radius: 50px;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
-  box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+.croquetas25-start-croqueta__button {
+  width: 20vw;
+  height: 20vw;
+  min-width: 15vw;
+  min-height: 15vw;
+  max-width: 25vw;
+  max-height: 25vw;
 }
 
 .croquetas25-start-button:hover .croquetas25-start-button__content {

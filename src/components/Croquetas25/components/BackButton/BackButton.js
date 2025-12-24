@@ -22,21 +22,32 @@ const BackButton = ({ onBack }) => {
     
     // Animación continua de rotación y flotación suave
     if (croquetaWrapperRef.current) {
+      // Asegurar que el transform origin esté en el centro para rotación correcta
+      gsap.set(croquetaWrapperRef.current, {
+        transformOrigin: '50% 50%',
+        x: 0,
+        y: 0
+      });
+      
       // Rotación continua muy lenta (20 segundos para una vuelta completa)
+      // Rotar sobre el centro del wrapper sin desplazarse
       const rotationTimeline = gsap.to(croquetaWrapperRef.current, {
         rotation: 360,
         duration: 20,
         ease: 'none',
-        repeat: -1
+        repeat: -1,
+        transformOrigin: '50% 50%'
       });
       
       // Flotación suave sin guiño (usando yoyo para que sea continuo)
+      // Aplicar flotación relativa al elemento para que no se desplace
       const floatTimeline = gsap.to(croquetaWrapperRef.current, {
-        y: -10,
+        y: '+=10',
         duration: 3,
         ease: 'sine.inOut',
         repeat: -1,
-        yoyo: true
+        yoyo: true,
+        transformOrigin: '50% 50%'
       });
       
       animationRef.current = { rotationTimeline, floatTimeline };
@@ -50,9 +61,26 @@ const BackButton = ({ onBack }) => {
     };
   }, []);
   
-  const handleBack = () => {
-    // Pausar audio
-    pause();
+  const handleBack = async () => {
+    if (!buttonRef.current) return;
+    
+    // Crear timeline para animar scale 0 mientras se hace fade-out del volumen
+    const exitTimeline = gsap.timeline();
+    
+    // Animar scale a 0 mientras se hace fade-out del volumen
+    exitTimeline.to(buttonRef.current, {
+      scale: 0,
+      opacity: 0,
+      duration: 1.5, // Misma duración que el fade-out del volumen
+      ease: 'power2.in'
+    });
+    
+    // Hacer fade-out del volumen (esto toma 1.5 segundos)
+    await pause();
+    
+    // Esperar a que termine la animación de scale si aún no ha terminado
+    await exitTimeline;
+    
     // Llamar callback para resetear estados
     if (onBack) {
       onBack();

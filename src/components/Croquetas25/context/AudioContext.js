@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useRef, useState, useEffect } from 'react';
+import { gsap } from 'gsap';
 import './AudioContext.scss';
 
 const AudioContextReact = createContext(null);
@@ -29,6 +30,7 @@ export const AudioProvider = ({ children, audioSrc }) => {
   const analyserRef = useRef(null);
   const dataArrayRef = useRef(null);
   const timeDataArrayRef = useRef(null);
+  const volumeTweenRef = useRef(null); // Ref para la animación de volumen
 
   useEffect(() => {
     if (!audioSrc) return;
@@ -46,7 +48,7 @@ export const AudioProvider = ({ children, audioSrc }) => {
     let audioCleanup = null;
 
     // Configurar el elemento audio
-    audio.volume = 1;
+    audio.volume = 0; // Empezar en 0 para que el fade funcione correctamente
     audio.muted = false;
     audio.preload = 'auto';
 
@@ -175,7 +177,7 @@ export const AudioProvider = ({ children, audioSrc }) => {
       }
     };
 
-    // Función para reproducir el audio
+    // Función para reproducir el audio con fade in
     const playAudio = async () => {
       try {
         if (globalAudioContext && globalAudioContext.state === 'suspended') {
@@ -183,8 +185,23 @@ export const AudioProvider = ({ children, audioSrc }) => {
         }
 
         if (audio.paused) {
+          // Asegurar que el volumen esté en 0 antes de reproducir
+          audio.volume = 0;
+          
+          // Reproducir el audio
           await audio.play();
           setIsPlaying(true);
+          
+          // Pequeño delay para asegurar que el audio haya empezado
+          await new Promise(resolve => setTimeout(resolve, 50));
+          
+          // Animar el volumen de 0 a 1 con fade muy suave y largo
+          gsap.to(audio, {
+            volume: 1,
+            duration: 2.5, // Fade más largo para que sea super suave
+            ease: 'sine.out' // Ease muy suave
+          });
+          
           if (!isLoaded) {
             setIsLoaded(true);
             setLoadingProgress(100);
@@ -266,29 +283,83 @@ export const AudioProvider = ({ children, audioSrc }) => {
   }, [audioSrc, isLoaded]);
 
   const play = async () => {
-    if (audioRef.current && audioRef.current.paused) {
-      try {
-        if (globalAudioContext && globalAudioContext.state === 'suspended') {
-          await globalAudioContext.resume();
+    return new Promise(async (resolve) => {
+      if (audioRef.current && audioRef.current.paused) {
+        try {
+          // Cancelar cualquier animación de volumen en curso
+          if (volumeTweenRef.current) {
+            volumeTweenRef.current.kill();
+            volumeTweenRef.current = null;
+          }
+          
+          if (globalAudioContext && globalAudioContext.state === 'suspended') {
+            await globalAudioContext.resume();
+          }
+          
+          // Fade in del volumen - super suave
+          audioRef.current.volume = 0;
+          await audioRef.current.play();
+          
+          // Pequeño delay para asegurar que el audio haya empezado
+          await new Promise(resolve => setTimeout(resolve, 50));
+          
+          // Animar el volumen de 0 a 1 con fade muy suave y largo
+          volumeTweenRef.current = gsap.to(audioRef.current, {
+            volume: 1,
+            duration: 2.5, // Fade más largo para que sea super suave
+            ease: 'sine.out', // Ease muy suave
+            onComplete: () => {
+              volumeTweenRef.current = null;
+              resolve(); // Resolver cuando el fade-in termine
+            }
+          });
+        } catch (error) {
+          console.error('[AudioContext] Error playing:', error);
+          resolve(); // Resolver incluso si hay error
         }
-        await audioRef.current.play();
-      } catch (error) {
-        console.error('[AudioContext] Error playing:', error);
+      } else {
+        // Si ya está reproduciéndose, resolver inmediatamente
+        resolve();
       }
-    }
+    });
   };
 
   const pause = () => {
-    if (audioRef.current && !audioRef.current.paused) {
-      audioRef.current.pause();
-    }
+    return new Promise((resolve) => {
+      if (audioRef.current && !audioRef.current.paused) {
+        // Cancelar cualquier animación de volumen en curso
+        if (volumeTweenRef.current) {
+          volumeTweenRef.current.kill();
+          volumeTweenRef.current = null;
+        }
+        
+        // Fade out del volumen antes de pausar - más rápido
+        volumeTweenRef.current = gsap.to(audioRef.current, {
+          volume: 0,
+          duration: 0.6, // Fade más rápido
+          ease: 'power2.in',
+          onComplete: () => {
+            if (audioRef.current) {
+              audioRef.current.pause();
+              // Dejar volumen en 0 para que el próximo play empiece desde 0
+              audioRef.current.volume = 0;
+            }
+            volumeTweenRef.current = null;
+            resolve(); // Resolver la Promise cuando el fade-out termine
+          }
+        });
+      } else {
+        // Si ya está pausado, resolver inmediatamente
+        resolve();
+      }
+    });
   };
 
-  const togglePlayPause = () => {
+  const togglePlayPause = async () => {
     if (isPlaying) {
-      pause();
+      await pause();
     } else {
-      play();
+      await play();
     }
   };
 

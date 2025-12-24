@@ -1,9 +1,9 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import gsap from 'gsap';
 import Croqueta from '../Croqueta/Croqueta';
 import './Intro.scss';
 
-const Intro = ({ tracks, onTrackSelect }) => {
+const Intro = ({ tracks, onTrackSelect, selectedTrackId = null }) => {
   const titleRef = useRef(null);
   const buttonsRef = useRef([]);
   const buttonsContainerRef = useRef(null);
@@ -32,11 +32,11 @@ const Intro = ({ tracks, onTrackSelect }) => {
     // Crear timeline para la animación de entrada
     const tl = gsap.timeline();
 
-    // Fade in del overlay
+    // Fade in del overlay con efecto glass elegante
     if (overlayRef.current) {
       tl.to(overlayRef.current, {
         opacity: 1,
-        duration: 0.5,
+        duration: 0.8,
         ease: 'power2.out'
       });
     }
@@ -46,9 +46,9 @@ const Intro = ({ tracks, onTrackSelect }) => {
       tl.to(titleRef.current, {
         opacity: 1,
         y: 0,
-        duration: 0.8,
+        duration: 1.0,
         ease: 'power2.out'
-      }, 0.2);
+      }, '-=0.5');
     }
 
     // Animación escalonada de los botones (similar a la salida pero al revés)
@@ -155,30 +155,65 @@ const Intro = ({ tracks, onTrackSelect }) => {
           const svgHeight = svgRect.height;
           const svgSize = Math.max(svgWidth, svgHeight);
 
-          // Distribución uniforme en una cuadrícula
+          // Obtener el track correspondiente a este botón
+          const track = tracks[index];
+          const isMainCroqueta = selectedTrackId && (
+            track?.id === selectedTrackId || 
+            track?.name.toLowerCase().replace(/\s+/g, '-') === selectedTrackId.toLowerCase().replace(/\s+/g, '-')
+          );
+          
+          // Distribución uniforme: todas las croquetas se distribuyen, pero la principal va al centro
           const totalButtons = buttonsRef.current.length;
-          const cols = Math.ceil(Math.sqrt(totalButtons));
-          const rows = Math.ceil(totalButtons / cols);
-          const cellWidth = (containerWidth - 2 * margin) / cols;
-          const cellHeight = (containerHeight - 2 * margin) / rows;
-          const col = index % cols;
-          const row = Math.floor(index / cols);
+          const otherButtons = totalButtons - (isMainCroqueta ? 1 : 0);
           
-          // Posición base en el centro de la celda
-          const baseX = margin + col * cellWidth + cellWidth / 2;
-          const baseY = margin + row * cellHeight + cellHeight / 2;
+          let x, y, baseScale, minScale, maxScale;
           
-          // Añadir variación aleatoria pequeña para que no estén perfectamente alineadas
-          const variationX = (Math.random() - 0.5) * cellWidth * 0.3;
-          const variationY = (Math.random() - 0.5) * cellHeight * 0.3;
-          
-          // Asegurar que no se salgan de los márgenes
-          const x = Math.max(margin + svgWidth / 2, Math.min(containerWidth - margin - svgWidth / 2, baseX + variationX));
-          const y = Math.max(margin + svgHeight / 2, Math.min(containerHeight - margin - svgHeight / 2, baseY + variationY));
+          if (isMainCroqueta) {
+            // Croqueta principal siempre en el centro
+            x = containerWidth / 2;
+            y = containerHeight / 2;
+            minScale = 1.0;
+            maxScale = 1.2;
+            baseScale = 1.1;
+          } else {
+            // Distribución uniforme para las demás en una cuadrícula
+            const cols = Math.ceil(Math.sqrt(otherButtons));
+            const rows = Math.ceil(otherButtons / cols);
+            const cellWidth = (containerWidth - 2 * margin) / cols;
+            const cellHeight = (containerHeight - 2 * margin) / rows;
+            
+            // Calcular índice relativo (excluyendo la principal)
+            let relativeIndex = index;
+            if (selectedTrackId) {
+              // Si hay una principal, ajustar el índice
+              const mainIndex = tracks.findIndex(t => 
+                t?.id === selectedTrackId || 
+                t?.name.toLowerCase().replace(/\s+/g, '-') === selectedTrackId.toLowerCase().replace(/\s+/g, '-')
+              );
+              if (index > mainIndex) {
+                relativeIndex = index - 1;
+              }
+            }
+            
+            const col = relativeIndex % cols;
+            const row = Math.floor(relativeIndex / cols);
+            
+            // Posición base en el centro de la celda
+            const baseX = margin + col * cellWidth + cellWidth / 2;
+            const baseY = margin + row * cellHeight + cellHeight / 2;
+            
+            // Añadir variación aleatoria pequeña
+            const variationX = (Math.random() - 0.5) * cellWidth * 0.3;
+            const variationY = (Math.random() - 0.5) * cellHeight * 0.3;
+            
+            // Asegurar que no se salgan de los márgenes
+            x = Math.max(margin + svgWidth / 2, Math.min(containerWidth - margin - svgWidth / 2, baseX + variationX));
+            y = Math.max(margin + svgHeight / 2, Math.min(containerHeight - margin - svgHeight / 2, baseY + variationY));
 
-          const minScale = 1.2;
-          const maxScale = 1.5;
-          const baseScale = Math.random() * (maxScale - minScale) + minScale;
+            minScale = 1.2;
+            maxScale = 1.5;
+            baseScale = Math.random() * (maxScale - minScale) + minScale;
+          }
           const angle = Math.random() * Math.PI * 2;
           const speed = (Math.random() * 0.2 + 0.1) * SPEED_FACTOR; // Velocidad más lenta con factor
           const freq = Math.random() * 0.5 + 0.2;
@@ -252,60 +287,81 @@ const Intro = ({ tracks, onTrackSelect }) => {
           };
         }
 
-        // Detectar colisiones entre croquetas usando el tamaño del SVG con repulsión suave
+        // Sistema de repulsión suave entre croquetas
+        // Aplicar fuerza de repulsión continua y suave para evitar mezclarse
+        const REPULSION_RANGE = 2.0; // Distancia a la que empieza la repulsión (múltiplo del radio)
+        const REPULSION_STRENGTH = 0.15; // Fuerza de repulsión (ajustable para suavidad)
+        const REPULSION_SMOOTHING = 0.1; // Factor de suavizado para evitar saltos bruscos
+        
         for (let i = 0; i < croquetas.length; i++) {
-          for (let j = i + 1; j < croquetas.length; j++) {
-            const a = croquetas[i];
+          const a = croquetas[i];
+          if (!a.element || !a.element.parentNode) continue;
+          
+          const t = (time || 0) / 1000;
+          const scaleA = a.minScale + (a.maxScale - a.minScale) * 0.5 * (1 + Math.sin(a.freq * t + a.phase));
+          const rA = (Math.max(a.svgWidth * scaleA, a.svgHeight * scaleA) / 2);
+          
+          // Acumulador de fuerzas de repulsión
+          let forceX = 0;
+          let forceY = 0;
+          
+          for (let j = 0; j < croquetas.length; j++) {
+            if (i === j) continue;
+            
             const b = croquetas[j];
+            if (!b.element || !b.element.parentNode) continue;
             
-            // Verificar que ambos elementos existen
-            if (!a.element || !b.element || !a.element.parentNode || !b.element.parentNode) continue;
-            
-            const t = (time || 0) / 1000;
-            const scaleA = a.minScale + (a.maxScale - a.minScale) * 0.5 * (1 + Math.sin(a.freq * t + a.phase));
             const scaleB = b.minScale + (b.maxScale - b.minScale) * 0.5 * (1 + Math.sin(b.freq * t + b.phase));
-
-            // Usar el tamaño del SVG escalado para las colisiones con factor de separación
-            const COLLISION_FACTOR = 0.95; // Factor para que reboten antes (menor = rebotan más temprano)
-            const REPULSION_DISTANCE = 1.5; // Distancia adicional para repulsión suave (aumentado)
-            const widthA = a.svgWidth * scaleA;
-            const heightA = a.svgHeight * scaleA;
-            const widthB = b.svgWidth * scaleB;
-            const heightB = b.svgHeight * scaleB;
-            const rA = (Math.max(widthA, heightA) / 2) * COLLISION_FACTOR;
-            const rB = (Math.max(widthB, heightB) / 2) * COLLISION_FACTOR;
-            const minDist = (rA + rB) * REPULSION_DISTANCE;
-
+            const rB = (Math.max(b.svgWidth * scaleB, b.svgHeight * scaleB) / 2);
+            
+            // Calcular distancia entre centros
             const dx = a.x - b.x;
             const dy = a.y - b.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-
+            const minDist = (rA + rB) * REPULSION_RANGE;
+            
+            // Si están dentro del rango de repulsión
             if (dist < minDist && dist > 0) {
-              // Calcular fuerza de repulsión suave pero más fuerte
+              // Normalizar dirección
               const nx = dx / dist;
               const ny = dy / dist;
               
-              // Fuerza proporcional a la cercanía (más cerca = más fuerza) - aumentada
-              const overlap = minDist - dist;
-              const repulsionForce = overlap * 0.4; // Factor de suavidad aumentado
+              // Calcular fuerza de repulsión (más fuerte cuanto más cerca)
+              // Usar una función suave que aumenta gradualmente
+              const closeness = 1 - (dist / minDist); // 0 cuando están lejos, 1 cuando están muy cerca
+              const force = closeness * closeness * REPULSION_STRENGTH; // Cuadrático para suavidad
               
-              // Aplicar repulsión a ambas croquetas
-              a.x += nx * repulsionForce;
-              a.y += ny * repulsionForce;
-              b.x -= nx * repulsionForce;
-              b.y -= ny * repulsionForce;
-              
-              // Cambiar dirección más agresivamente para evitar mezclarse
-              const dotA = Math.cos(a.angle) * nx + Math.sin(a.angle) * ny;
-              const dotB = Math.cos(b.angle) * (-nx) + Math.sin(b.angle) * (-ny);
-              
-              // Reflejar ángulos más agresivamente
-              a.angle = a.angle - 2 * dotA * Math.atan2(ny, nx) * 0.6;
-              b.angle = b.angle - 2 * dotB * Math.atan2(-ny, -nx) * 0.6;
-              
-              // Normalizar ángulos
-              a.angle = ((a.angle % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
-              b.angle = ((b.angle % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
+              // Acumular fuerza
+              forceX += nx * force;
+              forceY += ny * force;
+            }
+          }
+          
+          // Aplicar fuerza de repulsión suavemente (interpolación)
+          if (forceX !== 0 || forceY !== 0) {
+            // Ajustar dirección del movimiento suavemente hacia la dirección de repulsión
+            const currentVelX = Math.cos(a.angle) * a.speed;
+            const currentVelY = Math.sin(a.angle) * a.speed;
+            
+            // Combinar velocidad actual con fuerza de repulsión
+            const newVelX = currentVelX + forceX * REPULSION_SMOOTHING;
+            const newVelY = currentVelY + forceY * REPULSION_SMOOTHING;
+            
+            // Calcular nuevo ángulo basado en la velocidad resultante
+            const newAngle = Math.atan2(newVelY, newVelX);
+            
+            // Interpolar suavemente el ángulo para evitar saltos bruscos
+            const angleDiff = ((newAngle - a.angle + Math.PI) % (Math.PI * 2)) - Math.PI;
+            a.angle += angleDiff * REPULSION_SMOOTHING;
+            
+            // Normalizar ángulo
+            a.angle = ((a.angle % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
+            
+            // Aplicar desplazamiento suave adicional para separación inmediata
+            const separationForce = Math.sqrt(forceX * forceX + forceY * forceY) * 0.5;
+            if (separationForce > 0) {
+              a.x += (forceX / separationForce) * separationForce * REPULSION_SMOOTHING;
+              a.y += (forceY / separationForce) * separationForce * REPULSION_SMOOTHING;
             }
           }
         }
@@ -337,11 +393,12 @@ const Intro = ({ tracks, onTrackSelect }) => {
           const halfHeight = currentHeight / 2;
           const maxRadius = Math.max(halfWidth, halfHeight);
 
-          // Detectar colisión con el título
+          // Repulsión suave con el título
           if (titleRect) {
-            const COLLISION_FACTOR = 0.95;
-            const REPULSION_DISTANCE_TITLE = 1.4;
-            const croquetaRadius = maxRadius * COLLISION_FACTOR * REPULSION_DISTANCE_TITLE;
+            const REPULSION_RANGE_TITLE = 1.8;
+            const REPULSION_STRENGTH_TITLE = 0.2;
+            const REPULSION_SMOOTHING_TITLE = 0.15;
+            const croquetaRadius = maxRadius * REPULSION_RANGE_TITLE;
             
             // Calcular el centro del título
             const titleCenterX = titleRect.left + titleRect.width / 2;
@@ -349,28 +406,37 @@ const Intro = ({ tracks, onTrackSelect }) => {
             const titleHalfWidth = titleRect.width / 2;
             const titleHalfHeight = titleRect.height / 2;
             
-            // Verificar si la croqueta colisiona con el título (usando AABB con margen)
-            const closestX = Math.max(titleRect.left - croquetaRadius, Math.min(newX, titleRect.right + croquetaRadius));
-            const closestY = Math.max(titleRect.top - croquetaRadius, Math.min(newY, titleRect.bottom + croquetaRadius));
+            // Calcular distancia desde el centro de la croqueta al punto más cercano del título
+            const closestX = Math.max(titleRect.left, Math.min(newX, titleRect.right));
+            const closestY = Math.max(titleRect.top, Math.min(newY, titleRect.bottom));
             
             const dx = newX - closestX;
             const dy = newY - closestY;
-            const distSq = dx * dx + dy * dy;
+            const dist = Math.sqrt(dx * dx + dy * dy);
             
-            if (distSq < croquetaRadius * croquetaRadius) {
-              // Colisión con el título: rebotar con más fuerza
-              const dist = Math.sqrt(distSq);
-              if (dist > 0) {
-                const nx = dx / dist;
-                const ny = dy / dist;
-                // Reflejar el ángulo más agresivamente
-                const dot = Math.cos(croqueta.angle) * nx + Math.sin(croqueta.angle) * ny;
-                croqueta.angle = croqueta.angle - 2 * dot * Math.atan2(ny, nx) * 0.8;
-                // Separar la croqueta del título con más fuerza
-                const overlap = croquetaRadius - dist;
-                newX += nx * overlap * 1.5;
-                newY += ny * overlap * 1.5;
-              }
+            if (dist < croquetaRadius && dist > 0) {
+              // Aplicar repulsión suave con el título
+              const nx = dx / dist;
+              const ny = dy / dist;
+              
+              // Calcular fuerza de repulsión (más fuerte cuanto más cerca)
+              const closeness = 1 - (dist / croquetaRadius);
+              const force = closeness * closeness * REPULSION_STRENGTH_TITLE;
+              
+              // Ajustar dirección del movimiento suavemente
+              const currentVelX = Math.cos(croqueta.angle) * croqueta.speed;
+              const currentVelY = Math.sin(croqueta.angle) * croqueta.speed;
+              
+              const newVelX = currentVelX + nx * force * REPULSION_SMOOTHING_TITLE;
+              const newVelY = currentVelY + ny * force * REPULSION_SMOOTHING_TITLE;
+              
+              const newAngle = Math.atan2(newVelY, newVelX);
+              const angleDiff = ((newAngle - croqueta.angle + Math.PI) % (Math.PI * 2)) - Math.PI;
+              croqueta.angle += angleDiff * REPULSION_SMOOTHING_TITLE;
+              
+              // Aplicar desplazamiento suave
+              newX += nx * force * REPULSION_SMOOTHING_TITLE * 2;
+              newY += ny * force * REPULSION_SMOOTHING_TITLE * 2;
             }
           }
 
@@ -480,6 +546,7 @@ const Intro = ({ tracks, onTrackSelect }) => {
   const handleTrackSelect = (track, index) => {
     if (isAnimating) return; // Prevenir múltiples clics durante la animación
     
+    // Asegurarse de que el evento no se propague y se maneje correctamente
     setIsAnimating(true);
 
     // Detener animación de física
@@ -550,12 +617,30 @@ const Intro = ({ tracks, onTrackSelect }) => {
     });
   };
 
+  // Memoizar el renderizado para evitar guiños
+  const memoizedTracks = useMemo(() => tracks, [tracks]);
+
   return (
-    <div className="intro-overlay" ref={overlayRef}>
+    <div 
+      className="intro-overlay" 
+      ref={overlayRef}
+      onClick={(e) => {
+        // Solo prevenir el comportamiento por defecto si se hace click directamente en el overlay
+        // Las croquetas tienen pointer-events: auto y z-index alto, así que capturarán sus propios clicks
+        if (e.target === overlayRef.current) {
+          e.preventDefault();
+        }
+      }}
+    >
       <div className="intro">
         <h2 ref={titleRef} className="intro__title">Coge una croqueta</h2>
         <div className="intro__buttons" ref={buttonsContainerRef}>
-          {tracks.map((track, index) => {
+          {memoizedTracks.map((track, index) => {
+            const isMainCroqueta = selectedTrackId && (
+              track?.id === selectedTrackId || 
+              track?.name.toLowerCase().replace(/\s+/g, '-') === selectedTrackId.toLowerCase().replace(/\s+/g, '-')
+            );
+            
             return (
               <Croqueta
                 key={track.id}
@@ -563,17 +648,18 @@ const Intro = ({ tracks, onTrackSelect }) => {
                 text={track.name}
                 onClick={(e) => {
                   e.stopPropagation();
+                  e.preventDefault();
                   handleTrackSelect(track, index);
                 }}
                 rotation={0}
-                className="intro__button"
+                className={`intro__button ${isMainCroqueta ? 'main-croqueta' : ''}`}
                 style={{
-                  width: '20vw',
-                  height: '20vw',
-                  minWidth: '18vw',
-                  minHeight: '18vw',
-                  maxWidth: '25vw',
-                  maxHeight: '25vw',
+                  width: isMainCroqueta ? '30vw' : '20vw',
+                  height: isMainCroqueta ? '30vw' : '20vw',
+                  minWidth: isMainCroqueta ? '25vw' : '18vw',
+                  minHeight: isMainCroqueta ? '25vw' : '18vw',
+                  maxWidth: isMainCroqueta ? '35vw' : '25vw',
+                  maxHeight: isMainCroqueta ? '35vw' : '25vw',
                 }}
                 ref={el => {
                   // Usar callback ref más robusto

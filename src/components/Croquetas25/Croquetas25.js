@@ -106,7 +106,7 @@ const Croquetas25 = () => {
 
   const handleTrackSelect = (track) => {
     setSelectedTrack(track);
-    setAudioStarted(false);
+    setAudioStarted(false); // NO iniciar audio todavía, esperar a que todo esté cargado
     setShowStartButton(false); // No mostrar botón cuando se selecciona desde botones
     setWasSelectedFromIntro(true); // Marcar que fue seleccionado desde Intro
     // Actualizar la URL con el trackId
@@ -138,23 +138,30 @@ const Croquetas25 = () => {
   // Componente interno para manejar la pausa al mantener presionado (necesita acceso al contexto de audio)
   const HoldToPauseHandler = ({ isPausedByHold, setIsPausedByHold, wasPlayingBeforeHoldRef, typewriterInstanceRef }) => {
     const { audioRef, isPlaying, pause, play } = useAudio();
+    const isPausingRef = useRef(false); // Ref para rastrear si estamos en proceso de pausar
 
     useEffect(() => {
       const container = document.querySelector('.croquetas25');
       if (!container) return;
 
-      const pauseEverything = () => {
-        if (isPausedByHold) return;
+      const pauseEverything = async () => {
+        if (isPausingRef.current) return; // Evitar múltiples pausas simultáneas
         
+        isPausingRef.current = true;
         wasPlayingBeforeHoldRef.current = isPlaying;
         
-        // Pausar audio
+        // Pausar audio con fade-out y esperar a que termine
         if (audioRef?.current && !audioRef.current.paused) {
-          pause();
+          await pause(); // Esperar el fade-out
         }
         
-        // Pausar todas las animaciones GSAP
-        gsap.globalTimeline.pause();
+        // Pausar todas las animaciones GSAP (excepto las del Intro si está visible)
+        // No pausar animaciones del Intro para que las croquetas sigan siendo clicables
+        const introOverlay = document.querySelector('.intro-overlay');
+        if (!introOverlay || window.getComputedStyle(introOverlay).opacity === '0' || introOverlay.style.display === 'none') {
+          // Solo pausar animaciones GSAP si el Intro no está visible
+          gsap.globalTimeline.pause();
+        }
         
         // Pausar typewriter si existe (usando la instancia del componente)
         if (typewriterInstanceRef?.current) {
@@ -166,20 +173,23 @@ const Croquetas25 = () => {
         }
         
         setIsPausedByHold(true);
+        isPausingRef.current = false;
       };
 
       const resumeEverything = () => {
-        if (!isPausedByHold) return;
-        
-        // Reanudar audio si estaba reproduciéndose
-        if (wasPlayingBeforeHoldRef.current && audioRef?.current && audioRef.current.paused) {
-          play();
+        // Solo reanudar si realmente estaba pausado por el hold
+        // Verificar wasPlayingBeforeHoldRef para saber si debemos reanudar
+        if (!wasPlayingBeforeHoldRef.current) {
+          // Si no estaba reproduciéndose antes, solo resetear el estado
+          setIsPausedByHold(false);
+          isPausingRef.current = false;
+          return;
         }
         
-        // Reanudar todas las animaciones GSAP
+        // Reanudar inmediatamente las animaciones GSAP (sin esperar)
         gsap.globalTimeline.resume();
         
-        // Reanudar typewriter si existe (usando la instancia del componente)
+        // Reanudar typewriter inmediatamente si existe
         if (typewriterInstanceRef?.current) {
           try {
             typewriterInstanceRef.current.start();
@@ -188,26 +198,57 @@ const Croquetas25 = () => {
           }
         }
         
+        // Resetear estado inmediatamente
         setIsPausedByHold(false);
+        isPausingRef.current = false;
+        
+        // Reanudar audio en paralelo (sin await para que sea inmediato)
+        if (audioRef?.current && audioRef.current.paused) {
+          play(); // Sin await - se ejecuta en paralelo
+        }
+        
+        wasPlayingBeforeHoldRef.current = false;
       };
 
       const handleMouseDown = (e) => {
-        // No pausar si se hace clic en el seek bar o en el botón de inicio
-        if (e.target.closest('.seek') || e.target.closest('.croquetas25-start-button')) return;
+        // No pausar si se hace clic en el seek bar, botón de inicio, o croquetas del Intro
+        if (e.target.closest('.seek') || 
+            e.target.closest('.croquetas25-start-croqueta') || 
+            e.target.closest('.intro__button') ||
+            e.target.closest('.croqueta') ||
+            e.target.closest('.intro-overlay')) return;
         pauseEverything();
       };
 
-      const handleMouseUp = () => {
+      const handleMouseUp = (e) => {
+        // Asegurarse de que no se está haciendo clic en una croqueta
+        if (e && (e.target.closest('.intro__button') || 
+                  e.target.closest('.croqueta') || 
+                  e.target.closest('.intro-overlay'))) {
+          // Si se suelta sobre una croqueta, no hacer nada (el click se manejará por el onClick de la croqueta)
+          return;
+        }
         resumeEverything();
       };
 
       const handleTouchStart = (e) => {
-        // No pausar si se toca el seek bar o el botón de inicio
-        if (e.target.closest('.seek') || e.target.closest('.croquetas25-start-button')) return;
+        // No pausar si se toca el seek bar, botón de inicio, o croquetas del Intro
+        if (e.target.closest('.seek') || 
+            e.target.closest('.croquetas25-start-croqueta') || 
+            e.target.closest('.intro__button') ||
+            e.target.closest('.croqueta') ||
+            e.target.closest('.intro-overlay')) return;
         pauseEverything();
       };
 
-      const handleTouchEnd = () => {
+      const handleTouchEnd = (e) => {
+        // Asegurarse de que no se está tocando una croqueta
+        if (e && (e.target.closest('.intro__button') || 
+                  e.target.closest('.croqueta') || 
+                  e.target.closest('.intro-overlay'))) {
+          // Si se suelta sobre una croqueta, no hacer nada (el touch se manejará por el onClick de la croqueta)
+          return;
+        }
         resumeEverything();
       };
 
@@ -343,6 +384,7 @@ const Croquetas25 = () => {
             wasSelectedFromIntro={wasSelectedFromIntro}
             startButtonRef={startButtonRef}
             handleClick={handleClick}
+            selectedTrack={selectedTrack}
           />
           <AudioStarter audioStarted={audioStarted} />
           <HoldToPauseHandler 
@@ -376,10 +418,7 @@ const Croquetas25 = () => {
             />
           )}
           
-          {/* Mostrar Intro superpuesto cuando hay track seleccionado pero audio no iniciado */}
-          {selectedTrack && !audioStarted && tracks.length > 0 && (
-            <Intro tracks={tracks} onTrackSelect={handleTrackSelect} />
-          )}
+          {/* Intro se muestra en el nivel superior cuando !audioStarted */}
         </AudioProvider>
       )}
       
@@ -388,9 +427,13 @@ const Croquetas25 = () => {
         <Background onTriggerCallbackRef={triggerCallbackRef} />
       )}
       
-      {/* Mostrar Intro cuando no hay track seleccionado */}
-      {!selectedTrack && tracks.length > 0 && (
-        <Intro tracks={tracks} onTrackSelect={handleTrackSelect} />
+      {/* Mostrar Intro superpuesto cuando no hay audio iniciado - siempre visible con overlay glass */}
+      {!audioStarted && tracks.length > 0 && (
+        <Intro 
+          tracks={tracks} 
+          onTrackSelect={handleTrackSelect}
+          selectedTrackId={selectedTrack?.id || selectedTrack?.name?.toLowerCase().replace(/\s+/g, '-') || "cachitos25"}
+        />
       )}
     </div>
   );
@@ -505,7 +548,8 @@ const UnifiedContentManager = ({
   isDirectUri,
   wasSelectedFromIntro,
   startButtonRef,
-  handleClick
+  handleClick,
+  selectedTrack
 }) => {
   const { isInitialized, isLoaded, loadingProgress: audioProgress, audioRef } = useAudio();
   
@@ -528,11 +572,13 @@ const UnifiedContentManager = ({
       }
     } else {
       // Si entramos desde pantalla inicial o fue seleccionado desde Intro, auto-play
+      // PERO SOLO cuando TODO esté completamente listo (imágenes y audio)
       // Y FORZAR que el botón NO se muestre
       if (showStartButton) {
         setShowStartButton(false);
       }
-      if (!audioStarted) {
+      // Solo iniciar audio si TODO está listo (imágenes al 100% y audio con metadata)
+      if (!audioStarted && everythingReady) {
         setAudioStarted(true);
       }
     }
@@ -568,16 +614,20 @@ const UnifiedContentManager = ({
   
   return (
     <div 
-      className="croquetas25-start-button" 
+      className="croquetas25-start-croqueta" 
       ref={(el) => {
         startButtonRef.current = el;
         buttonRef.current = el;
       }}
       onClick={handleClick}
     >
-      <div className="croquetas25-start-button__content">
-        <div className="croquetas25-start-button__text">Comenzar</div>
-      </div>
+      <Croqueta
+        index={selectedTrack ? 0 : 999}
+        text={selectedTrack?.name || "Comenzar"}
+        onClick={handleClick}
+        rotation={0}
+        className="croquetas25-start-croqueta__button"
+      />
     </div>
   );
 };

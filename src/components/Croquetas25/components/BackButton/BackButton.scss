@@ -10,7 +10,15 @@
   position: absolute;
   top: 2dvh;
   left: 2vw;
+  width: 15vw; // Tamaño fijo para que el transform-origin funcione correctamente
+  height: 15vw;
+  max-width: 15vw;
+  max-height: 15vw;
   will-change: transform;
+  transform-origin: center center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .back-button__croqueta {
