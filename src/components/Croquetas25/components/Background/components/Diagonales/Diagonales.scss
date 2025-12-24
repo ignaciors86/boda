@@ -1,0 +1,70 @@
+.diagonales {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+  overflow: hidden;
+}
+
+.diagonales__line {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.15vw; // Más estrechitas
+  min-width: 1px;
+  height: 300dvh; // Mucho más largas para que rocen más los bordes
+  opacity: 1; // Sin transparencia
+  transform-style: preserve-3d;
+  transform-origin: center center;
+  transform: translate(-50%, -50%) rotate(var(--diagonal-angle, 0deg));
+  
+  // Diagonales fijas que atraviesen las esquinas - posicionadas desde el centro
+  &.diagonales__line--fixed {
+    // Estilos estáticos para diagonales fijas
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    height: 0.15vw; // Grosor de la línea (altura cuando está horizontal)
+    min-height: 1px;
+    opacity: 1;
+    z-index: 11; // Por encima de las otras diagonales
+    // Sin máscara para que se vean completas
+    mask-image: none;
+    -webkit-mask-image: none;
+    // Transform origin en el centro (como las diagonales normales)
+    transform-origin: center center;
+    // Los estilos dinámicos (width, transform) se aplican inline desde JS
+  }
+  will-change: transform, background, opacity, box-shadow;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  
+  // Transiciones suaves para cambios de color y opacidad
+  transition: 
+    background 0.3s ease,
+    box-shadow 0.3s ease,
+    opacity 0.3s ease,
+    filter 0.3s ease;
+  
+  // Puntas suavizadas con máscara
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 5%,
+    black 95%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 5%,
+    black 95%,
+    transparent 100%
+  );
+  
+  // Más brillante
+  filter: brightness(1.5) saturate(1.5);
+}

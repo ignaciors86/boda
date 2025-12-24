@@ -1,39 +1,58 @@
 import React, { useRef, useEffect, useState } from 'react';
 import gsap from 'gsap';
 import './Background.scss';
+import Diagonales from './components/Diagonales/Diagonales';
 
-const Background = ({ onTriggerCallbackRef }) => {
+// Helper para convertir hex a RGB
+const hexToRgb = (hex) => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '0, 255, 255';
+};
+
+const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitialized, onVoiceCallbackRef }) => {
   const [squares, setSquares] = useState([]);
   const squareRefs = useRef({});
   const lastProgressRef = useRef(0);
+  const colorIndexRef = useRef(0);
+  const squaresWithBackgroundRef = useRef(0); // Contador de cuadros con fondo
+  const FADE_OUT_PERCENTAGE = 40; // Porcentaje de scale/avance para iniciar fade out (más temprano)
 
   useEffect(() => {
-    console.log(`[Background] Setting up trigger callback | onTriggerCallbackRef exists: ${!!onTriggerCallbackRef} | timestamp: ${Date.now()}`);
-    if (onTriggerCallbackRef) {
-      onTriggerCallbackRef.current = (type, data = {}) => {
-        const id = `square-${Date.now()}-${Math.random()}`;
-        const timestamp = Date.now();
-        const squareData = { 
-          id, 
-          type, // 'beat' | 'progress' | 'custom'
-          data,
-          timestamp
-        };
-        console.log(`[Background] Trigger callback called | type: ${type} | data: ${JSON.stringify(data)} | id: ${id} | timestamp: ${timestamp}`);
-        try {
-          setSquares(prev => {
-            const newSquares = [...prev, squareData];
-            console.log(`[Background] Square added | new squares count: ${newSquares.length} | square id: ${id}`);
-            return newSquares;
-          });
-        } catch (error) {
-          console.error(`[Background] ERROR adding square: ${error.message} | stack: ${error.stack} | error object: ${JSON.stringify({ name: error.name, message: error.message })}`);
+    if (!onTriggerCallbackRef) return;
+    
+    onTriggerCallbackRef.current = (type, data = {}) => {
+      const id = `square-${Date.now()}-${Math.random()}`;
+      const lgtbColors = [
+        '#FF0080', '#FF8000', '#FFFF00', '#00FF00', '#0080FF', '#8000FF',
+        '#00FFFF', '#FF00FF', '#FFFFFF', '#FFB347', '#FFD700', '#C0C0C0',
+      ];
+      
+      const color1 = lgtbColors[colorIndexRef.current % lgtbColors.length];
+      const color2 = lgtbColors[(colorIndexRef.current + 1) % lgtbColors.length];
+      colorIndexRef.current++;
+      
+      const intensity = data?.intensity ?? 0.5;
+      const shouldHaveBackground = intensity > 0.3 && (squaresWithBackgroundRef.current % 4 === 0);
+      
+      if (shouldHaveBackground) {
+        squaresWithBackgroundRef.current++;
+      }
+      
+      const squareData = { 
+        id, 
+        type,
+        data,
+        timestamp: Date.now(),
+        isTarget: shouldHaveBackground,
+        gradient: {
+          color1: color1,
+          color2: color2,
+          angle: Math.floor(Math.random() * 360)
         }
       };
-      console.log(`[Background] Trigger callback set successfully`);
-    } else {
-      console.warn(`[Background] onTriggerCallbackRef is null, cannot set callback`);
-    }
+      
+      setSquares(prev => [...prev, squareData]);
+    };
   }, [onTriggerCallbackRef]);
 
   useEffect(() => {
@@ -47,49 +66,140 @@ const Background = ({ onTriggerCallbackRef }) => {
       if (el && !el.animated) {
         el.animated = true;
         
-        // Duración basada en el tipo de trigger
-        // Los beats pueden tener duración diferente a los de progreso
-        const duration = square.type === 'beat' ? 3 : 2.5;
+        // Duración basada en el tipo de trigger y la intensidad de la música
+        // Intensidad va de 0 (baja) a 1 (alta)
+        // Con más intensidad, movimiento más rápido (duración menor)
+        // Con menos intensidad, movimiento más lento (duración mayor)
+        const intensity = square.data?.intensity ?? 0.5; // Default 0.5 si no hay intensidad
         
-        console.log(`[Background] Starting GSAP animation | square id: ${square.id} | type: ${square.type} | duration: ${duration} | ease: ${square.type === 'beat' ? 'power2.out' : 'power1.out'}`);
+        // Duración base más lenta (aumentada)
+        // Rango: 8 segundos (intensidad baja) a 4 segundos (intensidad alta)
+        const baseDuration = square.type === 'beat' ? 8 : 7;
+        const duration = baseDuration - (intensity * 4); // De 8s a 4s según intensidad
         
         try {
-          gsap.fromTo(el, 
-            { scale: 0, z: -600 },
-            {
-              scale: 1,
-              z: 400,
-              duration: duration,
-              ease: square.type === 'beat' ? 'power2.out' : 'power1.out',
+          const timeline = gsap.timeline();
+          const isTarget = square.isTarget;
+          
+          // Cuadros target (con fondo): crecen hasta 85% con parón, luego desaparecen
+          if (isTarget) {
+            // Cuadros con fondo: crecen hasta 85% y luego desaparecen
+            const zStart = -600;
+            const zEnd = 400;
+            const zAtScale85 = 50; // z cuando scale debe ser 0.85 (85% del tamaño visible)
+            const scaleAt85 = 0.85; // Scale cuando el tamaño visible es 85%
+            
+            const zTotal = zEnd - zStart; // 1000
+            const zProgressToScale85 = (zAtScale85 - zStart) / zTotal; // 0.65 (65%)
+            
+            // Tiempo hasta scale 0.85: 60% de la duración
+            const timeToScale85 = duration * 0.6;
+            // Parón en scale 0.85: 10% de la duración
+            const pauseDuration = duration * 0.1;
+            // Fade out después del parón: 30% de la duración
+            const fadeOutDuration = duration * 0.3;
+            
+            // Animación hasta scale 0.85
+            timeline.fromTo(el, 
+              { 
+                scale: 0, 
+                z: zStart,
+                opacity: 1
+              },
+              {
+                scale: scaleAt85,
+                z: zAtScale85,
+                opacity: 1,
+                duration: timeToScale85,
+                ease: 'power1.out',
+                force3D: true
+              }
+            );
+            
+            // Parón en scale 0.85
+            timeline.to(el, {
+              scale: scaleAt85,
+              z: zAtScale85,
+              opacity: 1,
+              duration: pauseDuration,
+              ease: 'none',
+              force3D: true
+            });
+            
+            // Fade out después del parón
+            timeline.to(el, {
+              opacity: 0,
+              scale: 0.95,
+              z: 100,
+              duration: fadeOutDuration,
+              ease: 'power2.in',
+              force3D: true,
               onComplete: () => {
-                console.log(`[Background] GSAP animation complete | square id: ${square.id}`);
                 setSquares(prev => prev.filter(s => s.id !== square.id));
               }
-            }
-          );
-          console.log(`[Background] GSAP animation started successfully | square id: ${square.id}`);
+            });
+          } else {
+            // Cuadros normales (sin fondo): movimiento continuo y constante, sin fade out que afecte la velocidad
+            const targetScale = 0.85;
+            
+            // Animación continua: scale y z se mueven de forma constante y lineal
+            // No hay fade out que cambie la velocidad, solo desaparecen cuando salen de la vista
+            timeline.fromTo(el, 
+              { 
+                scale: 0, 
+                z: -600,
+                opacity: 1
+              },
+              {
+                scale: targetScale,
+                z: 400, // Llegan hasta el final sin cambiar velocidad
+                opacity: 1, // Mantienen opacidad constante
+                duration: duration, // Duración completa sin interrupciones
+                ease: 'none', // Linear, velocidad constante
+                force3D: true,
+                onComplete: () => {
+                  setSquares(prev => prev.filter(s => s.id !== square.id));
+                }
+              }
+            );
+          }
         } catch (error) {
-          console.error(`[Background] ERROR starting GSAP animation: ${error.message} | stack: ${error.stack} | error object: ${JSON.stringify({ name: error.name, message: error.message })} | square id: ${square.id}`);
+          console.error(`[Background] Animation error: ${error.message}`);
         }
-      } else if (!el) {
-        console.warn(`[Background] Square element not found in refs | square id: ${square.id} | available refs: ${Object.keys(squareRefs.current).join(', ')}`);
-      } else if (isAnimated) {
-        console.log(`[Background] Square already animated, skipping | square id: ${square.id}`);
       }
     });
   }, [squares]);
 
   return (
     <div className="background">
-      <div className="line-diagonal-1" />
-      <div className="line-diagonal-2" />
-      {squares.map(square => (
-        <div
-          key={square.id}
-          ref={el => squareRefs.current[square.id] = el}
-          className="square"
-        />
-      ))}
+      <Diagonales 
+        squares={squares}
+        analyserRef={analyserRef}
+        dataArrayRef={dataArrayRef}
+        isInitialized={isInitialized}
+        onVoiceCallbackRef={onVoiceCallbackRef}
+      />
+      {squares.map(square => {
+        const color1 = square.gradient?.color1 || '#00ffff';
+        const color2 = square.gradient?.color2 || '#00ffff';
+        const angle = square.gradient?.angle || 45;
+        
+        // Ya no se usa glassColor, los cuadros normales son transparentes
+        
+        return (
+          <div
+            key={square.id}
+            ref={el => squareRefs.current[square.id] = el}
+            className={`square ${square.isTarget ? 'square--target' : ''}`}
+            data-square-id={square.id}
+            style={{ 
+              '--square-color-1': color1,
+              '--square-color-2': color2,
+              '--square-gradient-angle': `${angle}deg`
+            }}
+          />
+        );
+      })}
     </div>
   );
 };

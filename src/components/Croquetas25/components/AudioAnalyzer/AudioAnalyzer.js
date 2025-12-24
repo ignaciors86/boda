@@ -2,10 +2,12 @@ import React, { useRef, useEffect } from 'react';
 import { useAudio } from '../../context/AudioContext';
 import './AudioAnalyzer.scss';
 
-const AudioAnalyzer = ({ onBeat, onAudioData }) => {
+const AudioAnalyzer = ({ onBeat, onVoice, onAudioData }) => {
   const { audioRef, audioContextRef, analyserRef, dataArrayRef, timeDataArrayRef, isInitialized } = useAudio();
   const lastBeatTimeRef = useRef(0);
+  const lastVoiceTimeRef = useRef(0);
   const energyHistoryRef = useRef([]);
+  const voiceHistoryRef = useRef([]);
 
   // Rangos de frecuencias (en índices del array de frecuencias)
   // Con fftSize 2048, tenemos 1024 bins de frecuencia
@@ -108,59 +110,105 @@ const AudioAnalyzer = ({ onBeat, onAudioData }) => {
         rangeEnergy[name] = energy / (range.end - range.start);
       }
 
-      // Energía total
+      // Energía total (volumen general de la música)
       const totalEnergy = Object.values(rangeEnergy).reduce((a, b) => a + b, 0) / Object.keys(rangeEnergy).length;
 
-      // Energía de graves (bass + subBass) para detección de beats
+      // Energía de graves (bass + subBass) para detección de beats/ritmos (para cuadros)
       const bassEnergy = (rangeEnergy.subBass + rangeEnergy.bass) / 2;
+      const lowMidEnergy = rangeEnergy.lowMid;
+      const rhythmEnergy = (bassEnergy * 0.7) + (lowMidEnergy * 0.3);
+      
+      // Energía de voces (frecuencias medias-altas) para diagonales
+      const midEnergy = (rangeEnergy.mid + rangeEnergy.highMid) / 2;
+      const trebleEnergy = (rangeEnergy.treble + rangeEnergy.presence) / 2;
+      const voiceEnergy = (midEnergy * 0.6) + (trebleEnergy * 0.4);
 
-      // Calcular variación de energía (para detectar cambios dinámicos)
-      energyHistoryRef.current.push(totalEnergy);
-      if (energyHistoryRef.current.length > 30) {
+      // Historiales separados para ritmos y voces
+      energyHistoryRef.current.push(rhythmEnergy);
+      if (energyHistoryRef.current.length > 20) {
         energyHistoryRef.current.shift();
       }
 
-      // Calcular métricas avanzadas
-      const averageEnergy = energyHistoryRef.current.length > 0
+      const averageRhythmEnergy = energyHistoryRef.current.length > 0
         ? energyHistoryRef.current.reduce((a, b) => a + b, 0) / energyHistoryRef.current.length
         : 0;
 
-      // Detección de beats adaptativa
-      const energyVariance = energyHistoryRef.current.length > 1
-        ? energyHistoryRef.current.reduce((acc, val) => acc + Math.pow(val - averageEnergy, 2), 0) / energyHistoryRef.current.length
+      const rhythmVariance = energyHistoryRef.current.length > 1
+        ? energyHistoryRef.current.reduce((acc, val) => acc + Math.pow(val - averageRhythmEnergy, 2), 0) / energyHistoryRef.current.length
         : 0;
 
-      // Threshold adaptativo basado en la varianza - AUMENTADO para ser menos sensible
-      // Multiplicador más alto = menos sensible (requiere más energía para detectar beat)
-      const adaptiveThreshold = averageEnergy + (Math.sqrt(energyVariance) * 2.5);
+      // Ajustar sensibilidad según el volumen detectado
+      // Volumen normalizado (0-1) basado en la energía total
+      const normalizedVolume = Math.min(totalEnergy / 255, 1); // 255 es el máximo valor de getByteFrequencyData
+      
+      // Detección de ritmos para cuadros
+      const rhythmSensitivity = 0.1 + (0.5 * (1 - normalizedVolume));
+      const rhythmThreshold = averageRhythmEnergy + (Math.sqrt(rhythmVariance) * rhythmSensitivity * 0.5);
+      const rhythmSpikeThreshold = 0.3 + (0.15 * (1 - normalizedVolume));
+      const rhythmSpikeMultiplier = 0.75 + (0.2 * (1 - normalizedVolume));
+      const recentRhythm = energyHistoryRef.current.slice(-5);
+      const maxRecentRhythm = Math.max(...recentRhythm);
+      const rhythmSpike = rhythmEnergy > maxRecentRhythm * rhythmSpikeThreshold && rhythmEnergy > averageRhythmEnergy * rhythmSpikeMultiplier;
+      
+      // Detección de voces para diagonales
+      const voiceHistory = voiceHistoryRef.current || [];
+      voiceHistory.push(voiceEnergy);
+      if (voiceHistory.length > 20) voiceHistory.shift();
+      voiceHistoryRef.current = voiceHistory;
+      
+      const averageVoiceEnergy = voiceHistory.length > 0
+        ? voiceHistory.reduce((a, b) => a + b, 0) / voiceHistory.length
+        : 0;
+      
+      const voiceVariance = voiceHistory.length > 1
+        ? voiceHistory.reduce((acc, val) => acc + Math.pow(val - averageVoiceEnergy, 2), 0) / voiceHistory.length
+        : 0;
+      
+      // Detección de voces extremadamente sensible
+      const voiceSensitivity = 0.05 + (0.3 * (1 - normalizedVolume));
+      const voiceThreshold = averageVoiceEnergy + (Math.sqrt(voiceVariance) * voiceSensitivity * 0.3);
+      const voiceSpikeThreshold = 0.25 + (0.1 * (1 - normalizedVolume));
+      const voiceSpikeMultiplier = 0.65 + (0.15 * (1 - normalizedVolume));
+      const recentVoice = voiceHistory.slice(-5);
+      const maxRecentVoice = Math.max(...recentVoice);
+      const voiceSpike = voiceEnergy > maxRecentVoice * voiceSpikeThreshold && voiceEnergy > averageVoiceEnergy * voiceSpikeMultiplier;
 
-      // Detección de beats mejorada
+      // Detección de ritmos para cuadros
       const now = Date.now();
       const timeSinceLastBeat = now - lastBeatTimeRef.current;
-      // Aumentar el tiempo mínimo entre beats de 100ms a 200ms para reducir frecuencia
-      const beatDetected = bassEnergy > adaptiveThreshold && timeSinceLastBeat > 200;
+      const minTimeBetweenBeats = 60 + (140 * (1 - normalizedVolume));
+      const rhythmDetected = (rhythmEnergy > rhythmThreshold || rhythmSpike) && timeSinceLastBeat > minTimeBetweenBeats;
       
-      if (beatDetected) {
-        const beatInfo = {
-          bassEnergy: bassEnergy,
-          adaptiveThreshold: adaptiveThreshold,
-          timeSinceLastBeat: timeSinceLastBeat,
-          timestamp: now,
-          totalEnergy: totalEnergy,
-          averageEnergy: averageEnergy,
-          energyVariance: energyVariance
-        };
-        console.log(`[AudioAnalyzer] BEAT DETECTED: ${JSON.stringify(beatInfo)}`);
+      if (rhythmDetected) {
         lastBeatTimeRef.current = now;
         if (onBeat) {
           try {
-            onBeat();
-            console.log(`[AudioAnalyzer] onBeat callback executed successfully`);
+            onBeat(normalizedVolume);
           } catch (error) {
-            console.error(`[AudioAnalyzer] ERROR in onBeat callback: ${error.message} | stack: ${error.stack} | error object: ${JSON.stringify({ name: error.name, message: error.message })}`);
+            console.error(`[AudioAnalyzer] ERROR in onBeat callback: ${error.message}`);
+          }
+        }
+      }
+      
+      // Detección de voces para diagonales - muy frecuente
+      const timeSinceLastVoice = now - lastVoiceTimeRef.current;
+      const minTimeBetweenVoices = 200 + (600 * (1 - normalizedVolume)); // Muy frecuente
+      // Detección más robusta: aceptar si hay energía de voz significativa o spike
+      const hasSignificantVoice = voiceEnergy > averageVoiceEnergy * 0.8 || voiceEnergy > 20;
+      const voiceDetected = (hasSignificantVoice || voiceEnergy > voiceThreshold || voiceSpike) && timeSinceLastVoice > minTimeBetweenVoices;
+      
+      if (voiceDetected) {
+        lastVoiceTimeRef.current = now;
+        console.log(`[AudioAnalyzer] Voice detected | intensity: ${normalizedVolume} | voiceEnergy: ${voiceEnergy} | onVoice exists: ${!!onVoice}`);
+        if (onVoice) {
+          try {
+            onVoice(normalizedVolume, voiceEnergy);
+            console.log(`[AudioAnalyzer] onVoice called successfully`);
+          } catch (error) {
+            console.error(`[AudioAnalyzer] onVoice error: ${error.message} | stack: ${error.stack}`);
           }
         } else {
-          console.warn(`[AudioAnalyzer] Beat detected but onBeat callback is null`);
+          console.warn(`[AudioAnalyzer] onVoice callback is null`);
         }
       }
 
@@ -176,13 +224,13 @@ const AudioAnalyzer = ({ onBeat, onAudioData }) => {
           
           // Métricas globales
           totalEnergy: totalEnergy,
-          averageEnergy: averageEnergy,
-          energyVariance: energyVariance,
+          averageEnergy: averageRhythmEnergy,
+          energyVariance: rhythmVariance,
           
           // Métricas de ritmo
           bassEnergy: bassEnergy,
           estimatedBPM: estimatedBPM,
-          beatDetected: bassEnergy > adaptiveThreshold,
+          beatDetected: rhythmDetected,
           
           // Datos raw para análisis avanzado
           frequencyData: Array.from(dataArrayRef.current),
@@ -217,7 +265,7 @@ const AudioAnalyzer = ({ onBeat, onAudioData }) => {
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [isInitialized, onBeat, onAudioData, analyserRef, dataArrayRef, timeDataArrayRef, audioContextRef, audioRef]);
+  }, [isInitialized, onBeat, onVoice, onAudioData, analyserRef, dataArrayRef, timeDataArrayRef, audioContextRef, audioRef]);
 
   return null;
 };

@@ -24,33 +24,6 @@
   z-index: 1;
 }
 
-.line-diagonal-1,
-.line-diagonal-2 {
-  position: absolute;
-  width: 0.5vw;
-  min-width: 2px;
-  background: var(--laser-color);
-  opacity: 1;
-  transform-style: preserve-3d;
-  z-index: 10;
-  box-shadow: 0 0 10px var(--laser-color);
-}
-
-.line-diagonal-1 {
-  top: 0;
-  left: 0;
-  height: 141.42dvh;
-  transform: rotate(45deg);
-  transform-origin: top left;
-}
-
-.line-diagonal-2 {
-  top: 0;
-  right: 0;
-  height: 141.42dvh;
-  transform: rotate(-45deg);
-  transform-origin: top right;
-}
 
 .square {
   position: absolute;
@@ -58,11 +31,56 @@
   left: 50%;
   width: 100%;
   height: 100%;
-  border: 0.2vw solid var(--laser-color);
   background: transparent;
-  opacity: var(--laser-opacity);
+  opacity: 0.2; // Transparente para efecto glass
+  
+  // Cuadros normales sin background - solo borde, transparente
+  &:not(.square--target) {
+    background: transparent; // Sin fondo, solo borde
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    opacity: 1;
+    z-index: 20; // Por encima de diagonales pero menos que los opacos
+  }
   transform-origin: center center;
   transform-style: preserve-3d;
   transform: translate(-50%, -50%) rotateX(var(--square-rotate-x)) rotateY(var(--square-rotate-y));
+  will-change: transform, opacity; // Optimizar renderizado
+  backface-visibility: hidden; // Evitar parpadeos
+  -webkit-backface-visibility: hidden;
+  // z-index se define en cada variante
+  
+  // Borde con degradado de colores LGTB+ en tonos neon
+  border: 0.3vw solid;
+  border-image: linear-gradient(
+    var(--square-gradient-angle, 45deg),
+    var(--square-color-1, var(--laser-color)),
+    var(--square-color-2, var(--laser-color))
+  ) 1;
+  
+  // Sin resplandor, solo borde
+  box-shadow: none;
+  
+  // Sin filtros de brillo
+  filter: none;
+  
+  // Transiciones suaves para cambios de color
+  transition: 
+    background 0.3s ease,
+    box-shadow 0.3s ease,
+    border-image 0.3s ease,
+    filter 0.3s ease,
+    opacity 0.3s ease;
+  
+  // Cuadros target (con fondo sólido) - estos sí tapan las diagonales
+  &.square--target {
+    background: linear-gradient(
+      var(--square-gradient-angle, 45deg),
+      var(--square-color-1, var(--laser-color)),
+      var(--square-color-2, var(--laser-color))
+    );
+    opacity: 1;
+    z-index: 30; // Por encima de todo para tapar diagonales
+  }
 }
 

@@ -5,7 +5,7 @@ import AudioAnalyzer from './components/AudioAnalyzer/AudioAnalyzer';
 import Seek from './components/Seek/Seek';
 import LoadingIndicator from './components/LoadingIndicator/LoadingIndicator';
 import { AudioProvider, useAudio } from './context/AudioContext';
-import audioSrc from './assets/audio/audio.mp3';
+import audioSrc from './assets/audio/lodo.mp3';
 
 const LoadingProgressHandler = ({ onTriggerCallbackRef }) => {
   const { loadingProgress, isLoaded } = useAudio();
@@ -52,6 +52,9 @@ const LoadingProgressHandler = ({ onTriggerCallbackRef }) => {
 const Croquetas25 = () => {
   const [audioStarted, setAudioStarted] = useState(false);
   const triggerCallbackRef = useRef(null);
+  const voiceCallbackRef = useRef(null);
+  const lastSquareTimeRef = useRef(0);
+  const minTimeBetweenSquares = 2000; // Tiempo mínimo de visionado: 2 segundos
 
   const handleClick = () => {
     console.log(`[Croquetas25] handleClick called | audioStarted: ${audioStarted} | triggerCallbackRef.current exists: ${!!triggerCallbackRef.current} | timestamp: ${Date.now()}`);
@@ -63,35 +66,128 @@ const Croquetas25 = () => {
     }
   };
 
-  const handleBeat = () => {
-    const hasCallback = !!triggerCallbackRef.current;
+  const lastDiagonalTimeRef = useRef(0);
+  const minTimeBetweenDiagonals = 10000; // Mucho menos frecuente para evitar acumulación
+
+  const handleBeat = (intensity = 0.5) => {
     const timestamp = Date.now();
-    console.log(`[Croquetas25] handleBeat called | hasCallback: ${hasCallback} | timestamp: ${timestamp}`);
+    const timeSinceLastSquare = timestamp - lastSquareTimeRef.current;
+    
+    // Generar cuadros (con tiempo mínimo entre cuadros)
+    if (timeSinceLastSquare >= minTimeBetweenSquares) {
+      if (triggerCallbackRef.current) {
+        try {
+          triggerCallbackRef.current('beat', { timestamp, intensity });
+          lastSquareTimeRef.current = timestamp;
+        } catch (error) {
+          console.error(`[Croquetas25] handleBeat ERROR: ${error.message}`);
+        }
+      }
+    }
+    
+    // Generar diagonales (con tiempo mínimo mucho menor para más frecuencia)
+    const timeSinceLastDiagonal = timestamp - lastDiagonalTimeRef.current;
+    
+    if (timeSinceLastDiagonal >= minTimeBetweenDiagonals) {
+      // El callback está directamente en voiceCallbackRef.current, no en voiceCallbackRef.current.current
+      if (voiceCallbackRef.current && typeof voiceCallbackRef.current === 'function') {
+        try {
+          console.log(`[Croquetas25] Calling diagonal callback from beat | intensity: ${intensity}`);
+          voiceCallbackRef.current(intensity, 0);
+          lastDiagonalTimeRef.current = timestamp;
+        } catch (error) {
+          console.error(`[Croquetas25] handleBeat diagonal callback ERROR: ${error.message} | stack: ${error.stack}`);
+        }
+      } else {
+        console.warn(`[Croquetas25] Cannot call diagonal callback | voiceCallbackRef.current exists: ${!!voiceCallbackRef.current} | is function: ${!!(voiceCallbackRef.current && typeof voiceCallbackRef.current === 'function')}`);
+      }
+    }
+  };
+
+  const handleVoice = (intensity = 0.5, voiceEnergy = 0) => {
+    // Llamar directamente al callback de diagonales
+    // El callback está directamente en voiceCallbackRef.current, no en voiceCallbackRef.current.current
+    if (voiceCallbackRef.current && typeof voiceCallbackRef.current === 'function') {
+      try {
+        console.log(`[Croquetas25] Calling voice callback for diagonals | intensity: ${intensity} | voiceEnergy: ${voiceEnergy}`);
+        voiceCallbackRef.current(intensity, voiceEnergy);
+      } catch (error) {
+        console.error(`[Croquetas25] handleVoice diagonal callback ERROR: ${error.message} | stack: ${error.stack}`);
+      }
+    }
+    
+    // También llamar al callback de cuadros si existe
     if (triggerCallbackRef.current) {
       try {
-        triggerCallbackRef.current('beat', { timestamp });
-        console.log(`[Croquetas25] handleBeat: Trigger callback executed successfully`);
+        triggerCallbackRef.current('voice', { timestamp: Date.now(), intensity, voiceEnergy });
       } catch (error) {
-        console.error(`[Croquetas25] handleBeat ERROR: ${error.message} | stack: ${error.stack} | error object: ${JSON.stringify({ name: error.name, message: error.message })}`);
+        console.error(`[Croquetas25] handleVoice square callback ERROR: ${error.message}`);
       }
-    } else {
-      console.warn(`[Croquetas25] handleBeat: triggerCallbackRef.current is null, cannot trigger beat`);
     }
   };
 
   return (
     <div className="croquetas25" onClick={handleClick}>
-      <Background onTriggerCallbackRef={triggerCallbackRef} />
-      {audioStarted && (
+      {audioStarted ? (
         <AudioProvider audioSrc={audioSrc}>
-          <LoadingProgressHandler onTriggerCallbackRef={triggerCallbackRef} />
-          <LoadingIndicator />
-          <AudioAnalyzer onBeat={handleBeat} />
-          <Seek />
+          <BackgroundWrapper onTriggerCallbackRef={triggerCallbackRef} onVoiceCallbackRef={voiceCallbackRef} />
+                 <LoadingProgressHandler onTriggerCallbackRef={triggerCallbackRef} />
+                 <LoadingIndicator />
+                 <AudioAnalyzer onBeat={handleBeat} onVoice={handleVoice} />
+                 <SeekWrapper />
         </AudioProvider>
+      ) : (
+        <Background onTriggerCallbackRef={triggerCallbackRef} />
       )}
     </div>
   );
+};
+
+// Wrapper para Background que tiene acceso al contexto de audio
+const BackgroundWrapper = ({ onTriggerCallbackRef, onVoiceCallbackRef }) => {
+  const { analyserRef, dataArrayRef, isInitialized } = useAudio();
+  
+  return (
+    <Background 
+      onTriggerCallbackRef={onTriggerCallbackRef}
+      onVoiceCallbackRef={onVoiceCallbackRef}
+      analyserRef={analyserRef}
+      dataArrayRef={dataArrayRef}
+      isInitialized={isInitialized}
+    />
+  );
+};
+
+// Componente wrapper para Seek que necesita los squares
+const SeekWrapper = () => {
+  const [squares, setSquares] = useState([]);
+  const squaresRef = useRef([]);
+  
+  // Escuchar cambios en los squares del Background
+  useEffect(() => {
+    const checkSquares = () => {
+      // Buscar elementos square en el DOM
+      const squareElements = document.querySelectorAll('.square');
+      const currentSquares = Array.from(squareElements).map((el, index) => ({
+        id: el.getAttribute('data-square-id') || `square-${index}`,
+        gradient: {
+          color1: getComputedStyle(el).getPropertyValue('--square-color-1') || '#00ffff',
+          color2: getComputedStyle(el).getPropertyValue('--square-color-2') || '#00ffff'
+        }
+      }));
+      
+      if (currentSquares.length !== squaresRef.current.length || 
+          currentSquares.length > 0 && currentSquares[0].gradient.color1 !== squaresRef.current[0]?.gradient?.color1) {
+        squaresRef.current = currentSquares;
+        setSquares([...currentSquares]);
+      }
+    };
+    
+    const interval = setInterval(checkSquares, 100);
+    return () => clearInterval(interval);
+  }, []);
+  
+  return <Seek squares={squaresRef.current} />;
 };
 
 export default Croquetas25;

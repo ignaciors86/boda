@@ -8,11 +8,15 @@
   gap: 2%;
   z-index: 1000;
   padding: 1.5% 2%;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(10px);
-  border-radius: 3vw;
+  background: transparent; // Sin fondo
   width: 60%;
   max-width: 80vw;
+  opacity: 0; // Oculto por defecto
+  transition: opacity 0.3s ease, background 0.3s ease, color 0.3s ease;
+
+  &:hover {
+    opacity: 1; // Visible al hacer hover
+  }
 }
 
 .seek__playPause {
@@ -24,7 +28,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition: transform 0.3s ease, opacity 0.3s ease, color 0.3s ease;
   flex-shrink: 0;
   width: 3vw;
   height: 3vw;
@@ -57,19 +61,16 @@
 .seek__progressBar {
   position: relative;
   width: 100%;
-  height: 0.3vw;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 0.15vw;
+  height: 2vw; // Barra mucho más grande y cómoda
+  min-height: 16px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 1vw;
   cursor: pointer;
-  overflow: visible;
-
+  overflow: hidden;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+  
   &:hover {
-    height: 0.4vw;
-
-    .seek__progressHandle {
-      opacity: 1;
-      transform: scale(1);
-    }
+    background: rgba(255, 255, 255, 0.25);
   }
 }
 
@@ -78,45 +79,16 @@
   top: 0;
   left: 0;
   height: 100%;
-  background: var(--laser-color);
-  border-radius: 0.15vw;
-  transition: width 0.1s linear;
-  box-shadow: 0 0 0.7vw var(--laser-color);
-}
-
-.seek__progressHandle {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  transform: translate(-50%, -50%) scale(0);
-  width: 0.8vw;
-  height: 0.8vw;
-  background: var(--laser-color);
-  border-radius: 50%;
-  cursor: grab;
-  opacity: 0;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  box-shadow: 0 0 0.6vw var(--laser-color);
-  pointer-events: auto; // Permitir interacción con el thumb
-  z-index: 2; // Asegurar que esté por encima
-
-  &:active {
-    cursor: grabbing;
-    transform: translate(-50%, -50%) scale(1.2);
-  }
-}
-
-.seek__progressBar:hover .seek__progressHandle {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
-}
-
-.seek__time {
-  display: flex;
-  justify-content: space-between;
-  font-size: 1vw;
-  color: rgba(255, 255, 255, 0.7);
-  font-family: monospace;
-  margin-top: 0.5%;
+  background: linear-gradient(
+    90deg,
+    var(--seek-color-1, var(--laser-color)),
+    var(--seek-color-2, var(--laser-color))
+  );
+  border-radius: 1vw;
+  transition: width 0.1s linear, background 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease;
+  box-shadow: 
+    0 0 1.5vw var(--seek-color-1, var(--laser-color)),
+    0 0 3vw var(--seek-color-2, var(--laser-color));
+  filter: brightness(1.2) saturate(1.3);
 }
 
