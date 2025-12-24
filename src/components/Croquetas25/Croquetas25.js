@@ -8,6 +8,7 @@ import Intro from './components/Intro/Intro';
 import { AudioProvider, useAudio } from './context/AudioContext';
 import { useGallery } from './components/Gallery/Gallery';
 import { useTracks } from './hooks/useTracks';
+import Prompt from './components/Prompt/Prompt';
 
 const LoadingProgressHandler = ({ onTriggerCallbackRef }) => {
   const { loadingProgress, isLoaded } = useAudio();
@@ -284,6 +285,10 @@ const Croquetas25 = () => {
           <LoadingIndicator />
           <AudioAnalyzer onBeat={handleBeat} onVoice={handleVoice} />
           <SeekWrapper />
+          {/* Mostrar Prompt si el track tiene guion */}
+          {selectedTrack.guion && selectedTrack.guion.textos && (
+            <Prompt textos={selectedTrack.guion.textos} />
+          )}
         </AudioProvider>
       )}
       
