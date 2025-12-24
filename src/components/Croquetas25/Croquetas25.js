@@ -6,6 +6,7 @@ import Seek from './components/Seek/Seek';
 import LoadingIndicator from './components/LoadingIndicator/LoadingIndicator';
 import Intro from './components/Intro/Intro';
 import { AudioProvider, useAudio } from './context/AudioContext';
+import { useGallery } from './components/Gallery/Gallery';
 import lodoSrc from './assets/audio/lodo.mp3';
 import opusSrc from './assets/audio/audio.mp3';
 import aotSrc from './assets/audio/rumbling.mp3';
@@ -59,6 +60,9 @@ const Croquetas25 = () => {
   const voiceCallbackRef = useRef(null);
   const lastSquareTimeRef = useRef(0);
   const minTimeBetweenSquares = 600; // Tiempo mínimo entre cuadros: 0.6 segundos (muy reducido para máxima frecuencia)
+  
+  // Precargar imágenes antes de mostrar el selector
+  const { isLoading: imagesLoading, preloadProgress } = useGallery();
 
   // Mapeo de tracks
   const tracks = [
@@ -153,8 +157,26 @@ const Croquetas25 = () => {
 
   return (
     <div className="croquetas25" onClick={handleClick}>
-      {/* Overlay de selección de canción */}
-      {!selectedTrack && (
+      {/* Mostrar indicador de carga mientras se precargan las imágenes */}
+      {imagesLoading && (
+        <div className="image-preloader">
+          <div className="image-preloader__content">
+            <div className="image-preloader__text">Cargando imágenes...</div>
+            <div className="image-preloader__bar">
+              <div 
+                className="image-preloader__fill" 
+                style={{ width: `${preloadProgress}%` }}
+              />
+            </div>
+            <div className="image-preloader__percentage">
+              {Math.round(preloadProgress)}%
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Overlay de selección de canción - solo cuando las imágenes estén cargadas */}
+      {!imagesLoading && !selectedTrack && (
         <Intro tracks={tracks} onTrackSelect={handleTrackSelect} />
       )}
       
