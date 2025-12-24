@@ -287,7 +287,7 @@ const Croquetas25 = () => {
           <SeekWrapper />
           {/* Mostrar Prompt si el track tiene guion */}
           {selectedTrack.guion && selectedTrack.guion.textos && (
-            <Prompt textos={selectedTrack.guion.textos} />
+            <PromptWrapper textos={selectedTrack.guion.textos} />
           )}
         </AudioProvider>
       )}
@@ -346,6 +346,54 @@ const SeekWrapper = () => {
   }, []);
   
   return <Seek squares={squaresRef.current} />;
+};
+
+// Componente wrapper para Prompt que necesita el tiempo del audio
+const PromptWrapper = ({ textos }) => {
+  const { audioRef } = useAudio();
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  useEffect(() => {
+    if (!audioRef?.current) return;
+
+    const audio = audioRef.current;
+
+    const updateTime = () => {
+      if (audio.currentTime !== undefined) {
+        setCurrentTime(audio.currentTime);
+      }
+      if (audio.duration && isFinite(audio.duration)) {
+        setDuration(audio.duration);
+      }
+    };
+
+    const handleTimeUpdate = () => updateTime();
+    const handleLoadedMetadata = () => {
+      if (audio.duration && isFinite(audio.duration)) {
+        setDuration(audio.duration);
+      }
+    };
+
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('seeked', handleTimeUpdate);
+
+    // Actualizar inmediatamente
+    updateTime();
+
+    // Actualizar periódicamente para capturar cambios de seek
+    const interval = setInterval(updateTime, 100);
+
+    return () => {
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('seeked', handleTimeUpdate);
+      clearInterval(interval);
+    };
+  }, [audioRef]);
+
+  return <Prompt textos={textos} currentTime={currentTime} duration={duration} />;
 };
 
 export default Croquetas25;

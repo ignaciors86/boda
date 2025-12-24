@@ -9,11 +9,12 @@
   align-items: flex-end;
   justify-content: center;
   z-index: 100;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.85);
   opacity: 0;
   box-sizing: border-box;
   border: 4px solid #00ffff;
   border-radius: 0.5vw;
+  will-change: opacity, transform;
 
   @media (orientation: portrait) {
     width: 90%;
@@ -35,20 +36,28 @@
     pointer-events: none;
 
     span {
-      font-size: 1.5vw;
-      line-height: 1.8vw;
+      font-size: 4.5dvh;
+      line-height: 5.5dvh;
       font-weight: 700;
       font-family: 'Courier New', monospace;
       color: #00ffff;
+      text-shadow: 0 0 1rem rgba(0, 255, 255, 0.8);
     }
 
     .Typewriter__wrapper {
       color: #00ffff;
       font-family: 'Courier New', monospace;
+      font-size: 4.5dvh;
+      line-height: 5.5dvh;
+      font-weight: 700;
+      text-shadow: 0 0 1rem rgba(0, 255, 255, 0.8);
     }
 
     .Typewriter__cursor {
       color: #00ffff;
+      font-size: 4.5dvh;
+      line-height: 5.5dvh;
+      text-shadow: 0 0 1rem rgba(0, 255, 255, 0.8);
     }
   }
 }

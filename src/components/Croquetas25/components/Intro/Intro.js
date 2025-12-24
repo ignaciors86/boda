@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import gsap from 'gsap';
 import './Intro.scss';
 
@@ -6,6 +6,59 @@ const Intro = ({ tracks, onTrackSelect }) => {
   const titleRef = useRef(null);
   const buttonsRef = useRef([]);
   const [isAnimating, setIsAnimating] = useState(false);
+  const overlayRef = useRef(null);
+
+  // Animación de entrada cuando el componente se monta
+  useEffect(() => {
+    // Inicializar elementos con opacidad 0 y scale 0
+    if (titleRef.current) {
+      gsap.set(titleRef.current, { opacity: 0, y: -30 });
+    }
+    
+    buttonsRef.current.forEach((buttonRef) => {
+      if (buttonRef) {
+        gsap.set(buttonRef, { opacity: 0, scale: 0 });
+      }
+    });
+
+    if (overlayRef.current) {
+      gsap.set(overlayRef.current, { opacity: 0 });
+    }
+
+    // Crear timeline para la animación de entrada
+    const tl = gsap.timeline();
+
+    // Fade in del overlay
+    if (overlayRef.current) {
+      tl.to(overlayRef.current, {
+        opacity: 1,
+        duration: 0.5,
+        ease: 'power2.out'
+      });
+    }
+
+    // Fade in del título
+    if (titleRef.current) {
+      tl.to(titleRef.current, {
+        opacity: 1,
+        y: 0,
+        duration: 0.8,
+        ease: 'power2.out'
+      }, 0.2);
+    }
+
+    // Animación escalonada de los botones (similar a la salida pero al revés)
+    buttonsRef.current.forEach((buttonRef, i) => {
+      if (buttonRef) {
+        tl.to(buttonRef, {
+          opacity: 1,
+          scale: 1,
+          duration: 0.6,
+          ease: 'back.out(1.7)'
+        }, 0.4 + (i * 0.1)); // Stagger de 0.1s entre cada botón
+      }
+    });
+  }, []);
 
   const handleTrackSelect = (track, index) => {
     if (isAnimating) return; // Prevenir múltiples clics durante la animación
@@ -73,7 +126,7 @@ const Intro = ({ tracks, onTrackSelect }) => {
   };
 
   return (
-    <div className="intro-overlay">
+    <div className="intro-overlay" ref={overlayRef}>
       <div className="intro">
         <h2 ref={titleRef} className="intro__title">Selecciona una canción</h2>
         <div className="intro__buttons">

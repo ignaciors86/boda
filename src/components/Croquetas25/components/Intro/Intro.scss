@@ -11,6 +11,7 @@
   z-index: 1000;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  opacity: 0; // Inicialmente oculto, se animará con GSAP
 }
 
 .intro {
@@ -32,6 +33,8 @@
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.2em;
+  opacity: 0; // Inicialmente oculto, se animará con GSAP
+  will-change: opacity, transform;
 }
 
 .intro__buttons {
@@ -75,6 +78,8 @@
   overflow: hidden;
   animation: float 3s ease-in-out infinite;
   will-change: transform, opacity; // Optimizar para animaciones
+  opacity: 0; // Inicialmente oculto, se animará con GSAP
+  transform: scale(0); // Inicialmente en scale 0, se animará con GSAP
   
   // Variar ligeramente el timing de cada botón para efecto más orgánico
   &:nth-child(1) {
