@@ -67,13 +67,14 @@
   text-transform: uppercase;
   letter-spacing: 0.1em;
   cursor: pointer;
-  transition: border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease, scale 0.3s ease;
+  transition: border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
   animation: float 3s ease-in-out infinite;
+  will-change: transform, opacity; // Optimizar para animaciones
   
   // Variar ligeramente el timing de cada botón para efecto más orgánico
   &:nth-child(1) {
@@ -121,9 +122,8 @@
     }
   }
   
-  &:active {
-    transform: translateY(-15px) scale(0.95);
-  }
+  // Eliminar :active para evitar conflictos con GSAP
+  // GSAP controlará el transform completamente
 }
 
 .intro__button-text {
