@@ -63,24 +63,98 @@ const Croquetas25 = () => {
   const { tracks, isLoading: tracksLoading } = useTracks();
   
   // Precargar imágenes del track seleccionado (o todas si no hay track seleccionado)
-  const { isLoading: imagesLoading, preloadProgress } = useGallery(selectedTrack);
+  const { isLoading: imagesLoading, preloadProgress: imagesProgress } = useGallery(selectedTrack);
 
   // Calcular el src del audio del track seleccionado
   const currentAudioSrc = selectedTrack?.src;
+  
+  // Estado para rastrear la carga del audio
+  const [audioLoadingProgress, setAudioLoadingProgress] = useState(0);
+  const [isAudioReady, setIsAudioReady] = useState(false);
 
   const handleTrackSelect = (track) => {
     console.log(`[Croquetas25] Track selected: ${track.name}`, track);
     setSelectedTrack(track);
-    // El audio se iniciará automáticamente cuando las imágenes estén cargadas
+    // Resetear estados de carga
+    setAudioLoadingProgress(0);
+    setIsAudioReady(false);
+    setAudioStarted(false);
   };
 
-  // Iniciar audio automáticamente cuando las imágenes del track estén cargadas
+  // Monitorear la carga del audio cuando se selecciona un track
   useEffect(() => {
-    if (selectedTrack && !imagesLoading && currentAudioSrc && !audioStarted) {
-      console.log(`[Croquetas25] Imágenes cargadas, iniciando audio para: ${selectedTrack.name}`);
+    if (!selectedTrack || !currentAudioSrc) {
+      setIsAudioReady(false);
+      setAudioLoadingProgress(0);
+      return;
+    }
+
+    // Crear un elemento audio temporal para precargar
+    const audio = new Audio(currentAudioSrc);
+    audio.preload = 'auto';
+    
+    const updateAudioProgress = () => {
+      if (audio.buffered.length > 0 && audio.duration && isFinite(audio.duration) && audio.duration > 0) {
+        const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
+        const progress = Math.min((bufferedEnd / audio.duration) * 100, 100);
+        setAudioLoadingProgress(progress);
+        
+        if (progress >= 95 || bufferedEnd >= audio.duration * 0.95) {
+          setIsAudioReady(true);
+          setAudioLoadingProgress(100);
+        }
+      } else if (audio.readyState >= 2) {
+        let progress = 0;
+        if (audio.readyState === 2) progress = 25;
+        else if (audio.readyState === 3) progress = 75;
+        else if (audio.readyState === 4) progress = 100;
+        
+        setAudioLoadingProgress(progress);
+        if (audio.readyState >= 4) {
+          setIsAudioReady(true);
+          setAudioLoadingProgress(100);
+        }
+      }
+    };
+
+    const progressInterval = setInterval(updateAudioProgress, 100);
+    
+    audio.addEventListener('canplaythrough', () => {
+      setIsAudioReady(true);
+      setAudioLoadingProgress(100);
+      clearInterval(progressInterval);
+    });
+
+    audio.addEventListener('error', () => {
+      console.warn('[Croquetas25] Error al precargar audio');
+      setIsAudioReady(true); // Continuar aunque haya error
+      setAudioLoadingProgress(100);
+      clearInterval(progressInterval);
+    });
+
+    // Iniciar la carga
+    audio.load();
+
+    return () => {
+      clearInterval(progressInterval);
+      audio.removeEventListener('canplaythrough', () => {});
+      audio.removeEventListener('error', () => {});
+    };
+  }, [selectedTrack, currentAudioSrc]);
+
+  // Calcular progreso combinado (imágenes + audio)
+  const combinedProgress = selectedTrack 
+    ? Math.round((imagesProgress + audioLoadingProgress) / 2)
+    : imagesProgress;
+
+  // Iniciar audio automáticamente cuando tanto las imágenes como el audio estén listos
+  // IMPORTANTE: Esperar a que imagesLoading sea false Y preloadProgress sea 100
+  useEffect(() => {
+    if (selectedTrack && !imagesLoading && imagesProgress >= 100 && isAudioReady && currentAudioSrc && !audioStarted) {
+      console.log(`[Croquetas25] Imágenes (${imagesProgress}%) y audio cargados, iniciando reproducción para: ${selectedTrack.name}`);
       setAudioStarted(true);
     }
-  }, [selectedTrack, imagesLoading, currentAudioSrc, audioStarted]);
+  }, [selectedTrack, imagesLoading, imagesProgress, isAudioReady, currentAudioSrc, audioStarted]);
 
   const handleClick = () => {
     console.log(`[Croquetas25] handleClick called | audioStarted: ${audioStarted} | triggerCallbackRef.current exists: ${!!triggerCallbackRef.current} | timestamp: ${Date.now()}`);
@@ -169,19 +243,25 @@ const Croquetas25 = () => {
         </div>
       )}
       
-      {/* Mostrar indicador de carga mientras se precargan las imágenes */}
-      {!tracksLoading && imagesLoading && (
+      {/* Mostrar indicador de carga mientras se precargan las imágenes y el audio */}
+      {!tracksLoading && selectedTrack && (imagesLoading || !isAudioReady) && (
         <div className="image-preloader">
           <div className="image-preloader__content">
-            <div className="image-preloader__text">Cargando imágenes...</div>
+            <div className="image-preloader__text">
+              {imagesLoading && !isAudioReady 
+                ? 'Cargando imágenes y audio...' 
+                : imagesLoading 
+                  ? 'Cargando imágenes...' 
+                  : 'Cargando audio...'}
+            </div>
             <div className="image-preloader__bar">
               <div 
                 className="image-preloader__fill" 
-                style={{ width: `${preloadProgress}%` }}
+                style={{ width: `${combinedProgress}%` }}
               />
             </div>
             <div className="image-preloader__percentage">
-              {Math.round(preloadProgress)}%
+              {combinedProgress}%
             </div>
           </div>
         </div>
