@@ -31,9 +31,23 @@
     min-height: 1px;
     opacity: 1;
     z-index: 11; // Por encima de las otras diagonales
-    // Sin máscara para que se vean completas
-    mask-image: none;
-    -webkit-mask-image: none;
+    // Máscara para hacer transparente el centro - transparencia muy leve
+    mask-image: linear-gradient(
+      to right,
+      black 0%,
+      black 45%,
+      transparent 50%,
+      black 55%,
+      black 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      to right,
+      black 0%,
+      black 45%,
+      transparent 50%,
+      black 55%,
+      black 100%
+    );
     // Transform origin en el centro (como las diagonales normales)
     transform-origin: center center;
     // Los estilos dinámicos (width, transform) se aplican inline desde JS
@@ -49,11 +63,14 @@
     opacity 0.3s ease,
     filter 0.3s ease;
   
-  // Puntas suavizadas con máscara
+  // Puntas suavizadas con máscara y transparencia en el centro
   mask-image: linear-gradient(
     to bottom,
     transparent 0%,
     black 5%,
+    black 45%,
+    transparent 50%,
+    black 55%,
     black 95%,
     transparent 100%
   );
@@ -61,6 +78,9 @@
     to bottom,
     transparent 0%,
     black 5%,
+    black 45%,
+    transparent 50%,
+    black 55%,
     black 95%,
     transparent 100%
   );

@@ -35,6 +35,9 @@ const Diagonales = ({ squares, analyserRef, dataArrayRef, isInitialized, onVoice
     // Vector: (-width, height), ángulo = atan2(height, -width)
     const angle2 = Math.atan2(height, -width) * (180 / Math.PI);
     
+    // Para la diagonal horizontal, usar el ancho de la ventana con un multiplicador
+    const horizontalWidth = width * 1.5;
+    
     return {
       diagonal1: {
         angle: angle1,
@@ -43,6 +46,10 @@ const Diagonales = ({ squares, analyserRef, dataArrayRef, isInitialized, onVoice
       diagonal2: {
         angle: angle2,
         width: lineWidth
+      },
+      diagonal3: {
+        angle: 0, // Horizontal
+        width: horizontalWidth
       }
     };
   };
@@ -51,7 +58,7 @@ const Diagonales = ({ squares, analyserRef, dataArrayRef, isInitialized, onVoice
   useEffect(() => {
     if (isInitialized && diagonales.length === 0) {
       // Calcular propiedades para diagonales fijas
-      const { diagonal1, diagonal2 } = calculateFixedDiagonalProps();
+      const { diagonal1, diagonal2, diagonal3 } = calculateFixedDiagonalProps();
       
       const initialDiagonales = [
         // Diagonales fijas que atraviesen las esquinas (siempre se crean primero)
@@ -67,6 +74,15 @@ const Diagonales = ({ squares, analyserRef, dataArrayRef, isInitialized, onVoice
         {
           id: 'diag-fixed-2',
           baseAngle: diagonal2.angle,
+          speed: 0, // Sin rotación
+          createdAt: Date.now(),
+          opacity: 1,
+          creationIntensity: 0.5,
+          isFixed: true
+        },
+        {
+          id: 'diag-fixed-3',
+          baseAngle: diagonal3.angle,
           speed: 0, // Sin rotación
           createdAt: Date.now(),
           opacity: 1,
@@ -303,8 +319,10 @@ const Diagonales = ({ squares, analyserRef, dataArrayRef, isInitialized, onVoice
         let currentAngle;
         if (diag.isFixed) {
           // Para diagonales fijas, recalcular propiedades en cada frame por si cambió el tamaño de ventana
-          const { diagonal1, diagonal2 } = calculateFixedDiagonalProps();
-          const fixedProps = diag.id === 'diag-fixed-1' ? diagonal1 : diagonal2;
+          const { diagonal1, diagonal2, diagonal3 } = calculateFixedDiagonalProps();
+          const fixedProps = diag.id === 'diag-fixed-1' ? diagonal1 : 
+                            diag.id === 'diag-fixed-2' ? diagonal2 : 
+                            diagonal3;
           
           // Actualizar propiedades dinámicas de la diagonal fija (posicionamiento desde centro)
           currentAngle = fixedProps.angle;
@@ -349,8 +367,8 @@ const Diagonales = ({ squares, analyserRef, dataArrayRef, isInitialized, onVoice
         if (!diag.isFixed) {
           // Desvanecimiento más rápido para evitar acumulación - reducido a la mitad
           const age = now - diag.createdAt;
-          const fadeStartTime = 4000; // 4 segundos antes de empezar a desvanecer (la mitad)
-          const fadeDuration = 5000; // 5 segundos para desvanecerse completamente (la mitad)
+          const fadeStartTime = 2000; // 2 segundos antes de empezar a desvanecer
+          const fadeDuration = 3000; // 3 segundos para desvanecerse completamente
           
           if (age > fadeStartTime) {
             const fadeProgress = Math.min((age - fadeStartTime) / fadeDuration, 1);
@@ -442,8 +460,10 @@ const Diagonales = ({ squares, analyserRef, dataArrayRef, isInitialized, onVoice
         let dynamicStyle = {};
         
         if (diag.isFixed) {
-          const { diagonal1, diagonal2 } = calculateFixedDiagonalProps();
-          const fixedProps = diag.id === 'diag-fixed-1' ? diagonal1 : diagonal2;
+          const { diagonal1, diagonal2, diagonal3 } = calculateFixedDiagonalProps();
+          const fixedProps = diag.id === 'diag-fixed-1' ? diagonal1 : 
+                            diag.id === 'diag-fixed-2' ? diagonal2 : 
+                            diagonal3;
           displayAngle = fixedProps.angle;
           // Solo estilos dinámicos en línea (width y rotación, posicionamiento desde centro)
           dynamicStyle = {
@@ -462,8 +482,10 @@ const Diagonales = ({ squares, analyserRef, dataArrayRef, isInitialized, onVoice
                 diagonalRefs.current[diag.id] = el;
                 // Para diagonales fijas, actualizar estilos dinámicos
                 if (diag.isFixed) {
-                  const { diagonal1, diagonal2 } = calculateFixedDiagonalProps();
-                  const fixedProps = diag.id === 'diag-fixed-1' ? diagonal1 : diagonal2;
+                  const { diagonal1, diagonal2, diagonal3 } = calculateFixedDiagonalProps();
+                  const fixedProps = diag.id === 'diag-fixed-1' ? diagonal1 : 
+                                    diag.id === 'diag-fixed-2' ? diagonal2 : 
+                                    diagonal3;
                   
                   // Solo estilos dinámicos en línea (width y rotación, posicionamiento desde centro)
                   el.style.width = `${fixedProps.width}px`;

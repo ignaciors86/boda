@@ -32,7 +32,8 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
       colorIndexRef.current++;
       
       const intensity = data?.intensity ?? 0.5;
-      const shouldHaveBackground = intensity > 0.3 && (squaresWithBackgroundRef.current % 4 === 0);
+      // Aumentar frecuencia de cuadros target: cada 2 cuadros en lugar de cada 4
+      const shouldHaveBackground = intensity > 0.2 && (squaresWithBackgroundRef.current % 2 === 0);
       
       if (shouldHaveBackground) {
         squaresWithBackgroundRef.current++;
@@ -139,11 +140,22 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
               }
             });
           } else {
-            // Cuadros normales (sin fondo): movimiento continuo y constante, sin fade out que afecte la velocidad
+            // Cuadros normales (sin fondo): movimiento continuo y constante
+            // La opacidad desaparece progresivamente según avanzan al scale 1
             const targetScale = 0.85;
+            const scale1 = 1.0; // Scale objetivo donde deben desaparecer completamente
+            
+            // Calcular el progreso donde comienza el fade out (cuando scale alcanza 1.0)
+            // scale va de 0 a targetScale (0.85), necesitamos saber cuándo sería 1.0
+            const scaleProgressTo1 = 1.0 / targetScale; // Progreso donde scale sería 1.0 (1.0/0.85 ≈ 1.176)
+            // Pero como el scale máximo es 0.85, nunca alcanzará 1.0
+            // En su lugar, hacemos que el fade out comience cuando scale se acerca a targetScale
+            // Fade out comienza al 80% del progreso (cuando scale ≈ 0.68) y termina al 100% (scale = 0.85)
+            const fadeStartProgress = 0.7; // Comienza fade out al 70% del progreso
+            const fadeEndProgress = 1.0; // Termina al 100% (scale = 0.85)
             
             // Animación continua: scale y z se mueven de forma constante y lineal
-            // No hay fade out que cambie la velocidad, solo desaparecen cuando salen de la vista
+            // Opacidad disminuye progresivamente según avanzan hacia scale 1
             timeline.fromTo(el, 
               { 
                 scale: 0, 
@@ -152,11 +164,22 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
               },
               {
                 scale: targetScale,
-                z: 400, // Llegan hasta el final sin cambiar velocidad
-                opacity: 1, // Mantienen opacidad constante
-                duration: duration, // Duración completa sin interrupciones
+                z: 400,
+                opacity: 1,
+                duration: duration,
                 ease: 'none', // Linear, velocidad constante
                 force3D: true,
+                onUpdate: function() {
+                  // Calcular progreso actual (0 a 1)
+                  const progress = this.progress();
+                  
+                  // Si estamos en la zona de fade out, reducir opacidad progresivamente
+                  if (progress >= fadeStartProgress) {
+                    const fadeProgress = (progress - fadeStartProgress) / (fadeEndProgress - fadeStartProgress);
+                    const newOpacity = 1 - fadeProgress; // De 1 a 0
+                    gsap.set(el, { opacity: Math.max(0, newOpacity) });
+                  }
+                },
                 onComplete: () => {
                   setSquares(prev => prev.filter(s => s.id !== square.id));
                 }
