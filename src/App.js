@@ -13,7 +13,7 @@ import { InvitadoImageProvider } from './contexts/InvitadoImageContext';
 import CocheFantastico from 'components/CocheFantastico/CocheFantastico';
 import Kudos from './components/GaticosYMonetes/Kudos';
 import Controles from './components/GaticosYMonetes/Controles';
-import SimpleWebRTCTest from './components/SimpleWebRTCTest';
+import SimpleWebRTCTest from './components/SimpleWebRTCTest/SimpleWebRTCTest';
 import Croquetas25 from './components/Croquetas25/Croquetas25';
 import MapaMesas from './components/MapaMesas/MapaMesas';
 

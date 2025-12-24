@@ -1,1 +1,1 @@
-export { default } from './SimpleWebRTCTest'; 
+export { default } from './SimpleWebRTCTest.js'; 
