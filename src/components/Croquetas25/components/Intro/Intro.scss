@@ -18,19 +18,15 @@
 }
 
 .intro {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3rem;
-  padding: 2rem;
+  position: relative;
   width: 100%;
-  max-width: 100%;
+  height: 100%;
   box-sizing: border-box;
 }
 
 .intro__title {
   position: absolute;
-  top: 15%;
+  top: 10%;
   left: 50%;
   transform: translateX(-50%);
   color: #fff;
@@ -44,16 +40,21 @@
   will-change: opacity, transform;
   z-index: 200;
   pointer-events: none;
+  text-shadow: 0 0 1vw rgba(0, 255, 255, 0.8), 0 0 2vw rgba(0, 255, 255, 0.5);
 }
 
 .intro__buttons {
-  position: relative;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100dvh;
-  min-width: 100vw;
-  min-height: 100dvh;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 2vw;
+  width: 100%;
+  padding: 2vw;
+  padding-top: 40%; // Espacio para el título y la croqueta activa
+  box-sizing: border-box;
+  max-height: 100%;
+  overflow-y: auto;
 }
 
 .intro__button {
@@ -75,7 +76,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  position: absolute;
+  position: relative;
   overflow: visible;
   will-change: transform, opacity; // Optimizar para animaciones
   opacity: 0; // Inicialmente oculto, se animará con GSAP
@@ -84,16 +85,31 @@
   padding: 0;
   pointer-events: auto; // Asegurar que los clicks funcionen
   z-index: 10; // Asegurar que estén por encima del overlay
+  transform-origin: center center;
   
-  // Croqueta principal más grande (1.5 veces mayor)
+  // Croqueta principal más grande (1.5 veces mayor) - en absolute, centrada
   &.main-croqueta {
-    width: 22.5vw;
-    height: 22.5vw;
-    min-width: 20vw;
-    min-height: 20vw;
-    max-width: 25vw;
-    max-height: 25vw;
+    position: absolute;
+    top: 25%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 25vw;
+    height: 25vw;
+    min-width: 22vw;
+    min-height: 22vw;
+    max-width: 28vw;
+    max-height: 28vw;
     z-index: 20; // Por encima de las demás
+    
+    // Si es activa por URI, aún más grande
+    &.croqueta-active-uri {
+      width: 28vw;
+      height: 28vw;
+      min-width: 25vw;
+      min-height: 25vw;
+      max-width: 32vw;
+      max-height: 32vw;
+    }
   }
   
   // Croquetas bloqueadas (cuando hay una activa por URI)

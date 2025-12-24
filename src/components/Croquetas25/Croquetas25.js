@@ -12,6 +12,7 @@ import { useTracks } from './hooks/useTracks';
 import Prompt from './components/Prompt/Prompt';
 import Croqueta from './components/Croqueta/Croqueta';
 import BackButton from './components/BackButton/BackButton';
+import KITT from './components/KITT/KITT';
 
 const LoadingProgressHandler = ({ onTriggerCallbackRef }) => {
   const { loadingProgress, isLoaded } = useAudio();
@@ -398,6 +399,10 @@ const Croquetas25 = () => {
             onVoiceCallbackRef={voiceCallbackRef}
             selectedTrack={selectedTrack}
           />
+          {/* KITT - detrás de las Diagonales */}
+          {audioStarted && (
+            <KITTWrapper />
+          )}
                  <LoadingProgressHandler onTriggerCallbackRef={triggerCallbackRef} />
                  <AudioAnalyzer onBeat={handleBeat} onVoice={handleVoice} />
                  <SeekWrapper />
@@ -654,6 +659,18 @@ const BackgroundWrapper = ({ onTriggerCallbackRef, onVoiceCallbackRef, selectedT
       selectedTrack={selectedTrack}
     />
   );
+};
+
+// Wrapper para KITT que tiene acceso al contexto de audio
+const KITTWrapper = () => {
+  const { analyserRef, isInitialized } = useAudio();
+  
+  // Solo mostrar KITT si el analyser está inicializado
+  if (!isInitialized || !analyserRef?.current) {
+    return null;
+  }
+  
+  return <KITT analyser={analyserRef.current} />;
 };
 
 // Componente wrapper para Seek que necesita los squares
