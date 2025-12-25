@@ -22,13 +22,17 @@
   width: 100%;
   height: 100%;
   box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  overflow: hidden;
+  align-content: stretch;
 }
 
 .intro__title {
   position: absolute;
-  top: 10%;
+  top: 55%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   color: #fff;
   font-size: 2.5rem;
   font-weight: 300;
@@ -46,15 +50,14 @@
 .intro__buttons {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 2vw;
+  align-content: space-between;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5%;
   width: 100%;
-  padding: 2vw;
-  padding-top: 40%; // Espacio para el título y la croqueta activa
   box-sizing: border-box;
-  max-height: 100%;
-  overflow-y: auto;
+  height: auto;
+  overflow: hidden;
 }
 
 .intro__button {
@@ -87,19 +90,19 @@
   z-index: 10; // Asegurar que estén por encima del overlay
   transform-origin: center center;
   
-  // Croqueta principal más grande (1.5 veces mayor) - en absolute, centrada
+  // Croqueta principal más grande - en absolute, centrada
   &.main-croqueta {
     position: absolute;
-    top: 25%;
+    top: 38%;
     left: 50%;
     transform: translate(-50%, -50%);
+    z-index: 20; // Por encima de las demás
     width: 25vw;
     height: 25vw;
     min-width: 22vw;
     min-height: 22vw;
     max-width: 28vw;
     max-height: 28vw;
-    z-index: 20; // Por encima de las demás
     
     // Si es activa por URI, aún más grande
     &.croqueta-active-uri {
