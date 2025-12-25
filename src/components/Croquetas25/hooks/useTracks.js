@@ -13,7 +13,7 @@ export const useTracks = () => {
         const imageFiles = imagesContext.keys();
         
         // Cargar todos los archivos de audio
-        const audioContext = require.context('../assets/tracks', true, /\.(mp3|wav|ogg)$/);
+        const audioContext = require.context('../assets/tracks', true, /\.(mp3|m4a|wav|ogg)$/);
         const audioFiles = audioContext.keys();
         
         // Cargar archivos guion.js
