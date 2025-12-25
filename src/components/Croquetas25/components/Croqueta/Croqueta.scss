@@ -37,20 +37,26 @@
     left: 50%;
     z-index: 100;
     pointer-events: none;
-    font-size: 1.4vw;
+    font-size: 1.6vw;
     text-align: center;
     width: auto;
-    max-width: 70%;
+    max-width: 35%;
     padding: 0;
     box-sizing: border-box;
     text-shadow: 0 0 0.5vw rgba(0, 255, 255, 0.8), 0 0 1vw rgba(0, 255, 255, 0.5);
     color: #00ffff;
     white-space: nowrap;
     transform-origin: center center;
+    transform: translate(-70%, -60%) rotate(10deg);
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0;
+  }
+  
+  // Croqueta principal - texto más grande proporcionalmente
+  &.main-croqueta .croqueta__text {
+    font-size: 2.2vw;
   }
   
   &:hover {

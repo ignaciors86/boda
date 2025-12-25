@@ -10,17 +10,21 @@
   align-items: center;
   justify-content: flex-start;
   gap: 2%;
-  z-index: 100;
+  z-index: 300; // Por encima de todo
   background: rgba(0, 0, 0, 0.85);
   opacity: 0;
   box-sizing: border-box;
   border: 4px solid #00ffff;
   border-radius: 0.5vw;
   will-change: opacity, transform;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 
   @media (orientation: portrait) {
     width: 90%;
-    padding: 5%;
+    padding: 5% 5% 5% 15%;
     left: 5%;
     bottom: 4%;
   }
@@ -93,7 +97,7 @@
 
     
     @media (orientation: portrait) {
-      padding-left: 5vw;
+      padding-left: 15vw;
     }
     
     @media (orientation: landscape) {
