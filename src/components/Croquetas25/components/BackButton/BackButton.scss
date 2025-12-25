@@ -19,6 +19,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  
+  // En portrait, duplicar el tamaño
+  @media (orientation: portrait) {
+    width: 30vw; // 15vw * 2
+    height: 30vw; // 15vw * 2
+    max-width: 30vw;
+    max-height: 30vw;
+  }
 }
 
 .back-button__croqueta {
@@ -28,5 +36,15 @@
   min-height: 10vw;
   max-width: 15vw;
   max-height: 15vw;
+  
+  // En portrait, duplicar el tamaño
+  @media (orientation: portrait) {
+    width: 24vw; // 12vw * 2
+    height: 24vw; // 12vw * 2
+    min-width: 20vw; // 10vw * 2
+    min-height: 20vw; // 10vw * 2
+    max-width: 30vw; // 15vw * 2
+    max-height: 30vw; // 15vw * 2
+  }
 }
 

@@ -50,6 +50,14 @@
     pointer-events: none;
     z-index: 1;
     box-sizing: border-box;
+    
+    // En portrait, centrar entre el borde interno del padding (0%) y el inicio del texto
+    // El contenedor tiene width: 90vw
+    // El placeholder tiene padding-left: 15vw del viewport = 15/90 = 16.67% del ancho del contenedor
+    // Para centrar: 16.67% / 2 = 8.33% del ancho del contenedor
+    @media (orientation: portrait) {
+      left: 8.3%; // Mitad del espacio hasta el texto (15vw / 90vw / 2)
+    }
 
     .kitt-container {
       position: relative !important;
