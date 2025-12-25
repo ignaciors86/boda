@@ -139,6 +139,8 @@ const Croquetas25 = () => {
   const HoldToPauseHandler = ({ isPausedByHold, setIsPausedByHold, wasPlayingBeforeHoldRef, typewriterInstanceRef }) => {
     const { audioRef, isPlaying, pause, play } = useAudio();
     const isPausingRef = useRef(false); // Ref para rastrear si estamos en proceso de pausar
+    const mouseDownTimeRef = useRef(0); // Para detectar si es un clic simple o un hold
+    const isHoldRef = useRef(false); // Para saber si fue un hold o un clic simple
 
     useEffect(() => {
       const container = document.querySelector('.croquetas25');
@@ -210,6 +212,21 @@ const Croquetas25 = () => {
         wasPlayingBeforeHoldRef.current = false;
       };
 
+      const togglePauseResume = async () => {
+        // Verificar el estado real del audio
+        const isCurrentlyPaused = audioRef?.current?.paused || isPausedByHold;
+        
+        if (isCurrentlyPaused) {
+          // Si está pausado, reanudar
+          // Primero asegurarse de que wasPlayingBeforeHoldRef esté en true para que resumeEverything funcione
+          wasPlayingBeforeHoldRef.current = true;
+          resumeEverything();
+        } else {
+          // Si está reproduciendo, pausar
+          await pauseEverything();
+        }
+      };
+
       const handleMouseDown = (e) => {
         // No pausar si se hace clic en el seek bar, botón de inicio, o croquetas del Intro
         if (e.target.closest('.seek') || 
@@ -217,7 +234,20 @@ const Croquetas25 = () => {
             e.target.closest('.intro__button') ||
             e.target.closest('.croqueta') ||
             e.target.closest('.intro-overlay')) return;
-        pauseEverything();
+        
+        // Guardar el tiempo del mousedown para detectar si es un clic simple o un hold
+        mouseDownTimeRef.current = Date.now();
+        isHoldRef.current = false;
+        
+        // Iniciar un timer para detectar si es un hold (más de 200ms)
+        setTimeout(() => {
+          const timeSinceMouseDown = Date.now() - mouseDownTimeRef.current;
+          if (timeSinceMouseDown >= 200) {
+            // Es un hold, pausar
+            isHoldRef.current = true;
+            pauseEverything();
+          }
+        }, 200);
       };
 
       const handleMouseUp = (e) => {
@@ -228,7 +258,16 @@ const Croquetas25 = () => {
           // Si se suelta sobre una croqueta, no hacer nada (el click se manejará por el onClick de la croqueta)
           return;
         }
-        resumeEverything();
+        
+        const timeSinceMouseDown = Date.now() - mouseDownTimeRef.current;
+        
+        // Si fue un hold (más de 200ms), reanudar al soltar
+        if (isHoldRef.current) {
+          resumeEverything();
+        } else if (timeSinceMouseDown < 200) {
+          // Si fue un clic rápido, toggle pausa/reanudar
+          togglePauseResume();
+        }
       };
 
       const handleTouchStart = (e) => {
@@ -238,7 +277,20 @@ const Croquetas25 = () => {
             e.target.closest('.intro__button') ||
             e.target.closest('.croqueta') ||
             e.target.closest('.intro-overlay')) return;
-        pauseEverything();
+        
+        // Guardar el tiempo del touchstart para detectar si es un tap simple o un hold
+        mouseDownTimeRef.current = Date.now();
+        isHoldRef.current = false;
+        
+        // Iniciar un timer para detectar si es un hold (más de 200ms)
+        setTimeout(() => {
+          const timeSinceTouchStart = Date.now() - mouseDownTimeRef.current;
+          if (timeSinceTouchStart >= 200) {
+            // Es un hold, pausar
+            isHoldRef.current = true;
+            pauseEverything();
+          }
+        }, 200);
       };
 
       const handleTouchEnd = (e) => {
@@ -249,7 +301,16 @@ const Croquetas25 = () => {
           // Si se suelta sobre una croqueta, no hacer nada (el touch se manejará por el onClick de la croqueta)
           return;
         }
-        resumeEverything();
+        
+        const timeSinceTouchStart = Date.now() - mouseDownTimeRef.current;
+        
+        // Si fue un hold (más de 200ms), reanudar al soltar
+        if (isHoldRef.current) {
+          resumeEverything();
+        } else if (timeSinceTouchStart < 200) {
+          // Si fue un tap rápido, toggle pausa/reanudar
+          togglePauseResume();
+        }
       };
 
       container.addEventListener('mousedown', handleMouseDown);
