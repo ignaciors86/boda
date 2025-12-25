@@ -16,8 +16,9 @@ export const useGallery = (selectedTrack = null) => {
           imagesList = selectedTrack.images;
           console.log('Gallery: Usando imágenes del track:', selectedTrack.name, 'Total:', imagesList.length);
         } else {
-          // Si no hay track seleccionado, cargar todas las imágenes de todos los tracks
+          // Si no hay track seleccionado, cargar todas las imágenes y GIFs de todos los tracks
           // Esto es para el preloader antes de seleccionar canción
+          // require.context busca recursivamente por defecto con el segundo parámetro en true
           const context = require.context('../../assets/tracks', true, /\.(jpg|jpeg|png|gif|webp)$/);
           const files = context.keys();
           

@@ -61,9 +61,17 @@
   pointer-events: none;
   text-shadow: 0 0 1vw rgba(0, 255, 255, 0.8), 0 0 2vw rgba(0, 255, 255, 0.5);
   
-  // En portrait, bajar el texto para que esté entre la principal y las normales
+  // En landscape, posicionar a la izquierda, centrado verticalmente
+  @media (orientation: landscape) {
+    top: 50%;
+    left: 30%; // Acercado desde 25% para reducir espacio
+    transform: translate(-50%, -50%);
+    text-align: left;
+  }
+  
+  // En portrait, subir un poco el texto
   @media (orientation: portrait) {
-    top: 60%;
+    top: 55%; // Subido desde 60%
   }
 }
 
@@ -130,6 +138,18 @@
     min-height: 22vw;
     max-width: 28vw;
     max-height: 28vw;
+    
+    // En landscape, posicionar a la derecha, centrado verticalmente
+    @media (orientation: landscape) {
+      top: 50%;
+      left: 70%; // Acercado desde 75% para reducir espacio
+      transform: translate(-50%, -50%);
+    }
+    
+    // En portrait, subir un poco más la croqueta principal
+    @media (orientation: portrait) {
+      top: 32%; // Subido desde 35%
+    }
     
     // Si es activa por URI, aún más grande
     &.croqueta-active-uri {

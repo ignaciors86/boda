@@ -8,7 +8,8 @@ export const useTracks = () => {
   useEffect(() => {
     const loadTracks = () => {
       try {
-        // Cargar todas las imágenes de las carpetas de tracks
+        // Cargar todas las imágenes y GIFs (videos convertidos) de las carpetas de tracks
+        // require.context busca recursivamente por defecto con el segundo parámetro en true
         const imagesContext = require.context('../assets/tracks', true, /\.(jpg|jpeg|png|gif|webp)$/);
         const imageFiles = imagesContext.keys();
         

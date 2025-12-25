@@ -12,6 +12,29 @@ const getCroquetaSVG = (index) => {
       preserveAspectRatio="xMidYMid meet"
       xmlns="http://www.w3.org/2000/svg"
     >
+      {/* Path invisible para detectar clics dentro del área de la croqueta */}
+      <path
+        d="M 20 60 
+           Q 15 40, 20 25 
+           Q 25 15, 40 18 
+           Q 60 22, 80 20 
+           Q 100 18, 120 25 
+           Q 140 32, 155 40 
+           Q 170 48, 175 60 
+           Q 180 72, 175 85 
+           Q 170 98, 160 100 
+           Q 150 102, 140 100 
+           Q 130 98, 120 95 
+           Q 110 92, 100 88 
+           Q 90 84, 80 80 
+           Q 70 76, 60 72 
+           Q 50 68, 40 65 
+           Q 30 62, 22 60 
+           Q 20 60, 20 60 Z"
+        fill="currentColor"
+        fillOpacity="0"
+        pointerEvents="all"
+      />
       <path
         d="M 20 60 
            Q 15 40, 20 25 
@@ -35,6 +58,7 @@ const getCroquetaSVG = (index) => {
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
+        pointerEvents="none"
       />
       <path d="M 50 30 Q 47 28, 50 26 Q 53 28, 50 30" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
       <path d="M 90 25 Q 87 23, 90 21 Q 93 23, 90 25" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
@@ -51,6 +75,25 @@ const getCroquetaSVG = (index) => {
       preserveAspectRatio="xMidYMid meet"
       xmlns="http://www.w3.org/2000/svg"
     >
+      {/* Path invisible para detectar clics dentro del área de la croqueta */}
+      <path
+        d="M 30 60 
+           Q 25 35, 35 20 
+           Q 45 10, 65 15 
+           Q 85 20, 100 18 
+           Q 115 16, 130 22 
+           Q 145 28, 160 35 
+           Q 175 42, 170 60 
+           Q 165 78, 155 90 
+           Q 145 102, 130 100 
+           Q 115 98, 100 95 
+           Q 85 92, 70 88 
+           Q 55 84, 45 75 
+           Q 35 66, 30 60 Z"
+        fill="currentColor"
+        fillOpacity="0"
+        pointerEvents="all"
+      />
       <path
         d="M 30 60 
            Q 25 35, 35 20 
@@ -70,6 +113,7 @@ const getCroquetaSVG = (index) => {
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
+        pointerEvents="none"
       />
       <path d="M 55 28 Q 52 26, 55 24 Q 58 26, 55 28" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
       <path d="M 85 22 Q 82 20, 85 18 Q 88 20, 85 22" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
@@ -88,6 +132,27 @@ const getCroquetaSVG = (index) => {
       preserveAspectRatio="xMidYMid meet"
       xmlns="http://www.w3.org/2000/svg"
     >
+      {/* Path invisible para detectar clics dentro del área de la croqueta */}
+      <path
+        d="M 25 60 
+           Q 20 42, 28 28 
+           Q 38 16, 52 18 
+           Q 68 20, 82 16 
+           Q 96 12, 110 20 
+           Q 124 28, 138 32 
+           Q 152 36, 165 45 
+           Q 178 54, 172 68 
+           Q 166 82, 155 92 
+           Q 144 102, 130 98 
+           Q 116 94, 102 90 
+           Q 88 86, 74 82 
+           Q 60 78, 48 72 
+           Q 36 66, 28 60 
+           Q 25 60, 25 60 Z"
+        fill="currentColor"
+        fillOpacity="0"
+        pointerEvents="all"
+      />
       <path
         d="M 25 60 
            Q 20 42, 28 28 
@@ -109,6 +174,7 @@ const getCroquetaSVG = (index) => {
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
+        pointerEvents="none"
       />
       <path d="M 48 24 Q 45 22, 48 20 Q 51 22, 48 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
       <path d="M 78 18 Q 75 16, 78 14 Q 81 16, 78 18" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
@@ -141,7 +207,10 @@ const Croqueta = forwardRef(({
         '--rotation': `${rotation}deg`
       }}
     >
-      <div className="croqueta__svg-wrapper">
+      <div 
+        className="croqueta__svg-wrapper"
+        onClick={onClick}
+      >
         {getCroquetaSVG(index)}
       </div>
       {text && (

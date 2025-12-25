@@ -12,6 +12,7 @@
   overflow: visible;
   will-change: transform, opacity;
   transition: color 0.3s ease, filter 0.3s ease;
+  pointer-events: none; // Desactivar eventos en el botón, solo en el SVG
   
   .croqueta__svg-wrapper {
     width: 100%;
@@ -22,6 +23,9 @@
     z-index: 1;
     transition: filter 0.3s ease, transform 0.3s ease;
     filter: drop-shadow(0 0 1vw currentColor);
+    transform: scale(1.15); // Aumentar el tamaño del SVG en un 15%
+    pointer-events: all; // Activar eventos solo en el wrapper del SVG
+    cursor: pointer;
   }
   
   .croqueta__svg {
@@ -29,6 +33,7 @@
     height: auto;
     max-width: 100%;
     max-height: 100%;
+    pointer-events: all; // Activar eventos en el SVG
   }
   
   .croqueta__text {
@@ -59,13 +64,20 @@
     font-size: 2.2vw;
   }
   
-  &:hover {
+  // Hover en el wrapper del SVG para que funcione con pointer-events
+  .croqueta__svg-wrapper:hover {
+    filter: drop-shadow(0 0 20px #ff00ff) drop-shadow(0 0 40px rgba(255, 0, 255, 0.5)) !important;
+    transform: scale(1.2) !important; // Aumentar más en hover (1.15 * 1.05 ≈ 1.2)
+  }
+  
+  // Cambiar color del texto en hover
+  .croqueta__svg-wrapper:hover ~ .croqueta__text {
     color: #ff00ff;
-    
-    .croqueta__svg-wrapper {
-      filter: drop-shadow(0 0 20px currentColor) drop-shadow(0 0 40px rgba(255, 0, 255, 0.5));
-      transform: scale(1.05);
-    }
+  }
+  
+  // Cambiar color del SVG en hover - usar variable CSS
+  .croqueta__svg-wrapper:hover .croqueta__svg {
+    color: #ff00ff;
   }
   
   // En portrait, aumentar el tamaño del texto proporcionalmente (x3)
