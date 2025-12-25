@@ -12,7 +12,6 @@ import { useTracks } from './hooks/useTracks';
 import Prompt from './components/Prompt/Prompt';
 import Croqueta from './components/Croqueta/Croqueta';
 import BackButton from './components/BackButton/BackButton';
-import KITT from './components/KITT/KITT';
 
 const LoadingProgressHandler = ({ onTriggerCallbackRef }) => {
   const { loadingProgress, isLoaded } = useAudio();
@@ -399,10 +398,6 @@ const Croquetas25 = () => {
             onVoiceCallbackRef={voiceCallbackRef}
             selectedTrack={selectedTrack}
           />
-          {/* KITT - detrás de las Diagonales */}
-          {audioStarted && (
-            <KITTWrapper />
-          )}
                  <LoadingProgressHandler onTriggerCallbackRef={triggerCallbackRef} />
                  <AudioAnalyzer onBeat={handleBeat} onVoice={handleVoice} />
                  <SeekWrapper />
@@ -661,18 +656,6 @@ const BackgroundWrapper = ({ onTriggerCallbackRef, onVoiceCallbackRef, selectedT
   );
 };
 
-// Wrapper para KITT que tiene acceso al contexto de audio
-const KITTWrapper = () => {
-  const { analyserRef, isInitialized } = useAudio();
-  
-  // Solo mostrar KITT si el analyser está inicializado
-  if (!isInitialized || !analyserRef?.current) {
-    return null;
-  }
-  
-  return <KITT analyser={analyserRef.current} />;
-};
-
 // Componente wrapper para Seek que necesita los squares
 const SeekWrapper = () => {
   const [squares, setSquares] = useState([]);
@@ -707,7 +690,7 @@ const SeekWrapper = () => {
 
 // Componente wrapper para Prompt que necesita el tiempo del audio
 const PromptWrapper = ({ textos, typewriterInstanceRef, isPausedByHold }) => {
-  const { audioRef } = useAudio();
+  const { audioRef, analyserRef, isInitialized } = useAudio();
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
@@ -750,7 +733,9 @@ const PromptWrapper = ({ textos, typewriterInstanceRef, isPausedByHold }) => {
     };
   }, [audioRef]);
 
-  return <Prompt textos={textos} currentTime={currentTime} duration={duration} typewriterInstanceRef={typewriterInstanceRef} isPaused={isPausedByHold} />;
+  const analyser = isInitialized && analyserRef?.current ? analyserRef.current : null;
+  
+  return <Prompt textos={textos} currentTime={currentTime} duration={duration} typewriterInstanceRef={typewriterInstanceRef} isPaused={isPausedByHold} analyser={analyser} />;
 };
 
 export default Croquetas25;

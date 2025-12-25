@@ -24,12 +24,18 @@ const KITT = ({ analyser }) => {
         canvasBarsRef.current.height = barsHeight * dpr;
         ctxBars.scale(dpr, dpr);
 
-        // Configuración general - usando dvh para mantener proporciones
+        // Configuración general
         const numBars = 3;
         const numSegments = 13;
         const segmentSpacing = 2;
-        // Convertir 6dvh a píxeles basado en la altura de la ventana
-        const segmentWidth = (window.innerHeight * 0.06); // 6dvh equivalente
+        
+        // Si el canvas es pequeño (como en el prompt), calcular basándose en el ancho del canvas
+        // Si es grande (pantalla completa), usar la altura de la ventana
+        const isCompact = barsWidth < 200; // Si el ancho es menor a 200px, está en modo compacto
+        const segmentWidth = isCompact 
+          ? Math.min(barsWidth / 6, 8) // En modo compacto, usar el ancho del canvas dividido por 6, máximo 8px
+          : (window.innerHeight * 0.06); // 6dvh equivalente para pantalla completa
+        
         const columnSpacing = segmentWidth * 0.8;
         const maxHeight = barsHeight * 0.7;
         const segmentHeight = (maxHeight / numSegments) / 2;
@@ -88,8 +94,8 @@ const KITT = ({ analyser }) => {
 
         previousAveragesRef.current = averages;
 
-        // Color cyan por defecto (0, 255, 255)
-        const color = '0, 255, 255';
+        // Color rojo original de KITT (255, 0, 0)
+        const color = '255, 0, 0';
 
         const barOrder = [1, 0, 2];
         for (const i of barOrder) {

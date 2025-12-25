@@ -2,8 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import './Prompt.scss';
 import Typewriter from 'typewriter-effect';
 import { gsap } from 'gsap';
+import KITT from '../KITT/KITT';
 
-const Prompt = ({ textos = [], currentTime = 0, duration = 0, typewriterInstanceRef: externalTypewriterRef, isPaused = false }) => {
+const Prompt = ({ textos = [], currentTime = 0, duration = 0, typewriterInstanceRef: externalTypewriterRef, isPaused = false, analyser = null }) => {
   const promptRef = useRef(null);
   const typewriterKeyRef = useRef(0);
   const currentTextIndexRef = useRef(-1);
@@ -170,6 +171,11 @@ const Prompt = ({ textos = [], currentTime = 0, duration = 0, typewriterInstance
 
   return (
     <div className="croquetas25-prompt" ref={promptRef}>
+      {analyser && (
+        <div className="croquetas25-prompt__kitt">
+          <KITT analyser={analyser} />
+        </div>
+      )}
       <div className="croquetas25-prompt__placeholder">
         {shouldRenderTypewriter ? (
           <Typewriter
