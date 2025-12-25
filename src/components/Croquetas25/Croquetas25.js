@@ -83,26 +83,8 @@ const Croquetas25 = () => {
   // Determinar si entramos por URI directa (trackId presente en URL)
   const isDirectUri = !!trackId;
   
-  // Efecto para seleccionar automáticamente el track si hay trackId en la URL
-  useEffect(() => {
-    if (trackId && tracks.length > 0 && !selectedTrack) {
-      // Buscar el track por ID o nombre (normalizado)
-      const normalizedTrackId = trackId.toLowerCase().replace(/\s+/g, '-');
-      const track = tracks.find(t => 
-        t.id === normalizedTrackId || 
-        t.name.toLowerCase().replace(/\s+/g, '-') === normalizedTrackId
-      );
-      
-      if (track) {
-        setSelectedTrack(track);
-        setAudioStarted(false);
-        // Solo mostrar botón si NO fue seleccionado desde Intro
-        if (!wasSelectedFromIntro) {
-          setShowStartButton(true);
-        }
-      }
-    }
-  }, [trackId, tracks, selectedTrack]);
+  // NO seleccionar automáticamente el track cuando entramos por URI directa
+  // Solo se seleccionará cuando el usuario haga clic en la croqueta desde el Intro
 
   const handleTrackSelect = (track) => {
     setSelectedTrack(track);
@@ -464,13 +446,17 @@ const Croquetas25 = () => {
         <Background onTriggerCallbackRef={triggerCallbackRef} />
       )}
       
-      {/* Intro - solo cuando no hay track seleccionado (pantalla inicial) */}
+      {/* Intro - cuando no hay track seleccionado (pantalla inicial o URI directa) */}
       {!tracksLoading && !selectedTrack && tracks.length > 0 && (
         <Intro 
           tracks={tracks} 
           onTrackSelect={handleTrackSelect}
-          selectedTrackId={null}
-          isDirectUri={false}
+          selectedTrackId={
+            // Si hay trackId en la URL (entrada directa), usarlo para destacar la croqueta principal
+            // Si no hay trackId, usar "croquetas25" como principal (URI genérica)
+            trackId ? trackId.toLowerCase().replace(/\s+/g, '-') : 'croquetas25'
+          }
+          isDirectUri={isDirectUri}
         />
       )}
       
@@ -510,18 +496,6 @@ const Croquetas25 = () => {
             wasPlayingBeforeHoldRef={wasPlayingBeforeHoldRef}
             typewriterInstanceRef={typewriterInstanceRef}
           />
-          {/* Intro con croqueta principal destacada cuando es URI directa y no ha empezado */}
-          {!audioStarted && isDirectUri && !wasSelectedFromIntro && (
-            <Intro 
-              tracks={tracks} 
-              onTrackSelect={handleTrackSelect}
-              selectedTrackId={
-                trackId ? trackId.toLowerCase().replace(/\s+/g, '-') : 
-                (selectedTrack?.id || selectedTrack?.name?.toLowerCase().replace(/\s+/g, '-'))
-              }
-              isDirectUri={true}
-            />
-          )}
           <LoadingProgressHandler onTriggerCallbackRef={triggerCallbackRef} />
           <AudioAnalyzer onBeat={handleBeat} onVoice={handleVoice} />
           <SeekWrapper />

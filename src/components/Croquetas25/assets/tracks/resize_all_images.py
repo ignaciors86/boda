@@ -165,7 +165,7 @@ def main():
     # Obtener todas las carpetas de colecciones (excluir backups, Cachitos25 y src)
     collection_folders = [f for f in tracks_dir.iterdir() 
                          if f.is_dir() 
-                         and f.name not in ['Cachitos25', 'src', BACKUP_DIR_NAME]
+                         and f.name not in ['Croquetas25', 'src', BACKUP_DIR_NAME]
                          and not f.name.startswith('_')]
     
     if not collection_folders:

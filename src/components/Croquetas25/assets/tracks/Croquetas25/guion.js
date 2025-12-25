@@ -1,4 +1,4 @@
-// Guion para Cachitos25
+// Guion para Croquetas 25
 // Humor estilo Broncano sobre recopilación de tonterías y código
 export default {
   textos: [

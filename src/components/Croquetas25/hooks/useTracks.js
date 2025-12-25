@@ -97,16 +97,16 @@ export const useTracks = () => {
             guion: track.guion // Incluir el guion si existe
           }));
 
-        // Si existe Cachitos25, agregar todas las imágenes de otros tracks
-        const cachitos25Track = tracksArray.find(t => t.id === 'cachitos25' || t.name.toLowerCase() === 'cachitos25');
-        if (cachitos25Track) {
-          // Recopilar todas las imágenes de otros tracks (excluyendo Cachitos25)
+        // Si existe Croquetas25, agregar todas las imágenes de otros tracks
+        const croquetas25Track = tracksArray.find(t => t.id === 'croquetas25' || t.name.toLowerCase() === 'croquetas25' || t.name.toLowerCase() === 'croquetas 25');
+        if (croquetas25Track) {
+          // Recopilar todas las imágenes de otros tracks (excluyendo Croquetas25)
           const allOtherImages = tracksArray
-            .filter(t => t.id !== 'cachitos25' && t.name.toLowerCase() !== 'cachitos25')
+            .filter(t => t.id !== 'croquetas25' && t.name.toLowerCase() !== 'croquetas25' && t.name.toLowerCase() !== 'croquetas 25')
             .flatMap(t => t.images);
           
-          // Agregar todas las imágenes a Cachitos25
-          cachitos25Track.images = [...cachitos25Track.images, ...allOtherImages];
+          // Agregar todas las imágenes a Croquetas25
+          croquetas25Track.images = [...croquetas25Track.images, ...allOtherImages];
         }
 
         console.log('Tracks encontrados:', tracksArray.map(t => ({ 

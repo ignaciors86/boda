@@ -188,11 +188,15 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null, isDirectUri = fa
       <div className="intro">
         <h2 ref={titleRef} className="intro__title">Coge una croqueta</h2>
         
-        {/* Croqueta activa en absolute, centrada */}
-        {memoizedTracks.map((track, index) => {
-          const isMainCroqueta = selectedTrackId && track && (
-            track.id === selectedTrackId || 
-            (track.name && selectedTrackId && track.name.toLowerCase().replace(/\s+/g, '-') === selectedTrackId.toLowerCase().replace(/\s+/g, '-'))
+        {/* Croqueta activa en absolute, centrada - solo cuando hay selectedTrackId */}
+        {selectedTrackId && memoizedTracks.map((track, index) => {
+          const normalizedTrackId = selectedTrackId.toLowerCase().replace(/\s+/g, '-');
+          const normalizedTrackIdFromTrack = track.id ? track.id.toLowerCase().replace(/\s+/g, '-') : null;
+          const normalizedTrackName = track.name ? track.name.toLowerCase().replace(/\s+/g, '-') : null;
+          
+          const isMainCroqueta = (
+            normalizedTrackIdFromTrack === normalizedTrackId ||
+            normalizedTrackName === normalizedTrackId
           );
           
           if (!isMainCroqueta) return null;
@@ -254,10 +258,18 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null, isDirectUri = fa
         {/* Resto de croquetas en flexbox */}
         <div className="intro__buttons">
           {memoizedTracks.map((track, index) => {
-            const isMainCroqueta = selectedTrackId && track && (
-              track.id === selectedTrackId || 
-              (track.name && selectedTrackId && track.name.toLowerCase().replace(/\s+/g, '-') === selectedTrackId.toLowerCase().replace(/\s+/g, '-'))
-            );
+            // Si hay selectedTrackId, verificar si es la croqueta principal
+            let isMainCroqueta = false;
+            if (selectedTrackId) {
+              const normalizedTrackId = selectedTrackId.toLowerCase().replace(/\s+/g, '-');
+              const normalizedTrackIdFromTrack = track.id ? track.id.toLowerCase().replace(/\s+/g, '-') : null;
+              const normalizedTrackName = track.name ? track.name.toLowerCase().replace(/\s+/g, '-') : null;
+              
+              isMainCroqueta = (
+                normalizedTrackIdFromTrack === normalizedTrackId ||
+                normalizedTrackName === normalizedTrackId
+              );
+            }
             
             // Saltar la croqueta activa (ya está renderizada arriba)
             if (isMainCroqueta) return null;
