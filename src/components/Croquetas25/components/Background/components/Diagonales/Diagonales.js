@@ -365,10 +365,10 @@ const Diagonales = ({ squares, analyserRef, dataArrayRef, isInitialized, onVoice
 
         // Las diagonales fijas no se desvanecen ni se eliminan
         if (!diag.isFixed) {
-          // Desvanecimiento más rápido para evitar acumulación - reducido a la mitad
+          // Desvanecimiento ajustado para mantener diagonales visibles más tiempo
           const age = now - diag.createdAt;
-          const fadeStartTime = 2000; // 2 segundos antes de empezar a desvanecer
-          const fadeDuration = 3000; // 3 segundos para desvanecerse completamente
+          const fadeStartTime = 5000; // 5 segundos antes de empezar a desvanecer
+          const fadeDuration = 5000; // 5 segundos para desvanecerse completamente
           
           if (age > fadeStartTime) {
             const fadeProgress = Math.min((age - fadeStartTime) / fadeDuration, 1);

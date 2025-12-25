@@ -172,7 +172,7 @@ const Croquetas25 = () => {
   };
 
   const lastDiagonalTimeRef = useRef(0);
-  const minTimeBetweenDiagonals = 30000;
+  const minTimeBetweenDiagonals = 500; // 0.5 segundos - permitir más diagonales
 
   const triggerSquare = (type, data) => {
     if (!audioStarted) return;
@@ -192,7 +192,13 @@ const Croquetas25 = () => {
   const triggerDiagonal = (intensity, voiceEnergy = 0, type = '') => {
     const timestamp = Date.now();
     const timeSinceLastDiagonal = timestamp - lastDiagonalTimeRef.current;
-    if (timeSinceLastDiagonal >= minTimeBetweenDiagonals && 
+    
+    // Calcular tiempo mínimo dinámico basado en la intensidad
+    // Intensidad alta (1.0) = 100ms mínimo, intensidad baja (0.0) = 2000ms mínimo
+    // Esto permite más diagonales cuando la música es más intensa
+    const dynamicMinTime = 100 + (1900 * (1 - intensity));
+    
+    if (timeSinceLastDiagonal >= dynamicMinTime && 
         voiceCallbackRef.current && 
         typeof voiceCallbackRef.current === 'function') {
       try {
