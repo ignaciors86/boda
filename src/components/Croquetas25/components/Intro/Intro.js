@@ -12,6 +12,9 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null, isDirectUri = fa
   const rotationTimelinesRef = useRef([]);
   const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth);
 
+  // Memoizar el renderizado para evitar guiños
+  const memoizedTracks = useMemo(() => tracks, [tracks]);
+
   // Detectar orientación portrait
   useEffect(() => {
     const checkOrientation = () => {
@@ -91,7 +94,7 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null, isDirectUri = fa
     });
   }, []);
 
-  // Iniciar rotación suave continua para cada croqueta
+  // Iniciar rotación suave continua para cada croqueta (excepto la principal)
   useEffect(() => {
     // Limpiar timelines anteriores
     rotationTimelinesRef.current.forEach(tl => {
@@ -102,7 +105,26 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null, isDirectUri = fa
     buttonsRef.current.forEach((buttonRef, index) => {
       if (!buttonRef) return;
 
-      // Rotación suave y continua
+      // Verificar si es la croqueta principal
+      const track = tracks[index];
+      if (!track) return;
+      
+      let isMainCroqueta = false;
+      if (selectedTrackId) {
+        const normalizedTrackId = selectedTrackId.toLowerCase().replace(/\s+/g, '-');
+        const normalizedTrackIdFromTrack = track.id ? track.id.toLowerCase().replace(/\s+/g, '-') : null;
+        const normalizedTrackName = track.name ? track.name.toLowerCase().replace(/\s+/g, '-') : null;
+        
+        isMainCroqueta = (
+          normalizedTrackIdFromTrack === normalizedTrackId ||
+          normalizedTrackName === normalizedTrackId
+        );
+      }
+
+      // No rotar la croqueta principal
+      if (isMainCroqueta) return;
+
+      // Rotación suave y continua solo para las demás
       const rotationSpeed = 20 + Math.random() * 10; // Entre 20 y 30 segundos por rotación completa
       const direction = Math.random() > 0.5 ? 1 : -1; // Dirección aleatoria
       
@@ -122,7 +144,7 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null, isDirectUri = fa
       });
       rotationTimelinesRef.current = [];
     };
-  }, [tracks]);
+  }, [tracks, selectedTrackId]);
 
   const handleTrackSelect = (track, index) => {
     if (isAnimating) return;
@@ -189,9 +211,6 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null, isDirectUri = fa
     });
   };
 
-  // Memoizar el renderizado para evitar guiños
-  const memoizedTracks = useMemo(() => tracks, [tracks]);
-
   return (
     <div 
       className="intro-overlay" 
@@ -217,8 +236,6 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null, isDirectUri = fa
           );
           
           if (!isMainCroqueta) return null;
-          
-          const isLocked = isDirectUri && !croquetasUnlocked && !isMainCroqueta;
           
           const getCroquetaSize = () => {
             const multiplier = isPortrait ? 3 : 1;
@@ -254,10 +271,9 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null, isDirectUri = fa
                 handleTrackSelect(track, index);
               }}
               rotation={0}
-              className={`intro__button main-croqueta ${isDirectUri ? 'croqueta-active-uri' : ''} ${isLocked ? 'croqueta-locked' : ''}`}
+              className={`intro__button main-croqueta ${isDirectUri ? 'croqueta-active-uri' : ''}`}
               style={{
                 ...getCroquetaSize(),
-                pointerEvents: isLocked ? 'none' : 'auto',
               }}
               ref={el => {
                 if (el) {
@@ -292,7 +308,12 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null, isDirectUri = fa
             // Saltar la croqueta activa (ya está renderizada arriba)
             if (isMainCroqueta) return null;
             
-            const isLocked = isDirectUri && !croquetasUnlocked && !isMainCroqueta;
+            const isLocked = isDirectUri && !croquetasUnlocked;
+            
+            // Si está bloqueada (URI directa y no desbloqueada), ocultar completamente
+            if (isLocked) {
+              return null; // No renderizar las croquetas bloqueadas
+            }
             
             return (
               <Croqueta
@@ -305,7 +326,7 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null, isDirectUri = fa
                   handleTrackSelect(track, index);
                 }}
                 rotation={0}
-                className={`intro__button ${isLocked ? 'croqueta-locked' : ''}`}
+                className={`intro__button`}
                 style={{
                   width: isPortrait ? '45vw' : '15vw',
                   height: isPortrait ? '45vw' : '15vw',
@@ -313,7 +334,6 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null, isDirectUri = fa
                   minHeight: isPortrait ? '36vw' : '12vw',
                   maxWidth: isPortrait ? '60vw' : '20vw',
                   maxHeight: isPortrait ? '60vw' : '20vw',
-                  pointerEvents: isLocked ? 'none' : 'auto',
                 }}
                 ref={el => {
                   if (el) {
