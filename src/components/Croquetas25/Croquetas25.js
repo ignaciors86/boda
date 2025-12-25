@@ -459,15 +459,30 @@ const Croquetas25 = () => {
       
       {/* El indicador de carga unificado se muestra dentro del AudioProvider */}
       
-      {/* Overlay de selección de canción - solo cuando los tracks y las imágenes estén cargadas */}
-      {!tracksLoading && !imagesLoading && !selectedTrack && (
-        <Intro tracks={tracks} onTrackSelect={handleTrackSelect} isDirectUri={isDirectUri} />
+      {/* Background siempre visible - muestra las diagonales */}
+      {!selectedTrack && (
+        <Background onTriggerCallbackRef={triggerCallbackRef} />
+      )}
+      
+      {/* Intro - solo cuando no hay track seleccionado (pantalla inicial) */}
+      {!tracksLoading && !selectedTrack && tracks.length > 0 && (
+        <Intro 
+          tracks={tracks} 
+          onTrackSelect={handleTrackSelect}
+          selectedTrackId={null}
+          isDirectUri={false}
+        />
       )}
       
       {/* Cuando se selecciona un track, cargar sus imágenes y luego iniciar audio */}
       {/* Montar AudioProvider siempre que haya track seleccionado y audio src, incluso antes de que empiece */}
       {selectedTrack && currentAudioSrc && (
         <AudioProvider audioSrc={currentAudioSrc}>
+          <BackgroundWrapper 
+            onTriggerCallbackRef={triggerCallbackRef} 
+            onVoiceCallbackRef={voiceCallbackRef}
+            selectedTrack={selectedTrack}
+          />
           <UnifiedLoadingIndicator 
             imagesLoading={imagesLoading}
             imagesProgress={imagesProgress}
@@ -495,14 +510,21 @@ const Croquetas25 = () => {
             wasPlayingBeforeHoldRef={wasPlayingBeforeHoldRef}
             typewriterInstanceRef={typewriterInstanceRef}
           />
-          <BackgroundWrapper 
-            onTriggerCallbackRef={triggerCallbackRef} 
-            onVoiceCallbackRef={voiceCallbackRef}
-            selectedTrack={selectedTrack}
-          />
-                 <LoadingProgressHandler onTriggerCallbackRef={triggerCallbackRef} />
-                 <AudioAnalyzer onBeat={handleBeat} onVoice={handleVoice} />
-                 <SeekWrapper />
+          {/* Intro con croqueta principal destacada cuando es URI directa y no ha empezado */}
+          {!audioStarted && isDirectUri && !wasSelectedFromIntro && (
+            <Intro 
+              tracks={tracks} 
+              onTrackSelect={handleTrackSelect}
+              selectedTrackId={
+                trackId ? trackId.toLowerCase().replace(/\s+/g, '-') : 
+                (selectedTrack?.id || selectedTrack?.name?.toLowerCase().replace(/\s+/g, '-'))
+              }
+              isDirectUri={true}
+            />
+          )}
+          <LoadingProgressHandler onTriggerCallbackRef={triggerCallbackRef} />
+          <AudioAnalyzer onBeat={handleBeat} onVoice={handleVoice} />
+          <SeekWrapper />
           {/* Mostrar Prompt si el track tiene guion - solo cuando el audio haya empezado */}
           {audioStarted && selectedTrack.guion && selectedTrack.guion.textos && (
             <PromptWrapper textos={selectedTrack.guion.textos} typewriterInstanceRef={typewriterInstanceRef} isPausedByHold={isPausedByHold} />
@@ -519,31 +541,7 @@ const Croquetas25 = () => {
               }}
             />
           )}
-          
-          {/* Intro se muestra en el nivel superior cuando !audioStarted */}
         </AudioProvider>
-      )}
-      
-      {/* Fondo por defecto cuando no hay track seleccionado */}
-      {!selectedTrack && (
-        <Background onTriggerCallbackRef={triggerCallbackRef} />
-      )}
-      
-      {/* Mostrar Intro superpuesto cuando no hay audio iniciado - siempre visible con overlay glass */}
-      {!audioStarted && tracks.length > 0 && (
-        <Intro 
-          tracks={tracks} 
-          onTrackSelect={handleTrackSelect}
-          selectedTrackId={
-            // Si hay trackId en la URL (entrada directa), normalizarlo y usarlo
-            trackId ? trackId.toLowerCase().replace(/\s+/g, '-') : 
-            // Si no, usar el track seleccionado
-            (selectedTrack?.id || selectedTrack?.name?.toLowerCase().replace(/\s+/g, '-')) ||
-            // Solo usar "cachitos25" como fallback si no hay URI directa ni track seleccionado
-            (!isDirectUri ? "cachitos25" : null)
-          }
-          isDirectUri={isDirectUri}
-        />
       )}
     </div>
   );
