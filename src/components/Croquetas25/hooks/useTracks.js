@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 
-// Helper para normalizar nombres
 const normalizeName = (name) => name?.toLowerCase().replace(/\s+/g, '-') || '';
 
-// Helper para crear track inicial
 const createTrack = (trackName) => ({
   id: normalizeName(trackName),
   name: trackName,
@@ -12,7 +10,6 @@ const createTrack = (trackName) => ({
   guion: null
 });
 
-// Helper para procesar archivos
 const processFiles = (files, context, tracksTemp, processor) => {
   files.forEach(file => {
     const trackName = file.split('/')[1];
@@ -34,8 +31,9 @@ export const useTracks = () => {
         
         const tracksTemp = {};
 
-        // Procesar imágenes
-        processFiles(imagesContext.keys(), imagesContext, tracksTemp, (track, imagePath) => {
+        // Procesar imágenes - ordenar alfabéticamente por ruta completa
+        const imageFiles = imagesContext.keys().sort((a, b) => a.localeCompare(b));
+        processFiles(imageFiles, imagesContext, tracksTemp, (track, imagePath) => {
           track.images.push(imagePath);
         });
 
@@ -54,7 +52,11 @@ export const useTracks = () => {
           }
         });
 
-        // Convertir a array y filtrar tracks con audio
+        // Ordenar imágenes dentro de cada track alfabéticamente
+        Object.values(tracksTemp).forEach(track => {
+          track.images.sort((a, b) => a.localeCompare(b));
+        });
+
         let tracksArray = Object.values(tracksTemp)
           .filter(track => track.audioSrc !== null)
           .map(track => ({
@@ -65,7 +67,6 @@ export const useTracks = () => {
             guion: track.guion
           }));
 
-        // Agregar todas las imágenes a Croquetas25 si existe
         const croquetas25Track = tracksArray.find(t => 
           ['croquetas25', 'croquetas 25'].includes(normalizeName(t.name))
         );
@@ -73,8 +74,9 @@ export const useTracks = () => {
         if (croquetas25Track) {
           const allOtherImages = tracksArray
             .filter(t => !['croquetas25', 'croquetas 25'].includes(normalizeName(t.name)))
-            .flatMap(t => t.images);
-          croquetas25Track.images = [...croquetas25Track.images, ...allOtherImages];
+            .flatMap(t => t.images)
+            .sort((a, b) => a.localeCompare(b));
+          croquetas25Track.images = [...croquetas25Track.images, ...allOtherImages].sort((a, b) => a.localeCompare(b));
         }
 
         console.log('Tracks encontrados:', tracksArray.map(t => ({ 

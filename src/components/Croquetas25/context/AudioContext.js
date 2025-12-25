@@ -56,45 +56,46 @@ export const AudioProvider = ({ children, audioSrc }) => {
     // iOS funciona mejor con 'metadata' en lugar de 'auto'
     audio.preload = isIOS ? 'metadata' : 'auto';
 
-    // Función para actualizar el progreso de carga
+    // Función para actualizar el progreso de carga - simplificada para evitar bucles
     const updateProgress = () => {
       if (!audio) return;
       
-      // En iOS, readyState puede ser más lento, así que ser más permisivo
       const minReadyState = isIOS ? 1 : 2;
       
-      // Si tiene metadata cargada (readyState >= minReadyState) y duración, considerarlo listo
-      if (audio.readyState >= minReadyState && audio.duration && isFinite(audio.duration) && audio.duration > 0) {
-        // Si tiene buffer, usar el progreso del buffer
-        if (audio.buffered.length > 0) {
-          const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
-          const progress = Math.min((bufferedEnd / audio.duration) * 100, 100);
-          setLoadingProgress(progress);
-          
-          if (progress >= 95 || bufferedEnd >= audio.duration * 0.95) {
-            setIsLoaded(true);
-            setLoadingProgress(100);
-          } else if (audio.readyState >= minReadyState) {
-            // Si tiene metadata pero buffer incompleto, marcar como 100% de todas formas
-            // porque el buffer se cargará durante la reproducción
+      // Si tiene metadata cargada, considerarlo listo
+      if (audio.readyState >= minReadyState) {
+        if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
+          if (audio.buffered.length > 0) {
+            const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
+            const progress = Math.min((bufferedEnd / audio.duration) * 100, 100);
+            setLoadingProgress(progress);
+            
+            // Si el buffer está al 95% o más, considerar listo
+            if (progress >= 95 || bufferedEnd >= audio.duration * 0.95) {
+              if (!isLoaded) {
+                setIsLoaded(true);
+                setLoadingProgress(100);
+              }
+            } else if (!isLoaded) {
+              // Si tiene metadata pero buffer incompleto, marcar como listo de todas formas
+              // porque el buffer se cargará durante la reproducción
+              setIsLoaded(true);
+              setLoadingProgress(100);
+            }
+          } else if (!isLoaded) {
+            // Si tiene metadata pero no buffer aún, marcar como listo
             setIsLoaded(true);
             setLoadingProgress(100);
           }
-        } else {
-          // Si tiene metadata pero no buffer aún, marcar como listo (el buffer se cargará después)
+        } else if (!isLoaded) {
+          // Si tiene metadata pero no duración aún, marcar como listo
           setIsLoaded(true);
           setLoadingProgress(100);
         }
-      } else if (audio.readyState >= minReadyState) {
-        // Si tiene metadata pero no duración aún, usar readyState como indicador
-        let progress = 0;
-        if (audio.readyState >= minReadyState) progress = 100; // Metadata cargada = listo
-        
+      } else {
+        // Calcular progreso basado en readyState
+        const progress = Math.min((audio.readyState / 4) * 100, 95);
         setLoadingProgress(progress);
-        if (audio.readyState >= minReadyState) {
-          setIsLoaded(true);
-          setLoadingProgress(100);
-        }
       }
     };
 
@@ -331,7 +332,8 @@ export const AudioProvider = ({ children, audioSrc }) => {
     if (isIOS) {
       audio.addEventListener('loadedmetadata', () => {
         updateProgress();
-        if (audio.readyState >= 1) {
+        const minReadyState = 1;
+        if (audio.readyState >= minReadyState && !isLoaded) {
           setIsLoaded(true);
           setLoadingProgress(100);
         }
@@ -361,22 +363,29 @@ export const AudioProvider = ({ children, audioSrc }) => {
       }
     }
 
-    // Actualizar progreso periódicamente
+    // Actualizar progreso periódicamente - simplificado para evitar bucles
     const minReadyState = isIOS ? 1 : 2;
     progressIntervalId = setInterval(() => {
+      if (isLoaded) {
+        if (progressIntervalId) {
+          clearInterval(progressIntervalId);
+          progressIntervalId = null;
+        }
+        return;
+      }
+      
       updateProgress();
-      // Si el audio tiene metadata cargada (readyState >= minReadyState), considerarlo completamente listo
-      // No esperamos a que el buffer esté al 100% porque puede cargarse durante la reproducción
-      if (audio.readyState >= minReadyState) {
-        if (!isLoaded) {
-          setIsLoaded(true);
-          setLoadingProgress(100);
+      
+      // Verificar si ya está listo después de actualizar
+      if (audio.readyState >= minReadyState && !isLoaded) {
+        setIsLoaded(true);
+        setLoadingProgress(100);
+        if (progressIntervalId) {
+          clearInterval(progressIntervalId);
+          progressIntervalId = null;
         }
       }
-      if (isLoaded) {
-        clearInterval(progressIntervalId);
-      }
-    }, isIOS ? 200 : 100); // En iOS, verificar menos frecuentemente
+    }, isIOS ? 200 : 100);
 
     // Cleanup
     return () => {
@@ -387,7 +396,7 @@ export const AudioProvider = ({ children, audioSrc }) => {
         audioCleanup();
       }
     };
-  }, [audioSrc, isLoaded]);
+  }, [audioSrc]);
 
   const play = async () => {
     return new Promise(async (resolve) => {

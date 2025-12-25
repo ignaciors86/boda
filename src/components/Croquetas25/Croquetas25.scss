@@ -30,8 +30,8 @@
   align-items: center;
   justify-content: center;
   z-index: 2000;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   opacity: 1;
   pointer-events: none;
   will-change: opacity;
@@ -54,6 +54,7 @@
   width: 100%;
   max-width: 500px;
   padding: 2rem;
+  position: relative;
 }
 
 .image-preloader__text {

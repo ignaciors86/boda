@@ -12,44 +12,16 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
   const animationTimelinesRef = useRef({});
   const lastProgressRef = useRef(0);
   const colorIndexRef = useRef(0);
-  const { getRandomImage, allImages, isLoading } = useGallery(selectedTrack);
-  const allImagesRef = useRef([]);
+  const { getNextImage, allImages, isLoading, preloadNextImages } = useGallery(selectedTrack);
   const MAX_SQUARES = 50;
   
-  const getRandomImageFromRef = () => {
-    if (allImagesRef.current.length === 0) return null;
-    const randomIndex = Math.floor(Math.random() * allImagesRef.current.length);
-    return allImagesRef.current[randomIndex];
-  };
-  
+  // Pre-cargar imágenes próximas cuando cambian las imágenes disponibles
   useEffect(() => {
     if (!isLoading && allImages.length > 0) {
-      allImagesRef.current = allImages;
-      console.log('[Background] Imágenes cargadas:', allImages.length);
-      
-      setSquares(prev => {
-        const squaresToUpdate = prev.filter(square => square.isTarget && !square.imageUrl);
-        if (squaresToUpdate.length === 0) return prev;
-        
-        console.log('[Background] Actualizando', squaresToUpdate.length, 'cuadros sin imagen');
-        return prev.map(square => {
-          if (square.isTarget && !square.imageUrl) {
-            const newImageUrl = getRandomImageFromRef();
-            if (newImageUrl) {
-              const imagePosition = {
-                x: `${5 + Math.random() * 90}%`,
-                y: `${5 + Math.random() * 90}%`
-              };
-              console.log('[Background] Asignando imagen a cuadro:', square.id);
-              return { ...square, imageUrl: newImageUrl, imagePosition };
-            }
-          }
-          return square;
-        });
-      });
+      preloadNextImages();
     }
-  }, [isLoading, allImages.length]);
-
+  }, [isLoading, allImages.length, preloadNextImages]);
+  
   useEffect(() => {
     if (!onTriggerCallbackRef) return;
     
@@ -68,14 +40,20 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
       const intensity = data?.intensity ?? 0.5;
       const shouldHaveBackground = data?.shouldBeSolid ?? false;
       
-      const imageUrl = shouldHaveBackground ? getRandomImageFromRef() : null;
+      // Solo obtener imagen si está lista (pre-cargada)
+      const imageUrl = shouldHaveBackground ? getNextImage() : null;
       const imagePosition = shouldHaveBackground && imageUrl ? {
         x: `${5 + Math.random() * 90}%`,
         y: `${5 + Math.random() * 90}%`
       } : null;
       
       if (shouldHaveBackground && !imageUrl) {
-        console.log('[Background] Cuadro sólido sin imagen (aún cargando)');
+        console.log('[Background] Cuadro sólido sin imagen (aún cargando o no disponible)');
+      }
+      
+      // Pre-cargar próximas imágenes de forma proactiva
+      if (shouldHaveBackground) {
+        preloadNextImages();
       }
       
       const squareData = { 
@@ -123,12 +101,7 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
     };
     
     createCallback();
-    
-    if (!isLoading && allImagesRef.current.length > 0) {
-      createCallback();
-      console.log('[Background] Callback recreado con imágenes disponibles');
-    }
-  }, [onTriggerCallbackRef, isLoading, allImages.length]);
+  }, [onTriggerCallbackRef, getNextImage, preloadNextImages]);
 
   useEffect(() => {
     console.log(`[Background] Squares effect triggered | squares count: ${squares.length} | timestamp: ${Date.now()}`);
