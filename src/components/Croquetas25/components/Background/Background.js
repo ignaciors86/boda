@@ -7,10 +7,12 @@ import { useGallery } from '../Gallery/Gallery';
 const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitialized, onVoiceCallbackRef, selectedTrack }) => {
   const [squares, setSquares] = useState([]);
   const squareRefs = useRef({});
+  const animationTimelinesRef = useRef({}); // Ref para almacenar las animaciones GSAP de cada cuadro
   const lastProgressRef = useRef(0);
   const colorIndexRef = useRef(0);
   const { getRandomImage, allImages, isLoading } = useGallery(selectedTrack); // Hook para obtener imágenes de la galería del track seleccionado
   const allImagesRef = useRef([]); // Ref para mantener las imágenes disponibles
+  const MAX_SQUARES = 50; // Límite máximo de cuadros simultáneos
   
   // Función helper para obtener imagen aleatoria
   const getRandomImageFromRef = () => {
@@ -100,7 +102,39 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
         }
       };
       
-      setSquares(prev => [...prev, squareData]);
+      setSquares(prev => {
+        // Si hay demasiados cuadros, eliminar los más antiguos primero
+        let newSquares = [...prev, squareData];
+        if (newSquares.length > MAX_SQUARES) {
+          // Ordenar por timestamp y mantener solo los más recientes
+          newSquares.sort((a, b) => b.timestamp - a.timestamp);
+          const toRemove = newSquares.slice(MAX_SQUARES);
+          // Limpiar refs y animaciones de los cuadros que se eliminan
+          toRemove.forEach(square => {
+            // Limpiar animación GSAP si existe
+            if (animationTimelinesRef.current[square.id]) {
+              animationTimelinesRef.current[square.id].kill();
+              delete animationTimelinesRef.current[square.id];
+            }
+            // Limpiar ref del elemento
+            if (squareRefs.current[square.id]) {
+              const el = squareRefs.current[square.id];
+              // Limpiar imágenes del DOM
+              if (el) {
+                const img = el.querySelector('.square-image');
+                if (img) {
+                  img.src = ''; // Liberar referencia de la imagen
+                  img.remove();
+                }
+              }
+              delete squareRefs.current[square.id];
+            }
+          });
+          // Mantener solo los más recientes
+          newSquares = newSquares.slice(0, MAX_SQUARES);
+        }
+        return newSquares;
+      });
     };
     };
     
@@ -139,6 +173,26 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
         try {
           const timeline = gsap.timeline();
           const isTarget = square.isTarget;
+          
+          // Guardar la animación en el ref para poder limpiarla después
+          animationTimelinesRef.current[square.id] = timeline;
+          
+          // Función helper para limpiar el cuadro completamente
+          const cleanupSquare = () => {
+            // Limpiar imagen del DOM si existe
+            if (el) {
+              const img = el.querySelector('.square-image');
+              if (img) {
+                img.src = ''; // Liberar referencia de la imagen
+                img.remove();
+              }
+            }
+            // Limpiar refs
+            delete squareRefs.current[square.id];
+            delete animationTimelinesRef.current[square.id];
+            // Eliminar del estado
+            setSquares(prev => prev.filter(s => s.id !== square.id));
+          };
           
           // Cuadros target (con fondo): crecen hasta 85% con parón, luego desaparecen
           if (isTarget) {
@@ -181,9 +235,7 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
               duration: fadeOutDuration,
               ease: 'power2.in',
               force3D: true,
-              onComplete: () => {
-                setSquares(prev => prev.filter(s => s.id !== square.id));
-              }
+              onComplete: cleanupSquare
             });
           } else {
             // Cuadros normales (sin fondo): movimiento continuo y constante
@@ -226,18 +278,95 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
                     gsap.set(el, { opacity: Math.max(0, newOpacity) });
                   }
                 },
-                onComplete: () => {
-                  setSquares(prev => prev.filter(s => s.id !== square.id));
-                }
+                onComplete: cleanupSquare
               }
             );
           }
         } catch (error) {
           console.error(`[Background] Animation error: ${error.message}`);
+          // Limpiar en caso de error
+          if (squareRefs.current[square.id]) {
+            const el = squareRefs.current[square.id];
+            if (el) {
+              const img = el.querySelector('.square-image');
+              if (img) {
+                img.src = '';
+                img.remove();
+              }
+            }
+            delete squareRefs.current[square.id];
+          }
+          delete animationTimelinesRef.current[square.id];
+          setSquares(prev => prev.filter(s => s.id !== square.id));
         }
       }
     });
   }, [squares]);
+
+  // Cleanup: limpiar todos los cuadros y animaciones cuando el componente se desmonte o cambie el track
+  useEffect(() => {
+    return () => {
+      // Limpiar todas las animaciones GSAP
+      Object.values(animationTimelinesRef.current).forEach(timeline => {
+        if (timeline) timeline.kill();
+      });
+      animationTimelinesRef.current = {};
+      
+      // Limpiar todas las imágenes del DOM
+      Object.values(squareRefs.current).forEach(el => {
+        if (el) {
+          const img = el.querySelector('.square-image');
+          if (img) {
+            img.src = '';
+            img.remove();
+          }
+        }
+      });
+      squareRefs.current = {};
+      
+      // Limpiar el estado
+      setSquares([]);
+    };
+  }, [selectedTrack]);
+
+  // Limpiar cuadros antiguos periódicamente (cada 10 segundos)
+  useEffect(() => {
+    const cleanupInterval = setInterval(() => {
+      setSquares(prev => {
+        if (prev.length <= MAX_SQUARES) return prev;
+        
+        // Ordenar por timestamp y mantener solo los más recientes
+        const sorted = [...prev].sort((a, b) => b.timestamp - a.timestamp);
+        const toRemove = sorted.slice(MAX_SQUARES);
+        
+        // Limpiar refs y animaciones de los cuadros que se eliminan
+        toRemove.forEach(square => {
+          // Limpiar animación GSAP si existe
+          if (animationTimelinesRef.current[square.id]) {
+            animationTimelinesRef.current[square.id].kill();
+            delete animationTimelinesRef.current[square.id];
+          }
+          // Limpiar ref del elemento
+          if (squareRefs.current[square.id]) {
+            const el = squareRefs.current[square.id];
+            // Limpiar imágenes del DOM
+            if (el) {
+              const img = el.querySelector('.square-image');
+              if (img) {
+                img.src = '';
+                img.remove();
+              }
+            }
+            delete squareRefs.current[square.id];
+          }
+        });
+        
+        return sorted.slice(0, MAX_SQUARES);
+      });
+    }, 10000); // Cada 10 segundos
+    
+    return () => clearInterval(cleanupInterval);
+  }, []);
 
   return (
     <div className="background">

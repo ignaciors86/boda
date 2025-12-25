@@ -63,6 +63,7 @@ const Croquetas25 = () => {
   const [isPausedByHold, setIsPausedByHold] = useState(false);
   const [showStartButton, setShowStartButton] = useState(false);
   const [wasSelectedFromIntro, setWasSelectedFromIntro] = useState(false); // Track si fue seleccionado desde Intro
+  const [loadingFadedOut, setLoadingFadedOut] = useState(false); // Estado para controlar el fadeout del loading
   const wasPlayingBeforeHoldRef = useRef(false);
   const startButtonRef = useRef(null);
   const triggerCallbackRef = useRef(null);
@@ -107,11 +108,10 @@ const Croquetas25 = () => {
         ease: 'power2.in',
         onComplete: () => {
           setShowStartButton(false);
-          // Esperar 1.5 segundos antes de iniciar el audio
-          setTimeout(() => {
-            console.log(`[Croquetas25] Setting audioStarted to true after delay | audioSrc: ${selectedTrack.src}`);
-      setAudioStarted(true);
-          }, 1500);
+          // Iniciar el audio inmediatamente después de desvanecer el botón
+          // El loading ya debería haber hecho fadeout antes de mostrar el botón
+          console.log(`[Croquetas25] Setting audioStarted to true | audioSrc: ${selectedTrack.src}`);
+          setAudioStarted(true);
         }
       });
     }
@@ -475,6 +475,9 @@ const Croquetas25 = () => {
             isDirectUri={isDirectUri}
             audioStarted={audioStarted}
             showStartButton={showStartButton}
+            loadingFadedOut={loadingFadedOut}
+            setLoadingFadedOut={setLoadingFadedOut}
+            selectedTrack={selectedTrack}
           />
           <UnifiedContentManager
             imagesLoading={imagesLoading}
@@ -488,6 +491,7 @@ const Croquetas25 = () => {
             startButtonRef={startButtonRef}
             handleClick={handleClick}
             selectedTrack={selectedTrack}
+            loadingFadedOut={loadingFadedOut}
           />
           <AudioStarter audioStarted={audioStarted} />
           <HoldToPauseHandler 
@@ -556,8 +560,10 @@ const AudioStarter = ({ audioStarted }) => {
 };
 
 // Componente unificado de loading que combina imágenes y audio del AudioProvider
-const UnifiedLoadingIndicator = ({ imagesLoading, imagesProgress, isDirectUri, audioStarted }) => {
+const UnifiedLoadingIndicator = ({ imagesLoading, imagesProgress, isDirectUri, audioStarted, loadingFadedOut, setLoadingFadedOut, selectedTrack }) => {
   const { loadingProgress: audioProgress, isLoaded: audioLoaded, isInitialized, audioRef } = useAudio();
+  const loadingRef = useRef(null);
+  const fadeoutStartedRef = useRef(false);
   
   // Verificar si el audio tiene metadata cargada (readyState >= 2 es suficiente para considerar que está listo)
   // No requerimos readyState >= 3 porque el AudioContext puede estar suspendido hasta el primer gesto del usuario
@@ -585,18 +591,38 @@ const UnifiedLoadingIndicator = ({ imagesLoading, imagesProgress, isDirectUri, a
     combinedProgress = Math.round((imagesProgress + audioProgress) / 2);
   }
   
-  // Si el audio ya empezó, ocultar el loading
-  if (audioStarted) {
-    return null;
-  }
+  // Efecto para iniciar el fadeout cuando todo esté listo
+  useEffect(() => {
+    if (!isLoading && !fadeoutStartedRef.current && loadingRef.current && !loadingFadedOut) {
+      fadeoutStartedRef.current = true;
+      // Iniciar fadeout con GSAP
+      gsap.to(loadingRef.current, {
+        opacity: 0,
+        duration: 0.8,
+        ease: 'power2.out',
+        onComplete: () => {
+          setLoadingFadedOut(true);
+        }
+      });
+    }
+  }, [isLoading, loadingFadedOut, setLoadingFadedOut]);
   
-  // Si todo está listo, ocultar el loading (el botón o auto-play se manejará en UnifiedContentManager)
-  if (!isLoading) {
+  // Resetear el fadeout cuando cambia el track
+  useEffect(() => {
+    fadeoutStartedRef.current = false;
+    setLoadingFadedOut(false);
+    if (loadingRef.current) {
+      gsap.set(loadingRef.current, { opacity: 1 });
+    }
+  }, [selectedTrack, setLoadingFadedOut]);
+  
+  // Si el audio ya empezó o el loading ya hizo fadeout, no renderizar
+  if (audioStarted || loadingFadedOut) {
     return null;
   }
   
   return (
-    <div className="image-preloader">
+    <div className="image-preloader" ref={loadingRef}>
       <div className="image-preloader__content">
         <div className="image-preloader__text">
           {imagesLoading && !audioLoaded 
@@ -631,9 +657,12 @@ const UnifiedContentManager = ({
   wasSelectedFromIntro,
   startButtonRef,
   handleClick,
-  selectedTrack
+  selectedTrack,
+  loadingFadedOut
 }) => {
   const { isInitialized, isLoaded, loadingProgress: audioProgress, audioRef } = useAudio();
+  const buttonRef = useRef(null);
+  const buttonAnimationStartedRef = useRef(false);
   
   // Verificar si TODO está completamente listo
   // Usamos readyState >= 2 (metadata cargada) porque readyState >= 3 puede no alcanzarse hasta el primer gesto del usuario
@@ -641,9 +670,9 @@ const UnifiedContentManager = ({
   const audioHasMetadata = audioRef?.current && audioRef.current.readyState >= 2;
   const everythingReady = !imagesLoading && imagesProgress >= 100 && isLoaded && audioHasMetadata;
   
-  // Efecto para manejar auto-play o mostrar botón cuando todo esté listo
+  // Efecto para manejar auto-play o mostrar botón cuando todo esté listo Y el loading haya hecho fadeout
   useEffect(() => {
-    if (!everythingReady) {
+    if (!everythingReady || !loadingFadedOut) {
       return;
     }
     
@@ -654,43 +683,42 @@ const UnifiedContentManager = ({
       }
     } else {
       // Si entramos desde pantalla inicial o fue seleccionado desde Intro, auto-play
-      // PERO SOLO cuando TODO esté completamente listo (imágenes y audio)
+      // PERO SOLO cuando TODO esté completamente listo (imágenes y audio) Y el loading haya hecho fadeout
       // Y FORZAR que el botón NO se muestre
       if (showStartButton) {
         setShowStartButton(false);
       }
-      // Solo iniciar audio si TODO está listo (imágenes al 100% y audio con metadata)
-      if (!audioStarted && everythingReady) {
+      // Solo iniciar audio si TODO está listo (imágenes al 100% y audio con metadata) Y el loading haya hecho fadeout
+      if (!audioStarted && everythingReady && loadingFadedOut) {
         setAudioStarted(true);
       }
     }
-  }, [everythingReady, isDirectUri, showStartButton, audioStarted, wasSelectedFromIntro, setShowStartButton, setAudioStarted]);
+  }, [everythingReady, loadingFadedOut, isDirectUri, showStartButton, audioStarted, wasSelectedFromIntro, setShowStartButton, setAudioStarted]);
   
-  // Mostrar botón solo si es URI directa, todo está listo, y no ha empezado
-  const [buttonVisible, setButtonVisible] = useState(false);
-  const buttonRef = useRef(null);
-  
+  // Efecto para mostrar y animar el botón cuando sea necesario
   useEffect(() => {
-    // Solo mostrar si es URI directa, NO fue seleccionado desde Intro, todo está listo, y no ha empezado
-    if (isDirectUri && !wasSelectedFromIntro && everythingReady && showStartButton && !audioStarted) {
-      // Mostrar con delay para transición suave desde el loading
-      const timer = setTimeout(() => {
-        setButtonVisible(true);
+    // Solo mostrar si es URI directa, NO fue seleccionado desde Intro, todo está listo, loading hizo fadeout, y no ha empezado
+    if (isDirectUri && !wasSelectedFromIntro && everythingReady && loadingFadedOut && showStartButton && !audioStarted) {
+      if (!buttonAnimationStartedRef.current && buttonRef.current) {
+        buttonAnimationStartedRef.current = true;
         // Animar entrada del botón
-        if (buttonRef.current) {
-          gsap.fromTo(buttonRef.current, 
-            { opacity: 0, scale: 0.8 },
-            { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.7)' }
-          );
-        }
-      }, 600);
-      return () => clearTimeout(timer);
+        gsap.fromTo(buttonRef.current, 
+          { opacity: 0, scale: 0.8 },
+          { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.7)' }
+        );
+      }
     } else {
-      setButtonVisible(false);
+      buttonAnimationStartedRef.current = false;
     }
-  }, [isDirectUri, wasSelectedFromIntro, everythingReady, showStartButton, audioStarted]);
+  }, [isDirectUri, wasSelectedFromIntro, everythingReady, loadingFadedOut, showStartButton, audioStarted]);
   
-  if (!buttonVisible) {
+  // Resetear la animación cuando cambia el track
+  useEffect(() => {
+    buttonAnimationStartedRef.current = false;
+  }, [selectedTrack]);
+  
+  // Solo renderizar el botón si cumple todas las condiciones
+  if (!(isDirectUri && !wasSelectedFromIntro && everythingReady && loadingFadedOut && showStartButton && !audioStarted)) {
     return null;
   }
   
