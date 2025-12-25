@@ -420,6 +420,46 @@ def main():
                 print(f"  Reducción de tamaño: {folder_reduction_mb:.2f} MB ({folder_reduction:.1f}%)")
         else:
             print(f"  No se encontraron archivos JPEG o videos en esta carpeta.")
+        
+        # Eliminar todos los archivos originales residuales (JPEG y videos) al final
+        print(f"  Limpiando archivos originales residuales...")
+        deleted_count = 0
+        deleted_size = 0
+        
+        # Buscar y eliminar todos los JPEG residuales (siempre recursivo)
+        for ext in JPEG_EXTENSIONS:
+            jpeg_files = list(folder.rglob(f'*{ext}'))
+            
+            for jpeg_file in jpeg_files:
+                if (jpeg_file.exists() 
+                    and BACKUP_DIR_NAME not in jpeg_file.parts
+                    and jpeg_file.name != 'resize_all_images.py'):
+                    try:
+                        file_size = os.path.getsize(jpeg_file)
+                        os.remove(jpeg_file)
+                        deleted_count += 1
+                        deleted_size += file_size
+                    except Exception as e:
+                        print(f"    Advertencia: No se pudo eliminar {jpeg_file.name}: {e}")
+        
+        # Buscar y eliminar todos los videos residuales (siempre recursivo)
+        for ext in VIDEO_EXTENSIONS:
+            video_files = list(folder.rglob(f'*{ext}'))
+            
+            for video_file in video_files:
+                if (video_file.exists() 
+                    and BACKUP_DIR_NAME not in video_file.parts
+                    and video_file.name != 'resize_all_images.py'):
+                    try:
+                        file_size = os.path.getsize(video_file)
+                        os.remove(video_file)
+                        deleted_count += 1
+                        deleted_size += file_size
+                    except Exception as e:
+                        print(f"    Advertencia: No se pudo eliminar {video_file.name}: {e}")
+        
+        if deleted_count > 0:
+            print(f"  Archivos originales eliminados: {deleted_count} ({deleted_size / (1024 * 1024):.2f} MB)")
     
     print("\n" + "=" * 70)
     print("RESUMEN GENERAL:")
