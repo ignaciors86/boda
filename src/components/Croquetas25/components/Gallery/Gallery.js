@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
-// Hook para cargar imágenes de las galerías del track seleccionado
 export const useGallery = (selectedTrack = null) => {
   const [allImages, setAllImages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -9,58 +8,39 @@ export const useGallery = (selectedTrack = null) => {
   useEffect(() => {
     const loadImages = async () => {
       try {
-        let imagesList = [];
+        let imagesList = selectedTrack?.images?.length > 0
+          ? selectedTrack.images
+          : (() => {
+              const context = require.context('../../assets/tracks', true, /\.(jpg|jpeg|png|gif|webp)$/);
+              return context.keys().map(file => context(file));
+            })();
 
-        if (selectedTrack && selectedTrack.images && selectedTrack.images.length > 0) {
-          // Usar las imágenes del track seleccionado
-          imagesList = selectedTrack.images;
-          console.log('Gallery: Usando imágenes del track:', selectedTrack.name, 'Total:', imagesList.length);
-        } else {
-          // Si no hay track seleccionado, cargar todas las imágenes y GIFs de todos los tracks
-          // Esto es para el preloader antes de seleccionar canción
-          // require.context busca recursivamente por defecto con el segundo parámetro en true
-          const context = require.context('../../assets/tracks', true, /\.(jpg|jpeg|png|gif|webp)$/);
-          const files = context.keys();
-          
-          files.forEach(file => {
-            const imagePath = context(file);
-            imagesList.push(imagePath);
-          });
-          
-          console.log('Gallery: Cargando todas las imágenes de tracks. Total:', imagesList.length);
-        }
-        
-        // Precargar todas las imágenes realmente
-        let loadedCount = 0;
-        const totalImages = imagesList.length;
-        
-        if (totalImages === 0) {
+        if (imagesList.length === 0) {
           setIsLoading(false);
           setPreloadProgress(100);
           return;
         }
-        
-        const preloadPromises = imagesList.map((imagePath) => {
-          return new Promise((resolve) => {
+
+        let loadedCount = 0;
+        const totalImages = imagesList.length;
+
+        const preloadPromises = imagesList.map((imagePath) => 
+          new Promise((resolve) => {
             const img = new Image();
-            img.onload = () => {
+            const updateProgress = () => {
               loadedCount++;
-              // Usar contador que solo avanza, no índice
               setPreloadProgress((loadedCount / totalImages) * 100);
               resolve(imagePath);
             };
+            img.onload = updateProgress;
             img.onerror = () => {
               console.warn('Gallery: Error al precargar imagen:', imagePath);
-              loadedCount++;
-              // Contar también los errores para que el progreso avance
-              setPreloadProgress((loadedCount / totalImages) * 100);
-              resolve(imagePath); // Continuar aunque falle una imagen
+              updateProgress();
             };
             img.src = imagePath;
-          });
-        });
+          })
+        );
 
-        // Esperar a que todas las imágenes se precarguen
         await Promise.all(preloadPromises);
         
         console.log('Gallery: Todas las imágenes precargadas');
@@ -78,22 +58,15 @@ export const useGallery = (selectedTrack = null) => {
     loadImages();
   }, [selectedTrack]);
 
-  // Función para obtener una imagen aleatoria
-  const getRandomImage = () => {
+  const getRandomImage = useCallback(() => {
     if (allImages.length === 0) {
       console.warn('Gallery: No hay imágenes disponibles aún');
       return null;
     }
-    const randomIndex = Math.floor(Math.random() * allImages.length);
-    return allImages[randomIndex];
-  };
+    return allImages[Math.floor(Math.random() * allImages.length)];
+  }, [allImages]);
 
-  return {
-    allImages,
-    getRandomImage,
-    isLoading,
-    preloadProgress
-  };
+  return { allImages, getRandomImage, isLoading, preloadProgress };
 };
 
 export default useGallery;

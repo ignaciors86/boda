@@ -1,4 +1,4 @@
-.back-button {
+.backButton {
   position: fixed;
   top: 0;
   left: 0;
@@ -6,11 +6,11 @@
   pointer-events: auto;
 }
 
-.back-button__croqueta-wrapper {
+.backButton__wrapper {
   position: absolute;
   top: 2dvh;
   left: 2vw;
-  width: 15vw; // Tamaño fijo para que el transform-origin funcione correctamente
+  width: 15vw;
   height: 15vw;
   max-width: 15vw;
   max-height: 15vw;
@@ -20,16 +20,15 @@
   align-items: center;
   justify-content: center;
   
-  // En portrait, duplicar el tamaño
   @media (orientation: portrait) {
-    width: 30vw; // 15vw * 2
-    height: 30vw; // 15vw * 2
+    width: 30vw;
+    height: 30vw;
     max-width: 30vw;
     max-height: 30vw;
   }
 }
 
-.back-button__croqueta {
+.backButton__croqueta {
   width: 12vw;
   height: 12vw;
   min-width: 10vw;
@@ -37,14 +36,12 @@
   max-width: 15vw;
   max-height: 15vw;
   
-  // En portrait, duplicar el tamaño
   @media (orientation: portrait) {
-    width: 24vw; // 12vw * 2
-    height: 24vw; // 12vw * 2
-    min-width: 20vw; // 10vw * 2
-    min-height: 20vw; // 10vw * 2
-    max-width: 30vw; // 15vw * 2
-    max-height: 30vw; // 15vw * 2
+    width: 24vw;
+    height: 24vw;
+    min-width: 20vw;
+    min-height: 20vw;
+    max-width: 30vw;
+    max-height: 30vw;
   }
 }
-

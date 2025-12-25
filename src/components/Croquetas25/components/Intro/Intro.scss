@@ -1,4 +1,4 @@
-.intro-overlay {
+.intro {
   position: fixed;
   top: 0;
   left: 0;
@@ -8,17 +8,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 250; // Por encima de diagonales pero permite verlas translúcidas
+  z-index: 250;
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  opacity: 0; // Inicialmente oculto, se animará con GSAP
-  pointer-events: auto; // Asegurar que capture eventos pero permita clicks en elementos hijos
+  opacity: 0;
+  pointer-events: auto;
   user-select: none;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   
-  // En portrait, permitir scroll
   @media (orientation: portrait) {
     overflow-y: auto;
     overflow-x: hidden;
@@ -26,7 +25,7 @@
   }
 }
 
-.intro {
+.intro__container {
   position: relative;
   width: 100%;
   height: 100%;
@@ -36,7 +35,6 @@
   overflow: hidden;
   align-content: stretch;
   
-  // En portrait, permitir scroll vertical
   @media (orientation: portrait) {
     overflow-y: auto;
     overflow-x: hidden;
@@ -55,23 +53,21 @@
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.2em;
-  opacity: 0; // Inicialmente oculto, se animará con GSAP
+  opacity: 0;
   will-change: opacity, transform;
   z-index: 200;
   pointer-events: none;
   text-shadow: 0 0 1vw rgba(0, 255, 255, 0.8), 0 0 2vw rgba(0, 255, 255, 0.5);
   
-  // En landscape, posicionar a la izquierda, centrado verticalmente
   @media (orientation: landscape) {
     top: 50%;
-    left: 30%; // Acercado desde 25% para reducir espacio
+    left: 30%;
     transform: translate(-50%, -50%);
     text-align: left;
   }
   
-  // En portrait, subir un poco el texto
   @media (orientation: portrait) {
-    top: 55%; // Subido desde 60%
+    top: 55%;
   }
 }
 
@@ -88,10 +84,8 @@
   height: auto;
   overflow: hidden;
   
-  // En portrait, añadir padding-top para que empiecen debajo de la principal
-  // La croqueta principal tiene 75vw de altura, más espacio para el título
   @media (orientation: portrait) {
-    padding-top: calc(75vw + 15vh); // Altura de la croqueta principal + espacio para título
+    padding-top: calc(75vw + 15vh);
   }
 }
 
@@ -116,22 +110,16 @@
   justify-content: center;
   position: relative;
   overflow: visible;
-  will-change: transform, opacity; // Optimizar para animaciones
-  opacity: 0; // Inicialmente oculto, se animará con GSAP
-  transform: scale(0); // Inicialmente en scale 0, se animará con GSAP
+  will-change: transform, opacity;
+  opacity: 0;
+  transform: scale(0);
   border: none;
   padding: 0;
-  pointer-events: auto; // Asegurar que los clicks funcionen
-  z-index: 10; // Asegurar que estén por encima del overlay
+  pointer-events: auto;
+  z-index: 10;
   transform-origin: center center;
   
-  // Croqueta principal más grande - en absolute, centrada
-  &.main-croqueta {
-    position: absolute;
-    top: 38%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 20; // Por encima de las demás
+  &--main {
     width: 25vw;
     height: 25vw;
     min-width: 22vw;
@@ -139,20 +127,7 @@
     max-width: 28vw;
     max-height: 28vw;
     
-    // En landscape, posicionar a la derecha, centrado verticalmente
-    @media (orientation: landscape) {
-      top: 50%;
-      left: 70%; // Acercado desde 75% para reducir espacio
-      transform: translate(-50%, -50%);
-    }
-    
-    // En portrait, subir un poco más la croqueta principal
-    @media (orientation: portrait) {
-      top: 32%; // Subido desde 35%
-    }
-    
-    // Si es activa por URI, aún más grande
-    &.croqueta-active-uri {
+    &Uri {
       width: 28vw;
       height: 28vw;
       min-width: 25vw;
@@ -162,83 +137,70 @@
     }
   }
   
-  // Croquetas bloqueadas (cuando hay una activa por URI)
-  &.croqueta-locked {
+  &--normal {
+    min-width: 12vw;
+    min-height: 12vw;
+    max-width: 20vw;
+    max-height: 20vw;
+  }
+  
+  &--main {
+    position: absolute;
+    top: 38%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+    
+    @media (orientation: landscape) {
+      top: 50%;
+      left: 70%;
+      transform: translate(-50%, -50%);
+    }
+    
+    @media (orientation: portrait) {
+      top: 32%;
+    }
+  }
+  
+  &--locked {
     opacity: 0.3;
     pointer-events: none;
     transition: opacity 0.3s ease;
   }
   
-  .intro__button-croqueta {
-    width: 100%;
-    height: auto;
-    max-width: 100%;
-    max-height: 100%;
-    transition: filter 0.3s ease, transform 0.3s ease;
-    filter: drop-shadow(0 0 1vw currentColor);
-    position: relative;
-    z-index: 1;
-  }
-  
-  &:hover {
-    color: #ff00ff;
-    animation-play-state: paused; // Pausar animación en hover para mejor control
+  @media (orientation: portrait) {
+    width: 45vw !important;
+    height: 45vw !important;
+    min-width: 36vw !important;
+    min-height: 36vw !important;
+    max-width: 60vw !important;
+    max-height: 60vw !important;
     
-    .intro__button-croqueta {
-      filter: drop-shadow(0 0 20px currentColor) drop-shadow(0 0 40px rgba(255, 0, 255, 0.5));
-      transform: scale(1.05);
-    }
-  }
-  
-  // Eliminar :active para evitar conflictos con GSAP
-  // GSAP controlará el transform completamente
-}
-
-.intro__button-text {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 100;
-  pointer-events: none;
-  font-size: 1.2vw;
-  text-align: center;
-  width: 100%;
-  padding: 0 1vw;
-  box-sizing: border-box;
-  text-shadow: 0 0 0.5vw rgba(0, 255, 255, 0.8), 0 0 1vw rgba(0, 255, 255, 0.5);
-  color: #00ffff;
-  white-space: nowrap;
-}
-
-// En portrait, hacer las croquetas el triple de grandes
-@media (orientation: portrait) {
-  .intro__button {
-    width: 45vw !important; // 15vw * 3
-    height: 45vw !important; // 15vw * 3
-    min-width: 36vw !important; // 12vw * 3
-    min-height: 36vw !important; // 12vw * 3
-    max-width: 60vw !important; // 20vw * 3
-    max-height: 60vw !important; // 20vw * 3
-    
-    // Croqueta principal
-    &.main-croqueta {
-      width: 75vw !important; // 25vw * 3
-      height: 75vw !important; // 25vw * 3
-      min-width: 66vw !important; // 22vw * 3
-      min-height: 66vw !important; // 22vw * 3
-      max-width: 84vw !important; // 28vw * 3
-      max-height: 84vw !important; // 28vw * 3
+    &--main {
+      width: 75vw !important;
+      height: 75vw !important;
+      min-width: 66vw !important;
+      min-height: 66vw !important;
+      max-width: 84vw !important;
+      max-height: 84vw !important;
       
-      // Si es activa por URI
-      &.croqueta-active-uri {
-        width: 84vw !important; // 28vw * 3
-        height: 84vw !important; // 28vw * 3
-        min-width: 75vw !important; // 25vw * 3
-        min-height: 75vw !important; // 25vw * 3
-        max-width: 96vw !important; // 32vw * 3
-        max-height: 96vw !important; // 32vw * 3
+      &Uri {
+        width: 84vw !important;
+        height: 84vw !important;
+        min-width: 75vw !important;
+        min-height: 75vw !important;
+        max-width: 96vw !important;
+        max-height: 96vw !important;
       }
+    }
+    
+    &--normal {
+      width: 45vw !important;
+      height: 45vw !important;
+      min-width: 36vw !important;
+      min-height: 36vw !important;
+      max-width: 60vw !important;
+      max-height: 60vw !important;
     }
   }
 }
@@ -254,15 +216,9 @@
     min-width: 15vw;
     min-height: 15vw;
     font-size: 1.2vw;
-    
-    .intro__button-croqueta {
-      max-width: 100%;
-      max-height: 100%;
-    }
   }
   
-  .intro {
+  .intro__container {
     gap: 2rem;
   }
 }
-

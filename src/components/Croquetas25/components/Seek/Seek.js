@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAudio } from '../../context/AudioContext';
 import './Seek.scss';
 
+const MAINCLASS = 'seek';
+
 const Seek = ({ squares }) => {
   const { audioRef } = useAudio();
   const [progress, setProgress] = useState(0);
@@ -52,16 +54,15 @@ const Seek = ({ squares }) => {
     setProgress(percentage);
   };
 
-  // Obtener colores del último cuadro para la barra
   const lastSquare = squares && squares.length > 0 ? squares[squares.length - 1] : null;
   const currentColor = lastSquare?.gradient?.color1 || '#00ffff';
   const currentColor2 = lastSquare?.gradient?.color2 || currentColor;
 
   return (
-    <div className="seek">
-      <div className="seek__progressContainer">
+    <div className={MAINCLASS}>
+      <div className={`${MAINCLASS}__progressContainer`}>
         <div 
-          className="seek__progressBar"
+          className={`${MAINCLASS}__progressBar`}
           ref={progressBarRef}
           onClick={handleProgressClick}
           style={{
@@ -70,7 +71,7 @@ const Seek = ({ squares }) => {
           }}
         >
           <div 
-            className="seek__progressFill" 
+            className={`${MAINCLASS}__progressFill`}
             style={{ width: `${progress}%` }}
           />
         </div>

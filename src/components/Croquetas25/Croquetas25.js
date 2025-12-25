@@ -142,7 +142,7 @@ const Croquetas25 = () => {
         
         // Pausar todas las animaciones GSAP (excepto las del Intro si está visible)
         // No pausar animaciones del Intro para que las croquetas sigan siendo clicables
-        const introOverlay = document.querySelector('.intro-overlay');
+        const introOverlay = document.querySelector('.intro');
         if (!introOverlay || window.getComputedStyle(introOverlay).opacity === '0' || introOverlay.style.display === 'none') {
           // Solo pausar animaciones GSAP si el Intro no está visible
           gsap.globalTimeline.pause();
@@ -208,29 +208,28 @@ const Croquetas25 = () => {
         }
       };
 
-      const handleMouseDown = (e) => {
-        // No pausar si se hace clic en el seek bar, botón de inicio, o croquetas del Intro
-        if (e.target.closest('.seek') || 
-            e.target.closest('.croquetas25-start-croqueta') || 
-            e.target.closest('.intro__button') ||
-            e.target.closest('.croqueta') ||
-            e.target.closest('.intro-overlay')) return;
+      // Helper para verificar si el evento debe ignorarse
+      const shouldIgnoreEvent = (e) => {
+        if (!e) return false;
+        const ignoredSelectors = ['.seek', '.croquetas25-start-croqueta', '.intro__button', '.croqueta', '.intro'];
+        return ignoredSelectors.some(selector => e.target.closest(selector));
+      };
+
+      // Handler unificado para inicio (mouse/touch)
+      const handleStart = (e) => {
+        if (shouldIgnoreEvent(e)) return;
         
-        // Cancelar cualquier timeout anterior
         if (holdTimeoutRef.current) {
           clearTimeout(holdTimeoutRef.current);
           holdTimeoutRef.current = null;
         }
         
-        // Guardar el tiempo del mousedown para detectar si es un clic simple o un hold
         mouseDownTimeRef.current = Date.now();
         isHoldRef.current = false;
         
-        // Iniciar un timer para detectar si es un hold (más de 200ms)
         holdTimeoutRef.current = setTimeout(() => {
-          const timeSinceMouseDown = Date.now() - mouseDownTimeRef.current;
-          if (timeSinceMouseDown >= 200) {
-            // Es un hold, pausar
+          const elapsed = Date.now() - mouseDownTimeRef.current;
+          if (elapsed >= 200) {
             isHoldRef.current = true;
             pauseEverything();
           }
@@ -238,118 +237,42 @@ const Croquetas25 = () => {
         }, 200);
       };
 
-      const handleMouseUp = (e) => {
-        // Asegurarse de que no se está haciendo clic en una croqueta
-        if (e && (e.target.closest('.intro__button') || 
-                  e.target.closest('.croqueta') || 
-                  e.target.closest('.intro-overlay'))) {
-          // Si se suelta sobre una croqueta, no hacer nada (el click se manejará por el onClick de la croqueta)
-          return;
-        }
+      // Handler unificado para fin (mouse/touch)
+      const handleEnd = (e) => {
+        if (shouldIgnoreEvent(e)) return;
         
-        // Guardar el tiempo antes de cancelar el timeout
-        const timeSinceMouseDown = mouseDownTimeRef.current > 0 
-          ? Date.now() - mouseDownTimeRef.current 
-          : 0;
+        const elapsed = mouseDownTimeRef.current > 0 ? Date.now() - mouseDownTimeRef.current : 0;
         const wasHold = isHoldRef.current;
         
-        // Cancelar el timeout del hold si todavía está activo
         if (holdTimeoutRef.current) {
           clearTimeout(holdTimeoutRef.current);
           holdTimeoutRef.current = null;
         }
         
-        // Si fue un hold (más de 200ms o isHoldRef está en true), reanudar al soltar
-        if (wasHold || timeSinceMouseDown >= 200) {
+        if (wasHold || elapsed >= 200) {
           resumeEverything();
-        } else if (timeSinceMouseDown > 0 && timeSinceMouseDown < 200) {
-          // Si fue un clic rápido, toggle pausa/reanudar
+        } else if (elapsed > 0 && elapsed < 200) {
           togglePauseResume();
         }
         
-        // Resetear el tiempo del mousedown y el estado del hold
         mouseDownTimeRef.current = 0;
         isHoldRef.current = false;
       };
 
-      const handleTouchStart = (e) => {
-        // No pausar si se toca el seek bar, botón de inicio, o croquetas del Intro
-        if (e.target.closest('.seek') || 
-            e.target.closest('.croquetas25-start-croqueta') || 
-            e.target.closest('.intro__button') ||
-            e.target.closest('.croqueta') ||
-            e.target.closest('.intro-overlay')) return;
-        
-        // Cancelar cualquier timeout anterior
-        if (holdTimeoutRef.current) {
-          clearTimeout(holdTimeoutRef.current);
-          holdTimeoutRef.current = null;
-        }
-        
-        // Guardar el tiempo del touchstart para detectar si es un tap simple o un hold
-        mouseDownTimeRef.current = Date.now();
-        isHoldRef.current = false;
-        
-        // Iniciar un timer para detectar si es un hold (más de 200ms)
-        holdTimeoutRef.current = setTimeout(() => {
-          const timeSinceTouchStart = Date.now() - mouseDownTimeRef.current;
-          if (timeSinceTouchStart >= 200) {
-            // Es un hold, pausar
-            isHoldRef.current = true;
-            pauseEverything();
-          }
-          holdTimeoutRef.current = null;
-        }, 200);
-      };
-
-      const handleTouchEnd = (e) => {
-        // Asegurarse de que no se está tocando una croqueta
-        if (e && (e.target.closest('.intro__button') || 
-                  e.target.closest('.croqueta') || 
-                  e.target.closest('.intro-overlay'))) {
-          // Si se suelta sobre una croqueta, no hacer nada (el touch se manejará por el onClick de la croqueta)
-          return;
-        }
-        
-        // Guardar el tiempo antes de cancelar el timeout
-        const timeSinceTouchStart = mouseDownTimeRef.current > 0 
-          ? Date.now() - mouseDownTimeRef.current 
-          : 0;
-        const wasHold = isHoldRef.current;
-        
-        // Cancelar el timeout del hold si todavía está activo
-        if (holdTimeoutRef.current) {
-          clearTimeout(holdTimeoutRef.current);
-          holdTimeoutRef.current = null;
-        }
-        
-        // Si fue un hold (más de 200ms o isHoldRef está en true), reanudar al soltar
-        if (wasHold || timeSinceTouchStart >= 200) {
-          resumeEverything();
-        } else if (timeSinceTouchStart > 0 && timeSinceTouchStart < 200) {
-          // Si fue un tap rápido, toggle pausa/reanudar
-          togglePauseResume();
-        }
-        
-        // Resetear el tiempo del touchstart y el estado del hold
-        mouseDownTimeRef.current = 0;
-        isHoldRef.current = false;
-      };
-
-      container.addEventListener('mousedown', handleMouseDown);
-      container.addEventListener('mouseup', handleMouseUp);
-      container.addEventListener('mouseleave', handleMouseUp);
-      container.addEventListener('touchstart', handleTouchStart, { passive: true });
-      container.addEventListener('touchend', handleTouchEnd);
-      container.addEventListener('touchcancel', handleTouchEnd);
+      container.addEventListener('mousedown', handleStart);
+      container.addEventListener('mouseup', handleEnd);
+      container.addEventListener('mouseleave', handleEnd);
+      container.addEventListener('touchstart', handleStart, { passive: true });
+      container.addEventListener('touchend', handleEnd);
+      container.addEventListener('touchcancel', handleEnd);
 
       return () => {
-        container.removeEventListener('mousedown', handleMouseDown);
-        container.removeEventListener('mouseup', handleMouseUp);
-        container.removeEventListener('mouseleave', handleMouseUp);
-        container.removeEventListener('touchstart', handleTouchStart);
-        container.removeEventListener('touchend', handleTouchEnd);
-        container.removeEventListener('touchcancel', handleTouchEnd);
+        container.removeEventListener('mousedown', handleStart);
+        container.removeEventListener('mouseup', handleEnd);
+        container.removeEventListener('mouseleave', handleEnd);
+        container.removeEventListener('touchstart', handleStart);
+        container.removeEventListener('touchend', handleEnd);
+        container.removeEventListener('touchcancel', handleEnd);
       };
     }, [isPausedByHold, isPlaying, audioRef, pause, play, setIsPausedByHold, wasPlayingBeforeHoldRef, typewriterInstanceRef]);
 
@@ -359,73 +282,46 @@ const Croquetas25 = () => {
   const lastDiagonalTimeRef = useRef(0);
   const minTimeBetweenDiagonals = 30000; // 30 segundos - mucho menos frecuente
 
-  const handleBeat = (intensity = 0.5, shouldBeSolid = false) => {
-    // No generar nada si está pausado
-    if (isPausedByHold) return;
-    
+  // Helper para llamar callback de cuadros
+  const triggerSquare = (type, data) => {
     const timestamp = Date.now();
     const timeSinceLastSquare = timestamp - lastSquareTimeRef.current;
-    
-    // Generar cuadros (con tiempo mínimo entre cuadros)
-    if (timeSinceLastSquare >= minTimeBetweenSquares) {
-      if (triggerCallbackRef.current) {
-        try {
-          triggerCallbackRef.current('beat', { timestamp, intensity, shouldBeSolid });
-          lastSquareTimeRef.current = timestamp;
-        } catch (error) {
-          console.error(`[Croquetas25] handleBeat ERROR: ${error.message}`);
-        }
-      }
-    }
-    
-    // Generar diagonales (con tiempo mínimo mucho menor para más frecuencia)
-    const timeSinceLastDiagonal = timestamp - lastDiagonalTimeRef.current;
-    
-    if (timeSinceLastDiagonal >= minTimeBetweenDiagonals) {
-      // El callback está directamente en voiceCallbackRef.current, no en voiceCallbackRef.current.current
-      if (voiceCallbackRef.current && typeof voiceCallbackRef.current === 'function') {
-        try {
-          console.log(`[Croquetas25] Calling diagonal callback from beat | intensity: ${intensity}`);
-          voiceCallbackRef.current(intensity, 0);
-          lastDiagonalTimeRef.current = timestamp;
-        } catch (error) {
-          console.error(`[Croquetas25] handleBeat diagonal callback ERROR: ${error.message} | stack: ${error.stack}`);
-        }
-      } else {
-        console.warn(`[Croquetas25] Cannot call diagonal callback | voiceCallbackRef.current exists: ${!!voiceCallbackRef.current} | is function: ${!!(voiceCallbackRef.current && typeof voiceCallbackRef.current === 'function')}`);
+    if (timeSinceLastSquare >= minTimeBetweenSquares && triggerCallbackRef.current) {
+      try {
+        triggerCallbackRef.current(type, { timestamp, ...data });
+        lastSquareTimeRef.current = timestamp;
+      } catch (error) {
+        console.error(`[Croquetas25] ${type} square callback ERROR:`, error.message);
       }
     }
   };
 
-  const handleVoice = (intensity = 0.5, voiceEnergy = 0) => {
-    // No generar nada si está pausado
-    if (isPausedByHold) return;
-    
-    // Llamar directamente al callback de diagonales
-    // El callback está directamente en voiceCallbackRef.current, no en voiceCallbackRef.current.current
-    if (voiceCallbackRef.current && typeof voiceCallbackRef.current === 'function') {
-      try {
-        console.log(`[Croquetas25] Calling voice callback for diagonals | intensity: ${intensity} | voiceEnergy: ${voiceEnergy}`);
-        voiceCallbackRef.current(intensity, voiceEnergy);
-      } catch (error) {
-        console.error(`[Croquetas25] handleVoice diagonal callback ERROR: ${error.message} | stack: ${error.stack}`);
-      }
-    }
-    
-    // También llamar al callback de cuadros si existe (con control de frecuencia)
+  // Helper para llamar callback de diagonales
+  const triggerDiagonal = (intensity, voiceEnergy = 0, type = '') => {
     const timestamp = Date.now();
-    const timeSinceLastSquare = timestamp - lastSquareTimeRef.current;
-    
-    if (timeSinceLastSquare >= minTimeBetweenSquares) {
-      if (triggerCallbackRef.current) {
-        try {
-          triggerCallbackRef.current('voice', { timestamp, intensity, voiceEnergy });
-          lastSquareTimeRef.current = timestamp;
-        } catch (error) {
-          console.error(`[Croquetas25] handleVoice square callback ERROR: ${error.message}`);
-        }
+    const timeSinceLastDiagonal = timestamp - lastDiagonalTimeRef.current;
+    if (timeSinceLastDiagonal >= minTimeBetweenDiagonals && 
+        voiceCallbackRef.current && 
+        typeof voiceCallbackRef.current === 'function') {
+      try {
+        voiceCallbackRef.current(intensity, voiceEnergy);
+        lastDiagonalTimeRef.current = timestamp;
+      } catch (error) {
+        console.error(`[Croquetas25] ${type} diagonal callback ERROR:`, error.message);
       }
     }
+  };
+
+  const handleBeat = (intensity = 0.5, shouldBeSolid = false) => {
+    if (isPausedByHold) return;
+    triggerSquare('beat', { intensity, shouldBeSolid });
+    triggerDiagonal(intensity, 0, 'beat');
+  };
+
+  const handleVoice = (intensity = 0.5, voiceEnergy = 0) => {
+    if (isPausedByHold) return;
+    triggerDiagonal(intensity, voiceEnergy, 'voice');
+    triggerSquare('voice', { intensity, voiceEnergy });
   };
 
   return (
@@ -451,11 +347,7 @@ const Croquetas25 = () => {
         <Intro 
           tracks={tracks} 
           onTrackSelect={handleTrackSelect}
-          selectedTrackId={
-            // Si hay trackId en la URL (entrada directa), usarlo para destacar la croqueta principal
-            // Si no hay trackId, usar "croquetas25" como principal (URI genérica)
-            trackId ? trackId.toLowerCase().replace(/\s+/g, '-') : 'croquetas25'
-          }
+          selectedTrackId={trackId ? trackId.toLowerCase().replace(/\s+/g, '-') : 'croquetas25'}
           isDirectUri={isDirectUri}
         />
       )}

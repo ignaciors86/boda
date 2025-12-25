@@ -1,6 +1,26 @@
 import { useState, useEffect } from 'react';
 
-// Hook para cargar automáticamente tracks desde carpetas
+// Helper para normalizar nombres
+const normalizeName = (name) => name?.toLowerCase().replace(/\s+/g, '-') || '';
+
+// Helper para crear track inicial
+const createTrack = (trackName) => ({
+  id: normalizeName(trackName),
+  name: trackName,
+  images: [],
+  audioSrc: null,
+  guion: null
+});
+
+// Helper para procesar archivos
+const processFiles = (files, context, tracksTemp, processor) => {
+  files.forEach(file => {
+    const trackName = file.split('/')[1];
+    if (!tracksTemp[trackName]) tracksTemp[trackName] = createTrack(trackName);
+    processor(tracksTemp[trackName], context(file), file);
+  });
+};
+
 export const useTracks = () => {
   const [tracks, setTracks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -8,105 +28,52 @@ export const useTracks = () => {
   useEffect(() => {
     const loadTracks = () => {
       try {
-        // Cargar todas las imágenes y GIFs (videos convertidos) de las carpetas de tracks
-        // require.context busca recursivamente por defecto con el segundo parámetro en true
         const imagesContext = require.context('../assets/tracks', true, /\.(jpg|jpeg|png|gif|webp)$/);
-        const imageFiles = imagesContext.keys();
-        
-        // Cargar todos los archivos de audio
         const audioContext = require.context('../assets/tracks', true, /\.(mp3|m4a|wav|ogg)$/);
-        const audioFiles = audioContext.keys();
-        
-        // Cargar archivos guion.js
         const guionContext = require.context('../assets/tracks', true, /guion\.js$/);
-        const guionFiles = guionContext.keys();
         
-        // Crear un objeto temporal para almacenar los tracks
         const tracksTemp = {};
 
-        // Procesar cada archivo de imagen encontrado
-        imageFiles.forEach(file => {
-          const pathParts = file.split('/');
-          const trackName = pathParts[1]; // El nombre de la carpeta es el nombre del track
-          
-          if (!tracksTemp[trackName]) {
-            tracksTemp[trackName] = {
-              id: trackName.toLowerCase().replace(/\s+/g, '-'), // ID en minúsculas con guiones
-              name: trackName, // Nombre original de la carpeta
-              images: [],
-              audioSrc: null,
-              guion: null
-            };
-          }
-          
-          tracksTemp[trackName].images.push(imagesContext(file));
+        // Procesar imágenes
+        processFiles(imagesContext.keys(), imagesContext, tracksTemp, (track, imagePath) => {
+          track.images.push(imagePath);
         });
 
-        // Procesar cada archivo de audio encontrado
-        audioFiles.forEach(file => {
-          const pathParts = file.split('/');
-          const trackName = pathParts[1]; // El nombre de la carpeta es el nombre del track
-          
-          if (!tracksTemp[trackName]) {
-            tracksTemp[trackName] = {
-              id: trackName.toLowerCase().replace(/\s+/g, '-'),
-              name: trackName,
-              images: [],
-              audioSrc: null,
-              guion: null
-            };
-          }
-          
-          // Asignar el audio (si hay múltiples, tomar el primero)
-          if (!tracksTemp[trackName].audioSrc) {
-            tracksTemp[trackName].audioSrc = audioContext(file);
-          }
+        // Procesar audio
+        processFiles(audioContext.keys(), audioContext, tracksTemp, (track, audioPath) => {
+          if (!track.audioSrc) track.audioSrc = audioPath;
         });
 
-        // Procesar archivos guion.js
-        guionFiles.forEach(file => {
-          const pathParts = file.split('/');
-          const trackName = pathParts[1]; // El nombre de la carpeta es el nombre del track
-          
-          if (!tracksTemp[trackName]) {
-            tracksTemp[trackName] = {
-              id: trackName.toLowerCase().replace(/\s+/g, '-'),
-              name: trackName,
-              images: [],
-              audioSrc: null,
-              guion: null
-            };
-          }
-          
-          // Cargar el guion
+        // Procesar guiones
+        processFiles(guionContext.keys(), guionContext, tracksTemp, (track, guionModule, file) => {
           try {
-            const guionModule = guionContext(file);
-            tracksTemp[trackName].guion = guionModule.default || guionModule;
+            const module = guionContext(file);
+            track.guion = module.default || module;
           } catch (error) {
-            console.warn(`Error al cargar guion para ${trackName}:`, error);
+            console.warn(`Error al cargar guion para ${track.name}:`, error);
           }
         });
 
-        // Convertir a array y filtrar tracks que tengan al menos audio
+        // Convertir a array y filtrar tracks con audio
         let tracksArray = Object.values(tracksTemp)
-          .filter(track => track.audioSrc !== null) // Solo tracks con audio
+          .filter(track => track.audioSrc !== null)
           .map(track => ({
             id: track.id,
             name: track.name,
             src: track.audioSrc,
             images: track.images,
-            guion: track.guion // Incluir el guion si existe
+            guion: track.guion
           }));
 
-        // Si existe Croquetas25, agregar todas las imágenes de otros tracks
-        const croquetas25Track = tracksArray.find(t => t.id === 'croquetas25' || t.name.toLowerCase() === 'croquetas25' || t.name.toLowerCase() === 'croquetas 25');
+        // Agregar todas las imágenes a Croquetas25 si existe
+        const croquetas25Track = tracksArray.find(t => 
+          ['croquetas25', 'croquetas 25'].includes(normalizeName(t.name))
+        );
+        
         if (croquetas25Track) {
-          // Recopilar todas las imágenes de otros tracks (excluyendo Croquetas25)
           const allOtherImages = tracksArray
-            .filter(t => t.id !== 'croquetas25' && t.name.toLowerCase() !== 'croquetas25' && t.name.toLowerCase() !== 'croquetas 25')
+            .filter(t => !['croquetas25', 'croquetas 25'].includes(normalizeName(t.name)))
             .flatMap(t => t.images);
-          
-          // Agregar todas las imágenes a Croquetas25
           croquetas25Track.images = [...croquetas25Track.images, ...allOtherImages];
         }
 
@@ -116,6 +83,7 @@ export const useTracks = () => {
           images: t.images.length,
           hasGuion: !!t.guion
         })));
+        
         setTracks(tracksArray);
         setIsLoading(false);
       } catch (error) {
@@ -128,11 +96,7 @@ export const useTracks = () => {
     loadTracks();
   }, []);
 
-  return {
-    tracks,
-    isLoading
-  };
+  return { tracks, isLoading };
 };
 
 export default useTracks;
-

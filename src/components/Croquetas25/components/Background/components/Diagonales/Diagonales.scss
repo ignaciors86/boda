@@ -13,27 +13,22 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  // Usa calc() con factor multiplicador para permitir animación
-  width: calc(var(--stroke-base-width, 0.3vw) * 0.5 * var(--stroke-factor-diagonal-normal, 1)); // 0.5 para hacerlas más estrechas que los bordes
+  width: calc(var(--stroke-base-width, 0.3vw) * 0.5 * var(--stroke-factor-diagonal-normal, 1));
   min-width: 1px;
-  height: 300dvh; // Mucho más largas para que rocen más los bordes
-  opacity: 1; // Sin transparencia
+  height: 300dvh;
+  opacity: 1;
   transform-style: preserve-3d;
   transform-origin: center center;
   transform: translate(-50%, -50%) rotate(var(--diagonal-angle, 0deg));
   
-  // Diagonales fijas que atraviesen las esquinas - posicionadas desde el centro
-  &.diagonales__line--fixed {
-    // Estilos estáticos para diagonales fijas
+  &--fixed {
     position: absolute;
     top: 50%;
     left: 50%;
-    // Grosor de la línea (altura cuando está horizontal) con factor multiplicador
     height: calc(var(--stroke-base-width, 0.3vw) * 0.5 * var(--stroke-factor-diagonal-fixed, 1));
     min-height: 1px;
     opacity: 1;
-    z-index: 11; // Por encima de las otras diagonales
-    // Máscara para hacer transparente el centro - transparencia muy leve
+    z-index: 11;
     mask-image: linear-gradient(
       to right,
       black 0%,
@@ -50,22 +45,18 @@
       black 55%,
       black 100%
     );
-    // Transform origin en el centro (como las diagonales normales)
     transform-origin: center center;
-    // Los estilos dinámicos (width, transform) se aplican inline desde JS
   }
   will-change: transform, background, opacity, box-shadow;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   
-  // Transiciones suaves para cambios de color y opacidad
   transition: 
     background 0.3s ease,
     box-shadow 0.3s ease,
     opacity 0.3s ease,
     filter 0.3s ease;
   
-  // Puntas suavizadas con máscara y transparencia en el centro
   mask-image: linear-gradient(
     to bottom,
     transparent 0%,
@@ -87,6 +78,5 @@
     transparent 100%
   );
   
-  // Más brillante
   filter: brightness(1.5) saturate(1.5);
 }

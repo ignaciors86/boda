@@ -1,18 +1,19 @@
 import React, { forwardRef } from 'react';
 import './Croqueta.scss';
 
+const MAINCLASS = 'croqueta';
+
 // Función para generar diferentes formas de croquetas
 const getCroquetaSVG = (index) => {
   const variations = [
     // Croqueta 1 - Forma más alargada
     <svg 
       key={`croqueta-${index}-1`}
-      className="croqueta__svg" 
+      className={`${MAINCLASS}__svg`}
       viewBox="0 0 200 120" 
       preserveAspectRatio="xMidYMid meet"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Path invisible para detectar clics dentro del área de la croqueta */}
       <path
         d="M 20 60 
            Q 15 40, 20 25 
@@ -70,12 +71,11 @@ const getCroquetaSVG = (index) => {
     // Croqueta 2 - Forma más redondeada
     <svg 
       key={`croqueta-${index}-2`}
-      className="croqueta__svg" 
+      className={`${MAINCLASS}__svg`}
       viewBox="0 0 200 120" 
       preserveAspectRatio="xMidYMid meet"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Path invisible para detectar clics dentro del área de la croqueta */}
       <path
         d="M 30 60 
            Q 25 35, 35 20 
@@ -127,12 +127,11 @@ const getCroquetaSVG = (index) => {
     // Croqueta 3 - Forma más irregular
     <svg 
       key={`croqueta-${index}-3`}
-      className="croqueta__svg" 
+      className={`${MAINCLASS}__svg`}
       viewBox="0 0 200 120" 
       preserveAspectRatio="xMidYMid meet"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Path invisible para detectar clics dentro del área de la croqueta */}
       <path
         d="M 25 60 
            Q 20 42, 28 28 
@@ -200,21 +199,21 @@ const Croqueta = forwardRef(({
   return (
     <button
       ref={ref}
-      className={`croqueta ${className}`}
+      className={`${MAINCLASS} ${className}`}
       onClick={onClick}
       style={{
         ...style,
-        '--rotation': `${rotation}deg`
+        ...(rotation !== 0 && { '--rotation': `${rotation}deg` })
       }}
     >
       <div 
-        className="croqueta__svg-wrapper"
+        className={`${MAINCLASS}__svgWrapper`}
         onClick={onClick}
       >
         {getCroquetaSVG(index)}
       </div>
       {text && (
-        <span className="croqueta__text">
+        <span className={`${MAINCLASS}__text`}>
           {text}
         </span>
       )}
@@ -225,4 +224,3 @@ const Croqueta = forwardRef(({
 Croqueta.displayName = 'Croqueta';
 
 export default Croqueta;
-

@@ -7,14 +7,14 @@
   align-items: center;
   z-index: 1000;
   padding: 1.5% 2%;
-  background: transparent; // Sin fondo
+  background: transparent;
   width: 60%;
   max-width: 80vw;
-  opacity: 0; // Oculto por defecto
+  opacity: 0;
   transition: opacity 0.3s ease, background 0.3s ease, color 0.3s ease;
 
   &:hover {
-    opacity: 1; // Visible al hacer hover
+    opacity: 1;
   }
 }
 
@@ -29,7 +29,7 @@
 .seek__progressBar {
   position: relative;
   width: 100%;
-  height: 2vw; // Barra mucho más grande y cómoda
+  height: 2vw;
   min-height: 16px;
   background: rgba(255, 255, 255, 0.15);
   border-radius: 1vw;
@@ -59,4 +59,3 @@
     0 0 3vw var(--seek-color-2, var(--laser-color));
   filter: brightness(1.2) saturate(1.3);
 }
-

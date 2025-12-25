@@ -4,15 +4,11 @@
   --perspective: 100vw;
   --square-rotate-x: 0deg;
   --square-rotate-y: 0deg;
-  
-  // Variable base para grosor de bordes y líneas
   --stroke-base-width: 0.3vw;
-  
-  // Factores multiplicadores para cada zona (permite animar individualmente)
-  --stroke-factor-square-normal: 1;      // Cuadros normales
-  --stroke-factor-square-image: 0;       // Cuadros con imagen (0 = sin borde)
-  --stroke-factor-diagonal-normal: 1;     // Diagonales normales
-  --stroke-factor-diagonal-fixed: 1;      // Diagonales fijas
+  --stroke-factor-square-normal: 1;
+  --stroke-factor-square-image: 0;
+  --stroke-factor-diagonal-normal: 1;
+  --stroke-factor-diagonal-fixed: 1;
 }
 
 * {
@@ -33,35 +29,29 @@
   z-index: 1;
 }
 
-
-.square {
+.background__square {
   position: absolute;
   top: 50%;
   left: 50%;
   width: 100%;
   height: 100%;
   background: transparent;
-  opacity: 0.2; // Transparente para efecto glass
+  opacity: 0.2;
   
-  // Cuadros normales sin background - solo borde, transparente
-  &:not(.square--target) {
-    // Sin fondo, solo borde
+  &:not(&--target) {
     background: transparent;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     opacity: 1;
-    z-index: 20; // Por encima de diagonales pero menos que los opacos
+    z-index: 20;
   }
   transform-origin: center center;
   transform-style: preserve-3d;
   transform: translate(-50%, -50%) rotateX(var(--square-rotate-x)) rotateY(var(--square-rotate-y));
-  will-change: transform, opacity; // Optimizar renderizado
-  backface-visibility: hidden; // Evitar parpadeos
+  will-change: transform, opacity;
+  backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  // z-index se define en cada variante
   
-  // Borde con degradado de colores LGTB+ en tonos neon
-  // Usa calc() con factor multiplicador para permitir animación
   border: calc(var(--stroke-base-width) * var(--stroke-factor-square-normal, 1)) solid;
   border-image: linear-gradient(
     var(--square-gradient-angle, 45deg),
@@ -69,13 +59,9 @@
     var(--square-color-2, var(--laser-color))
   ) 1;
   
-  // Sin resplandor, solo borde
   box-shadow: none;
-  
-  // Sin filtros de brillo
   filter: none;
   
-  // Transiciones suaves para cambios de color
   transition: 
     background 0.3s ease,
     box-shadow 0.3s ease,
@@ -83,21 +69,18 @@
     filter 0.3s ease,
     opacity 0.3s ease;
   
-  // Cuadros target (con imágenes) - estos sí tapan las diagonales
-  &.square--target {
-    // Sin fondo, solo borde e imagen
+  &--target {
     background: transparent;
     opacity: 1;
-    z-index: 30; // Por encima de todo para tapar diagonales
+    z-index: 30;
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: visible; // Permitir que la imagen sobresalga
+    overflow: visible;
     
-    // Borde con factor 0 (sin borde por ahora)
     border-width: calc(var(--stroke-base-width) * var(--stroke-factor-square-image, 0));
     
-    .square-image {
+    .background__squareImage {
       width: auto;
       height: auto;
       max-width: 100dvh;
@@ -108,11 +91,9 @@
       transform: translate(-50%, -50%);
       box-sizing: border-box;
       
-      // En portrait, escalar las imágenes a la mitad
       @media (orientation: portrait) {
         transform: translate(-50%, -50%) scale(0.5);
       }
     }
   }
 }
-

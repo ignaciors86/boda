@@ -1,6 +1,8 @@
 import React, { useRef, useEffect } from 'react';
 import './KITT.scss';
 
+const MAINCLASS = 'kitt';
+
 const KITT = ({ analyser }) => {
   const canvasBarsRef = useRef(null);
   const animationRef = useRef(null);
@@ -24,17 +26,14 @@ const KITT = ({ analyser }) => {
         canvasBarsRef.current.height = barsHeight * dpr;
         ctxBars.scale(dpr, dpr);
 
-        // Configuración general
         const numBars = 3;
         const numSegments = 13;
         const segmentSpacing = 2;
         
-        // Si el canvas es pequeño (como en el prompt), calcular basándose en el ancho del canvas
-        // Si es grande (pantalla completa), usar la altura de la ventana
-        const isCompact = barsWidth < 200; // Si el ancho es menor a 200px, está en modo compacto
+        const isCompact = barsWidth < 200;
         const segmentWidth = isCompact 
-          ? Math.min(barsWidth / 6, 8) // En modo compacto, usar el ancho del canvas dividido por 6, máximo 8px
-          : (window.innerHeight * 0.06); // 6dvh equivalente para pantalla completa
+          ? Math.min(barsWidth / 6, 8)
+          : (window.innerHeight * 0.06);
         
         const columnSpacing = segmentWidth * 0.8;
         const maxHeight = barsHeight * 0.7;
@@ -44,7 +43,6 @@ const KITT = ({ analyser }) => {
         const centerX = barsWidth / 2;
         const centerY = barsHeight / 2;
 
-        // Dividir el array de frecuencias en tres secciones
         const bajos = dataArray.slice(0, Math.floor(dataArray.length * 0.33));
         const medios = dataArray.slice(Math.floor(dataArray.length * 0.33), Math.floor(dataArray.length * 0.66));
         const altos = dataArray.slice(Math.floor(dataArray.length * 0.66));
@@ -94,7 +92,6 @@ const KITT = ({ analyser }) => {
 
         previousAveragesRef.current = averages;
 
-        // Color rojo original de KITT (255, 0, 0)
         const color = '255, 0, 0';
 
         const barOrder = [1, 0, 2];
@@ -111,7 +108,6 @@ const KITT = ({ analyser }) => {
           const totalSegments = numSegments;
           const activeSegments = Math.ceil(normalizedValue * totalSegments);
 
-          // Barra normal (igual que KITT)
           for (let direction = -1; direction <= 1; direction += 2) {
             for (let j = 0; j < numSegments; j++) {
               const isActive = j < activeSegments;
@@ -121,7 +117,6 @@ const KITT = ({ analyser }) => {
               const musicIntensity = normalizedValue * 0.3;
               const finalIntensity = segmentIntensity + musicIntensity;
               const baseIntensity = isCenter ? 0.7 : 0.8;
-              // Degradado: más transparente cuanto más lejos del centro
               const alpha = 0.99 * (1 - j / totalSegments) + 0.01;
               ctxBars.fillStyle = `rgba(${color}, ${alpha})`;
               const barX = x - (segmentWidth / 2);
@@ -130,7 +125,6 @@ const KITT = ({ analyser }) => {
           }
         }
 
-        // Gradiente de desvanecimiento (igual que KITT)
         const totalBarHeight = (numSegments * (segmentHeight + segmentSpacing) + centerGap) * 2;
         const startY = centerY - (totalBarHeight / 2);
         const fadeGradient = ctxBars.createLinearGradient(0, startY, 0, startY + totalBarHeight);
@@ -159,11 +153,10 @@ const KITT = ({ analyser }) => {
   }, [analyser]);
 
   return (
-    <div className="kitt-container">
-      <canvas ref={canvasBarsRef} className="kitt-bars" />
+    <div className={MAINCLASS}>
+      <canvas ref={canvasBarsRef} className={`${MAINCLASS}__canvas`} />
     </div>
   );
 };
 
 export default KITT;
-
