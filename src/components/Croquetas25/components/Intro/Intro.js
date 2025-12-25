@@ -10,7 +10,24 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null, isDirectUri = fa
   const overlayRef = useRef(null);
   const [croquetasUnlocked, setCroquetasUnlocked] = useState(false);
   const rotationTimelinesRef = useRef([]);
+  const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth);
 
+  // Detectar orientación portrait
+  useEffect(() => {
+    const checkOrientation = () => {
+      setIsPortrait(window.innerHeight > window.innerWidth);
+    };
+    
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
+    };
+  }, []);
+  
   // Resetear estado de desbloqueo cuando cambia selectedTrackId
   useEffect(() => {
     setCroquetasUnlocked(false);
@@ -204,23 +221,24 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null, isDirectUri = fa
           const isLocked = isDirectUri && !croquetasUnlocked && !isMainCroqueta;
           
           const getCroquetaSize = () => {
+            const multiplier = isPortrait ? 3 : 1;
             if (isDirectUri) {
               return {
-                width: '28vw',
-                height: '28vw',
-                minWidth: '25vw',
-                minHeight: '25vw',
-                maxWidth: '32vw',
-                maxHeight: '32vw',
+                width: `${28 * multiplier}vw`,
+                height: `${28 * multiplier}vw`,
+                minWidth: `${25 * multiplier}vw`,
+                minHeight: `${25 * multiplier}vw`,
+                maxWidth: `${32 * multiplier}vw`,
+                maxHeight: `${32 * multiplier}vw`,
               };
             } else {
               return {
-                width: '25vw',
-                height: '25vw',
-                minWidth: '22vw',
-                minHeight: '22vw',
-                maxWidth: '28vw',
-                maxHeight: '28vw',
+                width: `${25 * multiplier}vw`,
+                height: `${25 * multiplier}vw`,
+                minWidth: `${22 * multiplier}vw`,
+                minHeight: `${22 * multiplier}vw`,
+                maxWidth: `${28 * multiplier}vw`,
+                maxHeight: `${28 * multiplier}vw`,
               };
             }
           };
@@ -289,12 +307,12 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null, isDirectUri = fa
                 rotation={0}
                 className={`intro__button ${isLocked ? 'croqueta-locked' : ''}`}
                 style={{
-                  width: '15vw',
-                  height: '15vw',
-                  minWidth: '12vw',
-                  minHeight: '12vw',
-                  maxWidth: '20vw',
-                  maxHeight: '20vw',
+                  width: isPortrait ? '45vw' : '15vw',
+                  height: isPortrait ? '45vw' : '15vw',
+                  minWidth: isPortrait ? '36vw' : '12vw',
+                  minHeight: isPortrait ? '36vw' : '12vw',
+                  maxWidth: isPortrait ? '60vw' : '20vw',
+                  maxHeight: isPortrait ? '60vw' : '20vw',
                   pointerEvents: isLocked ? 'none' : 'auto',
                 }}
                 ref={el => {

@@ -47,7 +47,7 @@
     color: #00ffff;
     white-space: nowrap;
     transform-origin: center center;
-    transform: translate(-70%, -60%) rotate(10deg);
+    transform: translate(-50%, -90%) rotate(10deg);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -68,7 +68,19 @@
     }
   }
   
-  @media (max-width: 768px) {
+  // En portrait, aumentar el tamaño del texto proporcionalmente (x3)
+  // Debe ir después de otros media queries para tener prioridad
+  @media (orientation: portrait) {
+    .croqueta__text {
+      font-size: 4.8vw !important; // 1.6vw * 3
+    }
+    
+    &.main-croqueta .croqueta__text {
+      font-size: 6.6vw !important; // 2.2vw * 3
+    }
+  }
+  
+  @media (max-width: 768px) and (orientation: landscape) {
     .croqueta__text {
       font-size: 0.9vw;
     }
