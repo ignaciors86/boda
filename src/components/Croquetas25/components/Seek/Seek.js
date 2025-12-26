@@ -5,53 +5,70 @@ import './Seek.scss';
 const MAINCLASS = 'seek';
 
 const Seek = ({ squares }) => {
-  const { audioRef } = useAudio();
+  const { 
+    audioRef, 
+    currentIndex, 
+    audioSrcs, 
+    audioDurations, 
+    getTotalDuration, 
+    getTotalElapsed,
+    seekToAudio 
+  } = useAudio();
   const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState(0);
   const progressBarRef = useRef(null);
 
   useEffect(() => {
-    if (!audioRef?.current) return;
-
-    const audio = audioRef.current;
+    if (!audioRef?.current || audioDurations.length === 0) return;
 
     const updateProgress = () => {
-      if (audio.duration) {
-        setProgress((audio.currentTime / audio.duration) * 100);
-      }
-    };
-
-    const updateDuration = () => {
-      if (audio.duration) {
-        setDuration(audio.duration);
+      const totalDuration = getTotalDuration();
+      const totalElapsed = getTotalElapsed();
+      
+      if (totalDuration > 0) {
+        const progressPercent = (totalElapsed / totalDuration) * 100;
+        setProgress(Math.max(0, Math.min(100, progressPercent)));
       }
     };
 
     const handleTimeUpdate = () => updateProgress();
-    const handleLoadedMetadata = () => updateDuration();
 
+    const audio = audioRef.current;
     audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
 
-    updateDuration();
     updateProgress();
 
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
     };
-  }, [audioRef]);
+  }, [audioRef, currentIndex, audioDurations, getTotalDuration, getTotalElapsed]);
 
-  const handleProgressClick = (e) => {
-    if (!audioRef?.current || !progressBarRef.current) return;
+  const handleProgressClick = async (e) => {
+    if (!audioRef?.current || !progressBarRef.current || audioDurations.length === 0) return;
     
     const rect = progressBarRef.current.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const percentage = Math.max(0, Math.min(100, (clickX / rect.width) * 100));
-    const newTime = (percentage / 100) * audioRef.current.duration;
     
-    audioRef.current.currentTime = newTime;
-    setProgress(percentage);
+    const totalDuration = getTotalDuration();
+    const targetTime = (percentage / 100) * totalDuration;
+    
+    // Encontrar en qué canción está ese tiempo
+    let accumulatedTime = 0;
+    let targetAudioIndex = 0;
+    let targetTimeInAudio = 0;
+
+    for (let i = 0; i < audioDurations.length; i++) {
+      const duration = audioDurations[i];
+      if (accumulatedTime + duration >= targetTime) {
+        targetAudioIndex = i;
+        targetTimeInAudio = targetTime - accumulatedTime;
+        break;
+      }
+      accumulatedTime += duration;
+    }
+
+    // Llamar a seekToAudio con el tiempo objetivo
+    await seekToAudio(targetAudioIndex, targetTimeInAudio);
   };
 
   const lastSquare = squares && squares.length > 0 ? squares[squares.length - 1] : null;

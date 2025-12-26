@@ -6,7 +6,7 @@ const createTrack = (trackName) => ({
   id: normalizeName(trackName),
   name: trackName,
   images: [],
-  audioSrc: null,
+  audioSrcs: [], // Array para múltiples audios
   guion: null
 });
 
@@ -40,9 +40,13 @@ export const useTracks = () => {
           track.images.push({ path: imagePath, originalPath: file });
         });
 
-        // Procesar audio
-        processFiles(audioContext.keys(), audioContext, tracksTemp, (track, audioPath) => {
-          if (!track.audioSrc) track.audioSrc = audioPath;
+        // Procesar audio - cargar todos los archivos de audio por colección, ordenados alfabéticamente
+        const audioFiles = audioContext.keys().sort((a, b) => a.localeCompare(b));
+        audioFiles.forEach(file => {
+          const pathParts = file.split('/').filter(p => p && p !== '.');
+          const trackName = pathParts[0];
+          if (!tracksTemp[trackName]) tracksTemp[trackName] = createTrack(trackName);
+          tracksTemp[trackName].audioSrcs.push(audioContext(file));
         });
 
         // Procesar guiones
@@ -67,11 +71,12 @@ export const useTracks = () => {
         });
 
         let tracksArray = Object.values(tracksTemp)
-          .filter(track => track.audioSrc !== null)
+          .filter(track => track.audioSrcs.length > 0) // Filtrar tracks con al menos un audio
           .map(track => ({
             id: track.id,
             name: track.name,
-            src: track.audioSrc,
+            src: track.audioSrcs[0], // Mantener compatibilidad: primer audio como src
+            srcs: track.audioSrcs, // Array de todos los audios ordenados alfabéticamente
             // Convertir imágenes a formato esperado (string o objeto con path)
             images: track.images.map(img => typeof img === 'string' ? img : img.path || img),
             guion: track.guion

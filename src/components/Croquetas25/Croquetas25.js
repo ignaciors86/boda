@@ -46,7 +46,7 @@ const Croquetas25 = () => {
   
   const { tracks, isLoading: tracksLoading } = useTracks();
   const { isLoading: imagesLoading, preloadProgress: imagesProgress } = useGallery(selectedTrack);
-  const currentAudioSrc = selectedTrack?.src;
+  const audioSrcs = selectedTrack?.srcs || (selectedTrack?.src ? [selectedTrack.src] : []);
   const isDirectUri = !!trackId;
 
   const handleTrackSelect = (track) => {
@@ -222,6 +222,8 @@ const Croquetas25 = () => {
     triggerSquare('voice', { intensity, voiceEnergy });
   };
 
+  // Controles de teclado para audio - se manejan dentro de AudioProvider
+
   return (
     <div className="croquetas25" onClick={handleClick}>
       {tracksLoading && (
@@ -243,8 +245,8 @@ const Croquetas25 = () => {
       )}
       
       {/* Background siempre visible para mostrar diagonales - dentro de AudioProvider si hay track, fuera si no */}
-      {selectedTrack && currentAudioSrc ? (
-        <AudioProvider audioSrc={currentAudioSrc}>
+      {selectedTrack && audioSrcs.length > 0 ? (
+        <AudioProvider audioSrcs={audioSrcs}>
           <BackgroundWrapper 
             onTriggerCallbackRef={audioStarted ? triggerCallbackRef : null} 
             onVoiceCallbackRef={audioStarted ? voiceCallbackRef : null}
