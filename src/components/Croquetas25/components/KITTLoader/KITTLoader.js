@@ -15,4 +15,3 @@ const KITTLoader = ({ fast = false }) => {
 
 export default KITTLoader;
 
-
