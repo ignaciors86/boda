@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-export const useGallery = (selectedTrack = null) => {
+export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onAllComplete = null) => {
   const [allImages, setAllImages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [preloadProgress, setPreloadProgress] = useState(0);
@@ -11,6 +11,12 @@ export const useGallery = (selectedTrack = null) => {
   const preloadQueueRef = useRef([]);
   const preloadingRef = useRef(false);
   const backgroundLoadingRef = useRef(false);
+  
+  // Rastrear subcarpetas
+  const imagesBySubfolderRef = useRef(new Map()); // Map<imagePath, subfolder>
+  const subfolderCountsRef = useRef(new Map()); // Map<subfolder, {total, used}>
+  const lastSubfolderRef = useRef(null);
+  const completedSubfoldersRef = useRef(new Set());
   
   // Configuración de carga progresiva
   const INITIAL_PRELOAD_COUNT = 20; // Imágenes iniciales para empezar rápido
@@ -107,10 +113,14 @@ export const useGallery = (selectedTrack = null) => {
     const loadImages = async () => {
       try {
         let imagesList = selectedTrack?.images?.length > 0
-          ? selectedTrack.images.map(img => typeof img === 'string' ? img : img.path || img)
+          ? selectedTrack.images // Mantener estructura con subcarpetas
           : (() => {
               const context = require.context('../../assets/tracks', true, /\.(jpg|jpeg|png|gif|webp)$/);
-              return context.keys().map(file => context(file)).sort((a, b) => a.localeCompare(b));
+              return context.keys().map(file => ({
+                path: context(file),
+                originalPath: file,
+                subfolder: null
+              })).sort((a, b) => a.originalPath.localeCompare(b.originalPath));
             })();
 
         if (imagesList.length === 0) {
@@ -127,9 +137,25 @@ export const useGallery = (selectedTrack = null) => {
         preloadingRef.current = false;
         backgroundLoadingRef.current = false;
 
-        // Inicializar todas las imágenes como 'pending'
-        imagesList.forEach(img => {
-          imageStatesRef.current.set(img, { state: 'pending', imgElement: null });
+        // Inicializar todas las imágenes como 'pending' y rastrear subcarpetas
+        imagesBySubfolderRef.current.clear();
+        subfolderCountsRef.current.clear();
+        lastSubfolderRef.current = null;
+        completedSubfoldersRef.current.clear();
+        
+        imagesList.forEach((img) => {
+          const imageObj = typeof img === 'object' ? img : { path: img, originalPath: img, subfolder: null };
+          const imagePath = imageObj.path || img;
+          const subfolder = imageObj.subfolder || null;
+          
+          imageStatesRef.current.set(imagePath, { state: 'pending', imgElement: null });
+          imagesBySubfolderRef.current.set(imagePath, subfolder);
+          
+          if (!subfolderCountsRef.current.has(subfolder)) {
+            subfolderCountsRef.current.set(subfolder, { total: 0, used: 0 });
+          }
+          const counts = subfolderCountsRef.current.get(subfolder);
+          counts.total++;
         });
 
         setAllImages(imagesList);
@@ -137,7 +163,9 @@ export const useGallery = (selectedTrack = null) => {
 
         // Calcular cuántas imágenes precargar inicialmente
         const initialCount = Math.min(INITIAL_PRELOAD_COUNT, imagesList.length);
-        const initialImages = imagesList.slice(0, initialCount);
+        const initialImages = imagesList.slice(0, initialCount).map(img => {
+          return typeof img === 'object' ? (img.path || img) : img;
+        });
 
         console.log(`Gallery: Precargando ${initialCount} imágenes iniciales de ${imagesList.length} totales...`);
 
@@ -190,21 +218,71 @@ export const useGallery = (selectedTrack = null) => {
     let attempts = 0;
     while (attempts < allImages.length) {
       const index = currentIndexRef.current;
-      const imagePath = allImages[index];
+      const imageObj = allImages[index];
+      const imagePath = typeof imageObj === 'object' ? (imageObj.path || imageObj) : imageObj;
       const imageState = imageStatesRef.current.get(imagePath);
 
       if (imageState && imageState.state === 'ready') {
-        // Marcar como usada y avanzar índice
+        const currentSubfolder = imagesBySubfolderRef.current.get(imagePath);
+        const previousSubfolder = lastSubfolderRef.current;
+        
+        // Marcar como usada
         imageStatesRef.current.set(imagePath, { ...imageState, state: 'used' });
+        
+        // Actualizar contador
+        if (currentSubfolder !== null && subfolderCountsRef.current.has(currentSubfolder)) {
+          const counts = subfolderCountsRef.current.get(currentSubfolder);
+          counts.used++;
+        }
+        
+        // Verificar si se completó la subcarpeta anterior
+        if (previousSubfolder !== null && 
+            previousSubfolder !== currentSubfolder &&
+            !completedSubfoldersRef.current.has(previousSubfolder)) {
+          
+          let actuallyUsedCount = 0;
+          imagesBySubfolderRef.current.forEach((subfolder, path) => {
+            if (subfolder === previousSubfolder) {
+              const state = imageStatesRef.current.get(path);
+              if (state && state.state === 'used') {
+                actuallyUsedCount++;
+              }
+            }
+          });
+          
+          const prevCounts = subfolderCountsRef.current.get(previousSubfolder);
+          if (actuallyUsedCount >= prevCounts.total && prevCounts.total > 0) {
+            completedSubfoldersRef.current.add(previousSubfolder);
+            if (onSubfolderComplete) {
+              onSubfolderComplete(previousSubfolder);
+            }
+          }
+        }
+        
+        lastSubfolderRef.current = currentSubfolder;
         currentIndexRef.current = (currentIndexRef.current + 1) % allImages.length;
         
-        // Si hemos completado el loop, resetear estados de 'used' a 'ready'
+        // Si hemos completado el loop, verificar si todas las subcarpetas están completas
         if (currentIndexRef.current === 0) {
+          const allSubfoldersComplete = Array.from(subfolderCountsRef.current.keys()).every(subfolder => {
+            return completedSubfoldersRef.current.has(subfolder);
+          });
+          
+          if (allSubfoldersComplete && onAllComplete) {
+            onAllComplete();
+          }
+          
+          // Resetear estados
           imageStatesRef.current.forEach((state, path) => {
             if (state.state === 'used') {
               imageStatesRef.current.set(path, { ...state, state: 'ready' });
             }
           });
+          subfolderCountsRef.current.forEach((counts) => {
+            counts.used = 0;
+          });
+          completedSubfoldersRef.current.clear();
+          lastSubfolderRef.current = null;
         }
         
         return imagePath;
@@ -218,7 +296,7 @@ export const useGallery = (selectedTrack = null) => {
     // Si ninguna está lista, devolver null
     console.warn('Gallery: No hay imágenes listas disponibles');
     return null;
-  }, [allImages]);
+  }, [allImages, onSubfolderComplete, onAllComplete]);
 
   // Pre-cargar imágenes próximas de forma proactiva durante la reproducción
   const preloadNextImages = useCallback(() => {
@@ -228,12 +306,12 @@ export const useGallery = (selectedTrack = null) => {
     const imagesToPreload = [];
     let current = currentIndexRef.current;
     
-    // Obtener las próximas imágenes que no estén listas
-    // Buscar más adelante para tener un buffer
-    for (let i = 0; i < MAX_PRELOAD * 2 && imagesToPreload.length < MAX_PRELOAD; i++) {
-      const index = (current + i) % allImages.length;
-      const imagePath = allImages[index];
-      const imageState = imageStatesRef.current.get(imagePath);
+      // Obtener las próximas imágenes que no estén listas
+      for (let i = 0; i < MAX_PRELOAD * 2 && imagesToPreload.length < MAX_PRELOAD; i++) {
+        const index = (current + i) % allImages.length;
+        const imageObj = allImages[index];
+        const imagePath = typeof imageObj === 'object' ? (imageObj.path || imageObj) : imageObj;
+        const imageState = imageStatesRef.current.get(imagePath);
       
       // Solo precargar si está pendiente (no loading para evitar duplicados)
       if (imageState && imageState.state === 'pending') {
