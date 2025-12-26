@@ -253,6 +253,7 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
           const prevCounts = subfolderCountsRef.current.get(previousSubfolder);
           if (actuallyUsedCount >= prevCounts.total && prevCounts.total > 0) {
             completedSubfoldersRef.current.add(previousSubfolder);
+            console.log(`[Gallery] Subcarpeta ${previousSubfolder} completada (${actuallyUsedCount}/${prevCounts.total} imágenes)`);
             if (onSubfolderComplete) {
               onSubfolderComplete(previousSubfolder);
             }
@@ -262,17 +263,29 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
         lastSubfolderRef.current = currentSubfolder;
         currentIndexRef.current = (currentIndexRef.current + 1) % allImages.length;
         
-        // Si hemos completado el loop, verificar si todas las subcarpetas están completas
-        if (currentIndexRef.current === 0) {
-          const allSubfoldersComplete = Array.from(subfolderCountsRef.current.keys()).every(subfolder => {
-            return completedSubfoldersRef.current.has(subfolder);
+        // Verificar si todas las subcarpetas están completas (antes de resetear)
+        const allSubfoldersComplete = Array.from(subfolderCountsRef.current.keys()).every(subfolder => {
+          // Verificar manualmente si todas las imágenes de esta subcarpeta están usadas
+          let usedCount = 0;
+          imagesBySubfolderRef.current.forEach((sf, path) => {
+            if (sf === subfolder) {
+              const state = imageStatesRef.current.get(path);
+              if (state && state.state === 'used') {
+                usedCount++;
+              }
+            }
           });
-          
-          if (allSubfoldersComplete && onAllComplete) {
-            onAllComplete();
-          }
-          
-          // Resetear estados
+          const counts = subfolderCountsRef.current.get(subfolder);
+          return counts && usedCount >= counts.total && counts.total > 0;
+        });
+        
+        if (allSubfoldersComplete && onAllComplete) {
+          console.log('[Gallery] Todas las subcarpetas completadas, llamando onAllComplete');
+          onAllComplete();
+        }
+        
+        // Si hemos completado el loop, resetear estados
+        if (currentIndexRef.current === 0) {
           imageStatesRef.current.forEach((state, path) => {
             if (state.state === 'used') {
               imageStatesRef.current.set(path, { ...state, state: 'ready' });

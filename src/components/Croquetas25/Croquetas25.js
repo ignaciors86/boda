@@ -326,6 +326,9 @@ const Croquetas25 = () => {
           <LoadingProgressHandler onTriggerCallbackRef={triggerCallbackRef} audioStarted={audioStarted} />
           <AudioAnalyzer onBeat={handleBeat} onVoice={handleVoice} />
           <SeekWrapper />
+          {audioStarted && selectedTrack && (
+            <SubfolderAudioController selectedTrack={selectedTrack} />
+          )}
           {audioStarted && (
             <GuionManager 
               selectedTrack={selectedTrack}
@@ -609,6 +612,40 @@ const SeekWrapper = () => {
 };
 
 // Componente para gestionar el guión según la subcarpeta actual
+// Componente para controlar el cambio de audio cuando se completa una subcarpeta
+const SubfolderAudioController = ({ selectedTrack }) => {
+  const { seekToAudio, currentIndex } = useAudio();
+  const completedSubfoldersRef = useRef(new Set());
+
+  useEffect(() => {
+    if (!selectedTrack || !selectedTrack.subfolderToAudioIndex) return;
+    
+    completedSubfoldersRef.current.clear();
+    
+    window.__subfolderCompleteHandler = (completedSubfolder, nextAudioIndex) => {
+      if (completedSubfoldersRef.current.has(completedSubfolder)) {
+        console.log(`[SubfolderAudioController] Subcarpeta ${completedSubfolder} ya procesada`);
+        return;
+      }
+      
+      if (nextAudioIndex !== null && currentIndex !== nextAudioIndex) {
+        completedSubfoldersRef.current.add(completedSubfolder);
+        console.log(`[SubfolderAudioController] Cambiando de audio ${currentIndex} a ${nextAudioIndex}`);
+        seekToAudio(nextAudioIndex, 0);
+      } else {
+        completedSubfoldersRef.current.add(completedSubfolder);
+        console.log(`[SubfolderAudioController] No hay siguiente audio o ya estamos en el correcto`);
+      }
+    };
+    
+    return () => {
+      window.__subfolderCompleteHandler = null;
+    };
+  }, [selectedTrack, seekToAudio, currentIndex]);
+
+  return null;
+};
+
 const GuionManager = ({ selectedTrack, typewriterInstanceRef, isPausedByHold }) => {
   const [currentSubfolder, setCurrentSubfolder] = useState(null);
   const { currentIndex } = useAudio();
