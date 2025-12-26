@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onAllComplete = null) => {
+export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onAllComplete = null, getCurrentAudioIndex = null, getCurrentAudioTime = null) => {
   const [allImages, setAllImages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [preloadProgress, setPreloadProgress] = useState(0);
@@ -17,6 +17,10 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
   const subfolderCountsRef = useRef(new Map()); // Map<subfolder, {total, used}>
   const lastSubfolderRef = useRef(null);
   const completedSubfoldersRef = useRef(new Set());
+  
+  // Sistema de sincronización
+  const subfolderStartTimesRef = useRef(new Map()); // Map<subfolder, {startTime, audioTime}>
+  const currentAudioIndexRef = useRef(null); // AudioIndex actual para filtrar imágenes
   
   // Configuración de carga progresiva
   const INITIAL_PRELOAD_COUNT = 20; // Imágenes iniciales para empezar rápido
@@ -142,6 +146,8 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
         subfolderCountsRef.current.clear();
         lastSubfolderRef.current = null;
         completedSubfoldersRef.current.clear();
+        subfolderStartTimesRef.current.clear();
+        currentAudioIndexRef.current = null;
         
         imagesList.forEach((img) => {
           const imageObj = typeof img === 'object' ? img : { path: img, originalPath: img, subfolder: null };
@@ -207,12 +213,86 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
     loadImages();
   }, [selectedTrack, preloadImage, loadImagesInBatches]);
 
+  // Obtener subcarpetas que usan el audioIndex actual
+  const getSubfoldersForAudioIndex = useCallback((audioIndex) => {
+    if (!selectedTrack || !selectedTrack.subfolderToAudioIndex || audioIndex === null || audioIndex === undefined) {
+      return new Set();
+    }
+    
+    const subfolders = new Set();
+    Object.entries(selectedTrack.subfolderToAudioIndex).forEach(([subfolder, idx]) => {
+      if (idx === audioIndex) {
+        subfolders.add(subfolder);
+      }
+    });
+    return subfolders;
+  }, [selectedTrack]);
+
+  // Resetear índice cuando cambia el audio
+  useEffect(() => {
+    if (!selectedTrack || !getCurrentAudioIndex || allImages.length === 0) return;
+    
+    const audioIndex = getCurrentAudioIndex();
+    if (audioIndex === null || audioIndex === undefined) return;
+    
+    // Solo resetear si cambió el audioIndex
+    if (currentAudioIndexRef.current === audioIndex) return;
+    
+    currentAudioIndexRef.current = audioIndex;
+    
+    // Encontrar la primera imagen de las subcarpetas que usan este audio
+    const validSubfolders = getSubfoldersForAudioIndex(audioIndex);
+    if (validSubfolders.size === 0) return;
+    
+    // Buscar la primera imagen de estas subcarpetas
+    let firstImageIndex = -1;
+    for (let i = 0; i < allImages.length; i++) {
+      const imageObj = allImages[i];
+      const imagePath = typeof imageObj === 'object' ? (imageObj.path || imageObj) : imageObj;
+      const imageSubfolder = imagesBySubfolderRef.current.get(imagePath);
+      
+      if (validSubfolders.has(imageSubfolder)) {
+        firstImageIndex = i;
+        break;
+      }
+    }
+    
+    if (firstImageIndex !== -1) {
+      console.log(`[Gallery] AudioIndex cambió a ${audioIndex}, resetando índice a ${firstImageIndex}`);
+      currentIndexRef.current = firstImageIndex;
+      
+      // Resetear estados "used" de las imágenes de estas subcarpetas
+      imagesBySubfolderRef.current.forEach((subfolder, path) => {
+        if (validSubfolders.has(subfolder)) {
+          const state = imageStatesRef.current.get(path);
+          if (state && state.state === 'used') {
+            imageStatesRef.current.set(path, { ...state, state: 'ready' });
+          }
+        }
+      });
+      
+      // Resetear contadores
+      validSubfolders.forEach(subfolder => {
+        if (subfolderCountsRef.current.has(subfolder)) {
+          const counts = subfolderCountsRef.current.get(subfolder);
+          counts.used = 0;
+        }
+      });
+      
+      lastSubfolderRef.current = null;
+    }
+  }, [selectedTrack, allImages, getCurrentAudioIndex, getSubfoldersForAudioIndex]);
+
   // Función para obtener la siguiente imagen disponible (sin repetición hasta completar loop)
   const getNextImage = useCallback(() => {
     if (allImages.length === 0) {
       console.warn('Gallery: No hay imágenes disponibles aún');
       return null;
     }
+
+    // Obtener audioIndex actual y subcarpetas válidas
+    const audioIndex = getCurrentAudioIndex ? getCurrentAudioIndex() : null;
+    const validSubfolders = getSubfoldersForAudioIndex(audioIndex);
 
     // Buscar la siguiente imagen lista, empezando desde currentIndex
     let attempts = 0;
@@ -221,10 +301,30 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
       const imageObj = allImages[index];
       const imagePath = typeof imageObj === 'object' ? (imageObj.path || imageObj) : imageObj;
       const imageState = imageStatesRef.current.get(imagePath);
+      const imageSubfolder = imagesBySubfolderRef.current.get(imagePath);
+
+      // Si hay audioIndex, solo aceptar imágenes de subcarpetas válidas
+      if (audioIndex !== null && validSubfolders.size > 0 && !validSubfolders.has(imageSubfolder)) {
+        currentIndexRef.current = (currentIndexRef.current + 1) % allImages.length;
+        attempts++;
+        continue;
+      }
 
       if (imageState && imageState.state === 'ready') {
-        const currentSubfolder = imagesBySubfolderRef.current.get(imagePath);
+        const currentSubfolder = imageSubfolder;
         const previousSubfolder = lastSubfolderRef.current;
+        const timestamp = Date.now();
+        const audioTime = getCurrentAudioTime ? getCurrentAudioTime() : null;
+        
+        // Registrar tiempo de inicio de subcarpeta si es la primera imagen
+        if (previousSubfolder !== currentSubfolder && currentSubfolder !== null) {
+          if (!subfolderStartTimesRef.current.has(currentSubfolder)) {
+            subfolderStartTimesRef.current.set(currentSubfolder, {
+              startTime: timestamp,
+              audioTime: audioTime
+            });
+          }
+        }
         
         // Marcar como usada
         imageStatesRef.current.set(imagePath, { ...imageState, state: 'used' });
@@ -252,16 +352,44 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
           
           const prevCounts = subfolderCountsRef.current.get(previousSubfolder);
           if (actuallyUsedCount >= prevCounts.total && prevCounts.total > 0) {
+            const endAudioTime = getCurrentAudioTime ? getCurrentAudioTime() : null;
+            const startInfo = subfolderStartTimesRef.current.get(previousSubfolder);
+            
             completedSubfoldersRef.current.add(previousSubfolder);
             console.log(`[Gallery] Subcarpeta ${previousSubfolder} completada (${actuallyUsedCount}/${prevCounts.total} imágenes)`);
             if (onSubfolderComplete) {
-              onSubfolderComplete(previousSubfolder);
+              onSubfolderComplete(previousSubfolder, {
+                startTime: startInfo?.startTime,
+                endTime: timestamp,
+                startAudioTime: startInfo?.audioTime,
+                endAudioTime: endAudioTime
+              });
             }
           }
         }
         
         lastSubfolderRef.current = currentSubfolder;
-        currentIndexRef.current = (currentIndexRef.current + 1) % allImages.length;
+        
+        // Avanzar al siguiente índice, buscando la siguiente imagen válida
+        let nextIndex = (currentIndexRef.current + 1) % allImages.length;
+        let foundNext = false;
+        
+        // Buscar siguiente imagen válida (de subcarpetas válidas si hay audioIndex)
+        for (let i = 0; i < allImages.length; i++) {
+          const nextImageObj = allImages[nextIndex];
+          const nextImagePath = typeof nextImageObj === 'object' ? (nextImageObj.path || nextImageObj) : nextImageObj;
+          const nextImageSubfolder = imagesBySubfolderRef.current.get(nextImagePath);
+          
+          // Si no hay audioIndex o la imagen pertenece a subcarpetas válidas, usar este índice
+          if (audioIndex === null || validSubfolders.size === 0 || validSubfolders.has(nextImageSubfolder)) {
+            foundNext = true;
+            break;
+          }
+          
+          nextIndex = (nextIndex + 1) % allImages.length;
+        }
+        
+        currentIndexRef.current = foundNext ? nextIndex : (currentIndexRef.current + 1) % allImages.length;
         
         // Verificar si todas las subcarpetas están completas (antes de resetear)
         const allSubfoldersComplete = Array.from(subfolderCountsRef.current.keys()).every(subfolder => {
@@ -309,7 +437,7 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
     // Si ninguna está lista, devolver null
     console.warn('Gallery: No hay imágenes listas disponibles');
     return null;
-  }, [allImages, onSubfolderComplete, onAllComplete]);
+  }, [allImages, onSubfolderComplete, onAllComplete, getCurrentAudioIndex, getCurrentAudioTime, getSubfoldersForAudioIndex]);
 
   // Pre-cargar imágenes próximas de forma proactiva durante la reproducción
   const preloadNextImages = useCallback(() => {
