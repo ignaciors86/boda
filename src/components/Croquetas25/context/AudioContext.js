@@ -18,7 +18,7 @@ let globalSourceNode = null;
 let globalAnalyser = null;
 let connectedAudioElement = null;
 
-export const AudioProvider = ({ children, audioSrcs = [] }) => {
+export const AudioProvider = ({ children, audioSrcs = [], getCurrentAudioTimeRef = null, currentAudioIndexRef = null }) => {
   // Dos elementos audio: uno actual y uno siguiente para transiciones suaves
   const currentAudioRef = useRef(null);
   const nextAudioRef = useRef(null);
@@ -746,6 +746,25 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     
     return previousTime + (currentAudioRef.current.currentTime || 0);
   };
+  
+  // Función para obtener el tiempo actual del audio
+  const getCurrentAudioTime = () => {
+    if (!currentAudioRef.current) return null;
+    return currentAudioRef.current.currentTime || 0;
+  };
+  
+  // Actualizar refs externos
+  useEffect(() => {
+    if (getCurrentAudioTimeRef) {
+      getCurrentAudioTimeRef.current = getCurrentAudioTime;
+    }
+  }, [getCurrentAudioTimeRef]);
+  
+  useEffect(() => {
+    if (currentAudioIndexRef) {
+      currentAudioIndexRef.current = currentIndex;
+    }
+  }, [currentIndex, currentAudioIndexRef]);
 
   // Controles de teclado para audio
   useEffect(() => {
@@ -841,7 +860,8 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     audioDurations,
     seekToAudio,
     getTotalDuration,
-    getTotalElapsed
+    getTotalElapsed,
+    getCurrentAudioTime
   };
 
   return (

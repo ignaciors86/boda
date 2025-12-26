@@ -3,6 +3,7 @@ import gsap from 'gsap';
 import './Background.scss';
 import Diagonales from './components/Diagonales/Diagonales';
 import { useGallery } from '../Gallery/Gallery';
+import { useAudio } from '../../context/AudioContext';
 
 const MAINCLASS = 'background';
 
@@ -12,7 +13,25 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
   const animationTimelinesRef = useRef({});
   const lastProgressRef = useRef(0);
   const colorIndexRef = useRef(0);
-  const { getNextImage, allImages, isLoading, preloadNextImages } = useGallery(selectedTrack);
+  
+  // useAudio puede no estar disponible si no hay AudioProvider
+  let currentIndex = null;
+  let getCurrentAudioTime = null;
+  try {
+    const audioContext = useAudio();
+    currentIndex = audioContext.currentIndex;
+    getCurrentAudioTime = audioContext.getCurrentAudioTime;
+  } catch (e) {
+    // No hay AudioProvider, usar null
+  }
+  
+  const { getNextImage, allImages, isLoading, preloadNextImages } = useGallery(
+    selectedTrack,
+    null,
+    null,
+    () => currentIndex,
+    () => getCurrentAudioTime ? getCurrentAudioTime() : null
+  );
   const MAX_SQUARES = 50;
   
   // Pre-cargar imágenes próximas cuando cambian las imágenes disponibles
