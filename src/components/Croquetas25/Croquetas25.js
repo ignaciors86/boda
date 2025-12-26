@@ -45,7 +45,46 @@ const Croquetas25 = () => {
   const typewriterInstanceRef = useRef(null);
   
   const { tracks, isLoading: tracksLoading } = useTracks();
-  const { isLoading: imagesLoading, preloadProgress: imagesProgress } = useGallery(selectedTrack);
+  
+  // Callback para cuando se completa una subcarpeta - cambiar al siguiente audio
+  const handleSubfolderComplete = useCallback((completedSubfolder) => {
+    if (!selectedTrack || !selectedTrack.subfolderToAudioIndex) return;
+    
+    const audioIndex = selectedTrack.subfolderToAudioIndex[completedSubfolder];
+    if (audioIndex === undefined) return; // Esta subcarpeta no tiene audio
+    
+    // Buscar siguiente subcarpeta con audio
+    const subfolderOrder = selectedTrack.subfolderOrder || [];
+    const currentSubfolderIndex = subfolderOrder.indexOf(completedSubfolder);
+    
+    if (currentSubfolderIndex === -1) return;
+    
+    let nextAudioIndex = null;
+    for (let i = currentSubfolderIndex + 1; i < subfolderOrder.length; i++) {
+      const nextSubfolder = subfolderOrder[i];
+      const nextAudio = selectedTrack.subfolderToAudioIndex[nextSubfolder];
+      if (nextAudio !== undefined) {
+        nextAudioIndex = nextAudio;
+        break;
+      }
+    }
+    
+    if (nextAudioIndex !== null && typeof window !== 'undefined' && window.__subfolderCompleteHandler) {
+      window.__subfolderCompleteHandler(completedSubfolder, nextAudioIndex);
+    }
+  }, [selectedTrack]);
+  
+  // Callback para cuando se completa toda la colección - volver a Intro
+  const handleAllComplete = useCallback(() => {
+    console.log('[Croquetas25] Todas las subcarpetas completadas, volviendo a Intro');
+    setSelectedTrack(null);
+    setAudioStarted(false);
+    setShowStartButton(false);
+    setLoadingFadedOut(false);
+    navigate('/nachitos-de-nochevieja', { replace: true });
+  }, [navigate]);
+  
+  const { isLoading: imagesLoading, preloadProgress: imagesProgress } = useGallery(selectedTrack, handleSubfolderComplete, handleAllComplete);
   const audioSrcs = selectedTrack?.srcs || (selectedTrack?.src ? [selectedTrack.src] : []);
   const isDirectUri = !!trackId;
 
@@ -287,8 +326,12 @@ const Croquetas25 = () => {
           <LoadingProgressHandler onTriggerCallbackRef={triggerCallbackRef} audioStarted={audioStarted} />
           <AudioAnalyzer onBeat={handleBeat} onVoice={handleVoice} />
           <SeekWrapper />
-          {audioStarted && selectedTrack.guion && selectedTrack.guion.textos && (
-            <PromptWrapper textos={selectedTrack.guion.textos} typewriterInstanceRef={typewriterInstanceRef} isPausedByHold={isPausedByHold} />
+          {audioStarted && (
+            <GuionManager 
+              selectedTrack={selectedTrack}
+              typewriterInstanceRef={typewriterInstanceRef}
+              isPausedByHold={isPausedByHold}
+            />
           )}
           {audioStarted && (
             <BackButton 
@@ -563,6 +606,74 @@ const SeekWrapper = () => {
   }, []);
   
   return <Seek squares={squares} />;
+};
+
+// Componente para gestionar el guión según la subcarpeta actual
+const GuionManager = ({ selectedTrack, typewriterInstanceRef, isPausedByHold }) => {
+  const [currentSubfolder, setCurrentSubfolder] = useState(null);
+  const { currentIndex } = useAudio();
+  
+  // Rastrear la subcarpeta actual basándose en el audio que está sonando
+  useEffect(() => {
+    if (!selectedTrack || !selectedTrack.subfolderToAudioIndex || !selectedTrack.subfolderOrder) return;
+    
+    const subfolderOrder = selectedTrack.subfolderOrder || [];
+    let foundSubfolder = null;
+    
+    // Buscar la subcarpeta que tiene el audio actual
+    for (const subfolder of subfolderOrder) {
+      const audioIndex = selectedTrack.subfolderToAudioIndex[subfolder];
+      if (audioIndex === currentIndex) {
+        foundSubfolder = subfolder;
+        break;
+      }
+    }
+    
+    // Si no encontramos una subcarpeta con el audio actual, usar la primera o __root__
+    if (!foundSubfolder && subfolderOrder.length > 0) {
+      foundSubfolder = subfolderOrder[0];
+    }
+    
+    setCurrentSubfolder(foundSubfolder);
+  }, [selectedTrack, currentIndex]);
+  
+  // Obtener el guión: priorizar el de la raíz, luego el de la subcarpeta actual
+  const getCurrentGuion = () => {
+    if (!selectedTrack || !selectedTrack.guionesBySubfolder) {
+      return selectedTrack?.guion;
+    }
+    
+    // Priorizar guión de la raíz
+    const rootGuion = selectedTrack.guionesBySubfolder['__root__'];
+    if (rootGuion && rootGuion.textos) {
+      return rootGuion;
+    }
+    
+    // Si no hay guión en la raíz, usar el de la subcarpeta actual
+    if (currentSubfolder) {
+      const subfolderGuion = selectedTrack.guionesBySubfolder[currentSubfolder];
+      if (subfolderGuion && subfolderGuion.textos) {
+        return subfolderGuion;
+      }
+    }
+    
+    // Fallback al guión general del track
+    return selectedTrack?.guion;
+  };
+  
+  const currentGuion = getCurrentGuion();
+  
+  if (!currentGuion || !currentGuion.textos) {
+    return null;
+  }
+  
+  return (
+    <PromptWrapper 
+      textos={currentGuion.textos} 
+      typewriterInstanceRef={typewriterInstanceRef} 
+      isPausedByHold={isPausedByHold} 
+    />
+  );
 };
 
 const PromptWrapper = ({ textos, typewriterInstanceRef, isPausedByHold }) => {
