@@ -46,12 +46,8 @@ const Croquetas25 = () => {
   
   const { tracks, isLoading: tracksLoading } = useTracks();
   
-  // Ref para pasar funciones a useGallery
-  const getCurrentAudioTimeRef = useRef(null);
-  const currentAudioIndexRef = useRef(null);
-  
-  // Callback para cuando se completa una subcarpeta - nueva lógica de sincronización
-  const handleSubfolderComplete = useCallback((completedSubfolder, timingInfo = null) => {
+  // Callback para cuando se completa una subcarpeta - cambiar al siguiente audio
+  const handleSubfolderComplete = useCallback((completedSubfolder) => {
     if (!selectedTrack || !selectedTrack.subfolderToAudioIndex) return;
     
     const audioIndex = selectedTrack.subfolderToAudioIndex[completedSubfolder];
@@ -60,48 +56,35 @@ const Croquetas25 = () => {
     // Buscar siguiente subcarpeta con audio
     const subfolderOrder = selectedTrack.subfolderOrder || [];
     const currentSubfolderIndex = subfolderOrder.indexOf(completedSubfolder);
-    const isLastSubfolder = currentSubfolderIndex === subfolderOrder.length - 1;
     
     if (currentSubfolderIndex === -1) return;
     
     let nextAudioIndex = null;
-    if (!isLastSubfolder) {
-      for (let i = currentSubfolderIndex + 1; i < subfolderOrder.length; i++) {
-        const nextSubfolder = subfolderOrder[i];
-        const nextAudio = selectedTrack.subfolderToAudioIndex[nextSubfolder];
-        if (nextAudio !== undefined) {
-          nextAudioIndex = nextAudio;
-          break;
-        }
+    for (let i = currentSubfolderIndex + 1; i < subfolderOrder.length; i++) {
+      const nextSubfolder = subfolderOrder[i];
+      const nextAudio = selectedTrack.subfolderToAudioIndex[nextSubfolder];
+      if (nextAudio !== undefined) {
+        nextAudioIndex = nextAudio;
+        break;
       }
     }
     
-    if (typeof window !== 'undefined' && window.__subfolderCompleteHandler) {
-      window.__subfolderCompleteHandler(completedSubfolder, nextAudioIndex, timingInfo, isLastSubfolder);
+    if (nextAudioIndex !== null && typeof window !== 'undefined' && window.__subfolderCompleteHandler) {
+      window.__subfolderCompleteHandler(completedSubfolder, nextAudioIndex);
     }
   }, [selectedTrack]);
   
   // Callback para cuando se completa toda la colección - volver a Intro
   const handleAllComplete = useCallback(() => {
     console.log('[Croquetas25] Todas las subcarpetas completadas, volviendo a Intro');
-    if (typeof window !== 'undefined') {
-      window.__allCompleteHandler = () => {
-        setSelectedTrack(null);
-        setAudioStarted(false);
-        setShowStartButton(false);
-        setLoadingFadedOut(false);
-        navigate('/nachitos-de-nochevieja', { replace: true });
-      };
-    }
+    setSelectedTrack(null);
+    setAudioStarted(false);
+    setShowStartButton(false);
+    setLoadingFadedOut(false);
+    navigate('/nachitos-de-nochevieja', { replace: true });
   }, [navigate]);
   
-  const { isLoading: imagesLoading, preloadProgress: imagesProgress } = useGallery(
-    selectedTrack, 
-    handleSubfolderComplete, 
-    handleAllComplete,
-    () => currentAudioIndexRef.current !== null ? currentAudioIndexRef.current : null,
-    () => getCurrentAudioTimeRef.current ? getCurrentAudioTimeRef.current() : null
-  );
+  const { isLoading: imagesLoading, preloadProgress: imagesProgress } = useGallery(selectedTrack, handleSubfolderComplete, handleAllComplete);
   const audioSrcs = selectedTrack?.srcs || (selectedTrack?.src ? [selectedTrack.src] : []);
   const isDirectUri = !!trackId;
 
@@ -302,11 +285,7 @@ const Croquetas25 = () => {
       
       {/* Background siempre visible para mostrar diagonales - dentro de AudioProvider si hay track, fuera si no */}
       {selectedTrack && audioSrcs.length > 0 ? (
-        <AudioProvider 
-          audioSrcs={audioSrcs}
-          getCurrentAudioTimeRef={getCurrentAudioTimeRef}
-          currentAudioIndexRef={currentAudioIndexRef}
-        >
+        <AudioProvider audioSrcs={audioSrcs}>
           <BackgroundWrapper 
             onTriggerCallbackRef={audioStarted ? triggerCallbackRef : null} 
             onVoiceCallbackRef={audioStarted ? voiceCallbackRef : null}
@@ -635,70 +614,22 @@ const SeekWrapper = () => {
 // Componente para gestionar el guión según la subcarpeta actual
 // Componente para controlar el cambio de audio cuando se completa una subcarpeta
 const SubfolderAudioController = ({ selectedTrack }) => {
-  const { seekToAudio, currentIndex, audioDurations, getCurrentAudioTime } = useAudio();
+  const { seekToAudio, currentIndex } = useAudio();
   const completedSubfoldersRef = useRef(new Set());
-  const audioLoopCountRef = useRef(new Map()); // Map<audioIndex, loopCount>
 
   useEffect(() => {
     if (!selectedTrack || !selectedTrack.subfolderToAudioIndex) return;
     
     completedSubfoldersRef.current.clear();
-    audioLoopCountRef.current.clear();
     
-    window.__subfolderCompleteHandler = (completedSubfolder, nextAudioIndex, timingInfo, isLastSubfolder) => {
+    window.__subfolderCompleteHandler = (completedSubfolder, nextAudioIndex) => {
       if (completedSubfoldersRef.current.has(completedSubfolder)) {
         console.log(`[SubfolderAudioController] Subcarpeta ${completedSubfolder} ya procesada`);
         return;
       }
       
-      const currentAudioIndex = selectedTrack.subfolderToAudioIndex[completedSubfolder];
-      if (currentAudioIndex === undefined) return;
-      
-      const currentAudioDuration = audioDurations[currentAudioIndex] || 0;
-      const currentAudioTime = getCurrentAudioTime();
-      
-      // Tiempo de audio cuando terminaron las imágenes
-      const endAudioTime = timingInfo?.endAudioTime || currentAudioTime;
-      
-      console.log(`[SubfolderAudioController] Subcarpeta ${completedSubfolder} completada:`, {
-        currentAudioIndex,
-        currentAudioDuration,
-        endAudioTime,
-        isLastSubfolder
-      });
-      
-      // Si es la última subcarpeta y las imágenes terminan antes que la música
-      if (isLastSubfolder && endAudioTime && endAudioTime < currentAudioDuration) {
-        console.log(`[SubfolderAudioController] Última subcarpeta: imágenes terminaron antes (${endAudioTime.toFixed(2)}s < ${currentAudioDuration.toFixed(2)}s), volviendo a Intro`);
-        completedSubfoldersRef.current.add(completedSubfolder);
-        if (typeof window !== 'undefined' && window.__allCompleteHandler) {
-          window.__allCompleteHandler();
-        }
-        return;
-      }
-      
-      // Si las imágenes terminaron antes que la música (sin completar el loop)
-      if (endAudioTime && endAudioTime < currentAudioDuration && nextAudioIndex !== null) {
-        console.log(`[SubfolderAudioController] Imágenes terminaron antes que la música (${endAudioTime.toFixed(2)}s < ${currentAudioDuration.toFixed(2)}s), pasando a siguiente audio`);
-        completedSubfoldersRef.current.add(completedSubfolder);
-        audioLoopCountRef.current.set(currentAudioIndex, 0);
-        seekToAudio(nextAudioIndex, 0);
-        return;
-      }
-      
-      // Si la música terminó antes que las imágenes, hacer loop
-      if (endAudioTime && endAudioTime >= currentAudioDuration && nextAudioIndex !== null) {
-        const newLoopCount = (audioLoopCountRef.current.get(currentAudioIndex) || 0) + 1;
-        audioLoopCountRef.current.set(currentAudioIndex, newLoopCount);
-        console.log(`[SubfolderAudioController] Música terminó antes que imágenes (loop ${newLoopCount}), reiniciando audio`);
-        seekToAudio(currentAudioIndex, 0);
-        return;
-      }
-      
-      // Si llegamos aquí, pasar al siguiente audio normalmente
       if (nextAudioIndex !== null && currentIndex !== nextAudioIndex) {
         completedSubfoldersRef.current.add(completedSubfolder);
-        audioLoopCountRef.current.set(currentAudioIndex, 0);
         console.log(`[SubfolderAudioController] Cambiando de audio ${currentIndex} a ${nextAudioIndex}`);
         seekToAudio(nextAudioIndex, 0);
       } else {
@@ -710,7 +641,7 @@ const SubfolderAudioController = ({ selectedTrack }) => {
     return () => {
       window.__subfolderCompleteHandler = null;
     };
-  }, [selectedTrack, seekToAudio, currentIndex, audioDurations, getCurrentAudioTime]);
+  }, [selectedTrack, seekToAudio, currentIndex]);
 
   return null;
 };
