@@ -47,9 +47,22 @@ const Prompt = ({ textos = [], currentTime = 0, duration = 0, typewriterInstance
       return -1;
     }
 
-    const timePerText = duration / textos.length;
-    const index = Math.floor(currentTime / timePerText);
-    return Math.min(index, textos.length - 1);
+    // Añadir pausa adicional entre textos (1.5 segundos de pausa por texto)
+    const pausePerText = 1.5;
+    const totalPauseTime = pausePerText * (textos.length - 1);
+    const adjustedDuration = duration - totalPauseTime;
+    const timePerText = adjustedDuration / textos.length;
+    
+    // Calcular el índice considerando las pausas
+    let accumulatedTime = 0;
+    for (let i = 0; i < textos.length; i++) {
+      const textEndTime = accumulatedTime + timePerText;
+      if (currentTime < textEndTime) {
+        return i;
+      }
+      accumulatedTime = textEndTime + pausePerText; // Añadir pausa después de cada texto
+    }
+    return textos.length - 1;
   };
 
   useEffect(() => {
@@ -80,7 +93,7 @@ const Prompt = ({ textos = [], currentTime = 0, duration = 0, typewriterInstance
         gsap.to(promptRef.current, fadeOutProps);
         setIsIntentionallyHidden(true);
       }
-    }, 1000);
+    }, 2000); // Aumentado de 1000ms a 2000ms para mayor pausa antes de la siguiente frase
   };
 
   useEffect(() => {
@@ -164,7 +177,7 @@ const Prompt = ({ textos = [], currentTime = 0, duration = 0, typewriterInstance
             options={{
               autoStart: !isPaused,
               loop: false,
-              delay: 25,
+              delay: 30, // Aumentado de 25 a 40 para que vaya más lento y se pueda leer mejor
             }}
           />
         ) : (

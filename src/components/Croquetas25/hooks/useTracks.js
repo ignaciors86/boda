@@ -32,9 +32,12 @@ export const useTracks = () => {
         const tracksTemp = {};
 
         // Procesar imágenes - ordenar alfabéticamente por ruta completa
+        // require.context con true busca recursivamente en subcarpetas
         const imageFiles = imagesContext.keys().sort((a, b) => a.localeCompare(b));
-        processFiles(imageFiles, imagesContext, tracksTemp, (track, imagePath) => {
-          track.images.push(imagePath);
+        console.log('[useTracks] Archivos de imagen encontrados (recursivo):', imageFiles.length, imageFiles.slice(0, 10));
+        processFiles(imageFiles, imagesContext, tracksTemp, (track, imagePath, file) => {
+          // Incluir la ruta completa del archivo para mantener referencia a subcarpetas
+          track.images.push({ path: imagePath, originalPath: file });
         });
 
         // Procesar audio
@@ -54,7 +57,13 @@ export const useTracks = () => {
 
         // Ordenar imágenes dentro de cada track alfabéticamente
         Object.values(tracksTemp).forEach(track => {
-          track.images.sort((a, b) => a.localeCompare(b));
+          // Si las imágenes son objetos con path y originalPath, ordenar por originalPath
+          // Si son strings, ordenar directamente
+          track.images.sort((a, b) => {
+            const pathA = typeof a === 'string' ? a : a.originalPath || a.path;
+            const pathB = typeof b === 'string' ? b : b.originalPath || b.path;
+            return pathA.localeCompare(pathB);
+          });
         });
 
         let tracksArray = Object.values(tracksTemp)
@@ -63,7 +72,8 @@ export const useTracks = () => {
             id: track.id,
             name: track.name,
             src: track.audioSrc,
-            images: track.images,
+            // Convertir imágenes a formato esperado (string o objeto con path)
+            images: track.images.map(img => typeof img === 'string' ? img : img.path || img),
             guion: track.guion
           }));
 

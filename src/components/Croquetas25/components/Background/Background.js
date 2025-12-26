@@ -42,10 +42,57 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
       
       // Solo obtener imagen si está lista (pre-cargada)
       const imageUrl = shouldHaveBackground ? getNextImage() : null;
-      const imagePosition = shouldHaveBackground && imageUrl ? {
-        x: `${5 + Math.random() * 90}%`,
-        y: `${5 + Math.random() * 90}%`
-      } : null;
+      
+      // Calcular posición evitando la zona central inferior donde está el prompt
+      let imagePosition = null;
+      if (shouldHaveBackground && imageUrl) {
+        // Zona a evitar: central inferior (donde está el prompt)
+        // En landscape: bottom 10%, width 60%, left 20% (zona 20%-80% x, 0%-15% y desde abajo)
+        // En portrait: bottom 4%, width 90%, left 5% (zona 5%-95% x, 0%-20% y desde abajo)
+        
+        // Detectar orientación
+        const isPortrait = window.innerHeight > window.innerWidth;
+        
+        let x, y;
+        let attempts = 0;
+        const maxAttempts = 50;
+        
+        do {
+          // Generar posición aleatoria
+          x = 5 + Math.random() * 90; // 5% a 95%
+          y = 5 + Math.random() * 90; // 5% a 95%
+          
+          if (isPortrait) {
+            // En portrait: evitar zona 5%-95% x, 80%-100% y (últimos 20% desde abajo)
+            const avoidBottomZone = y > 80;
+            const avoidCenterX = x >= 5 && x <= 95;
+            const inAvoidZone = avoidBottomZone && avoidCenterX;
+            
+            if (!inAvoidZone) break;
+          } else {
+            // En landscape: evitar zona 20%-80% x, 85%-100% y (últimos 15% desde abajo)
+            const avoidBottomZone = y > 85;
+            const avoidCenterX = x >= 20 && x <= 80;
+            const inAvoidZone = avoidBottomZone && avoidCenterX;
+            
+            if (!inAvoidZone) break;
+          }
+          
+          attempts++;
+        } while (attempts < maxAttempts);
+        
+        // Si después de los intentos sigue en zona prohibida, usar posición alternativa
+        if (attempts >= maxAttempts) {
+          // Forzar posición en zona superior o lateral
+          x = Math.random() < 0.5 ? 5 + Math.random() * 15 : 85 + Math.random() * 10; // Lados
+          y = 5 + Math.random() * 70; // Zona superior (5% a 75%)
+        }
+        
+        imagePosition = {
+          x: `${x}%`,
+          y: `${y}%`
+        };
+      }
       
       if (shouldHaveBackground && !imageUrl) {
         console.log('[Background] Cuadro sólido sin imagen (aún cargando o no disponible)');
@@ -115,8 +162,8 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
         el.animated = true;
         
         const intensity = square.data?.intensity ?? 0.5;
-        const baseDuration = square.type === 'beat' ? 8 : 7;
-        const duration = baseDuration - (intensity * 4);
+        const baseDuration = square.type === 'beat' ? 6 : 5; // Ajustado: más rápido que antes (8/7) pero más lento que la versión anterior (4/3.5)
+        const duration = baseDuration - (intensity * 3); // Factor de intensidad ajustado
         
         try {
           const timeline = gsap.timeline();
@@ -146,8 +193,8 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
             const zTotal = zEnd - zStart;
             const zProgressToScale85 = (zAtScale85 - zStart) / zTotal;
             
-            const timeToScale85 = duration * 0.6;
-            const fadeOutDuration = duration * 0.4;
+            const timeToScale85 = duration * 0.55; // Ajustado: un poco más lento que 0.5
+            const fadeOutDuration = duration * 0.45; // Ajustado para balancear
             
             timeline.fromTo(el, 
               { 
@@ -172,13 +219,17 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
               duration: fadeOutDuration,
               ease: 'power2.in',
               force3D: true,
-              onComplete: cleanupSquare
+              onComplete: () => {
+                // Esperar más tiempo antes de limpiar para asegurar que el fade termine completamente
+                // El fadeOutDuration ya es parte de la animación, pero añadimos un pequeño delay extra
+                setTimeout(cleanupSquare, 200);
+              }
             });
           } else {
             const targetScale = 0.85;
             const scale1 = 1.0;
             const scaleProgressTo1 = 1.0 / targetScale;
-            const fadeStartProgress = 0.7;
+            const fadeStartProgress = 0.6; // Ajustado: un poco más lento que 0.5 pero más rápido que 0.7
             const fadeEndProgress = 1.0;
             
             timeline.fromTo(el, 
@@ -203,7 +254,11 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
                     gsap.set(el, { opacity: Math.max(0, newOpacity) });
                   }
                 },
-                onComplete: cleanupSquare
+                onComplete: () => {
+                  // Esperar más tiempo antes de limpiar para asegurar que el fade termine completamente
+                  // El fade ya terminó en progress 1.0, pero añadimos un pequeño delay extra
+                  setTimeout(cleanupSquare, 200);
+                }
               }
             );
           }
