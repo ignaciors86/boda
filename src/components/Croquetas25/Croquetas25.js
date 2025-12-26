@@ -348,7 +348,9 @@ const UnifiedLoadingIndicator = ({ imagesLoading, imagesProgress, isDirectUri, a
   const hasCheckedReadyRef = useRef(false);
   
   const audioHasMetadata = audioRef?.current && audioRef.current.readyState >= 2;
-  const everythingReady = !imagesLoading && imagesProgress >= 100 && audioLoaded && audioHasMetadata;
+  // Solo requerir que las imágenes iniciales estén listas (no todas), y que el audio esté listo
+  const imagesReady = !imagesLoading && imagesProgress >= 20; // Al menos 20% (imágenes iniciales)
+  const everythingReady = imagesReady && audioLoaded && audioHasMetadata;
   
   // Debug logging
   useEffect(() => {
@@ -447,7 +449,9 @@ const UnifiedContentManager = ({
   const buttonAnimationStartedRef = useRef(false);
   
   const audioHasMetadata = audioRef?.current && audioRef.current.readyState >= 2;
-  const everythingReady = !imagesLoading && imagesProgress >= 100 && isLoaded && audioHasMetadata;
+  // Solo requerir que las imágenes iniciales estén listas (no todas), y que el audio esté listo
+  const imagesReady = !imagesLoading && imagesProgress >= 20; // Al menos 20% (imágenes iniciales)
+  const everythingReady = imagesReady && isLoaded && audioHasMetadata;
   
   useEffect(() => {
     if (!everythingReady || !loadingFadedOut) return;

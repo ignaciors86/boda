@@ -324,8 +324,16 @@ def process_folder(folder_path, central_backup_dir, recursive=True):
             total_original_size += result['original_size']
             total_new_size += result['new_size']
             
-            # No eliminar el video original, solo crear el GIF
-            print(f"    ✓ {video_path.name} -> {gif_path.name}")
+            # Eliminar el video original después de convertir exitosamente a GIF
+            if gif_path.exists():
+                try:
+                    os.remove(video_path)
+                    print(f"    ✓ {video_path.name} -> {gif_path.name} (original eliminado)")
+                except Exception as e:
+                    print(f"    ✓ {video_path.name} -> {gif_path.name}")
+                    print(f"    Advertencia: No se pudo eliminar el video original {video_path.name}: {e}")
+            else:
+                print(f"    ✓ {video_path.name} -> {gif_path.name}")
         else:
             videos_failed += 1
             # Mostrar los primeros 3 errores para diagnóstico
