@@ -232,25 +232,24 @@ const Croquetas25 = () => {
         </div>
       )}
       
-      {!selectedTrack && (
-        <Background onTriggerCallbackRef={triggerCallbackRef} />
-      )}
-      
-      {!tracksLoading && !selectedTrack && tracks.length > 0 && (
+      {!tracksLoading && tracks.length > 0 && (
         <Intro 
           tracks={tracks} 
           onTrackSelect={handleTrackSelect}
           selectedTrackId={trackId ? trackId.toLowerCase().replace(/\s+/g, '-') : 'croquetas25'}
           isDirectUri={isDirectUri}
+          isVisible={!selectedTrack}
         />
       )}
       
-      {selectedTrack && currentAudioSrc && (
+      {/* Background siempre visible para mostrar diagonales - dentro de AudioProvider si hay track, fuera si no */}
+      {selectedTrack && currentAudioSrc ? (
         <AudioProvider audioSrc={currentAudioSrc}>
           <BackgroundWrapper 
-            onTriggerCallbackRef={triggerCallbackRef} 
-            onVoiceCallbackRef={voiceCallbackRef}
-            selectedTrack={selectedTrack}
+            onTriggerCallbackRef={audioStarted ? triggerCallbackRef : null} 
+            onVoiceCallbackRef={audioStarted ? voiceCallbackRef : null}
+            selectedTrack={audioStarted ? selectedTrack : null}
+            showOnlyDiagonales={!audioStarted}
           />
           <UnifiedLoadingIndicator 
             imagesLoading={imagesLoading}
@@ -300,6 +299,9 @@ const Croquetas25 = () => {
             />
           )}
         </AudioProvider>
+      ) : (
+        // Cuando no hay track seleccionado, mostrar solo diagonales sin AudioProvider
+        <DiagonalesOnly />
       )}
     </div>
   );
@@ -365,7 +367,13 @@ const UnifiedLoadingIndicator = ({ imagesLoading, imagesProgress, isDirectUri, a
       hasCheckedReadyRef.current = false;
       setLoadingFadedOut(false);
       if (loadingRef.current) {
-        gsap.set(loadingRef.current, { opacity: 1 });
+        // Fade-in suave del loading cuando aparece
+        gsap.set(loadingRef.current, { opacity: 0 });
+        gsap.to(loadingRef.current, {
+          opacity: 1,
+          duration: 0.6,
+          ease: 'power2.out'
+        });
       }
     }
   }, [selectedTrack, setLoadingFadedOut]);
@@ -498,17 +506,33 @@ const UnifiedContentManager = ({
   );
 };
 
-const BackgroundWrapper = ({ onTriggerCallbackRef, onVoiceCallbackRef, selectedTrack }) => {
+const BackgroundWrapper = ({ onTriggerCallbackRef, onVoiceCallbackRef, selectedTrack, showOnlyDiagonales = false }) => {
   const { analyserRef, dataArrayRef, isInitialized } = useAudio();
   
   return (
     <Background 
-      onTriggerCallbackRef={onTriggerCallbackRef}
-      onVoiceCallbackRef={onVoiceCallbackRef}
+      onTriggerCallbackRef={showOnlyDiagonales ? null : onTriggerCallbackRef}
+      onVoiceCallbackRef={showOnlyDiagonales ? null : onVoiceCallbackRef}
       analyserRef={analyserRef}
       dataArrayRef={dataArrayRef}
       isInitialized={isInitialized}
-      selectedTrack={selectedTrack}
+      selectedTrack={showOnlyDiagonales ? null : selectedTrack}
+      showOnlyDiagonales={showOnlyDiagonales}
+    />
+  );
+};
+
+// Componente para mostrar solo diagonales sin necesidad de AudioProvider
+const DiagonalesOnly = () => {
+  return (
+    <Background 
+      onTriggerCallbackRef={null}
+      onVoiceCallbackRef={null}
+      analyserRef={null}
+      dataArrayRef={null}
+      isInitialized={false}
+      selectedTrack={null}
+      showOnlyDiagonales={true}
     />
   );
 };

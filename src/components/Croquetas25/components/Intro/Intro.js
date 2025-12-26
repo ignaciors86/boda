@@ -5,11 +5,12 @@ import './Intro.scss';
 
 const MAINCLASS = 'intro';
 
-const Intro = ({ tracks, onTrackSelect, selectedTrackId = null, isDirectUri = false }) => {
+const Intro = ({ tracks, onTrackSelect, selectedTrackId = null, isDirectUri = false, isVisible = true }) => {
   const titleRef = useRef(null);
   const buttonsRef = useRef([]);
   const [isAnimating, setIsAnimating] = useState(false);
   const overlayRef = useRef(null);
+  const containerRef = useRef(null);
   const [croquetasUnlocked, setCroquetasUnlocked] = useState(false);
   const rotationTimelinesRef = useRef([]);
   const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth);
@@ -94,36 +95,162 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null, isDirectUri = fa
     setCroquetasUnlocked(false);
   }, [selectedTrackId]);
   
+  // Animación de entrada/salida basada en isVisible
   useEffect(() => {
-    const initProps = { opacity: 0 };
-    [titleRef, overlayRef].forEach(ref => {
-      if (ref.current) gsap.set(ref.current, ref === titleRef ? { ...initProps, y: -30 } : initProps);
-    });
+    if (!overlayRef.current || !containerRef.current) return;
     
-    buttonsRef.current.forEach(buttonRef => {
-      if (buttonRef) gsap.set(buttonRef, { ...initProps, scale: 0, rotation: 0 });
-    });
-
-    const tl = gsap.timeline();
-    const fadeIn = { opacity: 1, ease: 'power2.out' };
-    
-    overlayRef.current && tl.to(overlayRef.current, { ...fadeIn, duration: 0.8 });
-    titleRef.current && tl.to(titleRef.current, {
-      ...fadeIn,
-      y: 0,
-      duration: 1.0,
-      onComplete: () => titleRef.current && gsap.set(titleRef.current, { opacity: 1, y: 0 })
-    }, '-=0.5');
-
-    buttonsRef.current.forEach((buttonRef, i) => {
-      buttonRef && tl.to(buttonRef, {
-        ...fadeIn,
-        scale: 1,
-        duration: 0.6,
-        ease: 'back.out(1.7)'
-      }, 0.4 + (i * 0.1));
-    });
-  }, []);
+    if (isVisible) {
+      // Resetear todas las transformaciones primero
+      if (titleRef.current) {
+        gsap.set(titleRef.current, { 
+          opacity: 0, 
+          y: 0, 
+          rotation: 0,
+          clearProps: 'all'
+        });
+      }
+      
+      // Separar la croqueta principal de las normales para el reset
+      const mainCroquetaIndex = memoizedTracks.findIndex(track => 
+        selectedTrackId && isMainCroqueta(track)
+      );
+      
+      buttonsRef.current.forEach((buttonRef, index) => {
+        if (buttonRef) {
+          // La croqueta principal mantiene scale: 1 para preservar su tamaño CSS
+          const isMain = index === mainCroquetaIndex;
+          gsap.set(buttonRef, { 
+            opacity: 0, 
+            scale: isMain ? 1 : 0, 
+            rotation: 0,
+            clearProps: isMain ? 'opacity,rotation' : 'all'
+          });
+        }
+      });
+      
+      // El overlay (blur) se anima con fade-in suave
+      gsap.set(overlayRef.current, { 
+        opacity: 0,
+        display: 'flex',
+        y: 0,
+        rotation: 0
+      });
+      
+      // El contenedor interno se desplaza desde abajo
+      gsap.set(containerRef.current, { 
+        y: '100%', 
+        rotation: -15, 
+        opacity: 0
+      });
+      
+      const tl = gsap.timeline();
+      
+      // Animar overlay (blur) con fade-in suave
+      tl.to(overlayRef.current, {
+        opacity: 1,
+        duration: 0.8,
+        ease: 'power2.out'
+      });
+      
+      // Animar contenedor desde abajo
+      tl.to(containerRef.current, {
+        y: '0%',
+        rotation: 0,
+        opacity: 1,
+        duration: 1.2,
+        ease: 'back.out(1.4)'
+      }, '-=0.6'); // Iniciar un poco antes de que termine el fade del blur
+      
+      // Animar título
+      if (titleRef.current) {
+        tl.to(titleRef.current, {
+          opacity: 1,
+          y: 0,
+          rotation: 0,
+          duration: 1.0,
+          ease: 'power2.out'
+        }, '-=0.8');
+      }
+      
+      // Animar botones aleatoriamente como antes
+      // Separar la croqueta principal de las normales
+      
+      const normalButtonIndices = buttonsRef.current
+        .map((_, i) => i)
+        .filter(i => buttonsRef.current[i] && i !== mainCroquetaIndex)
+        .sort(() => Math.random() - 0.5); // Orden aleatorio
+      
+      // Animar croqueta principal sin escala (mantiene su tamaño CSS)
+      if (mainCroquetaIndex >= 0 && buttonsRef.current[mainCroquetaIndex]) {
+        const mainButtonRef = buttonsRef.current[mainCroquetaIndex];
+        gsap.set(mainButtonRef, { 
+          opacity: 0,
+          scale: 1, // Mantener escala 1 para preservar tamaño CSS
+          rotation: 0
+        });
+        tl.to(mainButtonRef, {
+          opacity: 1,
+          scale: 1,
+          rotation: 0,
+          duration: 0.6,
+          ease: 'power2.out'
+        }, 0.4);
+      }
+      
+      // Animar croquetas normales con escala
+      normalButtonIndices.forEach((originalIndex, shuffledIndex) => {
+        const buttonRef = buttonsRef.current[originalIndex];
+        if (buttonRef) {
+          const delay = 0.4 + (shuffledIndex * 0.1);
+          tl.to(buttonRef, {
+            opacity: 1,
+            scale: 1,
+            rotation: 0,
+            duration: 0.6,
+            ease: 'back.out(1.7)'
+          }, delay);
+        }
+      });
+    } else {
+      // Animación de salida hacia abajo con rotación
+      const tl = gsap.timeline({
+        onComplete: () => {
+          if (overlayRef.current) {
+            gsap.set(overlayRef.current, { display: 'none' });
+          }
+        }
+      });
+      
+      // Animar título y botones hacia abajo primero
+      [titleRef.current, ...buttonsRef.current.filter(Boolean)].forEach((ref, i) => {
+        if (ref) {
+          tl.to(ref, {
+            y: '+=50',
+            opacity: 0,
+            rotation: `+=${15 + i * 5}`,
+            duration: 0.6,
+            ease: 'power2.in'
+          }, i * 0.05);
+        }
+      });
+      
+      // Animar contenedor hacia abajo (no el overlay)
+      tl.to(containerRef.current, {
+        y: '100%',
+        rotation: 15,
+        opacity: 0,
+        duration: 1.0,
+        ease: 'power2.in'
+      }, '-=0.3');
+      
+      // El overlay se desvanece pero no se mueve
+      tl.to(overlayRef.current, {
+        opacity: 0,
+        duration: 0.5,
+        ease: 'power2.in'
+      }, '-=0.3');
+    }
+  }, [isVisible]);
 
   useEffect(() => {
     rotationTimelinesRef.current.forEach(tl => tl?.kill());
@@ -157,7 +284,7 @@ const Intro = ({ tracks, onTrackSelect, selectedTrackId = null, isDirectUri = fa
       ref={overlayRef}
       onClick={(e) => e.target === overlayRef.current && e.preventDefault()}
     >
-      <div className={`${MAINCLASS}__container`}>
+      <div className={`${MAINCLASS}__container`} ref={containerRef}>
         <h2 ref={titleRef} className={`${MAINCLASS}__title`}>Coge una croqueta</h2>
         
         {selectedTrackId && memoizedTracks.map((track, index) => {

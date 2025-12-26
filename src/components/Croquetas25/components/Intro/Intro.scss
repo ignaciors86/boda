@@ -4,19 +4,21 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: transparent;
+  background: rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 250;
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  z-index: 3000;
   opacity: 0;
   pointer-events: auto;
   user-select: none;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
+  transform-origin: center center;
+  will-change: transform, opacity;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   
   @media (orientation: portrait) {
     overflow-y: auto;
@@ -34,6 +36,8 @@
   flex-wrap: wrap;
   overflow: hidden;
   align-content: stretch;
+  transform-origin: center center;
+  will-change: transform, opacity;
   
   @media (orientation: portrait) {
     overflow-y: auto;
@@ -120,31 +124,12 @@
   transform-origin: center center;
   
   &--main {
-    width: 25vw;
-    height: 25vw;
-    min-width: 22vw;
-    min-height: 22vw;
-    max-width: 28vw;
-    max-height: 28vw;
-    
-    &Uri {
-      width: 28vw;
-      height: 28vw;
-      min-width: 25vw;
-      min-height: 25vw;
-      max-width: 32vw;
-      max-height: 32vw;
-    }
-  }
-  
-  &--normal {
-    min-width: 12vw;
-    min-height: 12vw;
-    max-width: 20vw;
-    max-height: 20vw;
-  }
-  
-  &--main {
+    width: 25vw !important;
+    height: 25vw !important;
+    min-width: 22vw !important;
+    min-height: 22vw !important;
+    max-width: 28vw !important;
+    max-height: 28vw !important;
     position: absolute;
     top: 38%;
     left: 50%;
@@ -160,6 +145,22 @@
     @media (orientation: portrait) {
       top: 32%;
     }
+    
+    &Uri {
+      width: 28vw !important;
+      height: 28vw !important;
+      min-width: 25vw !important;
+      min-height: 25vw !important;
+      max-width: 32vw !important;
+      max-height: 32vw !important;
+    }
+  }
+  
+  &--normal {
+    min-width: 12vw;
+    min-height: 12vw;
+    max-width: 20vw;
+    max-height: 20vw;
   }
   
   &--locked {

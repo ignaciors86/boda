@@ -6,7 +6,7 @@ import { useGallery } from '../Gallery/Gallery';
 
 const MAINCLASS = 'background';
 
-const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitialized, onVoiceCallbackRef, selectedTrack }) => {
+const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitialized, onVoiceCallbackRef, selectedTrack, showOnlyDiagonales = false }) => {
   const [squares, setSquares] = useState([]);
   const squareRefs = useRef({});
   const animationTimelinesRef = useRef({});
@@ -23,7 +23,7 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
   }, [isLoading, allImages.length, preloadNextImages]);
   
   useEffect(() => {
-    if (!onTriggerCallbackRef) return;
+    if (!onTriggerCallbackRef || showOnlyDiagonales) return;
     
     const createCallback = () => {
       onTriggerCallbackRef.current = (type, data = {}) => {
@@ -283,13 +283,13 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
   return (
     <div className={MAINCLASS}>
       <Diagonales 
-        squares={squares}
+        squares={showOnlyDiagonales ? [] : squares}
         analyserRef={analyserRef}
         dataArrayRef={dataArrayRef}
-        isInitialized={isInitialized}
-        onVoiceCallbackRef={onVoiceCallbackRef}
+        isInitialized={showOnlyDiagonales ? true : isInitialized}
+        onVoiceCallbackRef={showOnlyDiagonales ? null : onVoiceCallbackRef}
       />
-      {squares.map(square => {
+      {!showOnlyDiagonales && squares.map(square => {
         const color1 = square.gradient?.color1 || '#00ffff';
         const color2 = square.gradient?.color2 || '#00ffff';
         const angle = square.gradient?.angle || 45;
