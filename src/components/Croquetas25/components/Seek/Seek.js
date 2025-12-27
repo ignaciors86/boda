@@ -76,9 +76,49 @@ const Seek = ({ squares, seekToImagePosition, selectedTrack }) => {
     await seekToAudio(targetAudioIndex, targetTimeInAudio);
   };
 
-  const lastSquare = squares && squares.length > 0 ? squares[squares.length - 1] : null;
-  const currentColor = lastSquare?.gradient?.color1 || '#00ffff';
-  const currentColor2 = lastSquare?.gradient?.color2 || currentColor;
+
+  // Calcular posiciones y colores de cada tramo
+  const getSegmentColors = (index) => {
+    // Paleta de colores para diferentes tramos
+    const colors = [
+      { color1: '#FF0080', color2: '#FF8000' }, // Rosa/Naranja
+      { color1: '#FFFF00', color2: '#00FF00' }, // Amarillo/Verde
+      { color1: '#0080FF', color2: '#8000FF' }, // Azul/Morado
+      { color1: '#00FFFF', color2: '#FF00FF' }, // Cyan/Magenta
+      { color1: '#FFB347', color2: '#FFD700' }, // Naranja/Dorado
+      { color1: '#C0C0C0', color2: '#FFFFFF' }, // Plata/Blanco
+      { color1: '#FF6B6B', color2: '#4ECDC4' }, // Rojo/Verde agua
+      { color1: '#95E1D3', color2: '#F38181' }, // Verde agua/Rosa
+    ];
+    return colors[index % colors.length];
+  };
+
+  const segments = React.useMemo(() => {
+    if (!audioDurations || audioDurations.length === 0) return [];
+    
+    const totalDuration = getTotalDuration();
+    if (totalDuration === 0) return [];
+    
+    const segmentsData = [];
+    let accumulatedTime = 0;
+    
+    audioDurations.forEach((duration, index) => {
+      const startPercent = (accumulatedTime / totalDuration) * 100;
+      const widthPercent = (duration / totalDuration) * 100;
+      const colors = getSegmentColors(index);
+      
+      segmentsData.push({
+        index,
+        startPercent,
+        widthPercent,
+        ...colors
+      });
+      
+      accumulatedTime += duration;
+    });
+    
+    return segmentsData;
+  }, [audioDurations, getTotalDuration]);
 
   return (
     <div className={MAINCLASS}>
@@ -87,11 +127,21 @@ const Seek = ({ squares, seekToImagePosition, selectedTrack }) => {
           className={`${MAINCLASS}__progressBar`}
           ref={progressBarRef}
           onClick={handleProgressClick}
-          style={{
-            '--seek-color-1': currentColor,
-            '--seek-color-2': currentColor2
-          }}
+          style={{}}
         >
+          {/* Segmentos de fondo con diferentes colores */}
+          {segments.map((segment) => (
+            <div
+              key={segment.index}
+              className={`${MAINCLASS}__segment`}
+              style={{
+                left: `${segment.startPercent}%`,
+                width: `${segment.widthPercent}%`,
+                '--segment-color-1': segment.color1,
+                '--segment-color-2': segment.color2
+              }}
+            />
+          ))}
           <div 
             className={`${MAINCLASS}__progressFill`}
             style={{ width: `${progress}%` }}
