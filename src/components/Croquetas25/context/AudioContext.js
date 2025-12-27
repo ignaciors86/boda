@@ -327,16 +327,31 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     const normalizedCurrentSrc = currentAudioSrc.split('/').pop() || currentAudioSrc;
     const normalizedNewSrc = currentSrcString.split('/').pop() || currentSrcString;
     
+    // En iOS con múltiples audios, ser más estricto con la verificación
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const hasMultipleAudios = audioSrcs.length > 1;
+    
     if ((normalizedCurrentSrc === normalizedNewSrc || currentAudioSrc === currentSrcString) && audio.readyState >= 1) {
-      // El src ya está configurado y tiene metadata, no hacer nada
-      return;
+      // En iOS con múltiples audios, verificar que realmente esté listo (readyState 2 y duration válida)
+      if (isIOS && hasMultipleAudios) {
+        if (audio.readyState < 2 || !audio.duration || !isFinite(audio.duration) || audio.duration <= 0) {
+          // Forzar recarga si no está suficientemente cargado
+          console.log('[AudioContext] iOS múltiples audios: readyState o duration insuficiente, forzando recarga');
+          // No hacer return, continuar con la configuración
+        } else {
+          // El src ya está configurado y está realmente listo
+          return;
+        }
+      } else {
+        // El src ya está configurado y tiene metadata, no hacer nada
+        return;
+      }
     }
 
     let progressIntervalId = null;
     let audioCleanup = null;
 
-    // Detección mejorada de navegadores y dispositivos
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    // Detección mejorada de navegadores y dispositivos (isIOS ya está definido arriba)
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -502,10 +517,22 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       updateProgress();
       await setupAudioContext();
       // Marcar como cargado si tenemos suficiente readyState
+      // En iOS con múltiples audios, verificar también duration
       if (audio.readyState >= 2) {
-        if (!isLoaded) {
-          setIsLoaded(true);
-          setLoadingProgress(100);
+        if (isIOS && hasMultipleAudios) {
+          // En iOS con múltiples audios, verificar duration antes de marcar como cargado
+          if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
+            if (!isLoaded) {
+              setIsLoaded(true);
+              setLoadingProgress(100);
+              console.log(`[AudioContext] Audio ${currentIndex} marcado como cargado en handleCanPlay (iOS múltiples audios)`);
+            }
+          }
+        } else {
+          if (!isLoaded) {
+            setIsLoaded(true);
+            setLoadingProgress(100);
+          }
         }
       }
     };
@@ -588,16 +615,35 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       audio.removeEventListener('error', handleError);
     };
 
-    if (audio.readyState === 0 || isIOS) {
+    // En iOS con múltiples audios, siempre forzar load() y dar más tiempo
+    if (audio.readyState === 0 || isIOS || (isIOS && hasMultipleAudios)) {
       try {
+        console.log(`[AudioContext] Llamando load() para audio ${currentIndex} (iOS: ${isIOS}, múltiples: ${hasMultipleAudios})`);
         audio.load();
+        
+        // En iOS con múltiples audios, dar más tiempo y reintentar si es necesario
+        if (isIOS && hasMultipleAudios) {
+          setTimeout(() => {
+            if (audio.readyState < 2) {
+              console.warn(`[AudioContext] Audio ${currentIndex} aún no está listo después de load(), reintentando...`);
+              try {
+                audio.load();
+              } catch (retryError) {
+                console.warn('[AudioContext] Error en reintento de load():', retryError);
+              }
+            }
+          }, 1000);
+        }
       } catch (loadError) {
         console.warn('[AudioContext] Error calling load():', loadError);
       }
     }
 
     // Ajustar minReadyState y intervalo según navegador
-    const minReadyState = (isIOS || isSafari) ? 1 : 2;
+    // En iOS con múltiples audios, ser más conservador (necesita readyState 2)
+    const minReadyState = (isIOS || isSafari) 
+      ? (hasMultipleAudios ? 2 : 1)  // Con múltiples audios, esperar más datos
+      : 2;
     const progressInterval = (isIOS || isSafari) ? 200 : 100;
     
     progressIntervalId = setInterval(() => {
@@ -612,14 +658,32 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       updateProgress();
       
       // Para Chrome, esperar un poco más de buffer
-      // Para Safari/iOS, aceptar con menos buffer
-      const readyThreshold = (isChrome && !isMobile) ? 3 : minReadyState;
+      // Para Safari/iOS, aceptar con menos buffer, pero con múltiples audios ser más estricto
+      const readyThreshold = (isChrome && !isMobile) 
+        ? 3 
+        : (isIOS && hasMultipleAudios ? 2 : minReadyState);  // iOS con múltiples audios necesita readyState 2
+      
       if (audio.readyState >= readyThreshold && !isLoaded) {
-        setIsLoaded(true);
-        setLoadingProgress(100);
-        if (progressIntervalId) {
-          clearInterval(progressIntervalId);
-          progressIntervalId = null;
+        // En iOS con múltiples audios, verificar también que tenga duration válida
+        if (isIOS && hasMultipleAudios) {
+          if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
+            setIsLoaded(true);
+            setLoadingProgress(100);
+            console.log(`[AudioContext] Audio ${currentIndex} marcado como cargado (iOS múltiples audios, readyState: ${audio.readyState}, duration: ${audio.duration.toFixed(2)}s)`);
+            if (progressIntervalId) {
+              clearInterval(progressIntervalId);
+              progressIntervalId = null;
+            }
+          } else {
+            console.log(`[AudioContext] Audio ${currentIndex} tiene readyState ${audio.readyState} pero sin duration válida, esperando...`);
+          }
+        } else {
+          setIsLoaded(true);
+          setLoadingProgress(100);
+          if (progressIntervalId) {
+            clearInterval(progressIntervalId);
+            progressIntervalId = null;
+          }
         }
       }
     }, progressInterval);
