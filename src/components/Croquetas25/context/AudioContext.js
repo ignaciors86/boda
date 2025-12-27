@@ -55,32 +55,112 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
 
     const loadDurations = async () => {
       const durations = [];
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      // Timeout más largo para iOS y archivos grandes
+      const timeoutDuration = isIOS ? 30000 : 10000;
+      
+      // En iOS, cargar duraciones de forma secuencial con delays para evitar saturación
+      // Esto es especialmente importante para tracks con múltiples audios como "Boda"
       for (let i = 0; i < audioSrcs.length; i++) {
         const audioSrc = audioSrcs[i];
+        
+        // En iOS, esperar un poco entre cargas de múltiples audios para evitar saturación
+        if (isIOS && i > 0) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
         const audio = new Audio(audioSrc);
         
         try {
-          await new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-              reject(new Error('Timeout'));
-            }, 5000);
+          await new Promise((resolve) => {
+            let timeout = setTimeout(() => {
+              console.warn(`[AudioContext] Timeout loading duration for audio ${i} (${audioSrc}), retrying...`);
+              
+              // Limpiar listeners del audio original
+              audio.removeEventListener('loadedmetadata', handleLoaded);
+              audio.removeEventListener('error', handleError);
+              audio.removeEventListener('canplay', handleCanPlay);
+              
+              // Crear nuevo audio para reintentar (iOS a veces necesita esto)
+              const retryAudio = new Audio(audioSrc);
+              let retryTimeout = setTimeout(() => {
+                console.warn(`[AudioContext] Final timeout for audio ${i} after retry`);
+                durations[i] = 0;
+                resolve();
+              }, timeoutDuration);
+              
+              const retryCleanup = () => {
+                clearTimeout(retryTimeout);
+                retryAudio.removeEventListener('loadedmetadata', retryHandleLoaded);
+                retryAudio.removeEventListener('error', retryHandleError);
+                retryAudio.removeEventListener('canplay', retryHandleCanPlay);
+              };
+              
+              const retryHandleLoaded = () => {
+                retryCleanup();
+                if (retryAudio.duration && isFinite(retryAudio.duration) && retryAudio.duration > 0) {
+                  durations[i] = retryAudio.duration;
+                  console.log(`[AudioContext] Duration loaded for audio ${i} (retry): ${retryAudio.duration.toFixed(2)}s`);
+                } else {
+                  durations[i] = 0;
+                }
+                resolve();
+              };
+              
+              const retryHandleError = () => {
+                retryCleanup();
+                console.warn(`[AudioContext] Error loading duration for audio ${i} (retry):`, retryAudio.error);
+                durations[i] = 0;
+                resolve();
+              };
+              
+              const retryHandleCanPlay = () => {
+                if (retryAudio.duration && isFinite(retryAudio.duration) && retryAudio.duration > 0) {
+                  retryHandleLoaded();
+                }
+              };
+              
+              retryAudio.addEventListener('loadedmetadata', retryHandleLoaded);
+              retryAudio.addEventListener('error', retryHandleError);
+              retryAudio.addEventListener('canplay', retryHandleCanPlay);
+              retryAudio.load();
+            }, timeoutDuration);
 
-            audio.addEventListener('loadedmetadata', () => {
+            const cleanup = () => {
               clearTimeout(timeout);
-              if (audio.duration && isFinite(audio.duration)) {
+              audio.removeEventListener('loadedmetadata', handleLoaded);
+              audio.removeEventListener('error', handleError);
+              audio.removeEventListener('canplay', handleCanPlay);
+            };
+
+            const handleLoaded = () => {
+              cleanup();
+              if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
                 durations[i] = audio.duration;
+                console.log(`[AudioContext] Duration loaded for audio ${i}: ${audio.duration.toFixed(2)}s`);
               } else {
                 durations[i] = 0;
               }
               resolve();
-            });
+            };
 
-            audio.addEventListener('error', () => {
-              clearTimeout(timeout);
+            const handleError = (e) => {
+              cleanup();
+              console.warn(`[AudioContext] Error loading duration for audio ${i}:`, audio.error);
               durations[i] = 0;
               resolve();
-            });
+            };
+            
+            // En iOS, también escuchar 'canplay' como fallback (a veces loadedmetadata no se dispara)
+            const handleCanPlay = () => {
+              if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
+                handleLoaded();
+              }
+            };
 
+            audio.addEventListener('loadedmetadata', handleLoaded);
+            audio.addEventListener('error', handleError);
+            audio.addEventListener('canplay', handleCanPlay);
             audio.load();
           });
         } catch (error) {
@@ -288,12 +368,22 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
             const progress = Math.min((bufferedEnd / audio.duration) * 100, 100);
             setLoadingProgress(progress);
             
-            // Para iOS/Safari, considerar cargado con menos buffer
-            const loadThreshold = (isIOS || isSafari) ? 0.8 : 0.95;
-            if (progress >= (loadThreshold * 100) || bufferedEnd >= audio.duration * loadThreshold) {
+            // Para iOS/Safari, usar threshold más conservador para archivos grandes
+            // Si el archivo es grande (>5 minutos), esperar más buffer
+            const isLargeFile = audio.duration > 300; // 5 minutos
+            const loadThreshold = (isIOS || isSafari) 
+              ? (isLargeFile ? 0.95 : 0.85)  // Archivos grandes necesitan más buffer en iOS
+              : 0.95;
+            
+            // En iOS, también verificar que tengamos suficiente buffer absoluto (al menos 30 segundos)
+            const minBufferSeconds = isIOS && isLargeFile ? 30 : 0;
+            const hasMinBuffer = bufferedEnd >= minBufferSeconds;
+            
+            if ((progress >= (loadThreshold * 100) || bufferedEnd >= audio.duration * loadThreshold) && hasMinBuffer) {
               if (!isLoaded) {
                 setIsLoaded(true);
                 setLoadingProgress(100);
+                console.log(`[AudioContext] Audio marked as loaded. Progress: ${progress.toFixed(1)}%, Buffer: ${bufferedEnd.toFixed(1)}s/${audio.duration.toFixed(1)}s`);
               }
             }
           } else if (audio.readyState >= 3) {
@@ -894,3 +984,4 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     </AudioContextReact.Provider>
   );
 };
+
