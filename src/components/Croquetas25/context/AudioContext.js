@@ -77,11 +77,23 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     setPreloadProgress(0);
     
     // Crear y pre-cargar cada audio de forma secuencial
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    
     for (let i = 0; i < srcs.length; i++) {
       const audioSrc = srcs[i];
-      const audioSrcString = typeof audioSrc === 'string' ? audioSrc : (audioSrc?.default || audioSrc);
+      let audioSrcString = typeof audioSrc === 'string' ? audioSrc : (audioSrc?.default || audioSrc);
       
-      console.log(`[AudioContext] Pre-cargando audio ${i + 1}/${srcs.length}...`);
+      // En iOS, asegurar que las rutas de subcarpetas se conviertan correctamente
+      if (isIOS && audioSrcString && typeof audioSrcString === 'string' && !audioSrcString.startsWith('http') && !audioSrcString.startsWith('data:')) {
+        // Si es una ruta relativa, asegurar que sea una URL válida
+        // require.context ya debería devolver URLs válidas, pero en iOS puede haber problemas con subcarpetas
+        if (!audioSrcString.startsWith('/') && !audioSrcString.startsWith('./') && !audioSrcString.startsWith('../')) {
+          // Si no tiene prefijo, podría ser una ruta de subcarpeta que necesita normalización
+          // require.context debería devolver una URL válida, así que dejarlo como está
+        }
+      }
+      
+      console.log(`[AudioContext] Pre-cargando audio ${i + 1}/${srcs.length}: ${audioSrcString}`);
       
       const audio = new Audio();
       audio.preload = 'auto';
@@ -194,9 +206,13 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       const durations = [];
       
       // Cargar duraciones usando eventos, no timeouts
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      
       for (let i = 0; i < audioSrcs.length; i++) {
         const audioSrc = audioSrcs[i];
-        const audio = new Audio(audioSrc);
+        // En iOS, asegurar que las rutas se conviertan correctamente
+        let audioSrcString = typeof audioSrc === 'string' ? audioSrc : (audioSrc?.default || audioSrc);
+        const audio = new Audio(audioSrcString);
         
         try {
           await new Promise((resolve) => {
@@ -465,14 +481,42 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     }
     
     // Verificar si el src ya está configurado correctamente (para evitar resetear cuando handleEnded cambia el src)
-    const currentSrcString = typeof currentSrc === 'string' ? currentSrc : (currentSrc?.default || currentSrc);
+    // En iOS, asegurar que las rutas se conviertan correctamente a URLs absolutas
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    let currentSrcString = typeof currentSrc === 'string' ? currentSrc : (currentSrc?.default || currentSrc);
+    
+    // En iOS, convertir rutas relativas a URLs absolutas si es necesario
+    if (isIOS && currentSrcString && typeof currentSrcString === 'string' && !currentSrcString.startsWith('http') && !currentSrcString.startsWith('data:')) {
+      // Si es una ruta relativa, convertirla a URL absoluta
+      try {
+        // Si ya es una URL válida (empieza con /), dejarla así
+        // Si es una ruta de require.context, debería ser una URL válida ya
+        if (currentSrcString.startsWith('/')) {
+          // Ya es una ruta absoluta relativa al dominio
+        } else if (currentSrcString.includes('./') || currentSrcString.includes('../')) {
+          // Es una ruta relativa, convertir a absoluta
+          const baseUrl = window.location.origin;
+          const absolutePath = currentSrcString.startsWith('.') 
+            ? currentSrcString.replace(/^\./, '')
+            : '/' + currentSrcString;
+          currentSrcString = baseUrl + absolutePath;
+        }
+      } catch (e) {
+        console.warn('[AudioContext] Error normalizando ruta de audio en iOS:', e);
+      }
+    }
+    
     const currentAudioSrc = audio.src || '';
     // Comparar normalizando las URLs (pueden ser absolutas o relativas)
-    const normalizedCurrentSrc = currentAudioSrc.split('/').pop() || currentAudioSrc;
-    const normalizedNewSrc = currentSrcString.split('/').pop() || currentSrcString;
+    // En iOS, usar comparación más estricta con rutas completas
+    const normalizedCurrentSrc = isIOS 
+      ? currentAudioSrc 
+      : (currentAudioSrc.split('/').pop() || currentAudioSrc);
+    const normalizedNewSrc = isIOS 
+      ? currentSrcString 
+      : (currentSrcString.split('/').pop() || currentSrcString);
     
     // En iOS con múltiples audios, ser más estricto con la verificación
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     const hasMultipleAudios = audioSrcs.length > 1;
     
     if ((normalizedCurrentSrc === normalizedNewSrc || currentAudioSrc === currentSrcString) && audio.readyState >= 1) {
@@ -765,6 +809,32 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       const error = audio.error;
       if (error) {
         console.error('[AudioContext] Error code:', error.code, '| Message:', error.message);
+        console.error('[AudioContext] Audio src que causó el error:', audio.src);
+        console.error('[AudioContext] Current index:', currentIndex, 'Total audios:', audioSrcs.length);
+        console.error('[AudioContext] Audio en subcarpeta:', hasMultipleAudios && currentIndex > 0);
+        
+        // En iOS, especialmente con audios en subcarpetas, puede haber problemas con las rutas
+        if (isIOS) {
+          // Si el error es de src no soportado o red, puede ser un problema de ruta de subcarpeta
+          if (error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED || error.code === MediaError.MEDIA_ERR_NETWORK) {
+            console.warn('[AudioContext] iOS: Error de ruta o formato (posible problema con subcarpeta), intentando recargar...');
+            // Intentar recargar después de un delay, forzando una recarga completa
+            setTimeout(() => {
+              if (audio.src) {
+                const currentSrc = audio.src;
+                // Limpiar y recargar
+                audio.src = '';
+                audio.load();
+                setTimeout(() => {
+                  audio.src = currentSrc;
+                  audio.load();
+                  console.log('[AudioContext] iOS: Audio recargado después de error');
+                }, 200);
+              }
+            }, 1000);
+          }
+        }
+        
         // En Safari iOS, algunos errores pueden resolverse recargando
         if ((isIOS || isSafari) && error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
           console.warn('[AudioContext] Format not supported, trying to reload');
@@ -791,6 +861,26 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     // Configurar el src del audio actual solo si ha cambiado (currentSrcString ya está declarado arriba)
     if (normalizedCurrentSrc !== normalizedNewSrc && currentAudioSrc !== currentSrcString) {
       console.log(`[AudioContext] Cambiando src de ${normalizedCurrentSrc} a ${normalizedNewSrc}`);
+      console.log(`[AudioContext] Ruta completa: ${currentSrcString}`);
+      console.log(`[AudioContext] Índice actual: ${currentIndex}, Total audios: ${audioSrcs.length}`);
+      
+      // En iOS, especialmente con audios en subcarpetas, asegurar que la ruta sea válida
+      if (isIOS) {
+        // Verificar que la ruta sea accesible antes de establecerla
+        const testAudio = new Audio();
+        testAudio.src = currentSrcString;
+        testAudio.addEventListener('error', (e) => {
+          console.error(`[AudioContext] Error con ruta de audio en iOS: ${currentSrcString}`, e);
+          console.error(`[AudioContext] Error code: ${testAudio.error?.code}, Message: ${testAudio.error?.message}`);
+        }, { once: true });
+        testAudio.load();
+        // Limpiar el audio de prueba después de un momento
+        setTimeout(() => {
+          testAudio.src = '';
+          testAudio.load();
+        }, 1000);
+      }
+      
       audio.src = currentSrcString;
       audio.load();
     }
