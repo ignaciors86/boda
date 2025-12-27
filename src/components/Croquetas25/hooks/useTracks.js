@@ -60,6 +60,8 @@ export const useTracks = () => {
 
         // Procesar audio - organizar por subcarpeta
         const audioFiles = audioContext.keys().sort((a, b) => a.localeCompare(b));
+        const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        
         audioFiles.forEach(file => {
           const pathParts = file.split('/').filter(p => p && p !== '.');
           const trackName = pathParts[0];
@@ -74,7 +76,29 @@ export const useTracks = () => {
             tracksTemp[trackName].audioBySubfolder[subfolder] = [];
           }
           
-          tracksTemp[trackName].audioBySubfolder[subfolder].push(audioContext(file));
+          // Obtener la URL del audio desde require.context
+          let audioUrl = audioContext(file);
+          
+          // En iOS, especialmente con subcarpetas, verificar y normalizar la ruta
+          if (isIOS && subfolder !== '__root__') {
+            // Convertir a string si es necesario
+            if (typeof audioUrl !== 'string') {
+              audioUrl = audioUrl?.default || audioUrl;
+            }
+            
+            // Logging para diagnóstico
+            console.log(`[useTracks] iOS: Procesando audio de subcarpeta - Track: ${trackName}, Subcarpeta: ${subfolder}, Ruta original: ${file}, URL generada: ${audioUrl}`);
+            
+            // Verificar que la URL sea válida
+            if (audioUrl && typeof audioUrl === 'string') {
+              // require.context debería devolver URLs válidas, pero verificar
+              if (!audioUrl.startsWith('http') && !audioUrl.startsWith('data:') && !audioUrl.startsWith('/')) {
+                console.warn(`[useTracks] iOS: URL de audio de subcarpeta puede ser problemática: ${audioUrl}`);
+              }
+            }
+          }
+          
+          tracksTemp[trackName].audioBySubfolder[subfolder].push(audioUrl);
         });
 
         // Procesar guiones - organizar por subcarpeta
@@ -138,7 +162,39 @@ export const useTracks = () => {
               if (audios && audios.length > 0) {
                 const sortedAudios = audios.sort((a, b) => String(a).localeCompare(String(b)));
                 track.subfolderToAudioIndex[subfolder] = audioIndex;
-                track.audioSrcs.push(sortedAudios[0]); // Solo primer audio por subcarpeta
+                
+                // En iOS, asegurar que las rutas de subcarpetas sean URLs absolutas válidas
+                let audioSrc = sortedAudios[0];
+                if (typeof audioSrc !== 'string') {
+                  audioSrc = audioSrc?.default || audioSrc;
+                }
+                
+                // Si es una ruta de subcarpeta y estamos en iOS, verificar y normalizar
+                const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                if (isIOS && audioSrc && typeof audioSrc === 'string') {
+                  // require.context debería devolver URLs válidas, pero en iOS con subcarpetas puede haber problemas
+                  // Asegurar que la ruta sea accesible
+                  if (!audioSrc.startsWith('http') && !audioSrc.startsWith('data:') && !audioSrc.startsWith('/')) {
+                    // Si no tiene prefijo, podría ser una ruta relativa problemática
+                    // Intentar convertir a ruta absoluta
+                    try {
+                      // require.context debería devolver una URL válida, pero si no, intentar construirla
+                      if (audioSrc.includes('./') || audioSrc.includes('../')) {
+                        // Es una ruta relativa, convertir a absoluta
+                        const baseUrl = window.location.origin;
+                        const absolutePath = audioSrc.startsWith('.') 
+                          ? audioSrc.replace(/^\./, '')
+                          : '/' + audioSrc;
+                        audioSrc = baseUrl + absolutePath;
+                        console.log(`[useTracks] iOS: Ruta de subcarpeta normalizada: ${audioSrc}`);
+                      }
+                    } catch (e) {
+                      console.warn(`[useTracks] Error normalizando ruta de audio en iOS:`, e);
+                    }
+                  }
+                }
+                
+                track.audioSrcs.push(audioSrc);
                 audioIndex++;
               }
             });
