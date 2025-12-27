@@ -189,34 +189,15 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
         lastAudioIndexRef.current = null; // Resetear para que el efecto se ejecute en la primera carga
         isLastImageRef.current = false; // Resetear flag de última imagen
         
-        // Para Croquetas25 con rotación de colecciones, organizar imágenes por colección
-        if (selectedTrack?.useCollectionRotation) {
-          collectionIndicesRef.current.clear();
-          collectionImagesRef.current.clear();
-          lastCollectionRef.current = null;
-          
-          imagesList.forEach((img, index) => {
-            const imageObj = typeof img === 'object' ? img : { path: img, originalPath: img, subfolder: null };
-            const imagePath = imageObj.path || img;
-            const collection = imageObj.collection || 'croquetas25';
-            
-            if (!collectionImagesRef.current.has(collection)) {
-              collectionImagesRef.current.set(collection, []);
-              collectionIndicesRef.current.set(collection, 0);
-            }
-            collectionImagesRef.current.get(collection).push(imagePath);
-          });
-          
-          console.log('[Gallery] Croquetas25: Organizadas por colección:', Array.from(collectionImagesRef.current.entries()).map(([col, imgs]) => `${col}: ${imgs.length} imágenes`));
-        }
-        
         // Construir estructura plana: mapear cada subcarpeta a sus índices de imágenes
+        // IMPORTANTE: Inicializar imageStatesRef ANTES de organizar por colección
         imagesList.forEach((img, index) => {
           const imageObj = typeof img === 'object' ? img : { path: img, originalPath: img, subfolder: null };
           const imagePath = imageObj.path || img;
           const subfolder = imageObj.subfolder || null;
           const normalizedSubfolder = subfolder === null ? '__root__' : subfolder;
           
+          // Inicializar estado de imagen como 'pending' - CRÍTICO para que funcione
           imageStatesRef.current.set(imagePath, { state: 'pending', imgElement: null });
           imagesBySubfolderRef.current.set(imagePath, subfolder);
           
@@ -233,6 +214,33 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
           const counts = subfolderCountsRef.current.get(subfolder);
           counts.total++;
         });
+        
+        // Para Croquetas25 con rotación de colecciones, organizar imágenes por colección
+        // HACER ESTO DESPUÉS de inicializar imageStatesRef para asegurar que todas las imágenes estén registradas
+        if (selectedTrack?.useCollectionRotation) {
+          collectionIndicesRef.current.clear();
+          collectionImagesRef.current.clear();
+          lastCollectionRef.current = null;
+          
+          imagesList.forEach((img, index) => {
+            const imageObj = typeof img === 'object' ? img : { path: img, originalPath: img, subfolder: null };
+            const imagePath = imageObj.path || img;
+            const collection = imageObj.collection || 'croquetas25';
+            
+            if (!collectionImagesRef.current.has(collection)) {
+              collectionImagesRef.current.set(collection, []);
+              collectionIndicesRef.current.set(collection, 0);
+            }
+            // Asegurar que solo agregamos imágenes que ya están en imageStatesRef
+            if (imageStatesRef.current.has(imagePath)) {
+              collectionImagesRef.current.get(collection).push(imagePath);
+            } else {
+              console.warn(`[Gallery] Croquetas25: Imagen ${imagePath} no está en imageStatesRef, saltando`);
+            }
+          });
+          
+          console.log('[Gallery] Croquetas25: Organizadas por colección:', Array.from(collectionImagesRef.current.entries()).map(([col, imgs]) => `${col}: ${imgs.length} imágenes`));
+        }
         
         console.log('[Gallery] Estructura de subcarpetas:', Array.from(subfolderImageIndicesRef.current.entries()).map(([sf, indices]) => `${sf}: ${indices.length} imágenes`));
 
