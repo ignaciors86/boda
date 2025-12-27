@@ -28,6 +28,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
   const [audioDurations, setAudioDurations] = useState([]);
+  const [iosPreloadedAudios, setIosPreloadedAudios] = useState(false); // Estado para audios pre-cargados en iOS
   
   // Refs que se compartirán con los componentes
   const audioContextRef = useRef(null);
@@ -42,14 +43,130 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
   const audioSrcsRef = useRef(audioSrcs); // Ref para audioSrcs
   const currentIndexRef = useRef(currentIndex); // Ref para currentIndex
   const isChangingFromEndedRef = useRef(false); // Flag para evitar interferencia del useEffect principal
+  const iosPreloadAudioElementsRef = useRef([]); // Refs para elementos Audio de pre-carga en iOS
 
   // El audioRef que se expone es siempre el actual
   const audioRef = currentAudioRef;
 
+  // Función para pre-cargar todos los audios en iOS cuando hay múltiples
+  const preloadAllAudiosForIOS = async (srcs) => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (!isIOS || srcs.length <= 1) {
+      setIosPreloadedAudios(true);
+      return;
+    }
+    
+    // Limpiar audios anteriores si existen
+    iosPreloadAudioElementsRef.current.forEach(audio => {
+      if (audio) {
+        audio.pause();
+        audio.src = '';
+        audio.load();
+      }
+    });
+    iosPreloadAudioElementsRef.current = [];
+    
+    // Crear y pre-cargar cada audio de forma secuencial
+    for (let i = 0; i < srcs.length; i++) {
+      const audioSrc = srcs[i];
+      const audioSrcString = typeof audioSrc === 'string' ? audioSrc : (audioSrc?.default || audioSrc);
+      
+      console.log(`[AudioContext] Pre-cargando audio ${i + 1}/${srcs.length} para iOS...`);
+      
+      const audio = new Audio();
+      audio.preload = 'auto';
+      audio.src = audioSrcString;
+      
+      // Esperar a que el audio esté suficientemente cargado
+      await new Promise((resolve) => {
+        let resolved = false;
+        const timeout = setTimeout(() => {
+          if (!resolved) {
+            console.warn(`[AudioContext] Timeout pre-cargando audio ${i} para iOS, continuando...`);
+            resolved = true;
+            resolve();
+          }
+        }, 15000); // 15 segundos por audio
+        
+        const handleCanPlay = () => {
+          if (!resolved && audio.readyState >= 2) {
+            clearTimeout(timeout);
+            resolved = true;
+            console.log(`[AudioContext] Audio ${i} pre-cargado para iOS (readyState: ${audio.readyState})`);
+            resolve();
+          }
+        };
+        
+        const handleLoadedData = () => {
+          if (!resolved && audio.readyState >= 2) {
+            clearTimeout(timeout);
+            resolved = true;
+            console.log(`[AudioContext] Audio ${i} pre-cargado para iOS (readyState: ${audio.readyState})`);
+            resolve();
+          }
+        };
+        
+        const handleError = () => {
+          if (!resolved) {
+            clearTimeout(timeout);
+            resolved = true;
+            console.warn(`[AudioContext] Error pre-cargando audio ${i} para iOS, continuando...`);
+            resolve();
+          }
+        };
+        
+        audio.addEventListener('canplay', handleCanPlay);
+        audio.addEventListener('loadeddata', handleLoadedData);
+        audio.addEventListener('error', handleError);
+        
+        // Intentar cargar
+        try {
+          audio.load();
+        } catch (error) {
+          console.warn(`[AudioContext] Error al llamar load() en audio ${i} para iOS:`, error);
+          if (!resolved) {
+            clearTimeout(timeout);
+            resolved = true;
+            resolve();
+          }
+        }
+        
+        // Verificar periódicamente si ya está listo
+        const checkInterval = setInterval(() => {
+          if (audio.readyState >= 2 && !resolved) {
+            clearTimeout(timeout);
+            clearInterval(checkInterval);
+            resolved = true;
+            audio.removeEventListener('canplay', handleCanPlay);
+            audio.removeEventListener('loadeddata', handleLoadedData);
+            audio.removeEventListener('error', handleError);
+            console.log(`[AudioContext] Audio ${i} pre-cargado para iOS (verificación periódica, readyState: ${audio.readyState})`);
+            resolve();
+          }
+        }, 500);
+      });
+      
+      // Guardar referencia al audio pre-cargado
+      iosPreloadAudioElementsRef.current.push(audio);
+      
+      // Esperar un poco entre audios para evitar saturación
+      if (i < srcs.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+    
+    console.log('[AudioContext] Todos los audios pre-cargados para iOS');
+    setIosPreloadedAudios(true);
+  };
+
   // Cargar duraciones de todos los audios
   useEffect(() => {
+    // Resetear estado de pre-carga cuando cambian los audios
+    setIosPreloadedAudios(false);
+    
     if (!audioSrcs || audioSrcs.length === 0) {
       setAudioDurations([]);
+      setIosPreloadedAudios(true); // Si no hay audios, marcar como listo
       return;
     }
 
@@ -170,6 +287,15 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       }
 
       setAudioDurations(durations);
+      
+      // En iOS con múltiples audios, pre-cargar todos los audios antes de permitir reproducción
+      // isIOS ya está declarado arriba en la línea 175
+      if (isIOS && audioSrcs.length > 1) {
+        console.log('[AudioContext] iOS con múltiples audios: iniciando pre-carga de todos los audios...');
+        preloadAllAudiosForIOS(audioSrcs);
+      } else {
+        setIosPreloadedAudios(true); // Si no es iOS o solo hay un audio, marcar como listo
+      }
     };
 
     loadDurations();
@@ -727,6 +853,29 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       if (currentAudioRef.current && currentAudioRef.current.paused) {
         try {
           const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+          const hasMultipleAudios = audioSrcsRef.current.length > 1;
+          
+          // En iOS con múltiples audios, esperar a que todos estén pre-cargados
+          if (isIOS && hasMultipleAudios && !iosPreloadedAudios) {
+            console.log('[AudioContext] iOS múltiples audios: esperando a que todos estén pre-cargados...');
+            await new Promise((resolveWait) => {
+              const timeout = setTimeout(() => {
+                console.warn('[AudioContext] Timeout esperando pre-carga de audios en iOS, continuando...');
+                resolveWait();
+              }, 30000); // 30 segundos máximo
+              
+              const checkPreloaded = () => {
+                if (iosPreloadedAudios) {
+                  clearTimeout(timeout);
+                  console.log('[AudioContext] Todos los audios pre-cargados, continuando con play()');
+                  resolveWait();
+                } else {
+                  setTimeout(checkPreloaded, 200);
+                }
+              };
+              checkPreloaded();
+            });
+          }
           
           if (volumeTweenRef.current) {
             volumeTweenRef.current.kill();
@@ -754,7 +903,6 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           
           // En iOS con múltiples audios, esperar más tiempo y ser más flexible
           if (isIOS && currentAudioRef.current.readyState < 2) {
-            const hasMultipleAudios = audioSrcsRef.current.length > 1;
             const maxWaitTime = hasMultipleAudios ? 5000 : 2000; // Más tiempo para múltiples audios
             
             await new Promise((resolveWait) => {
@@ -778,15 +926,43 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           
           currentAudioRef.current.volume = 0;
           
-          try {
-            await currentAudioRef.current.play();
-          } catch (playError) {
-            console.error('[AudioContext] Error in play():', playError);
-            if (isIOS && playError.name === 'NotAllowedError') {
-              console.warn('[AudioContext] Play blocked - user interaction required');
+          // En iOS con múltiples audios, intentar reproducir múltiples veces si es necesario
+          let playAttempts = 0;
+          const maxPlayAttempts = isIOS && hasMultipleAudios ? 5 : 1;
+          
+          while (playAttempts < maxPlayAttempts) {
+            try {
+              await currentAudioRef.current.play();
+              console.log(`[AudioContext] Audio reproducido exitosamente (intento ${playAttempts + 1})`);
+              break; // Éxito, salir del bucle
+            } catch (playError) {
+              playAttempts++;
+              console.warn(`[AudioContext] Error en play() (intento ${playAttempts}/${maxPlayAttempts}):`, playError);
+              
+              if (isIOS && playError.name === 'NotAllowedError') {
+                console.warn('[AudioContext] Play blocked - user interaction required');
+                resolve();
+                return;
+              }
+              
+              // Si es iOS con múltiples audios y aún hay intentos, esperar y reintentar
+              if (isIOS && hasMultipleAudios && playAttempts < maxPlayAttempts) {
+                console.log(`[AudioContext] Reintentando play() en ${500 * playAttempts}ms...`);
+                await new Promise(resolve => setTimeout(resolve, 500 * playAttempts));
+                
+                // Asegurarse de que el audio esté listo antes de reintentar
+                if (currentAudioRef.current.readyState < 2) {
+                  console.log('[AudioContext] Audio no está listo, forzando load()...');
+                  currentAudioRef.current.load();
+                  await new Promise(resolve => setTimeout(resolve, 500));
+                }
+              } else {
+                // No más intentos o no es iOS con múltiples audios
+                console.error('[AudioContext] No se pudo reproducir el audio después de todos los intentos');
+                resolve();
+                return;
+              }
             }
-            resolve();
-            return;
           }
           
           await new Promise(resolve => setTimeout(resolve, isIOS ? 100 : 50));
