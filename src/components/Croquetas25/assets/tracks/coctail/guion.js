@@ -3,7 +3,7 @@ export default {
   textos: [
     'Al entrar en el salón, casi me como una farola maciza en mitad de todo.',
     '',
-    'La idea inial era que LOS DOS cortásemos la tarta.',
+    'La idea inicial era que LOS DOS cortásemos la tarta.',
     '',
     'Cuando me enteré de lo que costaba contratar la Hora Loca, opté por vivir el mayor delirio de compras de chorradas de Aliexpress de mi vida.',
     '',
@@ -22,4 +22,5 @@ export default {
     'El premio al invitado más elegante fue para Coscolla, con su outfit de Tiger a dos minutos de empezar la ceremonia.'
   ]
 };
+
 

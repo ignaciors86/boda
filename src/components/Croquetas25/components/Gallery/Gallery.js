@@ -17,6 +17,7 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
   const subfolderCountsRef = useRef(new Map()); // Map<subfolder, {total, used}>
   const lastSubfolderRef = useRef(null);
   const completedSubfoldersRef = useRef(new Set());
+  const subfoldersCompletedAtLeastOnceRef = useRef(new Set()); // Subcarpetas que han completado al menos un ciclo
   
   // Estructura plana: mapeo de subcarpeta a índices de imágenes en allImages
   const subfolderImageIndicesRef = useRef(new Map()); // Map<subfolder, number[]>
@@ -178,6 +179,7 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
         subfolderCurrentIndexRef.current.clear();
         lastSubfolderRef.current = null;
         completedSubfoldersRef.current.clear();
+        subfoldersCompletedAtLeastOnceRef.current.clear();
         lastAudioIndexRef.current = null; // Resetear para que el efecto se ejecute en la primera carga
         
         // Construir estructura plana: mapear cada subcarpeta a sus índices de imágenes
@@ -461,6 +463,7 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
         
         // Avanzar índice de esta subcarpeta
         subfolderIndex++;
+        let subfolderCompletedCycle = false;
         if (subfolderIndex >= imageIndices.length) {
           // Cuando se completa el ciclo (índice vuelve a 0), resetear todas las imágenes a "ready"
           // para permitir que se usen de nuevo
@@ -477,6 +480,11 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
             subfolderCountsRef.current.get(imageSubfolder).used = 0;
           }
           subfolderIndex = 0;
+          subfolderCompletedCycle = true;
+          
+          // Marcar esta subcarpeta como completada al menos una vez
+          subfoldersCompletedAtLeastOnceRef.current.add(normalizedImageSubfolder);
+          console.log(`[Gallery] Subcarpeta ${imageSubfolder || '__root__'} completó un ciclo completo`);
         }
         
         // Guardar índice actualizado ANTES de verificar completitud
@@ -485,23 +493,18 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
         const savedIndex = subfolderCurrentIndexRef.current.get(normalizedSubfolder);
         console.log(`[Gallery] getNextImage: Imagen encontrada y marcada como usada. Subcarpeta: ${currentSubfolder || '__root__'}, índice avanzado a: ${subfolderIndex}/${imageIndices.length}, guardado: ${savedIndex}, próxima imagen índice en allImages: ${imageIndices[subfolderIndex] || imageIndices[0]}, path actual: ${imagePath}`);
         
-        // Verificar si todas las subcarpetas están completas
-        const allSubfoldersComplete = Array.from(subfolderCountsRef.current.keys()).every(subfolder => {
-          let usedCount = 0;
-          imagesBySubfolderRef.current.forEach((sf, path) => {
-            if (sf === subfolder) {
-              const state = imageStatesRef.current.get(path);
-              if (state && state.state === 'used') {
-                usedCount++;
-              }
-            }
-          });
-          const counts = subfolderCountsRef.current.get(subfolder);
-          return counts && usedCount >= counts.total && counts.total > 0;
-        });
+        // Verificar si todas las subcarpetas han completado al menos un ciclo
+        // Esto es más confiable que verificar imágenes "used" porque se resetean
+        const allSubfoldersKeys = Array.from(subfolderCountsRef.current.keys()).map(sf => 
+          sf === null ? '__root__' : sf
+        );
+        const allSubfoldersComplete = allSubfoldersKeys.length > 0 && 
+          allSubfoldersKeys.every(subfolder => 
+            subfoldersCompletedAtLeastOnceRef.current.has(subfolder)
+          );
         
         if (allSubfoldersComplete && onAllComplete) {
-          console.log('[Gallery] Todas las subcarpetas completadas, llamando onAllComplete');
+          console.log('[Gallery] Todas las subcarpetas completaron al menos un ciclo, llamando onAllComplete');
           onAllComplete();
         }
         

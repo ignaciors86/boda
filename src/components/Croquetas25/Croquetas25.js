@@ -74,15 +74,48 @@ const Croquetas25 = () => {
     }
   }, [selectedTrack]);
   
+  // Ref para el callback de completado que puede pausar el audio
+  const handleAllCompleteRef = useRef(null);
+  
   // Callback para cuando se completa toda la colección - volver a Intro
-  const handleAllComplete = useCallback(() => {
+  const handleAllComplete = useCallback(async () => {
     console.log('[Croquetas25] Todas las subcarpetas completadas, volviendo a Intro');
-    setSelectedTrack(null);
+    
+    // Primero pausar el audio si está disponible
+    if (handleAllCompleteRef.current) {
+      await handleAllCompleteRef.current();
+    }
+    
+    // Luego detener todo y volver a la home
     setAudioStarted(false);
+    setSelectedTrack(null);
     setShowStartButton(false);
+    setWasSelectedFromIntro(false);
     setLoadingFadedOut(false);
     navigate('/nachitos-de-nochevieja', { replace: true });
   }, [navigate]);
+  
+  // Componente que maneja el completado dentro de AudioProvider para poder pausar el audio
+  const AllCompleteHandler = () => {
+    const { pause } = useAudio();
+    
+    useEffect(() => {
+      handleAllCompleteRef.current = async () => {
+        console.log('[AllCompleteHandler] Pausando audio antes de volver a home');
+        try {
+          await pause();
+        } catch (error) {
+          console.warn('[AllCompleteHandler] Error pausando audio:', error);
+        }
+      };
+      
+      return () => {
+        handleAllCompleteRef.current = null;
+      };
+    }, [pause]);
+    
+    return null;
+  };
   
   const { isLoading: imagesLoading, preloadProgress: imagesProgress, seekToImagePosition } = useGallery(selectedTrack, handleSubfolderComplete, handleAllComplete);
   const audioSrcs = selectedTrack?.srcs || (selectedTrack?.src ? [selectedTrack.src] : []);
@@ -286,6 +319,7 @@ const Croquetas25 = () => {
       {/* Background siempre visible para mostrar diagonales - dentro de AudioProvider si hay track, fuera si no */}
       {selectedTrack && audioSrcs.length > 0 ? (
         <AudioProvider audioSrcs={audioSrcs}>
+          <AllCompleteHandler />
           <BackgroundWrapper 
             onTriggerCallbackRef={audioStarted ? triggerCallbackRef : null} 
             onVoiceCallbackRef={audioStarted ? voiceCallbackRef : null}
