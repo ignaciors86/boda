@@ -255,17 +255,31 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     let progressIntervalId = null;
     let audioCleanup = null;
 
+    // Detección mejorada de navegadores y dispositivos
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
     audio.volume = 0;
     audio.muted = false;
-    audio.preload = isIOS ? 'metadata' : 'auto';
+    // Usar 'auto' para mejor compatibilidad, pero manejar la carga manualmente
+    audio.preload = 'auto';
     audio.loop = false; // No loop, manejamos la playlist manualmente
+    // Asegurar atributos de compatibilidad
+    audio.crossOrigin = 'anonymous';
+    audio.playsInline = true;
 
     const updateProgress = () => {
       if (!audio) return;
       
-      const minReadyState = isIOS ? 1 : 2;
+      // Ajustar minReadyState según el navegador para mejor compatibilidad
+      let minReadyState = 2; // Por defecto, esperar metadata y datos
+      if (isIOS || isSafari) {
+        minReadyState = 1; // iOS/Safari puede funcionar con menos datos
+      } else if (isChrome && isMobile) {
+        minReadyState = 2; // Chrome mobile necesita más datos
+      }
       
       if (audio.readyState >= minReadyState) {
         if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
@@ -274,20 +288,23 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
             const progress = Math.min((bufferedEnd / audio.duration) * 100, 100);
             setLoadingProgress(progress);
             
-            if (progress >= 95 || bufferedEnd >= audio.duration * 0.95) {
+            // Para iOS/Safari, considerar cargado con menos buffer
+            const loadThreshold = (isIOS || isSafari) ? 0.8 : 0.95;
+            if (progress >= (loadThreshold * 100) || bufferedEnd >= audio.duration * loadThreshold) {
               if (!isLoaded) {
                 setIsLoaded(true);
                 setLoadingProgress(100);
               }
-            } else if (!isLoaded) {
+            }
+          } else if (audio.readyState >= 3) {
+            // Si readyState es suficiente, considerar cargado
+            if (!isLoaded) {
               setIsLoaded(true);
               setLoadingProgress(100);
             }
-          } else if (!isLoaded) {
-            setIsLoaded(true);
-            setLoadingProgress(100);
           }
-        } else if (!isLoaded) {
+        } else if (audio.readyState >= 3 && !isLoaded) {
+          // Si tenemos suficiente readyState pero no duration, aún considerar cargado
           setIsLoaded(true);
           setLoadingProgress(100);
         }
@@ -394,17 +411,26 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     const handleCanPlay = async () => {
       updateProgress();
       await setupAudioContext();
-      if (!isIOS && audio.readyState >= 3) {
-        // No reproducir automáticamente
+      // Marcar como cargado si tenemos suficiente readyState
+      if (audio.readyState >= 2) {
+        if (!isLoaded) {
+          setIsLoaded(true);
+          setLoadingProgress(100);
+        }
       }
     };
 
     const handleProgress = () => updateProgress();
     const handleLoadedData = () => {
       updateProgress();
-      if (isIOS && audio.readyState >= 1) {
-        setIsLoaded(true);
-        setLoadingProgress(100);
+      // Para iOS/Safari, marcar como cargado con readyState 1
+      // Para otros navegadores, esperar readyState 2
+      const minReadyForLoaded = (isIOS || isSafari) ? 1 : 2;
+      if (audio.readyState >= minReadyForLoaded) {
+        if (!isLoaded) {
+          setIsLoaded(true);
+          setLoadingProgress(100);
+        }
       }
     };
 
@@ -412,6 +438,17 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       updateProgress();
       setIsLoaded(true);
       setLoadingProgress(100);
+    };
+    
+    // Handler adicional para loadedmetadata (importante para Safari/iOS)
+    const handleLoadedMetadata = () => {
+      updateProgress();
+      if ((isIOS || isSafari) && audio.readyState >= 1) {
+        if (!isLoaded) {
+          setIsLoaded(true);
+          setLoadingProgress(100);
+        }
+      }
     };
     
     const handleError = (e) => {
@@ -446,18 +483,8 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     audio.addEventListener('canplaythrough', handleCanPlayThrough);
     audio.addEventListener('progress', handleProgress);
     audio.addEventListener('loadeddata', handleLoadedData);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
     audio.addEventListener('error', handleError);
-    
-    if (isIOS) {
-      audio.addEventListener('loadedmetadata', () => {
-        updateProgress();
-        const minReadyState = 1;
-        if (audio.readyState >= minReadyState && !isLoaded) {
-          setIsLoaded(true);
-          setLoadingProgress(100);
-        }
-      });
-    }
 
     audioCleanup = () => {
       audio.removeEventListener('play', handlePlay);
@@ -467,10 +494,8 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       audio.removeEventListener('canplaythrough', handleCanPlayThrough);
       audio.removeEventListener('progress', handleProgress);
       audio.removeEventListener('loadeddata', handleLoadedData);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('error', handleError);
-      if (isIOS) {
-        audio.removeEventListener('loadedmetadata', () => {});
-      }
     };
 
     if (audio.readyState === 0 || isIOS) {
@@ -481,7 +506,10 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       }
     }
 
-    const minReadyState = isIOS ? 1 : 2;
+    // Ajustar minReadyState y intervalo según navegador
+    const minReadyState = (isIOS || isSafari) ? 1 : 2;
+    const progressInterval = (isIOS || isSafari) ? 200 : 100;
+    
     progressIntervalId = setInterval(() => {
       if (isLoaded) {
         if (progressIntervalId) {
@@ -493,7 +521,10 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       
       updateProgress();
       
-      if (audio.readyState >= minReadyState && !isLoaded) {
+      // Para Chrome, esperar un poco más de buffer
+      // Para Safari/iOS, aceptar con menos buffer
+      const readyThreshold = (isChrome && !isMobile) ? 3 : minReadyState;
+      if (audio.readyState >= readyThreshold && !isLoaded) {
         setIsLoaded(true);
         setLoadingProgress(100);
         if (progressIntervalId) {
@@ -501,7 +532,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           progressIntervalId = null;
         }
       }
-    }, isIOS ? 200 : 100);
+    }, progressInterval);
 
     return () => {
       if (progressIntervalId) {

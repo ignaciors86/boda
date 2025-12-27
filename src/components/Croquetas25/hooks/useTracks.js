@@ -26,7 +26,7 @@ export const useTracks = () => {
     const loadTracks = () => {
       try {
         const imagesContext = require.context('../assets/tracks', true, /\.(jpg|jpeg|png|gif|webp)$/);
-        const audioContext = require.context('../assets/tracks', true, /\.(mp3|m4a|wav|ogg)$/);
+        const audioContext = require.context('../assets/tracks', true, /\.(mp3|MP3)$/);
         const guionContext = require.context('../assets/tracks', true, /guion\.js$/);
         
         const tracksTemp = {};
