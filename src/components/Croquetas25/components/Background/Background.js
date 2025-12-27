@@ -187,6 +187,13 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
           };
           
           if (isTarget) {
+            // Detectar si es Croquetas25
+            const isCroquetas25 = selectedTrack && (
+              selectedTrack.name?.toLowerCase().includes('croquetas25') ||
+              selectedTrack.name?.toLowerCase().includes('croquetas 25') ||
+              selectedTrack.id?.toLowerCase().includes('croquetas25')
+            );
+            
             const zStart = -600;
             const zEnd = 400;
             const zAtScale85 = 50;
@@ -195,33 +202,93 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
             const zTotal = zEnd - zStart;
             const zProgressToScale85 = (zAtScale85 - zStart) / zTotal;
             
-            const timeToScale85 = duration * 0.55; // Ajustado: un poco más lento que 0.5
-            const fadeOutDuration = duration * 0.45; // Ajustado para balancear
-            
-            timeline.fromTo(el, 
-              { 
-                scale: 0, 
-                z: zStart,
-                opacity: 1
-              },
-              {
-                scale: scaleAt85,
-                z: zAtScale85,
-                opacity: 1,
-                duration: timeToScale85,
-                ease: 'power1.out',
-                force3D: true
-              }
-            );
-            
-            timeline.to(el, {
-              opacity: 0,
-              scale: 0.95,
-              z: 100,
-              duration: fadeOutDuration,
-              ease: 'power2.in',
-              force3D: true,
-              onComplete: async () => {
+            if (isCroquetas25) {
+              // Para Croquetas25: animación continua sin detención, directamente al fade out
+              const fadeStartProgress = 0.7; // Empezar fade out al 70% de la animación
+              
+              timeline.fromTo(el, 
+                { 
+                  scale: 0, 
+                  z: zStart,
+                  opacity: 1
+                },
+                {
+                  scale: scaleAt85,
+                  z: zEnd,
+                  opacity: 1,
+                  duration: duration,
+                  ease: 'power1.out',
+                  force3D: true,
+                  onUpdate: function() {
+                    const progress = this.progress();
+                    
+                    if (progress >= fadeStartProgress) {
+                      const fadeProgress = (progress - fadeStartProgress) / (1.0 - fadeStartProgress);
+                      const newOpacity = 1 - fadeProgress;
+                      gsap.set(el, { opacity: Math.max(0, newOpacity) });
+                    }
+                  },
+                  onComplete: async () => {
+                    // Si es la última imagen, hacer fade out del volumen y luego volver al menú
+                    if (square.isLastImage && onAllComplete && pause) {
+                      try {
+                        // Resetear el flag antes de hacer el fade out
+                        if (isLastImageRef?.current) {
+                          isLastImageRef.current = false;
+                        }
+                        console.log('[Background] Última imagen completada, iniciando fade out del volumen');
+                        console.log('[Background] pause es función:', typeof pause === 'function');
+                        // Hacer fade out del volumen (igual que el botón de volver)
+                        // pause() retorna una promesa que se resuelve cuando el fade out termina
+                        if (typeof pause === 'function') {
+                          await pause();
+                          console.log('[Background] Fade out del volumen completado, volviendo al menú');
+                        } else {
+                          console.warn('[Background] pause no es una función, saltando fade out');
+                        }
+                        // Llamar a onAllComplete para volver al menú
+                        await onAllComplete();
+                      } catch (error) {
+                        console.error('[Background] Error en fade out y navegación:', error);
+                        // Si hay error, limpiar el square de todas formas
+                        cleanupSquare();
+                      }
+                    } else {
+                      // Limpiar inmediatamente sin delay
+                      cleanupSquare();
+                    }
+                  }
+                }
+              );
+            } else {
+              // Para otras colecciones: animación con dos fases (con detención)
+              const timeToScale85 = duration * 0.55; // Ajustado: un poco más lento que 0.5
+              const fadeOutDuration = duration * 0.45; // Ajustado para balancear
+              
+              timeline.fromTo(el, 
+                { 
+                  scale: 0, 
+                  z: zStart,
+                  opacity: 1
+                },
+                {
+                  scale: scaleAt85,
+                  z: zAtScale85,
+                  opacity: 1,
+                  duration: timeToScale85,
+                  ease: 'power1.out',
+                  force3D: true
+                }
+              );
+              
+              timeline.to(el, {
+                opacity: 0,
+                scale: 0.95,
+                z: 100,
+                duration: fadeOutDuration,
+                ease: 'power2.in',
+                force3D: true,
+                onComplete: async () => {
                 // Si es la última imagen, hacer fade out del volumen y luego volver al menú
                 if (square.isLastImage && onAllComplete && pause) {
                   try {
@@ -253,6 +320,7 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
                 }
               }
             });
+            }
           } else {
             const targetScale = 0.85;
             const scale1 = 1.0;

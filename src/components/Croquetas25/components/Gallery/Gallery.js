@@ -26,6 +26,11 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
   const lastAudioIndexRef = useRef(null);
   const isLastImageRef = useRef(false); // Flag para indicar si la próxima imagen es la última
   
+  // Para Croquetas25: rastrear índices por colección para rotación
+  const collectionIndicesRef = useRef(new Map()); // Map<collectionName, currentIndex>
+  const collectionImagesRef = useRef(new Map()); // Map<collectionName, imagePaths[]>
+  const lastCollectionRef = useRef(null);
+  
   // Detectar dispositivo móvil (especialmente iPhone)
   const isMobile = typeof window !== 'undefined' && (
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
@@ -183,6 +188,27 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
         subfoldersCompletedAtLeastOnceRef.current.clear();
         lastAudioIndexRef.current = null; // Resetear para que el efecto se ejecute en la primera carga
         isLastImageRef.current = false; // Resetear flag de última imagen
+        
+        // Para Croquetas25 con rotación de colecciones, organizar imágenes por colección
+        if (selectedTrack?.useCollectionRotation) {
+          collectionIndicesRef.current.clear();
+          collectionImagesRef.current.clear();
+          lastCollectionRef.current = null;
+          
+          imagesList.forEach((img, index) => {
+            const imageObj = typeof img === 'object' ? img : { path: img, originalPath: img, subfolder: null };
+            const imagePath = imageObj.path || img;
+            const collection = imageObj.collection || 'croquetas25';
+            
+            if (!collectionImagesRef.current.has(collection)) {
+              collectionImagesRef.current.set(collection, []);
+              collectionIndicesRef.current.set(collection, 0);
+            }
+            collectionImagesRef.current.get(collection).push(imagePath);
+          });
+          
+          console.log('[Gallery] Croquetas25: Organizadas por colección:', Array.from(collectionImagesRef.current.entries()).map(([col, imgs]) => `${col}: ${imgs.length} imágenes`));
+        }
         
         // Construir estructura plana: mapear cada subcarpeta a sus índices de imágenes
         imagesList.forEach((img, index) => {
@@ -391,6 +417,79 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
     console.log(`[Gallery] getNextImage llamado | allImages.length: ${allImages.length} | currentAudioIndex: ${currentAudioIndex}`);
     if (allImages.length === 0) {
       console.warn('Gallery: No hay imágenes disponibles aún');
+      return null;
+    }
+
+    // Para Croquetas25 con rotación de colecciones, usar lógica especial
+    if (selectedTrack?.useCollectionRotation) {
+      const collections = Array.from(collectionImagesRef.current.keys());
+      if (collections.length === 0) {
+        console.warn('[Gallery] Croquetas25: No hay colecciones disponibles');
+        return null;
+      }
+      
+      // Intentar encontrar una imagen lista, rotando entre colecciones
+      let attempts = 0;
+      const maxAttempts = collections.length * 2; // Máximo 2 vueltas completas
+      
+      while (attempts < maxAttempts) {
+        // Determinar la siguiente colección en la rotación
+        let nextCollection = null;
+        if (lastCollectionRef.current === null) {
+          // Primera vez: empezar con la primera colección
+          nextCollection = collections[0];
+        } else {
+          // Encontrar el índice de la última colección usada
+          const lastIndex = collections.indexOf(lastCollectionRef.current);
+          // Siguiente colección en la rotación (circular)
+          nextCollection = collections[(lastIndex + 1) % collections.length];
+        }
+        
+        // Obtener el índice actual de esta colección
+        const collectionIndex = collectionIndicesRef.current.get(nextCollection) || 0;
+        const collectionImages = collectionImagesRef.current.get(nextCollection);
+        
+        if (!collectionImages || collectionImages.length === 0) {
+          console.warn(`[Gallery] Croquetas25: Colección ${nextCollection} no tiene imágenes`);
+          lastCollectionRef.current = nextCollection;
+          attempts++;
+          continue;
+        }
+        
+        // Si hemos usado todas las imágenes de esta colección, resetear
+        if (collectionIndex >= collectionImages.length) {
+          collectionIndicesRef.current.set(nextCollection, 0);
+          lastCollectionRef.current = nextCollection;
+          attempts++;
+          continue;
+        }
+        
+        // Obtener la imagen de esta colección
+        const imagePath = collectionImages[collectionIndex];
+        const imageState = imageStatesRef.current.get(imagePath);
+        
+        // Si la imagen está lista, usarla
+        if (imageState && imageState.state === 'ready') {
+          // Marcar como usada
+          imageStatesRef.current.set(imagePath, { ...imageState, state: 'used' });
+          
+          // Avanzar índice de esta colección
+          collectionIndicesRef.current.set(nextCollection, collectionIndex + 1);
+          lastCollectionRef.current = nextCollection;
+          
+          console.log(`[Gallery] Croquetas25: Imagen de colección ${nextCollection}, índice ${collectionIndex}/${collectionImages.length}`);
+          
+          return imagePath;
+        }
+        
+        // Si no está lista, avanzar índice y continuar con la siguiente colección
+        collectionIndicesRef.current.set(nextCollection, collectionIndex + 1);
+        lastCollectionRef.current = nextCollection;
+        attempts++;
+      }
+      
+      // Si no encontramos ninguna imagen lista después de todos los intentos
+      console.warn('[Gallery] Croquetas25: No se encontró ninguna imagen lista después de todos los intentos');
       return null;
     }
 

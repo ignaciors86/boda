@@ -175,24 +175,61 @@ export const useTracks = () => {
         );
         
         if (croquetas25Track) {
-          const allOtherImages = tracksArray
+          // Organizar imágenes por colección para rotación
+          const imagesByCollection = new Map();
+          
+          // Agregar imágenes propias de Croquetas25
+          if (croquetas25Track.images && croquetas25Track.images.length > 0) {
+            imagesByCollection.set('croquetas25', croquetas25Track.images.map(img => 
+              typeof img === 'object' ? img : { path: img, originalPath: img, subfolder: '__root__', collection: 'croquetas25' }
+            ));
+          }
+          
+          // Agregar imágenes de otras colecciones
+          tracksArray
             .filter(t => !['croquetas25', 'croquetas 25'].includes(normalizeName(t.name)))
-            .flatMap(t => t.images)
-            .map(img => typeof img === 'object' ? img : { path: img, originalPath: img, subfolder: '__root__' });
+            .forEach(track => {
+              const collectionName = normalizeName(track.name);
+              if (track.images && track.images.length > 0) {
+                imagesByCollection.set(collectionName, track.images.map(img => 
+                  typeof img === 'object' 
+                    ? { ...img, collection: collectionName }
+                    : { path: img, originalPath: img, subfolder: '__root__', collection: collectionName }
+                ));
+              }
+            });
           
-          // Ordenar por originalPath
-          allOtherImages.sort((a, b) => {
-            const pathA = a.originalPath || a.path || '';
-            const pathB = b.originalPath || b.path || '';
-            return String(pathA).localeCompare(String(pathB));
+          // Crear array intercalado: una imagen de cada colección en rotación
+          const interleavedImages = [];
+          const collectionNames = Array.from(imagesByCollection.keys());
+          const maxImagesPerCollection = Math.max(...Array.from(imagesByCollection.values()).map(imgs => imgs.length));
+          
+          // Para cada posición, tomar una imagen de cada colección en rotación
+          for (let round = 0; round < maxImagesPerCollection; round++) {
+            // Mezclar el orden de las colecciones en cada ronda para más variedad
+            const shuffledCollections = [...collectionNames].sort(() => Math.random() - 0.5);
+            
+            shuffledCollections.forEach(collectionName => {
+              const collectionImages = imagesByCollection.get(collectionName);
+              if (collectionImages && round < collectionImages.length) {
+                interleavedImages.push(collectionImages[round]);
+              }
+            });
+          }
+          
+          // Agregar las imágenes restantes de colecciones más largas
+          collectionNames.forEach(collectionName => {
+            const collectionImages = imagesByCollection.get(collectionName);
+            if (collectionImages && collectionImages.length > maxImagesPerCollection) {
+              for (let i = maxImagesPerCollection; i < collectionImages.length; i++) {
+                interleavedImages.push(collectionImages[i]);
+              }
+            }
           });
           
-          // Combinar y ordenar
-          croquetas25Track.images = [...croquetas25Track.images, ...allOtherImages].sort((a, b) => {
-            const pathA = a.originalPath || a.path || '';
-            const pathB = b.originalPath || b.path || '';
-            return String(pathA).localeCompare(String(pathB));
-          });
+          croquetas25Track.images = interleavedImages;
+          // Marcar que esta colección usa rotación entre colecciones
+          croquetas25Track.useCollectionRotation = true;
         }
 
         console.log('Tracks encontrados:', tracksArray.map(t => ({ 
