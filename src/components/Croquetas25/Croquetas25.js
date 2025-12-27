@@ -508,23 +508,7 @@ const UnifiedLoadingIndicator = ({ imagesLoading, imagesProgress, isDirectUri, a
   return (
     <div className="image-preloader" ref={loadingRef}>
       <div className="image-preloader__content">
-        <KITTLoader fast={showFast} />
-        <div className="image-preloader__text">
-          {imagesLoading && !audioLoaded 
-            ? 'Cargando imágenes y audio...' 
-            : imagesLoading 
-              ? 'Cargando imágenes...' 
-              : 'Cargando audio...'}
-        </div>
-        <div className="image-preloader__bar">
-          <div 
-            className="image-preloader__fill" 
-            style={{ width: `${combinedProgress}%` }}
-          />
-        </div>
-        <div className="image-preloader__percentage">
-          {combinedProgress}%
-        </div>
+        <KITTLoader fast={showFast} progress={combinedProgress} />
       </div>
     </div>
   );
