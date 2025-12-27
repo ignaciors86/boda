@@ -64,6 +64,7 @@
   text-align: center;
   text-transform: uppercase;
   letter-spacing: 0.2em;
+  font-family: 'VCR', monospace;
 }
 
 .image-preloader__bar {
@@ -87,7 +88,7 @@
 .image-preloader__percentage {
   font-size: 1.2rem;
   color: #00ffff;
-  font-family: monospace;
+  font-family: 'VCR', monospace;
   text-shadow: 0 0 1vw #00ffff;
 }
 
@@ -125,6 +126,6 @@
   text-transform: uppercase;
   letter-spacing: 0.2em;
   text-align: center;
-  font-family: 'Courier New', monospace;
+  font-family: 'VCR', monospace;
 }
 

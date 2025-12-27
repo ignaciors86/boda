@@ -9,7 +9,8 @@ const MAINCLASS = 'backButton';
 
 const BackButton = ({ onBack }) => {
   const navigate = useNavigate();
-  const { pause } = useAudio();
+  // useAudio está disponible porque BackButton se renderiza dentro de AudioProvider
+  const { pause, audioRef } = useAudio();
   const buttonRef = React.useRef(null);
   const croquetaWrapperRef = React.useRef(null);
   const animationRef = React.useRef(null);
@@ -47,7 +48,15 @@ const BackButton = ({ onBack }) => {
     const exitTimeline = gsap.timeline();
     exitTimeline.to(buttonRef.current, exitProps);
     
-    await pause();
+    // Pausar audio si está disponible y está reproduciéndose
+    if (pause && typeof pause === 'function' && audioRef?.current && !audioRef.current.paused) {
+      try {
+        await pause();
+      } catch (e) {
+        console.warn('[BackButton] Error pausando audio:', e);
+      }
+    }
+    
     await exitTimeline;
     
     if (onBack) {

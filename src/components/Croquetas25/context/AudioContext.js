@@ -253,9 +253,23 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       setAudioDurations(durations);
       
       // Pre-cargar todos los audios cuando hay múltiples (funciona en todos los SO)
+      // En iOS, hacer pre-carga en background sin bloquear
       if (audioSrcs.length > 1) {
         console.log('[AudioContext] Múltiples audios detectados: iniciando pre-carga...');
-        preloadAllAudios(audioSrcs);
+        // En iOS, marcar como pre-cargado inmediatamente para no bloquear
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        if (isIOS) {
+          // En iOS, pre-cargar en background pero no bloquear
+          setPreloadedAudios(true);
+          setPreloadProgress(100);
+          // Pre-cargar en background sin bloquear
+          preloadAllAudios(audioSrcs).catch(err => {
+            console.warn('[AudioContext] Error en pre-carga en background:', err);
+          });
+        } else {
+          // En otros navegadores, pre-cargar normalmente
+          preloadAllAudios(audioSrcs);
+        }
       } else {
         setPreloadedAudios(true); // Si solo hay un audio, marcar como listo
         setPreloadProgress(100);
@@ -514,16 +528,16 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
             const progress = Math.min((bufferedEnd / audio.duration) * 100, 100);
             setLoadingProgress(progress);
             
-            // Para iOS/Safari, usar threshold más conservador para archivos grandes
-            // Si el archivo es grande (>5 minutos), esperar más buffer
+            // Para iOS/Safari, ser más permisivo - no esperar tanto buffer
+            // iOS puede cargar bajo demanda mientras reproduce
             const isLargeFile = audio.duration > 300; // 5 minutos
             const loadThreshold = (isIOS || isSafari) 
-              ? (isLargeFile ? 0.95 : 0.85)  // Archivos grandes necesitan más buffer en iOS
+              ? (isLargeFile ? 0.5 : 0.3)  // En iOS/Safari, aceptar con menos buffer
               : 0.95;
             
-            // En iOS, también verificar que tengamos suficiente buffer absoluto (al menos 30 segundos)
-            const minBufferSeconds = isIOS && isLargeFile ? 30 : 0;
-            const hasMinBuffer = bufferedEnd >= minBufferSeconds;
+            // En iOS, no requerir buffer mínimo absoluto - puede cargar bajo demanda
+            const minBufferSeconds = 0; // No requerir buffer mínimo en iOS
+            const hasMinBuffer = true; // Siempre true en iOS
             
             if ((progress >= (loadThreshold * 100) || bufferedEnd >= audio.duration * loadThreshold) && hasMinBuffer) {
               if (!isLoaded) {
@@ -532,20 +546,31 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
                 console.log(`[AudioContext] Audio marked as loaded. Progress: ${progress.toFixed(1)}%, Buffer: ${bufferedEnd.toFixed(1)}s/${audio.duration.toFixed(1)}s`);
               }
             }
-          } else if (audio.readyState >= 3) {
-            // Si readyState es suficiente, considerar cargado
-            if (!isLoaded) {
+          } else if (audio.readyState >= 2) {
+            // En iOS/Safari, si tenemos readyState 2, considerar cargado incluso sin buffer
+            if ((isIOS || isSafari) && !isLoaded) {
+              setIsLoaded(true);
+              setLoadingProgress(100);
+              console.log(`[AudioContext] Audio marked as loaded (iOS/Safari, readyState: ${audio.readyState})`);
+            } else if (audio.readyState >= 3 && !isLoaded) {
+              // Otros navegadores necesitan readyState 3
               setIsLoaded(true);
               setLoadingProgress(100);
             }
           }
+        } else if (audio.readyState >= 2 && (isIOS || isSafari) && !isLoaded) {
+          // En iOS/Safari, si tenemos readyState 2, considerar cargado incluso sin duration
+          setIsLoaded(true);
+          setLoadingProgress(100);
+          console.log(`[AudioContext] Audio marked as loaded (iOS/Safari, readyState: ${audio.readyState}, sin duration aún)`);
         } else if (audio.readyState >= 3 && !isLoaded) {
           // Si tenemos suficiente readyState pero no duration, aún considerar cargado
           setIsLoaded(true);
           setLoadingProgress(100);
         }
       } else {
-        const progress = Math.min((audio.readyState / 4) * 100, 95);
+        // Calcular progreso basado en readyState
+        const progress = Math.min((audio.readyState / 4) * 100, (isIOS || isSafari) ? 50 : 95);
         setLoadingProgress(progress);
       }
     };
@@ -682,18 +707,17 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       updateProgress();
       await setupAudioContext();
       // Marcar como cargado si tenemos suficiente readyState
-      // En iOS con múltiples audios, verificar también duration
-      if (audio.readyState >= 2) {
-        if (isIOS && hasMultipleAudios) {
-          // En iOS con múltiples audios, verificar duration antes de marcar como cargado
-          if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
-            if (!isLoaded) {
-              setIsLoaded(true);
-              setLoadingProgress(100);
-              console.log(`[AudioContext] Audio ${currentIndex} marcado como cargado en handleCanPlay (iOS múltiples audios)`);
-            }
+      // En iOS/Safari, ser más permisivo
+      if (audio.readyState >= 1) {
+        // En iOS/Safari, readyState 1 es suficiente
+        if (isIOS || isSafari) {
+          if (!isLoaded) {
+            setIsLoaded(true);
+            setLoadingProgress(100);
+            console.log(`[AudioContext] Audio ${currentIndex} marcado como cargado en handleCanPlay (iOS/Safari, readyState: ${audio.readyState})`);
           }
-        } else {
+        } else if (audio.readyState >= 2) {
+          // Otros navegadores necesitan readyState 2
           if (!isLoaded) {
             setIsLoaded(true);
             setLoadingProgress(100);
@@ -712,6 +736,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
         if (!isLoaded) {
           setIsLoaded(true);
           setLoadingProgress(100);
+          console.log(`[AudioContext] Audio marcado como cargado en handleLoadedData (readyState: ${audio.readyState})`);
         }
       }
     };
@@ -725,10 +750,12 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     // Handler adicional para loadedmetadata (importante para Safari/iOS)
     const handleLoadedMetadata = () => {
       updateProgress();
+      // En iOS/Safari, loadedmetadata es suficiente para considerar cargado
       if ((isIOS || isSafari) && audio.readyState >= 1) {
         if (!isLoaded) {
           setIsLoaded(true);
           setLoadingProgress(100);
+          console.log(`[AudioContext] Audio marcado como cargado en handleLoadedMetadata (iOS/Safari)`);
         }
       }
     };
@@ -847,27 +874,24 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       
       updateProgress();
       
-      // Para Chrome, esperar un poco más de buffer
-      // Para Safari/iOS, aceptar con menos buffer, pero con múltiples audios ser más estricto
-      const readyThreshold = (isChrome && !isMobile) 
-        ? 3 
-        : (isIOS && hasMultipleAudios ? 2 : minReadyState);  // iOS con múltiples audios necesita readyState 2
+      // Para iOS/Safari, ser más permisivo - readyState 1 es suficiente
+      // Para otros navegadores, ser más estricto
+      const readyThreshold = (isIOS || isSafari) 
+        ? 1  // iOS/Safari puede funcionar con readyState 1
+        : (isChrome && !isMobile) ? 3 : minReadyState;
       
       if (audio.readyState >= readyThreshold && !isLoaded) {
-        // En iOS con múltiples audios, verificar también que tenga duration válida
-        if (isIOS && hasMultipleAudios) {
-          if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
-            setIsLoaded(true);
-            setLoadingProgress(100);
-            console.log(`[AudioContext] Audio ${currentIndex} marcado como cargado (iOS múltiples audios, readyState: ${audio.readyState}, duration: ${audio.duration.toFixed(2)}s)`);
-            if (progressIntervalId) {
-              clearInterval(progressIntervalId);
-              progressIntervalId = null;
-            }
-          } else {
-            console.log(`[AudioContext] Audio ${currentIndex} tiene readyState ${audio.readyState} pero sin duration válida, esperando...`);
+        // En iOS/Safari, no requerir duration - puede cargar bajo demanda
+        if (isIOS || isSafari) {
+          setIsLoaded(true);
+          setLoadingProgress(100);
+          console.log(`[AudioContext] Audio ${currentIndex} marcado como cargado (iOS/Safari, readyState: ${audio.readyState})`);
+          if (progressIntervalId) {
+            clearInterval(progressIntervalId);
+            progressIntervalId = null;
           }
         } else {
+          // Otros navegadores pueden necesitar más validación
           setIsLoaded(true);
           setLoadingProgress(100);
           if (progressIntervalId) {
@@ -905,16 +929,14 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
           const hasMultipleAudios = audioSrcsRef.current.length > 1;
           
-          // Con múltiples audios, esperar a que todos estén pre-cargados (usa estados, no timeouts)
-          if (hasMultipleAudios && !preloadedAudios) {
+          // En iOS, NO bloquear por pre-carga - iOS puede cargar audios bajo demanda
+          // Solo esperar pre-carga en otros navegadores y solo un tiempo limitado
+          if (hasMultipleAudios && !preloadedAudios && !isIOS) {
             console.log('[AudioContext] Múltiples audios: esperando a que todos estén pre-cargados...');
-            // En Safari iOS, dar más tiempo para la pre-carga
-            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-            const maxWaitTime = (isSafari && isIOS) ? 10000 : 5000; // 10 segundos en Safari iOS, 5 en otros
+            const maxWaitTime = 3000; // Solo 3 segundos máximo
             const startTime = Date.now();
             
             // Esperar usando un efecto que observe el estado preloadedAudios
-            // Usar un intervalo corto solo para verificar el estado, no como timeout
             await new Promise((resolveWait) => {
               const checkInterval = setInterval(() => {
                 if (preloadedAudios) {
@@ -926,8 +948,11 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
                   console.warn('[AudioContext] Timeout esperando pre-carga, continuando de todas formas...');
                   resolveWait();
                 }
-              }, 100); // Verificar cada 100ms el estado
+              }, 100);
             });
+          } else if (hasMultipleAudios && !preloadedAudios && isIOS) {
+            // En iOS, no esperar - continuar inmediatamente
+            console.log('[AudioContext] iOS: No esperando pre-carga completa, continuando...');
           }
           
           if (volumeTweenRef.current) {

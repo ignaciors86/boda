@@ -62,6 +62,7 @@
   z-index: 200;
   pointer-events: none;
   text-shadow: 0 0 1vw rgba(0, 255, 255, 0.8), 0 0 2vw rgba(0, 255, 255, 0.5);
+  font-family: 'VCR', monospace;
   
   @media (orientation: landscape) {
     top: 50%;
@@ -107,6 +108,7 @@
   text-transform: uppercase;
   letter-spacing: 0.1em;
   cursor: pointer;
+  font-family: 'VCR', monospace;
   transition: color 0.3s ease, filter 0.3s ease;
   display: flex;
   flex-direction: column;

@@ -155,32 +155,42 @@ const Croquetas25 = () => {
       // Detectar iOS (especialmente Chrome en iOS)
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
+      const isSafariIOS = isIOS && !isChromeIOS;
       
-      // En iOS, especialmente Chrome, necesitamos iniciar el audio directamente desde el click
-      if (isIOS || isChromeIOS) {
+      // En iOS, necesitamos iniciar el audio DIRECTAMENTE desde el click (no async)
+      // iOS requiere que play() se llame sincrónicamente desde el evento de usuario
+      if (isIOS || isChromeIOS || isSafariIOS) {
         // Obtener el contexto de audio si está disponible
         const audioContext = window.__globalAudioContext;
         if (audioContext && audioContext.state === 'suspended') {
-          try {
-            await audioContext.resume();
+          // Resumir AudioContext - debe ser dentro del evento de usuario
+          audioContext.resume().then(() => {
             console.log('[Croquetas25] AudioContext resumido desde click del usuario');
-          } catch (err) {
+          }).catch(err => {
             console.warn('[Croquetas25] Error resumiendo AudioContext:', err);
-          }
+          });
         }
         
-        // En Chrome iOS, intentar reproducir el audio directamente desde el elemento
-        if (isChromeIOS) {
-          try {
-            const audioElement = document.querySelector('.audio-context');
-            if (audioElement && audioElement.paused && audioElement.readyState >= 2) {
-              // Intentar reproducir directamente
-              await audioElement.play();
-              console.log('[Croquetas25] Audio iniciado directamente desde click en Chrome iOS');
+        // Intentar reproducir el audio directamente desde el elemento
+        // Esto DEBE hacerse dentro del handler de click, no en un callback
+        try {
+          const audioElement = document.querySelector('.audio-context');
+          if (audioElement) {
+            // En iOS, incluso con readyState bajo, intentar reproducir
+            // El navegador cargará el audio si es necesario
+            if (audioElement.paused) {
+              const playPromise = audioElement.play();
+              if (playPromise !== undefined) {
+                playPromise.then(() => {
+                  console.log('[Croquetas25] Audio iniciado directamente desde click en iOS');
+                }).catch(playErr => {
+                  console.warn('[Croquetas25] Error iniciando audio directamente:', playErr);
+                });
+              }
             }
-          } catch (playErr) {
-            console.warn('[Croquetas25] Error iniciando audio directamente:', playErr);
           }
+        } catch (playErr) {
+          console.warn('[Croquetas25] Error iniciando audio directamente:', playErr);
         }
       }
       
@@ -422,16 +432,18 @@ const Croquetas25 = () => {
               isPausedByHold={isPausedByHold}
             />
           )}
-          {audioStarted && (
+          {/* Mostrar BackButton siempre si es URI directa (incluso antes de seleccionar track), o cuando audioStarted */}
+          {isDirectUri || audioStarted ? (
             <BackButton 
               onBack={() => {
                 setAudioStarted(false);
                 setSelectedTrack(null);
                 setShowStartButton(false);
                 setWasSelectedFromIntro(false);
+                setLoadingFadedOut(false);
               }}
             />
-          )}
+          ) : null}
         </AudioProvider>
       ) : (
         // Cuando no hay track seleccionado, mostrar solo diagonales sin AudioProvider
@@ -458,30 +470,22 @@ const AudioStarter = ({ audioStarted }) => {
       // Detectar iOS (especialmente Chrome en iOS)
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
+      const isSafariIOS = isIOS && !isChromeIOS;
       
       const tryPlay = async () => {
-        if (audio.readyState >= 2) {
-          // En iOS, especialmente Chrome, asegurar que el AudioContext esté resumido
-          if (isIOS || isChromeIOS) {
-            const audioContext = audioContextRef?.current;
+        // En iOS/Safari, ser más permisivo con readyState
+        const minReadyState = (isIOS || isSafariIOS) ? 1 : 2;
+        
+        if (audio.readyState >= minReadyState) {
+          // En iOS, asegurar que el AudioContext esté resumido
+          if (isIOS || isChromeIOS || isSafariIOS) {
+            const audioContext = audioContextRef?.current || window.__globalAudioContext;
             if (audioContext && audioContext.state === 'suspended') {
               try {
                 await audioContext.resume();
                 console.log('[AudioStarter] AudioContext resumido antes de play()');
               } catch (resumeErr) {
                 console.warn('[AudioStarter] Error resumiendo AudioContext:', resumeErr);
-              }
-            }
-            
-            // En Chrome iOS, intentar reproducir directamente con el elemento audio
-            if (isChromeIOS) {
-              try {
-                // Intentar reproducir directamente primero
-                await audio.play();
-                console.log('[AudioStarter] Audio reproducido directamente en Chrome iOS');
-                return;
-              } catch (directPlayErr) {
-                console.warn('[AudioStarter] Error en play directo, intentando con play():', directPlayErr);
               }
             }
           }
@@ -494,8 +498,9 @@ const AudioStarter = ({ audioStarted }) => {
               console.warn('[AudioStarter] NotAllowedError en iOS, reintentando después de delay...');
               setTimeout(async () => {
                 try {
-                  if (audioContextRef?.current && audioContextRef.current.state === 'suspended') {
-                    await audioContextRef.current.resume();
+                  const audioContext = audioContextRef?.current || window.__globalAudioContext;
+                  if (audioContext && audioContext.state === 'suspended') {
+                    await audioContext.resume();
                   }
                   await play();
                 } catch (retryErr) {
@@ -508,7 +513,9 @@ const AudioStarter = ({ audioStarted }) => {
             }
           });
         } else if (audioStarted) {
-          setTimeout(tryPlay, 100);
+          // En iOS, esperar menos tiempo
+          const waitTime = (isIOS || isSafariIOS) ? 50 : 100;
+          setTimeout(tryPlay, waitTime);
         }
       };
       
