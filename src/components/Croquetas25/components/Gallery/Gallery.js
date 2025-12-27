@@ -24,11 +24,19 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
   const subfolderCurrentIndexRef = useRef(new Map()); // Map<subfolder, number>
   const lastAudioIndexRef = useRef(null);
   
-  // Configuración de carga progresiva
-  const INITIAL_PRELOAD_COUNT = 20; // Imágenes iniciales para empezar rápido
-  const MAX_PRELOAD = 10; // Imágenes a precargar durante reproducción
-  const BATCH_SIZE = 15; // Tamaño de lote para carga en background
-  const BATCH_DELAY = 200; // Delay entre lotes (ms)
+  // Detectar dispositivo móvil (especialmente iPhone)
+  const isMobile = typeof window !== 'undefined' && (
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (window.innerWidth <= 768)
+  );
+  const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  
+  // Configuración de carga progresiva - optimizada para móviles
+  const INITIAL_PRELOAD_COUNT = isMobile ? (isIOS ? 5 : 8) : 20; // Menos imágenes iniciales en móviles
+  const MAX_PRELOAD = isMobile ? (isIOS ? 3 : 5) : 10; // Menos precarga durante reproducción en móviles
+  const BATCH_SIZE = isMobile ? (isIOS ? 3 : 5) : 15; // Lotes más pequeños en móviles
+  const BATCH_DELAY = isMobile ? (isIOS ? 1000 : 500) : 200; // Delays más largos en móviles
+  const MAX_CONCURRENT_LOADS = isMobile ? (isIOS ? 2 : 3) : 10; // Límite de carga concurrente
 
   // Función para precargar una imagen individual
   const preloadImage = useCallback((imagePath) => {
@@ -60,60 +68,80 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
     });
   }, []);
 
-  // Cargar imágenes en lotes en background
+  // Cargar imágenes en lotes en background con límite de concurrencia
   const loadImagesInBatches = useCallback((imagesList, startIndex, onProgress) => {
     if (backgroundLoadingRef.current) return;
     backgroundLoadingRef.current = true;
     
     // Track del progreso máximo alcanzado para evitar retrocesos
     let maxProgressReached = 0;
+    let currentIndex = startIndex;
+    let activeLoads = 0;
+    const pendingImages = [];
 
-    const loadBatch = (batchStart) => {
-      const batchEnd = Math.min(batchStart + BATCH_SIZE, imagesList.length);
-      const batch = imagesList.slice(batchStart, batchEnd);
-      
-      if (batch.length === 0) {
-        backgroundLoadingRef.current = false;
-        return;
-      }
-
-      // Precargar este lote
-      const batchPromises = batch.map(imagePath => {
+    const loadWithConcurrencyLimit = () => {
+      // Cargar hasta el límite de concurrencia
+      while (activeLoads < MAX_CONCURRENT_LOADS && currentIndex < imagesList.length) {
+        const imagePath = imagesList[currentIndex];
+        currentIndex++;
+        
         const state = imageStatesRef.current.get(imagePath);
         if (state && state.state === 'pending') {
-          return preloadImage(imagePath);
-        }
-        return Promise.resolve({ status: 'fulfilled', value: imagePath });
-      });
-
-      Promise.allSettled(batchPromises).then(() => {
-        // Actualizar progreso - solo contar imágenes que realmente se procesaron
-        const loadedCount = Array.from(imageStatesRef.current.values())
-          .filter(s => s.state === 'ready' || s.state === 'error').length;
-        const progress = Math.min(100, (loadedCount / imagesList.length) * 100);
-        
-        // Solo actualizar si el progreso no retrocede
-        maxProgressReached = Math.max(maxProgressReached, progress);
-        if (onProgress) {
-          onProgress(maxProgressReached);
-        }
-
-        // Cargar siguiente lote después de un delay
-        if (batchEnd < imagesList.length) {
-          setTimeout(() => loadBatch(batchEnd), BATCH_DELAY);
+          activeLoads++;
+          preloadImage(imagePath).then(() => {
+            activeLoads--;
+            
+            // Actualizar progreso
+            const loadedCount = Array.from(imageStatesRef.current.values())
+              .filter(s => s.state === 'ready' || s.state === 'error').length;
+            const progress = Math.min(100, (loadedCount / imagesList.length) * 100);
+            
+            maxProgressReached = Math.max(maxProgressReached, progress);
+            if (onProgress) {
+              onProgress(maxProgressReached);
+            }
+            
+            // Continuar cargando
+            if (currentIndex < imagesList.length || activeLoads > 0) {
+              setTimeout(() => loadWithConcurrencyLimit(), 50);
+            } else {
+              backgroundLoadingRef.current = false;
+              console.log('Gallery: Todas las imágenes procesadas en background');
+              if (onProgress) {
+                onProgress(100);
+              }
+            }
+          });
         } else {
-          backgroundLoadingRef.current = false;
-          console.log('Gallery: Todas las imágenes procesadas en background');
-          // Asegurar que el progreso llegue a 100 al final
+          // Si ya está cargada o no está pendiente, continuar
+          const loadedCount = Array.from(imageStatesRef.current.values())
+            .filter(s => s.state === 'ready' || s.state === 'error').length;
+          const progress = Math.min(100, (loadedCount / imagesList.length) * 100);
+          maxProgressReached = Math.max(maxProgressReached, progress);
           if (onProgress) {
-            onProgress(100);
+            onProgress(maxProgressReached);
+          }
+          
+          if (currentIndex < imagesList.length) {
+            setTimeout(() => loadWithConcurrencyLimit(), 10);
+          } else if (activeLoads === 0) {
+            backgroundLoadingRef.current = false;
+            console.log('Gallery: Todas las imágenes procesadas en background');
+            if (onProgress) {
+              onProgress(100);
+            }
           }
         }
-      });
+      }
+      
+      // Si hay imágenes pendientes pero ya alcanzamos el límite, esperar
+      if (activeLoads >= MAX_CONCURRENT_LOADS && currentIndex < imagesList.length) {
+        setTimeout(() => loadWithConcurrencyLimit(), BATCH_DELAY);
+      }
     };
 
-    loadBatch(startIndex);
-  }, [preloadImage]);
+    loadWithConcurrencyLimit();
+  }, [preloadImage, BATCH_SIZE, BATCH_DELAY, MAX_CONCURRENT_LOADS]);
 
   useEffect(() => {
     const loadImages = async () => {
@@ -187,35 +215,84 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
           return typeof img === 'object' ? (img.path || img) : img;
         });
 
-        console.log(`Gallery: Precargando ${initialCount} imágenes iniciales de ${imagesList.length} totales...`);
+        console.log(`Gallery: Precargando ${initialCount} imágenes iniciales de ${imagesList.length} totales (móvil: ${isMobile}, iOS: ${isIOS})...`);
 
-        // Precargar imágenes iniciales
-        const initialPromises = initialImages.map(img => preloadImage(img));
+        // Precargar imágenes iniciales con límite de concurrencia
+        let loadedInitialCount = 0;
+        let activeInitialLoads = 0;
+        let initialIndex = 0;
+        let initialLoadingComplete = false;
         
-        Promise.allSettled(initialPromises).then(() => {
-          const loadedCount = Array.from(imageStatesRef.current.values())
-            .filter(s => s.state === 'ready' || s.state === 'error').length;
-          const progress = (loadedCount / imagesList.length) * 100;
-          
-          console.log(`Gallery: ${loadedCount} imágenes iniciales listas. Continuando en background...`);
-          
-          // Marcar como listo para empezar (no esperar a todas)
-          setIsLoading(false);
-          setPreloadProgress(progress);
-          
-          // Continuar cargando el resto en background
-          if (initialCount < imagesList.length) {
-            loadImagesInBatches(imagesList, initialCount, (newProgress) => {
-              setPreloadProgress(prev => {
-                // Asegurar que el progreso nunca retrocede
-                return Math.max(prev, newProgress);
-              });
+        const loadInitialWithLimit = () => {
+          // Cargar hasta el límite de concurrencia
+          while (activeInitialLoads < MAX_CONCURRENT_LOADS && initialIndex < initialImages.length) {
+            const img = initialImages[initialIndex];
+            const imagePath = typeof img === 'object' ? (img.path || img) : img;
+            initialIndex++;
+            
+            activeInitialLoads++;
+            preloadImage(imagePath).then(() => {
+              activeInitialLoads--;
+              loadedInitialCount++;
+              
+              const loadedCount = Array.from(imageStatesRef.current.values())
+                .filter(s => s.state === 'ready' || s.state === 'error').length;
+              const progress = (loadedCount / imagesList.length) * 100;
+              
+              setPreloadProgress(progress);
+              
+              // Si hemos cargado suficientes imágenes iniciales, marcar como listo
+              if (loadedInitialCount >= Math.min(3, initialCount) && !initialLoadingComplete) {
+                initialLoadingComplete = true;
+                setIsLoading(false);
+                console.log(`Gallery: ${loadedInitialCount} imágenes iniciales listas. Continuando en background...`);
+              }
+              
+              // Continuar cargando
+              if (initialIndex < initialImages.length || activeInitialLoads > 0) {
+                setTimeout(() => loadInitialWithLimit(), 50);
+              } else {
+                // Todas las iniciales cargadas
+                const finalLoadedCount = Array.from(imageStatesRef.current.values())
+                  .filter(s => s.state === 'ready' || s.state === 'error').length;
+                const finalProgress = (finalLoadedCount / imagesList.length) * 100;
+                
+                console.log(`Gallery: ${loadedInitialCount} imágenes iniciales listas. Continuando en background...`);
+                setIsLoading(false);
+                setPreloadProgress(finalProgress);
+                
+                // Continuar cargando el resto en background
+                if (initialCount < imagesList.length) {
+                  loadImagesInBatches(imagesList, initialCount, (newProgress) => {
+                    setPreloadProgress(prev => {
+                      // Asegurar que el progreso nunca retrocede
+                      return Math.max(prev, newProgress);
+                    });
+                  });
+                } else {
+                  // Si todas las imágenes ya están cargadas, marcar progreso como 100
+                  setPreloadProgress(100);
+                }
+              }
             });
-          } else {
-            // Si todas las imágenes ya están cargadas, marcar progreso como 100
-            setPreloadProgress(100);
           }
-        });
+          
+          // Si hay imágenes pendientes pero ya alcanzamos el límite, esperar
+          if (activeInitialLoads >= MAX_CONCURRENT_LOADS && initialIndex < initialImages.length) {
+            setTimeout(() => loadInitialWithLimit(), 100);
+          }
+        };
+        
+        // Empezar a cargar las iniciales
+        loadInitialWithLimit();
+        
+        // Marcar como listo después de un tiempo mínimo o cuando tengamos suficientes imágenes
+        setTimeout(() => {
+          if (loadedInitialCount >= Math.min(3, initialCount) && !initialLoadingComplete) {
+            initialLoadingComplete = true;
+            setIsLoading(false);
+          }
+        }, isMobile ? 1000 : 500);
       } catch (error) {
         console.error('Gallery: Error al cargar las galerías:', error);
         setAllImages([]);
