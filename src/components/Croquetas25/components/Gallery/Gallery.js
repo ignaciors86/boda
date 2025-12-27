@@ -602,9 +602,7 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
         // Avanzar índice de esta subcarpeta
         subfolderIndex++;
         let subfolderCompletedCycle = false;
-        const willCompleteSubfolder = subfolderIndex >= imageIndices.length;
-        
-        if (willCompleteSubfolder) {
+        if (subfolderIndex >= imageIndices.length) {
           // Cuando se completa el ciclo (índice vuelve a 0), resetear todas las imágenes a "ready"
           // para permitir que se usen de nuevo (solo si NO es el último tramo)
           if (!isLastSubfolder) {
@@ -639,23 +637,26 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
           }
         }
         
-        // Si es la última imagen del último tramo (o único tramo), marcar que es la última
-        // NO llamar a onAllComplete aquí, se llamará en el onComplete de la animación
-        if (isLastImageInSubfolder && isLastSubfolder && !willCompleteSubfolder) {
-          console.log('[Gallery] Última imagen del último tramo detectada');
-          // Guardar índice antes de salir
-          subfolderCurrentIndexRef.current.set(normalizedSubfolder, subfolderIndex);
-          currentIndexRef.current = imageIndices[0] || 0;
-          // Marcar que esta imagen es la última
-          isLastImageRef.current = true;
-          return imagePath;
-        }
-        
         // Guardar índice actualizado ANTES de verificar completitud
         subfolderCurrentIndexRef.current.set(normalizedSubfolder, subfolderIndex);
         currentIndexRef.current = imageIndices[subfolderIndex] || imageIndices[0] || 0;
         const savedIndex = subfolderCurrentIndexRef.current.get(normalizedSubfolder);
-        console.log(`[Gallery] getNextImage: Imagen encontrada y marcada como usada. Subcarpeta: ${currentSubfolder || '__root__'}, índice avanzado a: ${subfolderIndex}/${imageIndices.length}, guardado: ${savedIndex}, próxima imagen índice en allImages: ${imageIndices[subfolderIndex] || imageIndices[0]}, path actual: ${imagePath}, isLastImage: ${isLastImageRef.current}`);
+        console.log(`[Gallery] getNextImage: Imagen encontrada y marcada como usada. Subcarpeta: ${currentSubfolder || '__root__'}, índice avanzado a: ${subfolderIndex}/${imageIndices.length}, guardado: ${savedIndex}, próxima imagen índice en allImages: ${imageIndices[subfolderIndex] || imageIndices[0]}, path actual: ${imagePath}`);
+        
+        // Verificar si todas las subcarpetas han completado al menos un ciclo
+        // Esto es más confiable que verificar imágenes "used" porque se resetean
+        const allSubfoldersKeys = Array.from(subfolderCountsRef.current.keys()).map(sf => 
+          sf === null ? '__root__' : sf
+        );
+        const allSubfoldersComplete = allSubfoldersKeys.length > 0 && 
+          allSubfoldersKeys.every(subfolder => 
+            subfoldersCompletedAtLeastOnceRef.current.has(subfolder)
+          );
+        
+        if (allSubfoldersComplete && onAllComplete) {
+          console.log('[Gallery] Todas las subcarpetas completaron al menos un ciclo, llamando onAllComplete');
+          onAllComplete();
+        }
         
         // Retornar la imagen (el flag isLastImageRef se mantiene hasta que se use)
         return imagePath;

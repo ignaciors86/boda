@@ -79,17 +79,14 @@ const Croquetas25 = () => {
   
   // Callback para cuando se completa toda la colección - volver a Intro
   const handleAllComplete = useCallback(async () => {
-    console.log('[Croquetas25] handleAllComplete llamado - Todas las subcarpetas completadas, volviendo a Intro');
+    console.log('[Croquetas25] Todas las subcarpetas completadas, volviendo a Intro');
     
-    // Primero pausar el audio si está disponible (no esperar, hacerlo en paralelo)
-    const pausePromise = handleAllCompleteRef.current 
-      ? handleAllCompleteRef.current().catch(err => {
-          console.warn('[Croquetas25] Error pausando audio (continuando de todas formas):', err);
-        })
-      : Promise.resolve();
+    // Primero pausar el audio si está disponible
+    if (handleAllCompleteRef.current) {
+      await handleAllCompleteRef.current();
+    }
     
-    // Reseteando estados inmediatamente (no esperar a que pause termine)
-    console.log('[Croquetas25] Reseteando estados...');
+    // Luego detener todo y volver a la home
     setAudioStarted(false);
     setSelectedTrack(null);
     setShowStartButton(false);
@@ -100,38 +97,26 @@ const Croquetas25 = () => {
     console.log('[Croquetas25] Navegando a /nachitos-de-nochevieja');
     navigate('/nachitos-de-nochevieja', { replace: true });
     console.log('[Croquetas25] Navegación iniciada');
-    
-    // Esperar a que pause termine en background (pero no bloquear)
-    await pausePromise;
-    console.log('[Croquetas25] Audio pausado (si estaba disponible)');
   }, [navigate]);
   
   // Componente que maneja el completado dentro de AudioProvider para poder pausar el audio
   const AllCompleteHandler = () => {
-    const { pause, audioRef } = useAudio();
+    const { pause } = useAudio();
     
     useEffect(() => {
       handleAllCompleteRef.current = async () => {
         console.log('[AllCompleteHandler] Pausando audio antes de volver a home');
         try {
-          // Pausar el audio directamente si está disponible
-          if (audioRef?.current && !audioRef.current.paused) {
-            audioRef.current.pause();
-            console.log('[AllCompleteHandler] Audio pausado directamente');
-          }
-          // También llamar a pause() del contexto por si acaso
           await pause();
-          console.log('[AllCompleteHandler] Audio pausado correctamente');
         } catch (error) {
           console.warn('[AllCompleteHandler] Error pausando audio:', error);
-          // Continuar de todas formas
         }
       };
       
       return () => {
         handleAllCompleteRef.current = null;
       };
-    }, [pause, audioRef]);
+    }, [pause]);
     
     return null;
   };
