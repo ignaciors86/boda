@@ -84,7 +84,7 @@ const Croquetas25 = () => {
     navigate('/nachitos-de-nochevieja', { replace: true });
   }, [navigate]);
   
-  const { isLoading: imagesLoading, preloadProgress: imagesProgress } = useGallery(selectedTrack, handleSubfolderComplete, handleAllComplete);
+  const { isLoading: imagesLoading, preloadProgress: imagesProgress, seekToImagePosition } = useGallery(selectedTrack, handleSubfolderComplete, handleAllComplete);
   const audioSrcs = selectedTrack?.srcs || (selectedTrack?.src ? [selectedTrack.src] : []);
   const isDirectUri = !!trackId;
 
@@ -559,7 +559,7 @@ const UnifiedContentManager = ({
 };
 
 const BackgroundWrapper = ({ onTriggerCallbackRef, onVoiceCallbackRef, selectedTrack, showOnlyDiagonales = false }) => {
-  const { analyserRef, dataArrayRef, isInitialized } = useAudio();
+  const { analyserRef, dataArrayRef, isInitialized, currentIndex } = useAudio();
   
   return (
     <Background 
@@ -570,6 +570,7 @@ const BackgroundWrapper = ({ onTriggerCallbackRef, onVoiceCallbackRef, selectedT
       isInitialized={isInitialized}
       selectedTrack={showOnlyDiagonales ? null : selectedTrack}
       showOnlyDiagonales={showOnlyDiagonales}
+      currentAudioIndex={showOnlyDiagonales ? null : currentIndex}
     />
   );
 };
@@ -589,9 +590,10 @@ const DiagonalesOnly = () => {
   );
 };
 
-const SeekWrapper = () => {
+const SeekWrapper = ({ selectedTrack }) => {
   const { analyserRef } = useAudio();
   const [squares, setSquares] = useState([]);
+  const { seekToImagePosition } = useGallery(selectedTrack, null, null, null);
   
   useEffect(() => {
     const updateSquares = () => {
@@ -608,7 +610,7 @@ const SeekWrapper = () => {
     return () => clearInterval(interval);
   }, []);
   
-  return <Seek squares={squares} />;
+  return <Seek squares={squares} seekToImagePosition={seekToImagePosition} selectedTrack={selectedTrack} />;
 };
 
 // Componente para gestionar el guión según la subcarpeta actual

@@ -6,13 +6,13 @@ import { useGallery } from '../Gallery/Gallery';
 
 const MAINCLASS = 'background';
 
-const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitialized, onVoiceCallbackRef, selectedTrack, showOnlyDiagonales = false }) => {
+const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitialized, onVoiceCallbackRef, selectedTrack, showOnlyDiagonales = false, currentAudioIndex = null }) => {
   const [squares, setSquares] = useState([]);
   const squareRefs = useRef({});
   const animationTimelinesRef = useRef({});
   const lastProgressRef = useRef(0);
   const colorIndexRef = useRef(0);
-  const { getNextImage, allImages, isLoading, preloadNextImages } = useGallery(selectedTrack);
+  const { getNextImage, allImages, isLoading, preloadNextImages } = useGallery(selectedTrack, null, null, currentAudioIndex);
   const MAX_SQUARES = 50;
   
   // Pre-cargar imágenes próximas cuando cambian las imágenes disponibles
@@ -41,7 +41,11 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
       const shouldHaveBackground = data?.shouldBeSolid ?? false;
       
       // Solo obtener imagen si está lista (pre-cargada)
-      const imageUrl = shouldHaveBackground ? getNextImage() : null;
+      let imageUrl = null;
+      if (shouldHaveBackground) {
+        imageUrl = getNextImage();
+        console.log(`[Background] getNextImage llamado, resultado: ${imageUrl ? 'imagen obtenida' : 'null'}`);
+      }
       
       // Calcular posición evitando la zona central inferior donde está el prompt
       let imagePosition = null;

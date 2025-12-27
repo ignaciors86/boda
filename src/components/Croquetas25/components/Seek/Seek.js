@@ -4,7 +4,7 @@ import './Seek.scss';
 
 const MAINCLASS = 'seek';
 
-const Seek = ({ squares }) => {
+const Seek = ({ squares, seekToImagePosition, selectedTrack }) => {
   const { 
     audioRef, 
     currentIndex, 
@@ -67,6 +67,11 @@ const Seek = ({ squares }) => {
       accumulatedTime += duration;
     }
 
+    // Usar tiempos auxiliares para reposicionar imágenes ANTES de hacer seek del audio
+    if (seekToImagePosition && selectedTrack) {
+      seekToImagePosition(targetTime, selectedTrack);
+    }
+    
     // Llamar a seekToAudio con el tiempo objetivo
     await seekToAudio(targetAudioIndex, targetTimeInAudio);
   };
