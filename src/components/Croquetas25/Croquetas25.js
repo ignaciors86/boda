@@ -79,40 +79,59 @@ const Croquetas25 = () => {
   
   // Callback para cuando se completa toda la colección - volver a Intro
   const handleAllComplete = useCallback(async () => {
-    console.log('[Croquetas25] Todas las subcarpetas completadas, volviendo a Intro');
+    console.log('[Croquetas25] handleAllComplete llamado - Todas las subcarpetas completadas, volviendo a Intro');
     
-    // Primero pausar el audio si está disponible
-    if (handleAllCompleteRef.current) {
-      await handleAllCompleteRef.current();
-    }
+    // Primero pausar el audio si está disponible (no esperar, hacerlo en paralelo)
+    const pausePromise = handleAllCompleteRef.current 
+      ? handleAllCompleteRef.current().catch(err => {
+          console.warn('[Croquetas25] Error pausando audio (continuando de todas formas):', err);
+        })
+      : Promise.resolve();
     
-    // Luego detener todo y volver a la home
+    // Reseteando estados inmediatamente (no esperar a que pause termine)
+    console.log('[Croquetas25] Reseteando estados...');
     setAudioStarted(false);
     setSelectedTrack(null);
     setShowStartButton(false);
     setWasSelectedFromIntro(false);
     setLoadingFadedOut(false);
+    
+    // Navegar inmediatamente (igual que el botón de volver)
+    console.log('[Croquetas25] Navegando a /nachitos-de-nochevieja');
     navigate('/nachitos-de-nochevieja', { replace: true });
+    console.log('[Croquetas25] Navegación iniciada');
+    
+    // Esperar a que pause termine en background (pero no bloquear)
+    await pausePromise;
+    console.log('[Croquetas25] Audio pausado (si estaba disponible)');
   }, [navigate]);
   
   // Componente que maneja el completado dentro de AudioProvider para poder pausar el audio
   const AllCompleteHandler = () => {
-    const { pause } = useAudio();
+    const { pause, audioRef } = useAudio();
     
     useEffect(() => {
       handleAllCompleteRef.current = async () => {
         console.log('[AllCompleteHandler] Pausando audio antes de volver a home');
         try {
+          // Pausar el audio directamente si está disponible
+          if (audioRef?.current && !audioRef.current.paused) {
+            audioRef.current.pause();
+            console.log('[AllCompleteHandler] Audio pausado directamente');
+          }
+          // También llamar a pause() del contexto por si acaso
           await pause();
+          console.log('[AllCompleteHandler] Audio pausado correctamente');
         } catch (error) {
           console.warn('[AllCompleteHandler] Error pausando audio:', error);
+          // Continuar de todas formas
         }
       };
       
       return () => {
         handleAllCompleteRef.current = null;
       };
-    }, [pause]);
+    }, [pause, audioRef]);
     
     return null;
   };
@@ -325,6 +344,7 @@ const Croquetas25 = () => {
             onVoiceCallbackRef={audioStarted ? voiceCallbackRef : null}
             selectedTrack={audioStarted ? selectedTrack : null}
             showOnlyDiagonales={!audioStarted}
+            onAllComplete={handleAllComplete}
           />
           <UnifiedLoadingIndicator 
             imagesLoading={imagesLoading}
@@ -592,12 +612,12 @@ const UnifiedContentManager = ({
   );
 };
 
-const BackgroundWrapper = ({ onTriggerCallbackRef, onVoiceCallbackRef, selectedTrack, showOnlyDiagonales = false }) => {
-  const { analyserRef, dataArrayRef, isInitialized, currentIndex } = useAudio();
+const BackgroundWrapper = ({ onTriggerCallbackRef, onVoiceCallbackRef, selectedTrack, showOnlyDiagonales = false, onAllComplete }) => {
+  const { analyserRef, dataArrayRef, isInitialized, currentIndex, pause } = useAudio();
   
   return (
     <Background 
-      onTriggerCallbackRef={showOnlyDiagonales ? null : onTriggerCallbackRef}
+      onTriggerCallbackRef={showOnlyDiagonales ? null : onTriggerCallbackRef} 
       onVoiceCallbackRef={showOnlyDiagonales ? null : onVoiceCallbackRef}
       analyserRef={analyserRef}
       dataArrayRef={dataArrayRef}
@@ -605,6 +625,8 @@ const BackgroundWrapper = ({ onTriggerCallbackRef, onVoiceCallbackRef, selectedT
       selectedTrack={showOnlyDiagonales ? null : selectedTrack}
       showOnlyDiagonales={showOnlyDiagonales}
       currentAudioIndex={showOnlyDiagonales ? null : currentIndex}
+      onAllComplete={onAllComplete}
+      pause={showOnlyDiagonales ? null : pause}
     />
   );
 };

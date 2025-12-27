@@ -6,13 +6,13 @@ import { useGallery } from '../Gallery/Gallery';
 
 const MAINCLASS = 'background';
 
-const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitialized, onVoiceCallbackRef, selectedTrack, showOnlyDiagonales = false, currentAudioIndex = null }) => {
+const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitialized, onVoiceCallbackRef, selectedTrack, showOnlyDiagonales = false, currentAudioIndex = null, onAllComplete = null, pause = null }) => {
   const [squares, setSquares] = useState([]);
   const squareRefs = useRef({});
   const animationTimelinesRef = useRef({});
   const lastProgressRef = useRef(0);
   const colorIndexRef = useRef(0);
-  const { getNextImage, allImages, isLoading, preloadNextImages } = useGallery(selectedTrack, null, null, currentAudioIndex);
+  const { getNextImage, allImages, isLoading, preloadNextImages, isLastImageRef } = useGallery(selectedTrack, null, onAllComplete, currentAudioIndex);
   const MAX_SQUARES = 50;
   
   // Pre-cargar imágenes próximas cuando cambian las imágenes disponibles
@@ -42,9 +42,12 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
       
       // Solo obtener imagen si está lista (pre-cargada)
       let imageUrl = null;
+      let isLastImage = false;
       if (shouldHaveBackground) {
+        // Verificar si la próxima imagen será la última ANTES de obtenerla
+        isLastImage = isLastImageRef?.current || false;
         imageUrl = getNextImage();
-        console.log(`[Background] getNextImage llamado, resultado: ${imageUrl ? 'imagen obtenida' : 'null'}`);
+        // El flag se mantiene hasta que se use, así que isLastImage ya está correcto
       }
       
       // Calcular posición evitando la zona central inferior donde está el prompt
@@ -98,9 +101,7 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
         };
       }
       
-      if (shouldHaveBackground && !imageUrl) {
-        console.log('[Background] Cuadro sólido sin imagen (aún cargando o no disponible)');
-      }
+      // Si no hay imagen disponible, el cuadro será sólido
       
       // Pre-cargar próximas imágenes de forma proactiva
       if (shouldHaveBackground) {
@@ -115,6 +116,7 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
         isTarget: shouldHaveBackground,
         imageUrl: imageUrl,
         imagePosition: imagePosition,
+        isLastImage: isLastImage, // Marcar si es la última imagen
         gradient: {
           color1: color1,
           color2: color2,
@@ -155,12 +157,8 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
   }, [onTriggerCallbackRef, getNextImage, preloadNextImages]);
 
   useEffect(() => {
-    console.log(`[Background] Squares effect triggered | squares count: ${squares.length} | timestamp: ${Date.now()}`);
     squares.forEach(square => {
       const el = squareRefs.current[square.id];
-      const hasElement = !!el;
-      const isAnimated = el && el.animated;
-      console.log(`[Background] Processing square | id: ${square.id} | type: ${square.type} | hasElement: ${hasElement} | isAnimated: ${isAnimated}`);
       
       if (el && !el.animated) {
         el.animated = true;
@@ -223,10 +221,36 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
               duration: fadeOutDuration,
               ease: 'power2.in',
               force3D: true,
-              onComplete: () => {
-                // Esperar más tiempo antes de limpiar para asegurar que el fade termine completamente
-                // El fadeOutDuration ya es parte de la animación, pero añadimos un pequeño delay extra
-                setTimeout(cleanupSquare, 200);
+              onComplete: async () => {
+                // Si es la última imagen, hacer fade out del volumen y luego volver al menú
+                if (square.isLastImage && onAllComplete && pause) {
+                  try {
+                    // Resetear el flag antes de hacer el fade out
+                    if (isLastImageRef?.current) {
+                      isLastImageRef.current = false;
+                    }
+                    console.log('[Background] Última imagen completada, iniciando fade out del volumen');
+                    console.log('[Background] pause es función:', typeof pause === 'function');
+                    // Hacer fade out del volumen (igual que el botón de volver)
+                    // pause() retorna una promesa que se resuelve cuando el fade out termina
+                    if (typeof pause === 'function') {
+                      await pause();
+                      console.log('[Background] Fade out del volumen completado, volviendo al menú');
+                    } else {
+                      console.warn('[Background] pause no es una función, saltando fade out');
+                    }
+                    // Llamar a onAllComplete para volver al menú
+                    await onAllComplete();
+                  } catch (error) {
+                    console.error('[Background] Error en fade out y navegación:', error);
+                    // Si hay error, limpiar el square de todas formas
+                    cleanupSquare();
+                  }
+                } else {
+                  // Esperar más tiempo antes de limpiar para asegurar que el fade termine completamente
+                  // El fadeOutDuration ya es parte de la animación, pero añadimos un pequeño delay extra
+                  setTimeout(cleanupSquare, 200);
+                }
               }
             });
           } else {

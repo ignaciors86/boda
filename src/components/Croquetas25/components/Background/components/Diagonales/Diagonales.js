@@ -149,23 +149,16 @@ const Diagonales = ({ squares, analyserRef, dataArrayRef, isInitialized, onVoice
     if (!voiceCallbackHandlerRef.current) {
       voiceCallbackHandlerRef.current = (intensity = 0.5, voiceEnergy = 0) => {
         const now = Date.now();
-        console.log(`[Diagonales] Callback received | intensity: ${intensity} | voiceEnergy: ${voiceEnergy} | diagonales count before: ${diagonales.length}`);
         
         // Obtener la rotación actual de la última diagonal NO FIJA usando el estado actual
         setDiagonales(prev => {
-          console.log(`[Diagonales] setDiagonales called | prev length: ${prev.length}`);
-          
           // Filtrar solo las diagonales no fijas para encontrar la última
           const nonFixedDiagonals = prev.filter(d => !d.isFixed);
-          console.log(`[Diagonales] Non-fixed diagonals count: ${nonFixedDiagonals.length}`);
           
           const lastDiagonal = nonFixedDiagonals[nonFixedDiagonals.length - 1];
           let currentRotation = 0;
           if (lastDiagonal && rotationRefs.current[lastDiagonal.id]) {
             currentRotation = rotationRefs.current[lastDiagonal.id].current;
-            console.log(`[Diagonales] Last diagonal found | id: ${lastDiagonal.id} | baseAngle: ${lastDiagonal.baseAngle} | rotation: ${currentRotation}`);
-          } else {
-            console.log(`[Diagonales] No last diagonal or rotation ref | lastDiagonal: ${!!lastDiagonal} | rotationRef: ${!!(lastDiagonal && rotationRefs.current[lastDiagonal.id])}`);
           }
           
           // Nueva diagonal surge desde la rotación actual de la última diagonal no fija
@@ -187,32 +180,24 @@ const Diagonales = ({ squares, analyserRef, dataArrayRef, isInitialized, onVoice
             isFixed: false // Asegurar que NO es fija
           };
           
-          console.log(`[Diagonales] Creating new diagonal | id: ${newDiag.id} | angle: ${currentAngle} | speed: ${speed} | intensity: ${intensity} | isFixed: ${newDiag.isFixed}`);
           const newDiagonales = [...prev, newDiag];
-          console.log(`[Diagonales] New diagonales array length: ${newDiagonales.length}`);
           return newDiagonales;
         });
       };
-      console.log(`[Diagonales] Callback handler created | handler exists: ${!!voiceCallbackHandlerRef.current}`);
     }
   }, []); // Sin dependencias - se crea una sola vez
 
   // Registrar el callback en el ref externo
   useEffect(() => {
-    console.log(`[Diagonales] Registering callback | onVoiceCallbackRef exists: ${!!onVoiceCallbackRef} | handler exists: ${!!voiceCallbackHandlerRef.current}`);
-    
     if (!onVoiceCallbackRef) {
-      console.warn(`[Diagonales] onVoiceCallbackRef is null`);
       return;
     }
     
     // Asegurar que el handler esté creado
     if (!voiceCallbackHandlerRef.current) {
-      console.warn(`[Diagonales] voiceCallbackHandlerRef.current is null, creating handler now`);
       // Crear el handler si no existe
       voiceCallbackHandlerRef.current = (intensity = 0.5, voiceEnergy = 0) => {
         const now = Date.now();
-        console.log(`[Diagonales] Callback received (late creation) | intensity: ${intensity}`);
         setDiagonales(prev => {
           const nonFixedDiagonals = prev.filter(d => !d.isFixed);
           const lastDiagonal = nonFixedDiagonals[nonFixedDiagonals.length - 1];
@@ -232,14 +217,12 @@ const Diagonales = ({ squares, analyserRef, dataArrayRef, isInitialized, onVoice
             creationIntensity: intensity,
             isFixed: false
           };
-          console.log(`[Diagonales] Creating new diagonal (late) | id: ${newDiag.id}`);
           return [...prev, newDiag];
         });
       };
     }
     
     onVoiceCallbackRef.current = voiceCallbackHandlerRef.current;
-    console.log(`[Diagonales] Callback registered successfully | onVoiceCallbackRef.current type: ${typeof onVoiceCallbackRef.current} | handler type: ${typeof voiceCallbackHandlerRef.current}`);
   }, [onVoiceCallbackRef]);
 
   // Inicializar rotación de todas las diagonales - se ejecuta cuando cambian las diagonales
@@ -277,8 +260,6 @@ const Diagonales = ({ squares, analyserRef, dataArrayRef, isInitialized, onVoice
         // Multiplicador más agresivo para velocidades mayores
         const intensityMultiplier = 0.05 + ((1 - creationIntensity) * 0.15);
         const duration = baseDuration / speedMultiplier * intensityMultiplier;
-        
-        console.log(`[Diagonales] Initializing rotation for ${diag.id} | duration: ${duration}s | speed: ${speedMultiplier} | intensity: ${creationIntensity}`);
         
         rotationTimelinesRef.current[diag.id] = gsap.to(rotationRefs.current[diag.id], {
           current: 360,
@@ -338,8 +319,6 @@ const Diagonales = ({ squares, analyserRef, dataArrayRef, isInitialized, onVoice
             // Multiplicador más agresivo para velocidades mayores
             const intensityMultiplier = 0.05 + ((1 - creationIntensity) * 0.15);
             const duration = baseDuration / speedMultiplier * intensityMultiplier;
-            
-            console.log(`[Diagonales] Fallback rotation init for ${diag.id} | duration: ${duration}s`);
             
             rotationTimelinesRef.current[diag.id] = gsap.to(rotationRefs.current[diag.id], {
               current: 360,

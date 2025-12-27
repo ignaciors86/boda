@@ -618,21 +618,36 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     // En iOS con múltiples audios, siempre forzar load() y dar más tiempo
     if (audio.readyState === 0 || isIOS || (isIOS && hasMultipleAudios)) {
       try {
-        console.log(`[AudioContext] Llamando load() para audio ${currentIndex} (iOS: ${isIOS}, múltiples: ${hasMultipleAudios})`);
+        console.log(`[AudioContext] Llamando load() para audio ${currentIndex} (iOS: ${isIOS}, múltiples: ${hasMultipleAudios}, readyState: ${audio.readyState})`);
         audio.load();
         
         // En iOS con múltiples audios, dar más tiempo y reintentar si es necesario
         if (isIOS && hasMultipleAudios) {
-          setTimeout(() => {
-            if (audio.readyState < 2) {
-              console.warn(`[AudioContext] Audio ${currentIndex} aún no está listo después de load(), reintentando...`);
-              try {
-                audio.load();
-              } catch (retryError) {
-                console.warn('[AudioContext] Error en reintento de load():', retryError);
+          // Reintentar múltiples veces si es necesario
+          let retryCount = 0;
+          const maxRetries = 3;
+          const retryInterval = 1500; // 1.5 segundos entre reintentos
+          
+          const retryLoad = () => {
+            setTimeout(() => {
+              if (audio.readyState < 2 && retryCount < maxRetries) {
+                retryCount++;
+                console.warn(`[AudioContext] Audio ${currentIndex} aún no está listo (readyState: ${audio.readyState}), reintentando ${retryCount}/${maxRetries}...`);
+                try {
+                  audio.load();
+                  if (retryCount < maxRetries) {
+                    retryLoad();
+                  }
+                } catch (retryError) {
+                  console.warn('[AudioContext] Error en reintento de load():', retryError);
+                }
+              } else if (audio.readyState >= 2) {
+                console.log(`[AudioContext] Audio ${currentIndex} finalmente listo después de ${retryCount} reintentos`);
               }
-            }
-          }, 1000);
+            }, retryInterval);
+          };
+          
+          retryLoad();
         }
       } catch (loadError) {
         console.warn('[AudioContext] Error calling load():', loadError);
@@ -737,18 +752,24 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
             }
           }
           
+          // En iOS con múltiples audios, esperar más tiempo y ser más flexible
           if (isIOS && currentAudioRef.current.readyState < 2) {
+            const hasMultipleAudios = audioSrcsRef.current.length > 1;
+            const maxWaitTime = hasMultipleAudios ? 5000 : 2000; // Más tiempo para múltiples audios
+            
             await new Promise((resolveWait) => {
               const timeout = setTimeout(() => {
+                console.warn(`[AudioContext] iOS: Timeout esperando readyState >= 2 (actual: ${currentAudioRef.current.readyState}), continuando de todas formas`);
                 resolveWait();
-              }, 2000);
+              }, maxWaitTime);
               
               const checkReady = () => {
                 if (currentAudioRef.current.readyState >= 2) {
                   clearTimeout(timeout);
+                  console.log(`[AudioContext] iOS: Audio listo (readyState: ${currentAudioRef.current.readyState})`);
                   resolveWait();
                 } else {
-                  setTimeout(checkReady, 50);
+                  setTimeout(checkReady, 100); // Verificar cada 100ms en lugar de 50ms
                 }
               };
               checkReady();
@@ -792,16 +813,21 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
   const pause = () => {
     return new Promise((resolve) => {
       if (currentAudioRef.current && !currentAudioRef.current.paused) {
+        console.log('[AudioContext] pause() llamado, iniciando fade out del volumen');
         if (volumeTweenRef.current) {
           volumeTweenRef.current.kill();
           volumeTweenRef.current = null;
         }
+        
+        const currentVolume = currentAudioRef.current.volume;
+        console.log('[AudioContext] Volumen actual:', currentVolume);
         
         volumeTweenRef.current = gsap.to(currentAudioRef.current, {
           volume: 0,
           duration: 0.6,
           ease: 'power2.in',
           onComplete: () => {
+            console.log('[AudioContext] Fade out del volumen completado');
             if (currentAudioRef.current) {
               currentAudioRef.current.pause();
               currentAudioRef.current.volume = 0;
@@ -811,6 +837,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           }
         });
       } else {
+        console.log('[AudioContext] pause() llamado pero el audio ya está pausado o no existe');
         resolve();
       }
     });
