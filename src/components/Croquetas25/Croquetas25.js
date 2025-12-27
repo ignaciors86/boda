@@ -150,8 +150,40 @@ const Croquetas25 = () => {
     navigate(`/nachitos-de-nochevieja/${trackIdForUrl}`, { replace: true });
   };
 
-  const handleClick = () => {
+  const handleClick = async (e) => {
     if (!audioStarted && selectedTrack && showStartButton && startButtonRef.current) {
+      // Detectar iOS (especialmente Chrome en iOS)
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
+      
+      // En iOS, especialmente Chrome, necesitamos iniciar el audio directamente desde el click
+      if (isIOS || isChromeIOS) {
+        // Obtener el contexto de audio si está disponible
+        const audioContext = window.__globalAudioContext;
+        if (audioContext && audioContext.state === 'suspended') {
+          try {
+            await audioContext.resume();
+            console.log('[Croquetas25] AudioContext resumido desde click del usuario');
+          } catch (err) {
+            console.warn('[Croquetas25] Error resumiendo AudioContext:', err);
+          }
+        }
+        
+        // En Chrome iOS, intentar reproducir el audio directamente desde el elemento
+        if (isChromeIOS) {
+          try {
+            const audioElement = document.querySelector('.audio-context');
+            if (audioElement && audioElement.paused && audioElement.readyState >= 2) {
+              // Intentar reproducir directamente
+              await audioElement.play();
+              console.log('[Croquetas25] Audio iniciado directamente desde click en Chrome iOS');
+            }
+          } catch (playErr) {
+            console.warn('[Croquetas25] Error iniciando audio directamente:', playErr);
+          }
+        }
+      }
+      
       gsap.to(startButtonRef.current, {
         opacity: 0,
         scale: 0.8,
@@ -410,7 +442,7 @@ const Croquetas25 = () => {
 };
 
 const AudioStarter = ({ audioStarted }) => {
-  const { play, isLoaded, audioRef } = useAudio();
+  const { play, isLoaded, audioRef, audioContextRef } = useAudio();
   const hasAttemptedPlayRef = useRef(false);
 
   useEffect(() => {
@@ -423,11 +455,57 @@ const AudioStarter = ({ audioStarted }) => {
       hasAttemptedPlayRef.current = true;
       const audio = audioRef.current;
       
-      const tryPlay = () => {
+      // Detectar iOS (especialmente Chrome en iOS)
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
+      
+      const tryPlay = async () => {
         if (audio.readyState >= 2) {
+          // En iOS, especialmente Chrome, asegurar que el AudioContext esté resumido
+          if (isIOS || isChromeIOS) {
+            const audioContext = audioContextRef?.current;
+            if (audioContext && audioContext.state === 'suspended') {
+              try {
+                await audioContext.resume();
+                console.log('[AudioStarter] AudioContext resumido antes de play()');
+              } catch (resumeErr) {
+                console.warn('[AudioStarter] Error resumiendo AudioContext:', resumeErr);
+              }
+            }
+            
+            // En Chrome iOS, intentar reproducir directamente con el elemento audio
+            if (isChromeIOS) {
+              try {
+                // Intentar reproducir directamente primero
+                await audio.play();
+                console.log('[AudioStarter] Audio reproducido directamente en Chrome iOS');
+                return;
+              } catch (directPlayErr) {
+                console.warn('[AudioStarter] Error en play directo, intentando con play():', directPlayErr);
+              }
+            }
+          }
+          
+          // Llamar a play() del contexto
           play().catch(error => {
             console.error('[AudioStarter] Error playing audio:', error);
-            hasAttemptedPlayRef.current = false;
+            // En iOS, si es NotAllowedError, puede ser que necesitemos más tiempo
+            if (isIOS && error.name === 'NotAllowedError') {
+              console.warn('[AudioStarter] NotAllowedError en iOS, reintentando después de delay...');
+              setTimeout(async () => {
+                try {
+                  if (audioContextRef?.current && audioContextRef.current.state === 'suspended') {
+                    await audioContextRef.current.resume();
+                  }
+                  await play();
+                } catch (retryErr) {
+                  console.error('[AudioStarter] Error en reintento:', retryErr);
+                  hasAttemptedPlayRef.current = false;
+                }
+              }, 300);
+            } else {
+              hasAttemptedPlayRef.current = false;
+            }
           });
         } else if (audioStarted) {
           setTimeout(tryPlay, 100);
@@ -436,7 +514,7 @@ const AudioStarter = ({ audioStarted }) => {
       
       tryPlay();
     }
-  }, [audioStarted, isLoaded, play, audioRef]);
+  }, [audioStarted, isLoaded, play, audioRef, audioContextRef]);
 
   return null;
 };
@@ -528,7 +606,7 @@ const UnifiedContentManager = ({
   selectedTrack,
   loadingFadedOut
 }) => {
-  const { isLoaded, audioRef } = useAudio();
+  const { isLoaded, audioRef, audioContextRef } = useAudio();
   const buttonRef = useRef(null);
   const buttonAnimationStartedRef = useRef(false);
   
@@ -549,10 +627,29 @@ const UnifiedContentManager = ({
         setShowStartButton(false);
       }
       if (!audioStarted && everythingReady && loadingFadedOut) {
-        setAudioStarted(true);
+        // En iOS, especialmente Chrome, asegurar que el AudioContext esté resumido antes de iniciar
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
+        
+        if (isIOS || isChromeIOS) {
+          const audioContext = audioContextRef?.current || window.__globalAudioContext;
+          if (audioContext && audioContext.state === 'suspended') {
+            audioContext.resume().then(() => {
+              console.log('[UnifiedContentManager] AudioContext resumido antes de iniciar audio');
+              setAudioStarted(true);
+            }).catch(err => {
+              console.warn('[UnifiedContentManager] Error resumiendo AudioContext:', err);
+              setAudioStarted(true); // Continuar de todas formas
+            });
+          } else {
+            setAudioStarted(true);
+          }
+        } else {
+          setAudioStarted(true);
+        }
       }
     }
-  }, [everythingReady, loadingFadedOut, isDirectUri, showStartButton, audioStarted, wasSelectedFromIntro, setShowStartButton, setAudioStarted]);
+  }, [everythingReady, loadingFadedOut, isDirectUri, showStartButton, audioStarted, wasSelectedFromIntro, setShowStartButton, setAudioStarted, audioContextRef]);
   
   useEffect(() => {
     if (isDirectUri && !wasSelectedFromIntro && everythingReady && loadingFadedOut && showStartButton && !audioStarted) {

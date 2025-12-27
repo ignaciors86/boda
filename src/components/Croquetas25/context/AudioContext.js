@@ -18,6 +18,14 @@ let globalSourceNode = null;
 let globalAnalyser = null;
 let connectedAudioElement = null;
 
+// Exponer el AudioContext global en window para acceso desde handlers de eventos del usuario
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, '__globalAudioContext', {
+    get: () => globalAudioContext,
+    configurable: true
+  });
+}
+
 export const AudioProvider = ({ children, audioSrcs = [] }) => {
   // Dos elementos audio: uno actual y uno siguiente para transiciones suaves
   const currentAudioRef = useRef(null);
@@ -476,6 +484,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     // Detección mejorada de navegadores y dispositivos (isIOS ya está definido arriba)
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+    const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
     audio.volume = 0;
@@ -575,9 +584,23 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           try {
             globalAudioContext = new (window.AudioContext || window.webkitAudioContext)();
             console.log('[AudioContext] Created AudioContext | state:', globalAudioContext.state);
+            // Actualizar la referencia en window
+            if (typeof window !== 'undefined') {
+              Object.defineProperty(window, '__globalAudioContext', {
+                get: () => globalAudioContext,
+                configurable: true
+              });
+            }
           } catch (error) {
             console.error('[AudioContext] Error creating AudioContext:', error);
             globalAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+            // Actualizar la referencia en window incluso si hay error
+            if (typeof window !== 'undefined') {
+              Object.defineProperty(window, '__globalAudioContext', {
+                get: () => globalAudioContext,
+                configurable: true
+              });
+            }
           }
         }
 
@@ -598,7 +621,23 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           if (globalAudioContext.state === 'suspended') {
             try {
               await globalAudioContext.resume();
-              if (globalAudioContext.state === 'suspended') {
+              console.log('[AudioContext] AudioContext resumido en setupAudioContext, estado:', globalAudioContext.state);
+              // En Safari iOS con múltiples audios, puede necesitar múltiples intentos
+              if ((isSafari || isIOS) && hasMultipleAudios && globalAudioContext.state === 'suspended') {
+                // Intentar múltiples veces con delays crecientes
+                for (let i = 0; i < 3; i++) {
+                  await new Promise(resolve => setTimeout(resolve, 150 * (i + 1)));
+                  try {
+                    await globalAudioContext.resume();
+                    if (globalAudioContext.state !== 'suspended') {
+                      console.log(`[AudioContext] AudioContext resumido en Safari iOS (intento ${i + 1})`);
+                      break;
+                    }
+                  } catch (e) {
+                    console.warn(`[AudioContext] Error resuming AudioContext (intento ${i + 1}):`, e);
+                  }
+                }
+              } else if (globalAudioContext.state === 'suspended') {
                 setTimeout(async () => {
                   try {
                     await globalAudioContext.resume();
@@ -699,13 +738,23 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       const error = audio.error;
       if (error) {
         console.error('[AudioContext] Error code:', error.code, '| Message:', error.message);
-        if (isIOS && error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
+        // En Safari iOS, algunos errores pueden resolverse recargando
+        if ((isIOS || isSafari) && error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
           console.warn('[AudioContext] Format not supported, trying to reload');
           setTimeout(() => {
             if (audio.src) {
               audio.load();
             }
           }, 1000);
+        }
+        // En Safari con múltiples audios, puede haber problemas de carga
+        if (isSafari && hasMultipleAudios && (error.code === MediaError.MEDIA_ERR_NETWORK || error.code === MediaError.MEDIA_ERR_ABORTED)) {
+          console.warn('[AudioContext] Network/abort error en Safari con múltiples audios, reintentando carga...');
+          setTimeout(() => {
+            if (audio.src) {
+              audio.load();
+            }
+          }, 2000);
         }
       }
     };
@@ -853,11 +902,17 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       if (currentAudioRef.current && currentAudioRef.current.paused) {
         try {
           const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+          const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
           const hasMultipleAudios = audioSrcsRef.current.length > 1;
           
           // Con múltiples audios, esperar a que todos estén pre-cargados (usa estados, no timeouts)
           if (hasMultipleAudios && !preloadedAudios) {
             console.log('[AudioContext] Múltiples audios: esperando a que todos estén pre-cargados...');
+            // En Safari iOS, dar más tiempo para la pre-carga
+            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+            const maxWaitTime = (isSafari && isIOS) ? 10000 : 5000; // 10 segundos en Safari iOS, 5 en otros
+            const startTime = Date.now();
+            
             // Esperar usando un efecto que observe el estado preloadedAudios
             // Usar un intervalo corto solo para verificar el estado, no como timeout
             await new Promise((resolveWait) => {
@@ -865,6 +920,10 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
                 if (preloadedAudios) {
                   clearInterval(checkInterval);
                   console.log('[AudioContext] Todos los audios pre-cargados, continuando con play()');
+                  resolveWait();
+                } else if (Date.now() - startTime > maxWaitTime) {
+                  clearInterval(checkInterval);
+                  console.warn('[AudioContext] Timeout esperando pre-carga, continuando de todas formas...');
                   resolveWait();
                 }
               }, 100); // Verificar cada 100ms el estado
@@ -880,14 +939,22 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
             if (globalAudioContext.state === 'suspended') {
               try {
                 await globalAudioContext.resume();
-                if (isIOS && globalAudioContext.state === 'suspended') {
-                  setTimeout(async () => {
+                console.log('[AudioContext] AudioContext resumido, estado:', globalAudioContext.state);
+                // En Chrome iOS, puede necesitar múltiples intentos
+                if ((isIOS || isChromeIOS) && globalAudioContext.state === 'suspended') {
+                  // Intentar múltiples veces con delays crecientes
+                  for (let i = 0; i < 3; i++) {
+                    await new Promise(resolve => setTimeout(resolve, 100 * (i + 1)));
                     try {
                       await globalAudioContext.resume();
+                      if (globalAudioContext.state !== 'suspended') {
+                        console.log(`[AudioContext] AudioContext resumido en intento ${i + 1}`);
+                        break;
+                      }
                     } catch (e) {
-                      console.warn('[AudioContext] Error resuming AudioContext (retry in play):', e);
+                      console.warn(`[AudioContext] Error resuming AudioContext (intento ${i + 1}):`, e);
                     }
-                  }, 100);
+                  }
                 }
               } catch (resumeError) {
                 console.warn('[AudioContext] Error resuming AudioContext in play:', resumeError);
@@ -959,12 +1026,22 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           
           currentAudioRef.current.volume = 0;
           
-          // En iOS con múltiples audios, intentar reproducir múltiples veces si es necesario
+          // En iOS, especialmente Chrome, intentar reproducir múltiples veces si es necesario
           let playAttempts = 0;
-          const maxPlayAttempts = isIOS && hasMultipleAudios ? 5 : 1;
+          const maxPlayAttempts = (isIOS || isChromeIOS) ? (hasMultipleAudios ? 5 : 3) : 1;
           
           while (playAttempts < maxPlayAttempts) {
             try {
+              // En Chrome iOS, asegurar que el AudioContext esté resumido antes de cada intento
+              if (isChromeIOS && globalAudioContext && globalAudioContext.state === 'suspended') {
+                try {
+                  await globalAudioContext.resume();
+                  console.log('[AudioContext] AudioContext resumido antes de play() en Chrome iOS');
+                } catch (resumeErr) {
+                  console.warn('[AudioContext] Error resumiendo antes de play():', resumeErr);
+                }
+              }
+              
               await currentAudioRef.current.play();
               console.log(`[AudioContext] Audio reproducido exitosamente (intento ${playAttempts + 1})`);
               break; // Éxito, salir del bucle
@@ -972,8 +1049,14 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
               playAttempts++;
               console.warn(`[AudioContext] Error en play() (intento ${playAttempts}/${maxPlayAttempts}):`, playError);
               
-              if (isIOS && playError.name === 'NotAllowedError') {
+              if ((isIOS || isChromeIOS) && playError.name === 'NotAllowedError') {
                 console.warn('[AudioContext] Play blocked - user interaction required');
+                // En Chrome iOS, puede ser que necesitemos esperar un poco más
+                if (isChromeIOS && playAttempts < maxPlayAttempts) {
+                  console.log('[AudioContext] Esperando antes de reintentar en Chrome iOS...');
+                  await new Promise(resolve => setTimeout(resolve, 200));
+                  continue;
+                }
                 resolve();
                 return;
               }
