@@ -41,9 +41,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
   // Usar estrategia diferente: elementos audio nativos en lugar de Tone.js
   // Solo usar múltiples elementos en Safari iOS (no Chrome iOS) con múltiples audios
   // Se recalcula cuando cambia audioSrcs
-  // SIMPLIFICACIÓN: NO usar Tone.js, SIEMPRE usar elementos audio nativos
-  // Esto es más compatible con todos los navegadores móviles
-  const useMultipleElements = false; // Desactivar Tone.js completamente
+  const useMultipleElements = isSafariIOS && audioSrcs.length > 1;
   
   // Dos elementos audio: uno actual y uno siguiente para transiciones suaves
   // O array de elementos Audio si estamos en iOS/Android Safari con múltiples audios
@@ -82,13 +80,11 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
   // El audioRef que se expone es siempre el actual
   const audioRef = currentAudioRef;
 
-  // Función para pre-cargar todos los audios (SIEMPRE, incluso si hay solo 1)
-  // Esto asegura consistencia y evita problemas en móviles
+  // Función para pre-cargar todos los audios cuando hay múltiples (funciona en todos los SO)
   const preloadAllAudios = async (srcs) => {
-    if (!srcs || srcs.length === 0) {
+    if (srcs.length <= 1) {
       setPreloadedAudios(true);
       setPreloadProgress(100);
-      setIsLoaded(true);
       return;
     }
     
@@ -218,9 +214,11 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       // Guardar referencia al audio pre-cargado
       iosPreloadAudioElementsRef.current.push(audio);
       
-      // IMPORTANTE: SIEMPRE guardar en audioElementsRef para poder renderizar múltiples elementos
-      // Esto funciona mejor en móviles que cambiar el src dinámicamente
-      audioElementsRef.current.push(audio);
+      // IMPORTANTE: También guardar en audioElementsRef para Chrome iOS y otros casos
+      // donde necesitamos renderizar múltiples elementos audio
+      if (isChromeIOSLocal || (isIOS && srcs.length > 1)) {
+        audioElementsRef.current.push(audio);
+      }
       
       // Actualizar progreso
       const progress = Math.round(((i + 1) / srcs.length) * 100);
@@ -230,7 +228,6 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     console.log('[AudioContext] Todos los audios pre-cargados');
     setPreloadedAudios(true);
     setPreloadProgress(100);
-    setIsLoaded(true); // IMPORTANTE: Marcar isLoaded cuando todos los audios están pre-cargados
   };
 
   // Cargar duraciones de todos los audios
@@ -312,12 +309,132 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
 
       setAudioDurations(durations);
       
-      // SIMPLIFICACIÓN: SIEMPRE usar la misma lógica de pre-carga, sin importar si hay 1 o múltiples audios
-      // Esto evita problemas de condiciones de carrera y lógica compleja
-      console.log(`[AudioContext] Iniciando pre-carga de ${audioSrcs.length} audio(s)...`);
-      
-      // SIEMPRE pre-cargar usando elementos audio nativos (más compatible con móviles)
-      preloadAllAudios(audioSrcs);
+      // Pre-cargar todos los audios cuando hay múltiples
+      if (audioSrcs.length > 1) {
+        console.log('[AudioContext] Múltiples audios detectados: iniciando pre-carga...');
+        
+        // En iOS/Android Safari, usar Tone.js para múltiples audios (basado en interactivo-orquesta)
+        if (useMultipleElements) {
+          console.log('[AudioContext] iOS/Android Safari: Usando Tone.js para múltiples audios...');
+          const createTonePlayers = async () => {
+            try {
+              // Crear objeto con las URLs de audio (Tone.Players requiere un objeto)
+              const playersObj = {};
+              
+              audioSrcs.forEach((audioSrc, i) => {
+                let audioSrcString = typeof audioSrc === 'string' ? audioSrc : (audioSrc?.default || audioSrc);
+                // NO normalizar - las URLs de require.context ya son válidas
+                playersObj[`audio_${i}`] = audioSrcString;
+              });
+              
+              // Crear Tone.Players (similar a interactivo-orquesta)
+              const players = new Tone.Players(playersObj);
+              const durations = [];
+              
+              // Esperar a que todos los buffers estén cargados
+              let loadedCount = 0;
+              
+              // Usar el patrón de interactivo-orquesta: escuchar onload directamente
+              const playersList = [...players._players.values()];
+              const totalCount = playersList.length;
+              
+              // Función para verificar y procesar un buffer cargado
+              const checkAndProcessBuffer = (player, i) => {
+                if (player.buffer.loaded) {
+                  if (loadedCount < totalCount) { // Evitar procesar múltiples veces
+                    loadedCount++;
+                    
+                    if (player.buffer.duration && isFinite(player.buffer.duration) && player.buffer.duration > 0) {
+                      durations[i] = player.buffer.duration;
+                      console.log(`[AudioContext] Tone Player ${i} cargado: ${player.buffer.duration.toFixed(2)}s`);
+                    } else {
+                      durations[i] = 0;
+                    }
+                    
+                    const progress = Math.round((loadedCount / totalCount) * 100);
+                    setPreloadProgress(progress);
+                    
+                    if (loadedCount === totalCount) {
+                      tonePlayersRef.current = players;
+                      setAudioDurations(durations);
+                      setPreloadedAudios(true);
+                      setPreloadProgress(100);
+                      setIsLoaded(true); // IMPORTANTE: Marcar isLoaded como true para Tone.js
+                      console.log(`[AudioContext] ${totalCount} Tone Players creados y pre-cargados`);
+                    }
+                  }
+                  return true;
+                }
+                return false;
+              };
+              
+              playersList.forEach((player, i) => {
+                // Verificar inmediatamente si ya está cargado
+                if (!checkAndProcessBuffer(player, i)) {
+                  // Si no está cargado, escuchar el evento onload del buffer (patrón de interactivo-orquesta)
+                  player.buffer.onload = () => {
+                    checkAndProcessBuffer(player, i);
+                  };
+                }
+                
+                // Manejar errores de carga
+                player.buffer.onerror = (error) => {
+                  console.warn(`[AudioContext] Error cargando Tone Player ${i}:`, error);
+                  if (loadedCount < totalCount) { // Evitar procesar múltiples veces
+                    loadedCount++;
+                    durations[i] = 0;
+                    const progress = Math.round((loadedCount / totalCount) * 100);
+                    setPreloadProgress(progress);
+                    
+                    if (loadedCount === totalCount) {
+                      tonePlayersRef.current = players;
+                      setAudioDurations(durations);
+                      setPreloadedAudios(true);
+                      setPreloadProgress(100);
+                      setIsLoaded(true); // IMPORTANTE: Marcar isLoaded como true incluso con errores
+                    }
+                  }
+                };
+              });
+              
+              // Verificación final: si todos ya están cargados (poco probable pero posible)
+              // Esto maneja el caso donde todos se cargaron antes de asignar los handlers
+              let allLoaded = true;
+              playersList.forEach((player, i) => {
+                if (!player.buffer.loaded) {
+                  allLoaded = false;
+                }
+              });
+              
+              if (allLoaded && loadedCount < totalCount) {
+                // Procesar todos los que faltan
+                playersList.forEach((player, i) => {
+                  checkAndProcessBuffer(player, i);
+                });
+              }
+              
+            } catch (error) {
+              console.error('[AudioContext] Error creando Tone Players:', error);
+              setPreloadedAudios(true);
+              setPreloadProgress(100);
+              setIsLoaded(true); // IMPORTANTE: Marcar isLoaded como true incluso con errores
+            }
+          };
+          
+          createTonePlayers();
+        } else if (isChromeIOS && audioSrcs.length > 1) {
+          // Chrome iOS: usar elementos audio nativos en lugar de Tone.js
+          // Chrome iOS tiene problemas con Tone.js, usar preloadAllAudios
+          console.log('[AudioContext] Chrome iOS: Usando elementos audio nativos para múltiples audios...');
+          preloadAllAudios(audioSrcs);
+        } else {
+          // Para desktop con múltiples audios, usar la función preloadAllAudios
+          preloadAllAudios(audioSrcs);
+        }
+    } else {
+      setPreloadedAudios(true); // Si solo hay un audio, marcar como listo
+      setPreloadProgress(100);
+    }
     };
 
     loadDurations();
@@ -536,9 +653,19 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     let progressIntervalId = null;
     let audioCleanup = null;
     
-    // SIMPLIFICACIÓN: SIEMPRE usar elementos audio nativos cuando hay múltiples audios
-    // Esto funciona mejor en todos los navegadores móviles
-    if (audioElementsRef.current.length > 0 && audioSrcs.length > 1) {
+    // IMPORTANTE: Si estamos usando Tone.js, no intentar usar currentAudioRef.current
+    if (useMultipleElements && tonePlayersRef.current) {
+      console.log('[AudioContext] Usando Tone.js, no configurando currentAudioRef.current');
+      // Asegurar que isLoaded esté marcado como true si los players están listos
+      if (preloadedAudios && !isLoaded) {
+        setIsLoaded(true);
+        setLoadingProgress(100);
+      }
+      return;
+    }
+    
+    // En iOS/Android Safari con múltiples audios, usar elementos diferentes
+    if (useMultipleElements && audioElementsRef.current.length > 0) {
       const audio = audioElementsRef.current[currentIndex];
       if (!audio) {
         console.warn(`[AudioContext] No hay elemento Audio para índice ${currentIndex}`);
@@ -558,20 +685,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       
       // Establecer el nuevo elemento como actual
       currentAudioRef.current = audio;
-      console.log(`[AudioContext] Cambiado a elemento Audio ${currentIndex}/${audioElementsRef.current.length}`);
-      
-      // IMPORTANTE: Asegurar que el elemento tenga el src correcto y esté listo
-      // Si el elemento no tiene src o está en readyState 0, establecerlo
-      if (!audio.src || audio.readyState === 0) {
-        const currentSrc = audioSrcs[currentIndex];
-        const audioSrcString = typeof currentSrc === 'string' ? currentSrc : (currentSrc?.default || currentSrc);
-        if (audioSrcString) {
-          audio.src = audioSrcString;
-          audio.load();
-          console.log(`[AudioContext] Re-estableciendo src para elemento Audio ${currentIndex}: ${audioSrcString}`);
-        }
-      }
-      
+      console.log(`[AudioContext] Cambiado a elemento Audio ${currentIndex}/${audioElementsRef.current.length} (iOS/Android Safari)`);
       // Continuar con la configuración normal del audio (setupAudioContext, etc.)
     } else {
       // Lógica normal: cambiar src del mismo elemento
@@ -1109,9 +1223,8 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
 
   const play = async () => {
     return new Promise(async (resolve) => {
-      // SIMPLIFICACIÓN: Ya no usamos Tone.js, siempre usar elementos audio nativos
-      // Este bloque se mantiene por compatibilidad pero nunca se ejecutará
-      if (false && useMultipleElements && tonePlayersRef.current) {
+      // PRIORIDAD 1: Usar Tone.js en móviles con múltiples audios (basado en interactivo-orquesta)
+      if (useMultipleElements && tonePlayersRef.current) {
         try {
           // Asegurar que Tone.start() se haya llamado (requerido por navegadores)
           if (!toneStartedRef.current) {
@@ -1250,7 +1363,13 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
         return;
       }
       
-      // SIMPLIFICACIÓN: Ya no usamos Tone.js, siempre usar elementos audio nativos
+      // IMPORTANTE: Si estamos usando Tone.js, no intentar usar currentAudioRef.current
+      if (useMultipleElements && tonePlayersRef.current) {
+        // Ya manejado arriba, no debería llegar aquí
+        console.warn('[AudioContext] Tone.js ya debería haber manejado la reproducción');
+        resolve();
+        return;
+      }
       
       if (currentAudioRef.current && currentAudioRef.current.paused) {
         try {
@@ -1496,9 +1615,8 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
 
   const pause = () => {
     return new Promise((resolve) => {
-      // SIMPLIFICACIÓN: Ya no usamos Tone.js, siempre usar elementos audio nativos
-      // Este bloque se mantiene por compatibilidad pero nunca se ejecutará
-      if (false && useMultipleElements && tonePlayersRef.current) {
+      // PRIORIDAD 1: Usar Tone.js en móviles con múltiples audios
+      if (useMultipleElements && tonePlayersRef.current) {
         try {
           const players = tonePlayersRef.current;
           const Transport = Tone.getTransport();
@@ -1519,8 +1637,8 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
         return;
       }
       
-      // SIMPLIFICACIÓN: SIEMPRE usar elementos <audio> reales cuando hay múltiples audios
-      if (audioElementsRef.current.length > 0 && audioSrcsRef.current.length > 1) {
+      // PRIORIDAD 2: Usar elementos <audio> reales en iOS/Android (fallback)
+      if (useMultipleElements && audioElementsRef.current.length > 0) {
         const audio = audioElementsRef.current[currentIndex];
         if (audio && !audio.paused) {
           if (volumeTweenRef.current) {
@@ -1927,9 +2045,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
 
   // Determinar si debemos renderizar múltiples elementos audio
   // Chrome iOS también necesita múltiples elementos cuando hay múltiples audios
-  // SIMPLIFICACIÓN: SIEMPRE renderizar múltiples elementos cuando hay múltiples audios
-  // Esto funciona mejor en todos los navegadores móviles
-  const shouldRenderMultipleAudios = audioSrcs.length > 1 && audioElementsRef.current.length > 0;
+  const shouldRenderMultipleAudios = (isSafariIOS && audioSrcs.length > 1) || (isChromeIOS && audioSrcs.length > 1);
   
   return (
     <AudioContextReact.Provider value={value}>
@@ -1939,16 +2055,12 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
         audioElementsRef.current.map((audio, index) => {
           // Asignar ref solo al elemento actual
           const audioRef = index === currentIndex ? currentAudioRef : null;
-          // IMPORTANTE: Obtener el src del elemento Audio pre-cargado
-          const audioSrc = audio?.src || (audioSrcs[index] ? (typeof audioSrcs[index] === 'string' ? audioSrcs[index] : audioSrcs[index]?.default || audioSrcs[index]) : '');
           return (
             <audio
               key={`audio-mobile-${index}`}
               ref={audioRef}
-              src={audioSrc}
               crossOrigin="anonymous"
               playsInline
-              preload="auto"
               className="audio-context"
               style={{ display: 'none' }}
             />
