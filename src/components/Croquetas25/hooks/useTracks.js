@@ -265,10 +265,18 @@ export const useTracks = () => {
           audioSubfolders.forEach(subfolder => {
             const audios = track.audioBySubfolder.get(subfolder);
             if (audios && audios.length > 0) {
-              subfolderToAudioIndex[subfolder] = audioIndex;
-              audioSrcs.push(audios[0]);
-              lastAudioIndex = audioIndex;
-              audioIndex++;
+              // Asegurar que el audio sea un string válido
+              let audioSrc = audios[0];
+              if (typeof audioSrc !== 'string') {
+                audioSrc = audioSrc?.default || String(audioSrc);
+              }
+              // Verificar que sea un string válido antes de agregarlo
+              if (typeof audioSrc === 'string' && audioSrc.length > 0) {
+                subfolderToAudioIndex[subfolder] = audioIndex;
+                audioSrcs.push(audioSrc);
+                lastAudioIndex = audioIndex;
+                audioIndex++;
+              }
             }
           });
           
@@ -289,13 +297,23 @@ export const useTracks = () => {
           });
           
           // ============================================
+          // Asegurar que todos los audioSrcs sean strings válidos
+          // ============================================
+          const validAudioSrcs = audioSrcs.filter(src => {
+            if (typeof src === 'string' && src.length > 0) {
+              return true;
+            }
+            return false;
+          });
+          
+          // ============================================
           // Construir objeto final del track
           // ============================================
           const finalTrack = {
             id: track.id,
             name: track.name,
-            src: audioSrcs[0] || null,
-            srcs: audioSrcs,
+            src: validAudioSrcs[0] || null,
+            srcs: validAudioSrcs,
             images: imagesArray,
             subfolderOrder: subfolderOrder,
             imagesBySubfolder: Object.fromEntries(track.imagesBySubfolder),

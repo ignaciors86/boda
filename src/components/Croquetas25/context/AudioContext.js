@@ -28,6 +28,29 @@ if (typeof window !== 'undefined') {
 }
 
 export const AudioProvider = ({ children, audioSrcs = [] }) => {
+  // Validar y normalizar audioSrcs al inicio
+  const validAudioSrcs = React.useMemo(() => {
+    if (!audioSrcs || !Array.isArray(audioSrcs)) return [];
+    
+    return audioSrcs
+      .map(src => {
+        // Convertir a string si es necesario
+        if (typeof src === 'string') return src;
+        if (src?.default) return src.default;
+        if (src && typeof src === 'object') {
+          // Intentar obtener la propiedad default o cualquier propiedad string
+          const defaultVal = src.default;
+          if (typeof defaultVal === 'string') return defaultVal;
+        }
+        return String(src);
+      })
+      .filter(src => {
+        // Filtrar solo strings válidos con extensiones de audio
+        return typeof src === 'string' && 
+               src.length > 0 && 
+               (src.includes('.mp3') || src.includes('.wav') || src.includes('.ogg') || src.includes('/static/media/'));
+      });
+  }, [audioSrcs]);
   // Detectar si estamos en iOS/Android Safari (donde cambiar src causa problemas)
   const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   const isAndroid = typeof window !== 'undefined' && /Android/.test(navigator.userAgent);
@@ -39,8 +62,8 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
   // SIMPLIFICACIÓN: Para un solo audio, usar la misma lógica simple que Timeline
   // NO usar Tone.js ni complejidad innecesaria
   // Solo usar múltiples elementos en Safari iOS con múltiples audios
-  const useMultipleElements = isSafariIOS && audioSrcs.length > 1;
-  const useSimpleAudio = audioSrcs.length === 1; // Usar lógica simple como Timeline para un solo audio
+  const useMultipleElements = isSafariIOS && validAudioSrcs.length > 1;
+  const useSimpleAudio = validAudioSrcs.length === 1; // Usar lógica simple como Timeline para un solo audio
   
   // Dos elementos audio: uno actual y uno siguiente para transiciones suaves
   // O array de elementos Audio si estamos en iOS/Android Safari con múltiples audios
@@ -68,7 +91,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
   const fadeInTweenRef = useRef(null);
   const transitionTimeoutRef = useRef(null);
   const handleEndedRef = useRef(null); // Ref estable para handleEnded
-  const audioSrcsRef = useRef(audioSrcs); // Ref para audioSrcs
+  const audioSrcsRef = useRef(validAudioSrcs); // Ref para audioSrcs
   const currentIndexRef = useRef(currentIndex); // Ref para currentIndex
   const isChangingFromEndedRef = useRef(false); // Flag para evitar interferencia del useEffect principal
   const iosPreloadAudioElementsRef = useRef([]); // Refs para elementos Audio de pre-carga en iOS
@@ -315,7 +338,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     // Resetear contadores de reintentos cuando cambian los audios
     audioRetryCountRef.current.clear();
     
-    if (!audioSrcs || audioSrcs.length === 0) {
+    if (!validAudioSrcs || validAudioSrcs.length === 0) {
       setAudioDurations([]);
       setPreloadedAudios(true); // Si no hay audios, marcar como listo
       setPreloadProgress(100);
@@ -328,8 +351,8 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       // Cargar duraciones usando eventos, no timeouts
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       
-      for (let i = 0; i < audioSrcs.length; i++) {
-        const audioSrc = audioSrcs[i];
+      for (let i = 0; i < validAudioSrcs.length; i++) {
+        const audioSrc = validAudioSrcs[i];
         // En iOS, asegurar que las rutas se conviertan correctamente
         let audioSrcString = typeof audioSrc === 'string' ? audioSrc : (audioSrc?.default || audioSrc);
         const audio = new Audio(audioSrcString);
@@ -389,12 +412,12 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       setAudioDurations(durations);
       
       // Pre-cargar todos los audios cuando hay múltiples
-      if (audioSrcs.length > 1) {
+      if (validAudioSrcs.length > 1) {
         console.log('[AudioContext] Múltiples audios detectados: iniciando pre-carga...');
         
         // Para múltiples audios, usar elementos audio nativos (sin Tone.js)
         console.log('[AudioContext] Usando elementos audio nativos para múltiples audios...');
-        preloadAllAudios(audioSrcs);
+        preloadAllAudios(validAudioSrcs);
     } else {
       setPreloadedAudios(true); // Si solo hay un audio, marcar como listo
       setPreloadProgress(100);
@@ -408,23 +431,23 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
   useEffect(() => {
     // Solo actualizar si no estamos en medio de un cambio desde handleEnded
     if (!isChangingFromEndedRef.current) {
-      audioSrcsRef.current = audioSrcs;
+      audioSrcsRef.current = validAudioSrcs;
       // Actualizar currentIndexRef solo si realmente cambió (para evitar sobrescribir cambios de seekToAudio que ya lo actualizaron)
       if (currentIndexRef.current !== currentIndex) {
         console.log(`[AudioContext] Sincronizando currentIndexRef: ${currentIndexRef.current} -> ${currentIndex}`);
         currentIndexRef.current = currentIndex;
       }
     }
-  }, [audioSrcs, currentIndex]);
+  }, [validAudioSrcs, currentIndex]);
 
   // Precargar el siguiente audio
   useEffect(() => {
-    if (!audioSrcs || audioSrcs.length === 0) return;
+    if (!validAudioSrcs || validAudioSrcs.length === 0) return;
     
-    const nextIndex = (currentIndex + 1) % audioSrcs.length;
-    const nextSrc = audioSrcs[nextIndex];
+    const nextIndex = (currentIndex + 1) % validAudioSrcs.length;
+    const nextSrc = validAudioSrcs[nextIndex];
     
-    if (nextAudioRef.current && nextSrc && audioSrcs.length > 1) {
+    if (nextAudioRef.current && nextSrc && validAudioSrcs.length > 1) {
       nextAudioRef.current.src = nextSrc;
       nextAudioRef.current.load();
     }
@@ -443,7 +466,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       setIsPlaying(false);
       
       // Usar refs para obtener valores actuales sin depender de closures
-      const srcs = audioSrcsRef.current;
+      const srcs = validAudioSrcs;
       const idx = currentIndexRef.current;
       
       if (!srcs || srcs.length <= 1) {
@@ -476,7 +499,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           
           // Actualizar refs ANTES de cambiar el src para evitar que el useEffect principal interfiera
           currentIndexRef.current = nextIndex;
-          audioSrcsRef.current = srcs; // Asegurar que el ref esté actualizado
+          audioSrcsRef.current = validAudioSrcs; // Asegurar que el ref esté actualizado
           
           // Cambiar el src del audio actual
           // En iOS, desconectar el AudioContext antes de cambiar el src para evitar problemas
@@ -602,9 +625,9 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
 
   // Configurar el audio actual
   useEffect(() => {
-    if (!audioSrcs || audioSrcs.length === 0) return;
+    if (!validAudioSrcs || validAudioSrcs.length === 0) return;
 
-    const currentSrc = audioSrcs[currentIndex];
+    const currentSrc = validAudioSrcs[currentIndex];
     if (!currentSrc) return;
     
     // Si estamos cambiando desde handleEnded, no hacer nada aquí para evitar interferencia
@@ -631,7 +654,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     // En iOS/Android Safari con múltiples audios, usar elementos diferentes
     // También en Chrome iOS con múltiples audios
     const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
-    const shouldUseMultipleElements = (useMultipleElements || (isChromeIOS && audioSrcs.length > 1)) && audioElementsRef.current.length > 0;
+    const shouldUseMultipleElements = (useMultipleElements || (isChromeIOS && validAudioSrcs.length > 1)) && audioElementsRef.current.length > 0;
     
     if (shouldUseMultipleElements) {
       const audio = audioElementsRef.current[currentIndex];
@@ -675,7 +698,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       const currentAudioSrc = audio.src || '';
       // Comparar URLs directamente (webpack ya las procesa correctamente)
       // NO normalizar - las URLs de webpack ya son correctas
-      const hasMultipleAudios = audioSrcs.length > 1;
+      const hasMultipleAudios = validAudioSrcs.length > 1;
       
       if (currentAudioSrc === currentSrcString && audio.readyState >= 1) {
         // En iOS con múltiples audios, verificar que realmente esté listo (readyState 2 y duration válida)
@@ -778,7 +801,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       try {
         // En iOS con múltiples audios, siempre reconectar si el elemento cambió
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        const hasMultipleAudios = audioSrcs.length > 1;
+        const hasMultipleAudios = validAudioSrcs.length > 1;
         
         if (connectedAudioElement === audio && globalAudioContext && globalAnalyser && !(isIOS && hasMultipleAudios)) {
           console.log('[AudioContext] Reusing existing connection');
@@ -965,7 +988,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       if (error) {
         console.error('[AudioContext] Error code:', error.code, '| Message:', error.message);
         console.error('[AudioContext] Audio src que causó el error:', audio.src);
-        console.error('[AudioContext] Current index:', currentIndex, 'Total audios:', audioSrcs.length);
+        console.error('[AudioContext] Current index:', currentIndex, 'Total audios:', validAudioSrcs.length);
         console.error('[AudioContext] Audio en subcarpeta:', hasMultipleAudios && currentIndex > 0);
         console.error('[AudioContext] Network state:', audio.networkState, '| Ready state:', audio.readyState);
         
@@ -1115,7 +1138,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     // Configurar el src del audio actual solo si ha cambiado
     if (audio.src !== currentSrcString) {
       console.log(`[AudioContext] Cambiando src de ${audio.src || ''} a ${currentSrcString}`);
-      console.log(`[AudioContext] Índice actual: ${currentIndex}, Total audios: ${audioSrcs.length}`);
+      console.log(`[AudioContext] Índice actual: ${currentIndex}, Total audios: ${validAudioSrcs.length}`);
       
       // Los imports estáticos de webpack ya vienen como URLs válidas
       // NO hacer tests adicionales - confiar en webpack como Timeline
@@ -1910,7 +1933,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
 
   // Función para cambiar a un audio específico de la playlist
   const seekToAudio = async (index, targetTime = 0) => {
-    if (index < 0 || index >= audioSrcs.length) return;
+    if (index < 0 || index >= validAudioSrcs.length) return;
     if (index === currentIndex && targetTime === 0) return; // Si es el mismo y no hay tiempo específico, no hacer nada
     
     // SIMPLIFICACIÓN: Para un solo audio, usar currentTime simple como Timeline
