@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useRef, useState, useEffect } from 'react';
 import { gsap } from 'gsap';
+import { Howl, Howler } from 'howler';
 import './AudioContext.scss';
 
 const AudioContextReact = createContext(null);
@@ -38,9 +39,11 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
   
   // Dos elementos audio: uno actual y uno siguiente para transiciones suaves
   // O array de elementos Audio si estamos en iOS/Android Safari con múltiples audios
+  // O array de instancias Howl si usamos Howler.js
   const currentAudioRef = useRef(null);
   const nextAudioRef = useRef(null);
   const audioElementsRef = useRef([]); // Array de elementos Audio (solo para iOS/Android Safari con múltiples audios)
+  const howlInstancesRef = useRef([]); // Array de instancias Howl (para iOS/Android con múltiples audios)
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -283,9 +286,66 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       if (audioSrcs.length > 1) {
         console.log('[AudioContext] Múltiples audios detectados: iniciando pre-carga...');
         
-        // En iOS/Android Safari, crear elementos Audio separados y pre-cargarlos
+        // En iOS/Android Safari, usar Howler.js para múltiples audios
         if (useMultipleElements) {
-          console.log('[AudioContext] iOS/Android Safari: Creando elementos Audio separados...');
+          console.log('[AudioContext] iOS/Android Safari: Creando instancias Howl con Howler.js...');
+          const createHowlInstances = () => {
+            const instances = [];
+            const durations = [];
+            
+            for (let i = 0; i < audioSrcs.length; i++) {
+              const audioSrc = audioSrcs[i];
+              let audioSrcString = typeof audioSrc === 'string' ? audioSrc : (audioSrc?.default || audioSrc);
+              
+              const howl = new Howl({
+                src: [audioSrcString],
+                html5: false, // Usar Web Audio API para mejor compatibilidad
+                preload: true,
+                volume: 0,
+                onload: () => {
+                  durations[i] = howl.duration();
+                  console.log(`[AudioContext] Howl ${i} cargado: ${durations[i].toFixed(2)}s`);
+                  const progress = Math.round(((i + 1) / audioSrcs.length) * 100);
+                  setPreloadProgress(progress);
+                  
+                  // Si todos están cargados
+                  if (durations.filter(d => d !== undefined).length === audioSrcs.length) {
+                    setAudioDurations(durations);
+                    setPreloadedAudios(true);
+                    setPreloadProgress(100);
+                    console.log(`[AudioContext] ${instances.length} instancias Howl creadas y pre-cargadas`);
+                  }
+                },
+                onloaderror: (id, error) => {
+                  console.warn(`[AudioContext] Error cargando Howl ${i}:`, error);
+                  durations[i] = 0;
+                  const progress = Math.round(((i + 1) / audioSrcs.length) * 100);
+                  setPreloadProgress(progress);
+                  
+                  // Si todos están procesados (cargados o con error)
+                  if (durations.filter(d => d !== undefined).length === audioSrcs.length) {
+                    setAudioDurations(durations);
+                    setPreloadedAudios(true);
+                    setPreloadProgress(100);
+                  }
+                }
+              });
+              
+              instances.push(howl);
+            }
+            
+            howlInstancesRef.current = instances;
+            setPreloadedAudios(true);
+            setPreloadProgress(100);
+            console.log(`[AudioContext] ${instances.length} instancias Howl creadas`);
+          };
+          
+          createHowlInstances();
+          return; // Salir temprano para evitar el código de elementos Audio
+        }
+        
+        // Código original para desktop (mantener como fallback)
+        if (false) { // Nunca ejecutar, solo para referencia
           const createElements = async () => {
             const elements = [];
             for (let i = 0; i < audioSrcs.length; i++) {
@@ -1129,6 +1189,52 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
 
   const play = async () => {
     return new Promise(async (resolve) => {
+      // Si estamos usando Howler.js en iOS/Android
+      if (useMultipleElements && howlInstancesRef.current.length > 0) {
+        const howl = howlInstancesRef.current[currentIndex];
+        if (!howl) {
+          console.warn('[AudioContext] No hay instancia Howl para reproducir');
+          resolve();
+          return;
+        }
+        
+        try {
+          // Detener otras instancias
+          howlInstancesRef.current.forEach((h, i) => {
+            if (i !== currentIndex && h.playing()) {
+              h.stop();
+            }
+          });
+          
+          // Reproducir con Howler.js
+          const soundId = howl.play();
+          howl.volume(0, soundId);
+          
+          // Fade in con Howler.js
+          howl.fade(0, 1, 2500, soundId);
+          
+          setIsPlaying(true);
+          console.log('[AudioContext] Reproduciendo con Howler.js');
+          
+          // Manejar cuando termine
+          howl.once('end', () => {
+            setIsPlaying(false);
+            // Cambiar al siguiente audio
+            const nextIndex = (currentIndex + 1) % howlInstancesRef.current.length;
+            if (nextIndex !== currentIndex) {
+              currentIndexRef.current = nextIndex;
+              setCurrentIndex(nextIndex);
+            }
+          });
+          
+          resolve();
+        } catch (error) {
+          console.error('[AudioContext] Error reproduciendo con Howler.js:', error);
+          resolve();
+        }
+        return;
+      }
+      
       if (currentAudioRef.current && currentAudioRef.current.paused) {
         try {
           const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -1373,6 +1479,30 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
 
   const pause = () => {
     return new Promise((resolve) => {
+      // Si estamos usando Howler.js en iOS/Android
+      if (useMultipleElements && howlInstancesRef.current.length > 0) {
+        const howl = howlInstancesRef.current[currentIndex];
+        if (howl && howl.playing()) {
+          // Fade out y pausar
+          const soundId = howl.playing() ? howl._sounds[0]._id : null;
+          if (soundId !== null) {
+            howl.fade(howl.volume(soundId), 0, 600, soundId);
+            setTimeout(() => {
+              howl.pause(soundId);
+              setIsPlaying(false);
+              resolve();
+            }, 600);
+          } else {
+            howl.stop();
+            setIsPlaying(false);
+            resolve();
+          }
+        } else {
+          resolve();
+        }
+        return;
+      }
+      
       if (currentAudioRef.current && !currentAudioRef.current.paused) {
         console.log('[AudioContext] pause() llamado, iniciando fade out del volumen');
         if (volumeTweenRef.current) {
@@ -1416,6 +1546,33 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
   const seekToAudio = async (index, targetTime = 0) => {
     if (index < 0 || index >= audioSrcs.length) return;
     if (index === currentIndex && targetTime === 0) return; // Si es el mismo y no hay tiempo específico, no hacer nada
+    
+    // Si estamos usando Howler.js
+    if (useMultipleElements && howlInstancesRef.current.length > 0) {
+      const wasPlaying = isPlaying;
+      const currentHowl = howlInstancesRef.current[currentIndex];
+      
+      // Detener el actual
+      if (currentHowl && currentHowl.playing()) {
+        currentHowl.stop();
+      }
+      
+      // Cambiar al nuevo
+      currentIndexRef.current = index;
+      setCurrentIndex(index);
+      
+      const newHowl = howlInstancesRef.current[index];
+      if (newHowl && wasPlaying) {
+        const soundId = newHowl.play();
+        if (targetTime > 0) {
+          newHowl.seek(targetTime, soundId);
+        }
+        newHowl.volume(0, soundId);
+        newHowl.fade(0, 1, 400, soundId);
+        setIsPlaying(true);
+      }
+      return;
+    }
     
     const audio = currentAudioRef.current;
     if (!audio) return;
@@ -1511,6 +1668,17 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
 
   // Función para obtener el tiempo transcurrido total
   const getTotalElapsed = () => {
+    if (useMultipleElements && howlInstancesRef.current.length > 0) {
+      const howl = howlInstancesRef.current[currentIndex];
+      if (!howl || audioDurations.length === 0) return 0;
+      
+      const previousTime = audioDurations
+        .slice(0, currentIndex)
+        .reduce((sum, dur) => sum + dur, 0);
+      
+      return previousTime + (howl.seek() || 0);
+    }
+    
     if (!currentAudioRef.current || audioDurations.length === 0) return 0;
     
     const previousTime = audioDurations
