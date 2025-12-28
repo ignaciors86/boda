@@ -13,6 +13,7 @@ import Prompt from './components/Prompt/Prompt';
 import Croqueta from './components/Croqueta/Croqueta';
 import BackButton from './components/BackButton/BackButton';
 import KITTLoader from './components/KITTLoader/KITTLoader';
+import DebugPanel from './components/DebugPanel/DebugPanel';
 
 const LoadingProgressHandler = ({ onTriggerCallbackRef, audioStarted }) => {
   const { loadingProgress, isLoaded } = useAudio();
@@ -458,6 +459,14 @@ const Croquetas25 = () => {
               }}
             />
           ) : null}
+          {/* Debug Panel - visible en móviles */}
+          <DebugPanel 
+            imagesLoading={imagesLoading}
+            imagesProgress={imagesProgress}
+            audioStarted={audioStarted}
+            loadingFadedOut={loadingFadedOut}
+            selectedTrack={selectedTrack}
+          />
         </AudioProvider>
       ) : (
         // Cuando no hay track seleccionado, mostrar solo diagonales sin AudioProvider
@@ -505,8 +514,36 @@ const AudioStarter = ({ audioStarted }) => {
           }
           
           // Llamar a play() del contexto
+          console.log('[AudioStarter] Intentando reproducir audio...', {
+            audioRef: !!audioRef?.current,
+            audioReadyState: audio?.readyState,
+            isLoaded,
+            audioStarted
+          });
+          
           play().catch(error => {
             console.error('[AudioStarter] Error playing audio:', error);
+            
+            // Debug en móviles
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            if (isIOS && typeof window !== 'undefined') {
+              const debugDiv = document.getElementById('play-error');
+              if (!debugDiv) {
+                const div = document.createElement('div');
+                div.id = 'play-error';
+                div.style.cssText = 'position:fixed;top:400px;left:10px;background:rgba(255,0,0,0.8);color:#fff;padding:10px;font-family:monospace;font-size:10px;z-index:99999;max-width:300px;word-wrap:break-word;';
+                document.body.appendChild(div);
+              }
+              const debugDiv2 = document.getElementById('play-error');
+              if (debugDiv2) {
+                debugDiv2.innerHTML = `
+                  <div><strong>Play Error</strong></div>
+                  <div>${error.name}: ${error.message}</div>
+                  <div>readyState: ${audio?.readyState}</div>
+                  <div>isLoaded: ${isLoaded}</div>
+                `;
+              }
+            }
             // En iOS, si es NotAllowedError, puede ser que necesitemos más tiempo
             if (isIOS && error.name === 'NotAllowedError') {
               console.warn('[AudioStarter] NotAllowedError en iOS, reintentando después de delay...');
@@ -573,22 +610,51 @@ const UnifiedLoadingIndicator = ({ imagesLoading, imagesProgress, isDirectUri, a
   
   const everythingReady = imagesReady && audioReady;
   
-  // Debug logging
+  // Debug logging detallado para móviles
   useEffect(() => {
-    console.log('[UnifiedLoadingIndicator] Estado:', {
+    const debugInfo = {
       imagesLoading,
-      imagesProgress,
+      imagesProgress: Math.round(imagesProgress),
       audioLoaded,
       audioHasMetadata: audioRef?.current?.readyState >= minReadyState,
       audioReadyState: audioRef?.current?.readyState,
-      audioProgress,
+      audioProgress: Math.round(audioProgress),
       everythingReady,
       isMobile,
       isIOS,
       isChromeIOS,
-      isSafariIOS
-    });
-  }, [imagesLoading, imagesProgress, audioLoaded, audioProgress, everythingReady, audioRef, minReadyState, isMobile, isIOS, isChromeIOS, isSafariIOS]);
+      isSafariIOS,
+      loadingFadedOut,
+      audioStarted,
+      selectedTrackName: selectedTrack?.name
+    };
+    
+    console.log('[UnifiedLoadingIndicator] Estado:', debugInfo);
+    
+    // En móviles, también mostrar en la página para debugging
+    if (isMobile && typeof window !== 'undefined') {
+      const debugDiv = document.getElementById('debug-info');
+      if (!debugDiv) {
+        const div = document.createElement('div');
+        div.id = 'debug-info';
+        div.style.cssText = 'position:fixed;top:10px;left:10px;background:rgba(0,0,0,0.8);color:#0f0;padding:10px;font-family:monospace;font-size:10px;z-index:99999;max-width:300px;word-wrap:break-word;';
+        document.body.appendChild(div);
+      }
+      const debugDiv2 = document.getElementById('debug-info');
+      if (debugDiv2) {
+        debugDiv2.innerHTML = `
+          <div><strong>Loading Debug</strong></div>
+          <div>Images: ${debugInfo.imagesProgress}% (loading: ${debugInfo.imagesLoading})</div>
+          <div>Audio: ${debugInfo.audioProgress}% (loaded: ${debugInfo.audioLoaded}, readyState: ${debugInfo.audioReadyState})</div>
+          <div>Ready: ${debugInfo.everythingReady ? 'YES' : 'NO'}</div>
+          <div>Faded: ${debugInfo.loadingFadedOut ? 'YES' : 'NO'}</div>
+          <div>Started: ${debugInfo.audioStarted ? 'YES' : 'NO'}</div>
+          <div>Track: ${debugInfo.selectedTrackName || 'none'}</div>
+          <div>Browser: ${debugInfo.isChromeIOS ? 'Chrome iOS' : debugInfo.isSafariIOS ? 'Safari iOS' : 'Other'}</div>
+        `;
+      }
+    }
+  }, [imagesLoading, imagesProgress, audioLoaded, audioProgress, everythingReady, audioRef, minReadyState, isMobile, isIOS, isChromeIOS, isSafariIOS, loadingFadedOut, audioStarted, selectedTrack]);
   
   useEffect(() => {
     if (selectedTrack) {

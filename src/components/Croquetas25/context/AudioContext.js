@@ -416,6 +416,26 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
                       setPreloadProgress(100);
                       setIsLoaded(true); // IMPORTANTE: Marcar isLoaded como true para Tone.js
                       console.log(`[AudioContext] ${loadedCount}/${totalCount} Tone Players cargados - marcando como listo (Safari iOS: ${isSafariIOS})`);
+                      
+                      // Debug en móviles
+                      if (isIOS && typeof window !== 'undefined') {
+                        const debugDiv = document.getElementById('audio-debug');
+                        if (!debugDiv) {
+                          const div = document.createElement('div');
+                          div.id = 'audio-debug';
+                          div.style.cssText = 'position:fixed;top:200px;left:10px;background:rgba(0,0,0,0.8);color:#0ff;padding:10px;font-family:monospace;font-size:10px;z-index:99999;max-width:300px;word-wrap:break-word;';
+                          document.body.appendChild(div);
+                        }
+                        const debugDiv2 = document.getElementById('audio-debug');
+                        if (debugDiv2) {
+                          debugDiv2.innerHTML = `
+                            <div><strong>Audio Debug</strong></div>
+                            <div>Tone.js: ${loadedCount}/${totalCount} loaded</div>
+                            <div>isLoaded: true</div>
+                            <div>preloadedAudios: true</div>
+                          `;
+                        }
+                      }
                     }
                   }
                   return true;
