@@ -269,16 +269,19 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       setAudioDurations(durations);
       
       // Pre-cargar todos los audios cuando hay múltiples (funciona en todos los SO)
-      // En iOS, hacer pre-carga en background sin bloquear
+      // En iOS/Android Safari, simplificar la pre-carga para evitar bloqueos
       if (audioSrcs.length > 1) {
         console.log('[AudioContext] Múltiples audios detectados: iniciando pre-carga...');
-        // En iOS, marcar como pre-cargado inmediatamente para no bloquear
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        if (isIOS) {
-          // En iOS, pre-cargar en background pero no bloquear
+        const isAndroid = /Android/.test(navigator.userAgent);
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        
+        // En iOS/Android Safari, marcar como pre-cargado inmediatamente y no bloquear
+        if ((isIOS || (isAndroid && isSafari)) && audioSrcs.length > 1) {
+          console.log('[AudioContext] iOS/Android Safari: Marcando audios como pre-cargados inmediatamente para evitar bloqueos');
           setPreloadedAudios(true);
           setPreloadProgress(100);
-          // Pre-cargar en background sin bloquear
+          // Pre-cargar en background sin bloquear (opcional)
           preloadAllAudios(audioSrcs).catch(err => {
             console.warn('[AudioContext] Error en pre-carga en background:', err);
           });
@@ -1016,12 +1019,15 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       if (currentAudioRef.current && currentAudioRef.current.paused) {
         try {
           const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+          const isAndroid = /Android/.test(navigator.userAgent);
+          const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
           const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
+          const isMobileSafari = (isIOS || (isAndroid && isSafari));
           const hasMultipleAudios = audioSrcsRef.current.length > 1;
           
-          // En iOS, NO bloquear por pre-carga - iOS puede cargar audios bajo demanda
+          // En iOS/Android Safari, NO bloquear por pre-carga - pueden cargar audios bajo demanda
           // Solo esperar pre-carga en otros navegadores y solo un tiempo limitado
-          if (hasMultipleAudios && !preloadedAudios && !isIOS) {
+          if (hasMultipleAudios && !preloadedAudios && !isMobileSafari) {
             console.log('[AudioContext] Múltiples audios: esperando a que todos estén pre-cargados...');
             const maxWaitTime = 3000; // Solo 3 segundos máximo
             const startTime = Date.now();
@@ -1040,9 +1046,9 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
                 }
               }, 100);
             });
-          } else if (hasMultipleAudios && !preloadedAudios && isIOS) {
-            // En iOS, no esperar - continuar inmediatamente
-            console.log('[AudioContext] iOS: No esperando pre-carga completa, continuando...');
+          } else if (hasMultipleAudios && !preloadedAudios && isMobileSafari) {
+            // En iOS/Android Safari, no esperar - continuar inmediatamente
+            console.log('[AudioContext] iOS/Android Safari: No esperando pre-carga completa, continuando inmediatamente...');
           }
           
           if (volumeTweenRef.current) {
@@ -1078,7 +1084,9 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           }
           
           // Esperar a que el audio esté listo usando eventos, no timeouts
-          if (currentAudioRef.current.readyState < 2) {
+          // En iOS/Android Safari con múltiples audios, ser más permisivo con readyState
+          const minReadyState = (isMobileSafari && hasMultipleAudios) ? 1 : 2;
+          if (currentAudioRef.current.readyState < minReadyState) {
             await new Promise((resolveWait) => {
               const audio = currentAudioRef.current;
               let resolved = false;
@@ -1090,7 +1098,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
               };
               
               const handleCanPlay = () => {
-                if (!resolved && audio.readyState >= 2) {
+                if (!resolved && audio.readyState >= minReadyState) {
                   resolved = true;
                   cleanup();
                   console.log(`[AudioContext] Audio listo (canplay, readyState: ${audio.readyState})`);
@@ -1099,7 +1107,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
               };
               
               const handleLoadedData = () => {
-                if (!resolved && audio.readyState >= 2) {
+                if (!resolved && audio.readyState >= minReadyState) {
                   resolved = true;
                   cleanup();
                   console.log(`[AudioContext] Audio listo (loadeddata, readyState: ${audio.readyState})`);
@@ -1117,7 +1125,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
               };
               
               // Si ya está listo, resolver inmediatamente
-              if (audio.readyState >= 2) {
+              if (audio.readyState >= minReadyState) {
                 resolveWait();
                 return;
               }
