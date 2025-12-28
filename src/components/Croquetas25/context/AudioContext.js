@@ -1177,18 +1177,17 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           
           // Intentar recargar con diferentes estrategias (solo si no se ha excedido el límite)
           setTimeout(() => {
-            if (audio.src && audioRetryCountRef.current.get(audio.src) <= maxRetries) {
+            const currentSrc = audio.src;
+            if (currentSrc && audioRetryCountRef.current.get(currentSrc) <= maxRetries) {
               console.log(`[AudioContext] Reintentando cargar audio después de error DEMUXER (intento ${currentRetries + 1}/${maxRetries})...`);
-              const currentSrc = audio.src;
-              // Limpiar completamente
-              audio.src = '';
-              audio.load();
-              setTimeout(() => {
-                // Intentar con la misma URL
-                audio.src = currentSrc;
+              // Verificar que la URL sea válida antes de recargar
+              if (currentSrc && currentSrc !== '' && currentSrc.includes('.mp3')) {
+                // Forzar recarga sin limpiar el src (evitar problemas con src vacío)
                 audio.load();
                 console.log('[AudioContext] Audio recargado después de error DEMUXER');
-              }, 500);
+              } else {
+                console.error('[AudioContext] No se puede recargar: URL inválida o vacía');
+              }
             }
           }, 2000);
           return;
@@ -1207,16 +1206,16 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
               console.warn(`[AudioContext] iOS: Error de ruta o formato (posible problema con subcarpeta), intentando recargar (${currentRetries + 1}/${maxRetries})...`);
               // Intentar recargar después de un delay, forzando una recarga completa
               setTimeout(() => {
-                if (audio.src && audioRetryCountRef.current.get(audio.src) <= maxRetries) {
-                  const currentSrc = audio.src;
-                  // Limpiar y recargar
-                  audio.src = '';
-                  audio.load();
-                  setTimeout(() => {
-                    audio.src = currentSrc;
+                const currentSrc = audio.src;
+                if (currentSrc && audioRetryCountRef.current.get(currentSrc) <= maxRetries) {
+                  // Verificar que la URL sea válida antes de recargar
+                  if (currentSrc && currentSrc !== '' && currentSrc.includes('.mp3')) {
+                    // Forzar recarga sin limpiar el src (evitar problemas con src vacío)
                     audio.load();
                     console.log('[AudioContext] iOS: Audio recargado después de error');
-                  }, 200);
+                  } else {
+                    console.error('[AudioContext] iOS: No se puede recargar: URL inválida o vacía');
+                  }
                 }
               }, 1000);
             } else {
