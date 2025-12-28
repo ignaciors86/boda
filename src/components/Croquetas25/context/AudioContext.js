@@ -1570,17 +1570,70 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
         try {
           const audio = currentAudioRef.current;
           
-          // Asegurar que el AudioContext esté inicializado y resumido
-          if (globalAudioContext) {
-            if (globalAudioContext.state === 'suspended') {
-              await globalAudioContext.resume();
-              console.log('[AudioContext] AudioContext resumido antes de reproducir audio simple');
+          // Configurar AudioContext si no está inicializado
+          if (!isInitialized) {
+            console.log('[AudioContext] Configurando AudioContext para audio simple antes de reproducir...');
+            try {
+              // Crear AudioContext si no existe
+              if (!globalAudioContext || globalAudioContext.state === 'closed') {
+                globalAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+                console.log('[AudioContext] Created AudioContext (simple audio in play)');
+              }
+              
+              // Crear Analyser si no existe
+              if (!globalAnalyser) {
+                globalAnalyser = globalAudioContext.createAnalyser();
+                globalAnalyser.fftSize = 2048;
+                globalAnalyser.smoothingTimeConstant = 0.3;
+                console.log('[AudioContext] Created AnalyserNode (simple audio in play)');
+              }
+              
+              // Conectar el audio al AudioContext
+              if (connectedAudioElement !== audio) {
+                if (globalSourceNode) {
+                  try {
+                    globalSourceNode.disconnect();
+                  } catch (e) {
+                    console.warn('[AudioContext] Error disconnecting previous source:', e);
+                  }
+                }
+                
+                try {
+                  globalSourceNode = globalAudioContext.createMediaElementSource(audio);
+                  connectedAudioElement = audio;
+                  globalSourceNode.connect(globalAnalyser);
+                  globalAnalyser.connect(globalAudioContext.destination);
+                  console.log('[AudioContext] Audio conectado al AudioContext (simple audio in play)');
+                } catch (connectError) {
+                  if (connectError.name === 'InvalidStateError') {
+                    console.warn('[AudioContext] Audio already connected (simple audio in play)');
+                  } else {
+                    throw connectError;
+                  }
+                }
+              }
+              
+              // Resumir AudioContext si está suspendido
+              if (globalAudioContext.state === 'suspended') {
+                await globalAudioContext.resume();
+                console.log('[AudioContext] AudioContext resumido (simple audio in play)');
+              }
+              
+              // Configurar refs
+              audioContextRef.current = globalAudioContext;
+              analyserRef.current = globalAnalyser;
+              const bufferLength = globalAnalyser.frequencyBinCount;
+              dataArrayRef.current = new Uint8Array(bufferLength);
+              timeDataArrayRef.current = new Uint8Array(bufferLength);
+              
+              setIsInitialized(true);
+              console.log('[AudioContext] AudioContext configurado correctamente (simple audio in play)');
+            } catch (error) {
+              console.error('[AudioContext] Error configurando AudioContext (simple audio in play):', error);
             }
-          } else if (!isInitialized) {
-            // Si el AudioContext no está inicializado, intentar configurarlo ahora
-            console.warn('[AudioContext] AudioContext no inicializado, intentando configurar...');
-            // El useEffect debería configurarlo, pero si no, esperar un poco
-            await new Promise(resolve => setTimeout(resolve, 100));
+          } else if (globalAudioContext && globalAudioContext.state === 'suspended') {
+            await globalAudioContext.resume();
+            console.log('[AudioContext] AudioContext resumido antes de reproducir audio simple');
           }
           
           // Configurar volumen y hacer fade in como en el flujo normal
