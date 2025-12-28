@@ -37,11 +37,11 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
   const isSafariIOS = isIOS && !isChromeIOS;
   const isMobileSafari = isIOS || (isAndroid && isSafari);
   
-  // IMPORTANTE: Chrome iOS tiene problemas con Tone.js y múltiples audios
-  // Usar estrategia diferente: elementos audio nativos en lugar de Tone.js
-  // Solo usar múltiples elementos en Safari iOS (no Chrome iOS) con múltiples audios
-  // Se recalcula cuando cambia audioSrcs
+  // SIMPLIFICACIÓN: Para un solo audio, usar la misma lógica simple que Timeline
+  // NO usar Tone.js ni complejidad innecesaria
+  // Solo usar múltiples elementos en Safari iOS con múltiples audios
   const useMultipleElements = isSafariIOS && audioSrcs.length > 1;
+  const useSimpleAudio = audioSrcs.length === 1; // Usar lógica simple como Timeline para un solo audio
   
   // Dos elementos audio: uno actual y uno siguiente para transiciones suaves
   // O array de elementos Audio si estamos en iOS/Android Safari con múltiples audios
@@ -782,6 +782,16 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     let progressIntervalId = null;
     let audioCleanup = null;
     
+    // SIMPLIFICACIÓN: Para un solo audio, inicializar pero seguir el flujo normal
+    if (useSimpleAudio && !currentAudioRef.current) {
+      // Crear elemento Audio directamente como Timeline si no existe
+      const audioSrcString = typeof currentSrc === 'string' ? currentSrc : (currentSrc?.default || currentSrc);
+      console.log(`[AudioContext] Creando Audio simple como Timeline: ${audioSrcString}`);
+      currentAudioRef.current = new Audio();
+      currentAudioRef.current.preload = 'auto';
+      // El src se configurará en el flujo normal más abajo
+    }
+    
     // IMPORTANTE: Si estamos usando Tone.js, no intentar usar currentAudioRef.current
     if (useMultipleElements && tonePlayersRef.current) {
       console.log('[AudioContext] Usando Tone.js, no configurando currentAudioRef.current');
@@ -1449,8 +1459,156 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     };
   }, [audioSrcs, currentIndex]);
 
+  // useEffect separado para configurar AudioContext cuando el audio simple esté listo
+  useEffect(() => {
+    if (useSimpleAudio && isLoaded && currentAudioRef.current && !isInitialized) {
+      const audio = currentAudioRef.current;
+      
+      const setupAudioContext = async () => {
+        try {
+          if (connectedAudioElement === audio && globalAudioContext && globalAnalyser) {
+            console.log('[AudioContext] Reusing existing connection (simple audio)');
+            audioContextRef.current = globalAudioContext;
+            analyserRef.current = globalAnalyser;
+            const bufferLength = globalAnalyser.frequencyBinCount;
+            dataArrayRef.current = new Uint8Array(bufferLength);
+            timeDataArrayRef.current = new Uint8Array(bufferLength);
+            setIsInitialized(true);
+            return;
+          }
+
+          if (globalAudioContext && connectedAudioElement && connectedAudioElement !== audio) {
+            console.log('[AudioContext] Disconnecting previous audio (simple audio)');
+            try {
+              if (globalSourceNode) {
+                globalSourceNode.disconnect();
+              }
+            } catch (e) {
+              console.warn('[AudioContext] Error disconnecting:', e);
+            }
+            globalSourceNode = null;
+            connectedAudioElement = null;
+          }
+
+          if (!globalAudioContext || globalAudioContext.state === 'closed') {
+            try {
+              globalAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+              console.log('[AudioContext] Created AudioContext (simple audio) | state:', globalAudioContext.state);
+              if (typeof window !== 'undefined') {
+                Object.defineProperty(window, '__globalAudioContext', {
+                  get: () => globalAudioContext,
+                  configurable: true
+                });
+              }
+            } catch (error) {
+              console.error('[AudioContext] Error creating AudioContext:', error);
+              globalAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+              if (typeof window !== 'undefined') {
+                Object.defineProperty(window, '__globalAudioContext', {
+                  get: () => globalAudioContext,
+                  configurable: true
+                });
+              }
+            }
+          }
+
+          if (!globalAnalyser) {
+            globalAnalyser = globalAudioContext.createAnalyser();
+            globalAnalyser.fftSize = 2048;
+            globalAnalyser.smoothingTimeConstant = 0.3;
+            console.log('[AudioContext] Created AnalyserNode (simple audio)');
+          }
+
+          try {
+            globalSourceNode = globalAudioContext.createMediaElementSource(audio);
+            connectedAudioElement = audio;
+
+            globalSourceNode.connect(globalAnalyser);
+            globalAnalyser.connect(globalAudioContext.destination);
+
+            if (globalAudioContext.state === 'suspended') {
+              try {
+                await globalAudioContext.resume();
+                console.log('[AudioContext] AudioContext resumido (simple audio), estado:', globalAudioContext.state);
+              } catch (resumeError) {
+                console.warn('[AudioContext] Error resuming AudioContext:', resumeError);
+              }
+            }
+
+            audioContextRef.current = globalAudioContext;
+            analyserRef.current = globalAnalyser;
+            const bufferLength = globalAnalyser.frequencyBinCount;
+            dataArrayRef.current = new Uint8Array(bufferLength);
+            timeDataArrayRef.current = new Uint8Array(bufferLength);
+
+            setIsInitialized(true);
+            console.log('[AudioContext] Setup successful (simple audio)');
+
+          } catch (connectError) {
+            if (connectError.name === 'InvalidStateError') {
+              console.error('[AudioContext] Audio already connected (simple audio)');
+              setIsInitialized(true);
+            } else {
+              throw connectError;
+            }
+          }
+
+        } catch (error) {
+          console.error('[AudioContext] Error setting up AudioContext (simple audio):', error);
+          setIsInitialized(true);
+        }
+      };
+
+      setupAudioContext();
+    }
+  }, [useSimpleAudio, isLoaded, isInitialized]);
+
   const play = async () => {
     return new Promise(async (resolve) => {
+      // SIMPLIFICACIÓN: Para un solo audio, usar play() simple como Timeline pero con volumen y AudioContext
+      if (useSimpleAudio && currentAudioRef.current) {
+        try {
+          const audio = currentAudioRef.current;
+          
+          // Asegurar que el AudioContext esté inicializado y resumido
+          if (globalAudioContext) {
+            if (globalAudioContext.state === 'suspended') {
+              await globalAudioContext.resume();
+              console.log('[AudioContext] AudioContext resumido antes de reproducir audio simple');
+            }
+          } else if (!isInitialized) {
+            // Si el AudioContext no está inicializado, intentar configurarlo ahora
+            console.warn('[AudioContext] AudioContext no inicializado, intentando configurar...');
+            // El useEffect debería configurarlo, pero si no, esperar un poco
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+          
+          // Configurar volumen y hacer fade in como en el flujo normal
+          audio.volume = 0;
+          console.log('[AudioContext] Reproduciendo audio simple como Timeline');
+          await audio.play();
+          setIsPlaying(true);
+          
+          // Fade in con GSAP
+          if (volumeTweenRef.current) {
+            volumeTweenRef.current.kill();
+          }
+          volumeTweenRef.current = gsap.to(audio, {
+            volume: 1,
+            duration: 2.5,
+            ease: 'sine.out',
+            onComplete: () => {
+              volumeTweenRef.current = null;
+              resolve();
+            }
+          });
+        } catch (error) {
+          console.error('[AudioContext] Error reproduciendo audio simple:', error);
+          resolve();
+        }
+        return;
+      }
+      
       // PRIORIDAD 1: Usar Tone.js en móviles con múltiples audios (basado en interactivo-orquesta)
       if (useMultipleElements && tonePlayersRef.current) {
         try {
@@ -1901,6 +2059,20 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
 
   const pause = () => {
     return new Promise((resolve) => {
+      // SIMPLIFICACIÓN: Para un solo audio, usar pause() simple como Timeline
+      if (useSimpleAudio && currentAudioRef.current) {
+        try {
+          console.log('[AudioContext] Pausando audio simple como Timeline');
+          currentAudioRef.current.pause();
+          setIsPlaying(false);
+          resolve();
+        } catch (error) {
+          console.error('[AudioContext] Error pausando audio simple:', error);
+          resolve();
+        }
+        return;
+      }
+      
       // PRIORIDAD 1: Usar Tone.js en móviles con múltiples audios
       if (useMultipleElements && tonePlayersRef.current) {
         try {
@@ -2018,6 +2190,17 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
   const seekToAudio = async (index, targetTime = 0) => {
     if (index < 0 || index >= audioSrcs.length) return;
     if (index === currentIndex && targetTime === 0) return; // Si es el mismo y no hay tiempo específico, no hacer nada
+    
+    // SIMPLIFICACIÓN: Para un solo audio, usar currentTime simple como Timeline
+    if (useSimpleAudio && currentAudioRef.current) {
+      try {
+        console.log(`[AudioContext] Seek en audio simple: ${targetTime}s`);
+        currentAudioRef.current.currentTime = targetTime;
+      } catch (error) {
+        console.error('[AudioContext] Error en seek de audio simple:', error);
+      }
+      return;
+    }
     
     // PRIORIDAD 1: Usar Tone.js en móviles con múltiples audios
     if (useMultipleElements && tonePlayersRef.current) {
@@ -2194,11 +2377,20 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
 
   // Función para obtener el tiempo total de la playlist
   const getTotalDuration = () => {
+    // SIMPLIFICACIÓN: Para un solo audio, usar duration simple como Timeline
+    if (useSimpleAudio && currentAudioRef.current) {
+      return currentAudioRef.current.duration || 0;
+    }
     return audioDurations.reduce((sum, dur) => sum + dur, 0);
   };
 
   // Función para obtener el tiempo transcurrido total
   const getTotalElapsed = () => {
+    // SIMPLIFICACIÓN: Para un solo audio, usar currentTime simple como Timeline
+    if (useSimpleAudio && currentAudioRef.current) {
+      return currentAudioRef.current.currentTime || 0;
+    }
+    
     // PRIORIDAD 1: Usar Tone.js en móviles con múltiples audios
     if (useMultipleElements && tonePlayersRef.current) {
       try {
