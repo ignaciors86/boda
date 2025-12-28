@@ -1183,17 +1183,22 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
             console.error(`[AudioContext] Máximo de reintentos alcanzado (${maxRetries}) para: ${audioSrc}`);
             console.error('[AudioContext] El archivo de audio no se puede cargar. Verificar que existe y es accesible.');
             // Verificar si el archivo realmente existe haciendo una petición HEAD
-            fetch(audioSrc, { method: 'HEAD' })
+            const fullUrl = audioSrc.startsWith('http') ? audioSrc : `${window.location.origin}${audioSrc}`;
+            fetch(fullUrl, { method: 'HEAD', cache: 'no-cache' })
               .then(response => {
                 if (!response.ok) {
-                  console.error(`[AudioContext] El archivo no existe en el servidor (HTTP ${response.status}). El build puede necesitar actualizarse.`);
+                  console.error(`[AudioContext] El archivo no existe en el servidor (HTTP ${response.status}). URL: ${fullUrl}`);
+                  console.error(`[AudioContext] El build puede necesitar actualizarse. Hash del archivo: ${audioSrc.match(/\.([a-f0-9]+)\.mp3$/)?.[1] || 'no encontrado'}`);
                   // Marcar como no disponible para evitar más intentos
                   setIsLoaded(false);
                   setLoadingProgress(0);
+                } else {
+                  console.log(`[AudioContext] El archivo existe en el servidor pero no se puede cargar. Posible problema de formato o CORS.`);
                 }
               })
               .catch(err => {
                 console.error('[AudioContext] Error al verificar existencia del archivo:', err);
+                console.error(`[AudioContext] URL intentada: ${fullUrl}`);
                 // Marcar como no disponible para evitar más intentos
                 setIsLoaded(false);
                 setLoadingProgress(0);
