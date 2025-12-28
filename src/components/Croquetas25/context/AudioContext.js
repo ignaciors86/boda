@@ -239,13 +239,18 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     setPreloadedAudios(true);
     setPreloadProgress(100);
     
-    // IMPORTANTE: En Safari iOS con múltiples audios, asegurar que isLoaded esté marcado
+    // IMPORTANTE: En Safari iOS, asegurar que isLoaded esté marcado
     // incluso si algunos audios no tienen readyState completo
-    if (isIOS && srcs.length > 1) {
+    if (isIOS) {
       // Verificar si al menos el primer audio tiene metadata
       const firstAudio = iosPreloadAudioElementsRef.current[0];
       if (firstAudio && firstAudio.readyState >= 1) {
         console.log('[AudioContext] Safari iOS: Primer audio tiene metadata, marcando como cargado');
+        setIsLoaded(true);
+      } else if (srcs.length === 1) {
+        // Si solo hay un audio y no tiene metadata aún, darle un poco más de tiempo
+        // pero marcar como cargado de todas formas (Safari puede cargar bajo demanda)
+        console.log('[AudioContext] Safari iOS: Un solo audio, marcando como cargado (carga bajo demanda)');
         setIsLoaded(true);
       }
     }
@@ -354,10 +359,27 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
               
               // Esperar a que todos los buffers estén cargados
               let loadedCount = 0;
+              let safetyTimeoutId = null;
               
               // Usar el patrón de interactivo-orquesta: escuchar onload directamente
               const playersList = [...players._players.values()];
               const totalCount = playersList.length;
+              
+              // Timeout de seguridad para Safari iOS: si después de 8 segundos no todos están cargados,
+              // marcar como listo si al menos el primero está cargado
+              safetyTimeoutId = setTimeout(() => {
+                if (loadedCount < totalCount && !tonePlayersRef.current) {
+                  const firstPlayer = playersList[0];
+                  if (firstPlayer && firstPlayer.buffer.loaded) {
+                    console.warn(`[AudioContext] Safari iOS: Timeout de seguridad - solo ${loadedCount}/${totalCount} buffers cargados, pero el primero está listo. Marcando como cargado.`);
+                    tonePlayersRef.current = players;
+                    setAudioDurations(durations);
+                    setPreloadedAudios(true);
+                    setPreloadProgress(100);
+                    setIsLoaded(true);
+                  }
+                }
+              }, 8000);
               
               // Función para verificar y procesar un buffer cargado
               const checkAndProcessBuffer = (player, i) => {
@@ -375,13 +397,20 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
                     const progress = Math.round((loadedCount / totalCount) * 100);
                     setPreloadProgress(progress);
                     
-                    if (loadedCount === totalCount) {
+                    // En Safari iOS, ser más permisivo: marcar como listo cuando al menos el 70% esté cargado
+                    // o cuando el primer audio esté listo (para colecciones con múltiples audios)
+                    const minRequiredForSafari = Math.max(1, Math.ceil(totalCount * 0.7)); // Al menos 70% o 1
+                    const shouldMarkAsLoaded = loadedCount === totalCount || 
+                      (isSafariIOS && loadedCount >= minRequiredForSafari && i === 0); // Si el primero está listo y tenemos 70%
+                    
+                    if (shouldMarkAsLoaded && !tonePlayersRef.current) {
+                      if (safetyTimeoutId) clearTimeout(safetyTimeoutId);
                       tonePlayersRef.current = players;
                       setAudioDurations(durations);
                       setPreloadedAudios(true);
                       setPreloadProgress(100);
                       setIsLoaded(true); // IMPORTANTE: Marcar isLoaded como true para Tone.js
-                      console.log(`[AudioContext] ${totalCount} Tone Players creados y pre-cargados`);
+                      console.log(`[AudioContext] ${loadedCount}/${totalCount} Tone Players cargados - marcando como listo (Safari iOS: ${isSafariIOS})`);
                     }
                   }
                   return true;
@@ -407,12 +436,19 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
                     const progress = Math.round((loadedCount / totalCount) * 100);
                     setPreloadProgress(progress);
                     
-                    if (loadedCount === totalCount) {
+                    // En Safari iOS, ser más permisivo: marcar como listo cuando al menos el 70% esté cargado
+                    const minRequiredForSafari = Math.max(1, Math.ceil(totalCount * 0.7));
+                    const shouldMarkAsLoaded = loadedCount === totalCount || 
+                      (isSafariIOS && loadedCount >= minRequiredForSafari);
+                    
+                    if (shouldMarkAsLoaded && !tonePlayersRef.current) {
+                      if (safetyTimeoutId) clearTimeout(safetyTimeoutId);
                       tonePlayersRef.current = players;
                       setAudioDurations(durations);
                       setPreloadedAudios(true);
                       setPreloadProgress(100);
                       setIsLoaded(true); // IMPORTANTE: Marcar isLoaded como true incluso con errores
+                      console.log(`[AudioContext] ${loadedCount}/${totalCount} Tone Players procesados (con errores) - marcando como listo`);
                     }
                   }
                 };
