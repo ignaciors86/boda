@@ -145,16 +145,8 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
   useEffect(() => {
     const loadImages = async () => {
       try {
-        let imagesList = selectedTrack?.images?.length > 0
-          ? selectedTrack.images // Mantener estructura con subcarpetas
-          : (() => {
-              const context = require.context('../../assets/tracks', true, /\.(jpg|jpeg|png|gif|webp)$/);
-              return context.keys().map(file => ({
-                path: context(file),
-                originalPath: file,
-                subfolder: null
-              })).sort((a, b) => a.originalPath.localeCompare(b.originalPath));
-            })();
+        // Las imágenes ahora vienen del manifest en useTracks
+        let imagesList = selectedTrack?.images || [];
 
         if (imagesList.length === 0) {
           setIsLoading(false);

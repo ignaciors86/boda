@@ -46,7 +46,7 @@
     "eject": "react-scripts eject",
     "dev": "npm run generate-audio-imports && concurrently \"npm run start\"",
     "start:prod": "npm run build && serve -s build",
-    "generate-audio-imports": "node src/components/Croquetas25/assets/tracks/generateAudioImports.js"
+    "generate-audio-imports": "node public/tracks/generateAudioImports.js"
   },
   "eslintConfig": {
     "extends": [

@@ -1,7 +1,7 @@
 {
   "headers": [
     {
-      "source": "/static/media/(.*\\.mp3)",
+      "source": "/tracks/(.*\\.mp3)",
       "headers": [
         {
           "key": "Content-Type",
@@ -30,7 +30,7 @@
       ]
     },
     {
-      "source": "/static/media/(.*\\.wav)",
+      "source": "/tracks/(.*\\.wav)",
       "headers": [
         {
           "key": "Content-Type",
@@ -55,11 +55,36 @@
       ]
     },
     {
-      "source": "/static/media/(.*\\.ogg)",
+      "source": "/tracks/(.*\\.ogg)",
       "headers": [
         {
           "key": "Content-Type",
           "value": "audio/ogg"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, HEAD, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Range, Content-Range, Content-Type"
+        },
+        {
+          "key": "Accept-Ranges",
+          "value": "bytes"
+        }
+      ]
+    },
+    {
+      "source": "/static/media/(.*\\.mp3)",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "audio/mpeg"
         },
         {
           "key": "Access-Control-Allow-Origin",
