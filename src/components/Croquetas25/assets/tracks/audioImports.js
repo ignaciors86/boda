@@ -8,6 +8,7 @@ import bodita_lodo from './bodita/lodo.mp3';
 import bodita_postboda__2 from './bodita/postboda/2.mp3';
 import Croquetas25_thunderstruck from './Croquetas25/thunderstruck.mp3';
 import despes_track from './despes/track.mp3';
+import disenatas_valley from './disenatas/valley.mp3';
 import mascotas_YTDown_com_YouTube_W_W_OIIA_OIIA_Spinning_Cat_Media_IxX_QHay02M_008_128k from './mascotas/YTDown.com_YouTube_W&W-OIIA-OIIA-Spinning-Cat_Media_IxX_QHay02M_008_128k.mp3';
 import pokemon_YTDown_com_YouTube_AC_DC_Thunderstruck_MOONLGHT_Remix_Media_wlDlQquwxZk_008_128k from './pokemon/YTDown.com_YouTube_AC-DC-Thunderstruck-MOONLGHT-Remix_Media_wlDlQquwxZk_008_128k.mp3';
 import silos_lodo from './silos/lodo.mp3';
@@ -26,6 +27,9 @@ export const audioImports = {
   },
   'despes': {
     '__root__': [despes_track],
+  },
+  'disenatas': {
+    '__root__': [disenatas_valley],
   },
   'mascotas': {
     '__root__': [mascotas_YTDown_com_YouTube_W_W_OIIA_OIIA_Spinning_Cat_Media_IxX_QHay02M_008_128k],
