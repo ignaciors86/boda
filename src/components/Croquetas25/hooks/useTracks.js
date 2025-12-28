@@ -188,36 +188,14 @@ export const useTracks = () => {
                 const sortedAudios = audios.sort((a, b) => String(a).localeCompare(String(b)));
                 track.subfolderToAudioIndex[subfolder] = audioIndex;
                 
-                // En iOS, asegurar que las rutas de subcarpetas sean URLs absolutas válidas
+                // Obtener la URL del audio (require.context ya devuelve URLs válidas de webpack)
                 let audioSrc = sortedAudios[0];
                 if (typeof audioSrc !== 'string') {
                   audioSrc = audioSrc?.default || audioSrc;
                 }
                 
-                // Si es una ruta de subcarpeta y estamos en iOS, verificar y normalizar
-                const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                if (isIOS && audioSrc && typeof audioSrc === 'string') {
-                  // require.context debería devolver URLs válidas, pero en iOS con subcarpetas puede haber problemas
-                  // Asegurar que la ruta sea accesible
-                  if (!audioSrc.startsWith('http') && !audioSrc.startsWith('data:') && !audioSrc.startsWith('/')) {
-                    // Si no tiene prefijo, podría ser una ruta relativa problemática
-                    // Intentar convertir a ruta absoluta
-                    try {
-                      // require.context debería devolver una URL válida, pero si no, intentar construirla
-                      if (audioSrc.includes('./') || audioSrc.includes('../')) {
-                        // Es una ruta relativa, convertir a absoluta
-                        const baseUrl = window.location.origin;
-                        const absolutePath = audioSrc.startsWith('.') 
-                          ? audioSrc.replace(/^\./, '')
-                          : '/' + audioSrc;
-                        audioSrc = baseUrl + absolutePath;
-                        console.log(`[useTracks] iOS: Ruta de subcarpeta normalizada: ${audioSrc}`);
-                      }
-                    } catch (e) {
-                      console.warn(`[useTracks] Error normalizando ruta de audio en iOS:`, e);
-                    }
-                  }
-                }
+                // NO normalizar - webpack ya maneja las rutas correctamente
+                // Las URLs de require.context son válidas tal cual
                 
                 track.audioSrcs.push(audioSrc);
                 audioIndex++;

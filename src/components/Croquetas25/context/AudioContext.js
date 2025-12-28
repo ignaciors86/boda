@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useRef, useState, useEffect } from 'react';
 import { gsap } from 'gsap';
 import { Howl, Howler } from 'howler';
+import * as Tone from 'tone';
 import './AudioContext.scss';
 
 const AudioContextReact = createContext(null);
@@ -44,6 +45,9 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
   const nextAudioRef = useRef(null);
   const audioElementsRef = useRef([]); // Array de elementos Audio (solo para iOS/Android Safari con múltiples audios)
   const howlInstancesRef = useRef([]); // Array de instancias Howl (para iOS/Android con múltiples audios)
+  const tonePlayersRef = useRef(null); // Tone.Players para múltiples audios en móviles
+  const toneStartedRef = useRef(false); // Flag para saber si Tone.start() ya fue llamado
+  const toneCurrentPlayerRef = useRef(null); // Player actual de Tone.js
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -286,219 +290,110 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       if (audioSrcs.length > 1) {
         console.log('[AudioContext] Múltiples audios detectados: iniciando pre-carga...');
         
-        // En iOS/Android Safari, crear elementos <audio> reales para cada archivo (Opción 4)
+        // En iOS/Android Safari, usar Tone.js para múltiples audios (basado en interactivo-orquesta)
         if (useMultipleElements) {
-          console.log('[AudioContext] iOS/Android Safari: Creando elementos <audio> reales para cada archivo...');
-          const createAudioElements = async () => {
-            const elements = [];
-            const durations = [];
-            
-            for (let i = 0; i < audioSrcs.length; i++) {
-              const audioSrc = audioSrcs[i];
-              let audioSrcString = typeof audioSrc === 'string' ? audioSrc : (audioSrc?.default || audioSrc);
+          console.log('[AudioContext] iOS/Android Safari: Usando Tone.js para múltiples audios...');
+          const createTonePlayers = async () => {
+            try {
+              // Crear objeto con las URLs de audio (Tone.Players requiere un objeto)
+              const playersObj = {};
               
-              // NO normalizar - las URLs de require.context ya son válidas
-              // Webpack maneja las rutas correctamente, incluyendo subcarpetas
-              // Solo convertir a string si es necesario
-              
-              // Crear elemento <audio> real
-              const audio = document.createElement('audio');
-              audio.preload = 'auto';
-              audio.src = audioSrcString;
-              audio.volume = 0;
-              audio.muted = false;
-              audio.setAttribute('playsinline', 'true');
-              audio.crossOrigin = 'anonymous';
-              audio.style.display = 'none';
-              
-              // Agregar al DOM para que funcione correctamente en móviles
-              document.body.appendChild(audio);
-              
-              elements.push(audio);
-              
-              // Pre-cargar con eventos
-              try {
-                await new Promise((resolve) => {
-                  let resolved = false;
-                  const timeout = setTimeout(() => {
-                    if (!resolved) {
-                      resolved = true;
-                      resolve();
-                    }
-                  }, 10000); // Timeout de 10 segundos
-                  
-                  const handleReady = () => {
-                    if (!resolved) {
-                      resolved = true;
-                      clearTimeout(timeout);
-                      if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
-                        durations[i] = audio.duration;
-                        console.log(`[AudioContext] Audio ${i} pre-cargado: ${audio.duration.toFixed(2)}s`);
-                      } else {
-                        durations[i] = 0;
-                      }
-                      const progress = Math.round(((i + 1) / audioSrcs.length) * 100);
-                      setPreloadProgress(progress);
-                      resolve();
-                    }
-                  };
-                  
-                  audio.addEventListener('loadedmetadata', handleReady, { once: true });
-                  audio.addEventListener('canplay', handleReady, { once: true });
-                  audio.addEventListener('error', (e) => {
-                    console.warn(`[AudioContext] Error pre-cargando audio ${i}:`, audio.error);
-                    if (!resolved) {
-                      resolved = true;
-                      clearTimeout(timeout);
-                      durations[i] = 0;
-                      const progress = Math.round(((i + 1) / audioSrcs.length) * 100);
-                      setPreloadProgress(progress);
-                      resolve();
-                    }
-                  }, { once: true });
-                  
-                  audio.load();
-                });
-              } catch (e) {
-                console.warn(`[AudioContext] Error pre-cargando elemento ${i}:`, e);
-                durations[i] = 0;
-                const progress = Math.round(((i + 1) / audioSrcs.length) * 100);
-                setPreloadProgress(progress);
-              }
-            }
-            
-            audioElementsRef.current = elements;
-            if (elements.length > 0) {
-              currentAudioRef.current = elements[0];
-            }
-            setAudioDurations(durations);
-            setPreloadedAudios(true);
-            setPreloadProgress(100);
-            console.log(`[AudioContext] ${elements.length} elementos <audio> creados y pre-cargados`);
-          };
-          
-          createAudioElements();
-          
-          // También crear instancias Howler.js como fallback (Opción 1)
-          console.log('[AudioContext] Creando instancias Howl como fallback...');
-          const createHowlInstances = () => {
-            const instances = [];
-            
-            for (let i = 0; i < audioSrcs.length; i++) {
-              const audioSrc = audioSrcs[i];
-              let audioSrcString = typeof audioSrc === 'string' ? audioSrc : (audioSrc?.default || audioSrc);
-              
-              // Normalizar ruta
-              if (audioSrcString && typeof audioSrcString === 'string') {
-                if (!audioSrcString.startsWith('http') && !audioSrcString.startsWith('data:')) {
-                  if (audioSrcString.startsWith('/')) {
-                    audioSrcString = window.location.origin + audioSrcString;
-                  } else if (audioSrcString.startsWith('./') || audioSrcString.startsWith('../')) {
-                    const baseUrl = window.location.origin;
-                    const absolutePath = audioSrcString.startsWith('.') 
-                      ? audioSrcString.replace(/^\./, '')
-                      : '/' + audioSrcString;
-                    audioSrcString = baseUrl + absolutePath;
-                  } else {
-                    audioSrcString = window.location.origin + '/' + audioSrcString;
-                  }
-                }
-              }
-              
-              const howl = new Howl({
-                src: [audioSrcString],
-                html5: true, // Opción 1: Usar HTML5 en móviles para mejor compatibilidad
-                preload: true,
-                volume: 0,
-                onplayerror: function() {
-                  // Manejar desbloqueo de audio (Opción 1)
-                  console.log('[AudioContext] Howl playerror, esperando unlock...');
-                  howl.once('unlock', function() {
-                    console.log('[AudioContext] Howl desbloqueado, intentando reproducir...');
-                    howl.play();
-                  });
-                }
+              audioSrcs.forEach((audioSrc, i) => {
+                let audioSrcString = typeof audioSrc === 'string' ? audioSrc : (audioSrc?.default || audioSrc);
+                // NO normalizar - las URLs de require.context ya son válidas
+                playersObj[`audio_${i}`] = audioSrcString;
               });
               
-              instances.push(howl);
-            }
-            
-            howlInstancesRef.current = instances;
-            console.log(`[AudioContext] ${instances.length} instancias Howl creadas como fallback`);
-          };
-          
-          createHowlInstances();
-          return; // Salir temprano para evitar el código de elementos Audio de desktop
-        }
-        
-        // Código original para desktop (mantener como fallback)
-        if (false) { // Nunca ejecutar, solo para referencia
-          const createElements = async () => {
-            const elements = [];
-            for (let i = 0; i < audioSrcs.length; i++) {
-              const audioSrc = audioSrcs[i];
-              let audioSrcString = typeof audioSrc === 'string' ? audioSrc : (audioSrc?.default || audioSrc);
+              // Crear Tone.Players (similar a interactivo-orquesta)
+              const players = new Tone.Players(playersObj);
+              const durations = [];
               
-              const audio = new Audio();
-              audio.preload = 'auto';
-              audio.src = audioSrcString;
-              audio.volume = 0;
-              audio.muted = false;
-              audio.playsInline = true;
-              audio.crossOrigin = 'anonymous';
+              // Esperar a que todos los buffers estén cargados
+              let loadedCount = 0;
+              const totalCount = audioSrcs.length;
               
-              elements.push(audio);
-              
-              // Pre-cargar con timeout de seguridad
-              try {
-                await new Promise((resolve) => {
-                  let resolved = false;
-                  const timeout = setTimeout(() => {
-                    if (!resolved) {
-                      resolved = true;
-                      resolve();
+              players._players.forEach((player, i) => {
+                const checkBuffer = () => {
+                  if (player.buffer.loaded) {
+                    loadedCount++;
+                    if (player.buffer.duration && isFinite(player.buffer.duration) && player.buffer.duration > 0) {
+                      durations[i] = player.buffer.duration;
+                      console.log(`[AudioContext] Tone Player ${i} cargado: ${player.buffer.duration.toFixed(2)}s`);
+                    } else {
+                      durations[i] = 0;
                     }
-                  }, 5000);
-                  
-                  const handleReady = () => {
-                    if (!resolved) {
-                      resolved = true;
-                      clearTimeout(timeout);
-                      resolve();
+                    
+                    const progress = Math.round((loadedCount / totalCount) * 100);
+                    setPreloadProgress(progress);
+                    
+                    if (loadedCount === totalCount) {
+                      tonePlayersRef.current = players;
+                      setAudioDurations(durations);
+                      setPreloadedAudios(true);
+                      setPreloadProgress(100);
+                      console.log(`[AudioContext] ${totalCount} Tone Players creados y pre-cargados`);
                     }
+                  } else {
+                    // Si aún no está cargado, esperar un poco y volver a verificar
+                    setTimeout(checkBuffer, 100);
+                  }
+                };
+                
+                // Intentar verificar inmediatamente
+                checkBuffer();
+                
+                // También escuchar el evento onload del buffer
+                if (player.buffer.onload) {
+                  const originalOnload = player.buffer.onload;
+                  player.buffer.onload = () => {
+                    if (originalOnload) originalOnload();
+                    checkBuffer();
                   };
+                } else {
+                  player.buffer.onload = checkBuffer;
+                }
+                
+                // Manejar errores de carga
+                player.buffer.onerror = (error) => {
+                  console.warn(`[AudioContext] Error cargando Tone Player ${i}:`, error);
+                  loadedCount++;
+                  durations[i] = 0;
+                  const progress = Math.round((loadedCount / totalCount) * 100);
+                  setPreloadProgress(progress);
                   
-                  audio.addEventListener('loadedmetadata', handleReady, { once: true });
-                  audio.addEventListener('canplay', handleReady, { once: true });
-                  audio.addEventListener('error', handleReady, { once: true });
-                  audio.load();
-                });
-              } catch (e) {
-                console.warn(`[AudioContext] Error pre-cargando elemento ${i}:`, e);
+                  if (loadedCount === totalCount) {
+                    tonePlayersRef.current = players;
+                    setAudioDurations(durations);
+                    setPreloadedAudios(true);
+                    setPreloadProgress(100);
+                  }
+                };
+              });
+              
+              // Si todos ya están cargados (poco probable pero posible)
+              if (loadedCount === totalCount) {
+                tonePlayersRef.current = players;
+                setAudioDurations(durations);
+                setPreloadedAudios(true);
+                setPreloadProgress(100);
               }
               
-              const progress = Math.round(((i + 1) / audioSrcs.length) * 100);
-              setPreloadProgress(progress);
+            } catch (error) {
+              console.error('[AudioContext] Error creando Tone Players:', error);
+              setPreloadedAudios(true);
+              setPreloadProgress(100);
             }
-            
-            audioElementsRef.current = elements;
-            if (elements.length > 0) {
-              currentAudioRef.current = elements[0];
-            }
-            setPreloadedAudios(true);
-            setPreloadProgress(100);
-            console.log(`[AudioContext] ${elements.length} elementos Audio creados y pre-cargados`);
           };
           
-          createElements();
+          createTonePlayers();
         } else {
-          // En otros navegadores, pre-cargar normalmente
+          // Para desktop con múltiples audios, usar la función preloadAllAudios
           preloadAllAudios(audioSrcs);
         }
-      } else {
-        setPreloadedAudios(true); // Si solo hay un audio, marcar como listo
-        setPreloadProgress(100);
-      }
+    } else {
+      setPreloadedAudios(true); // Si solo hay un audio, marcar como listo
+      setPreloadProgress(100);
+    }
     };
 
     loadDurations();
@@ -1276,7 +1171,89 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
 
   const play = async () => {
     return new Promise(async (resolve) => {
-      // Si estamos usando Howler.js en iOS/Android
+      // PRIORIDAD 1: Usar Tone.js en móviles con múltiples audios (basado en interactivo-orquesta)
+      if (useMultipleElements && tonePlayersRef.current) {
+        try {
+          // Asegurar que Tone.start() se haya llamado (requerido por navegadores)
+          if (!toneStartedRef.current) {
+            await Tone.start();
+            toneStartedRef.current = true;
+            console.log('[AudioContext] Tone.start() llamado');
+          }
+          
+          const players = tonePlayersRef.current;
+          const playerKey = `audio_${currentIndex}`;
+          const player = players.player(playerKey);
+          
+          if (!player) {
+            console.warn(`[AudioContext] No hay Tone Player para ${playerKey}`);
+            resolve();
+            return;
+          }
+          
+          // Detener otros players
+          players._players.forEach((p, i) => {
+            if (i !== currentIndex && p.state === 'started') {
+              p.stop();
+            }
+          });
+          
+          // Obtener el tiempo actual del Transport
+          const Transport = Tone.getTransport();
+          const currentTime = Transport.seconds;
+          
+          // Si no está reproduciendo, iniciar el Transport
+          if (Transport.state !== 'started') {
+            Transport.start();
+          }
+          
+          // Reproducir el player actual desde el tiempo correcto
+          player.start("+0.1", currentTime);
+          toneCurrentPlayerRef.current = player;
+          
+          // Fade in con GSAP (ajustar volumen del player)
+          player.volume.value = -Infinity; // Silenciar inicialmente
+          gsap.to({ value: 0 }, {
+            value: 0,
+            duration: 2.5,
+            ease: 'sine.out',
+            onUpdate: function() {
+              // Tone.js usa decibeles, convertir de 0-1 a dB
+              const db = this.targets()[0].value === 0 ? -Infinity : 20 * Math.log10(this.targets()[0].value);
+              player.volume.value = db;
+            },
+            onComplete: () => {
+              player.volume.value = 0; // 0 dB = volumen normal
+            }
+          });
+          
+          setIsPlaying(true);
+          console.log(`[AudioContext] Reproduciendo con Tone.js: ${playerKey}`);
+          
+          // Manejar cuando termine (usando el buffer duration)
+          const duration = player.buffer.duration;
+          setTimeout(() => {
+            setIsPlaying(false);
+            const nextIndex = (currentIndex + 1) % audioSrcs.length;
+            if (nextIndex !== currentIndex) {
+              currentIndexRef.current = nextIndex;
+              setCurrentIndex(nextIndex);
+            }
+          }, duration * 1000);
+          
+          resolve();
+        } catch (error) {
+          console.error('[AudioContext] Error reproduciendo con Tone.js:', error);
+          // Fallback a Howler.js
+          if (useMultipleElements && howlInstancesRef.current.length > 0) {
+            // ... código de Howler.js fallback
+          }
+          resolve();
+        }
+        return;
+      }
+      
+      // PRIORIDAD 2: Fallback a Howler.js en iOS/Android
       if (useMultipleElements && howlInstancesRef.current.length > 0) {
         const howl = howlInstancesRef.current[currentIndex];
         if (!howl) {
@@ -1566,7 +1543,29 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
 
   const pause = () => {
     return new Promise((resolve) => {
-      // Opción 4: Usar elementos <audio> reales en iOS/Android (prioridad)
+      // PRIORIDAD 1: Usar Tone.js en móviles con múltiples audios
+      if (useMultipleElements && tonePlayersRef.current) {
+        try {
+          const players = tonePlayersRef.current;
+          const Transport = Tone.getTransport();
+          
+          // Pausar el Transport
+          Transport.pause();
+          
+          // Detener todos los players
+          players.stopAll();
+          
+          setIsPlaying(false);
+          console.log('[AudioContext] Pausado con Tone.js');
+          resolve();
+        } catch (error) {
+          console.error('[AudioContext] Error pausando con Tone.js:', error);
+          resolve();
+        }
+        return;
+      }
+      
+      // PRIORIDAD 2: Usar elementos <audio> reales en iOS/Android (fallback)
       if (useMultipleElements && audioElementsRef.current.length > 0) {
         const audio = audioElementsRef.current[currentIndex];
         if (audio && !audio.paused) {
@@ -1662,7 +1661,66 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     if (index < 0 || index >= audioSrcs.length) return;
     if (index === currentIndex && targetTime === 0) return; // Si es el mismo y no hay tiempo específico, no hacer nada
     
-    // Si estamos usando Howler.js
+    // PRIORIDAD 1: Usar Tone.js en móviles con múltiples audios
+    if (useMultipleElements && tonePlayersRef.current) {
+      try {
+        const players = tonePlayersRef.current;
+        const Transport = Tone.getTransport();
+        const wasPlaying = isPlaying;
+        
+        // Detener el player actual
+        if (toneCurrentPlayerRef.current) {
+          toneCurrentPlayerRef.current.stop();
+        }
+        
+        // Cambiar al nuevo índice
+        currentIndexRef.current = index;
+        setCurrentIndex(index);
+        
+        const playerKey = `audio_${index}`;
+        const newPlayer = players.player(playerKey);
+        
+        if (newPlayer && wasPlaying) {
+          // Calcular el tiempo total hasta este punto
+          let totalTime = targetTime;
+          for (let i = 0; i < index; i++) {
+            const prevPlayer = players.player(`audio_${i}`);
+            if (prevPlayer && prevPlayer.buffer.loaded) {
+              totalTime += prevPlayer.buffer.duration;
+            }
+          }
+          
+          // Establecer el tiempo del Transport
+          Transport.seconds = totalTime;
+          
+          // Reproducir el nuevo player
+          newPlayer.start("+0.1", targetTime);
+          toneCurrentPlayerRef.current = newPlayer;
+          
+          // Fade in
+          newPlayer.volume.value = -Infinity;
+          gsap.to({ value: 0 }, {
+            value: 0,
+            duration: 0.4,
+            ease: 'power2.out',
+            onUpdate: function() {
+              const db = this.targets()[0].value === 0 ? -Infinity : 20 * Math.log10(this.targets()[0].value);
+              newPlayer.volume.value = db;
+            },
+            onComplete: () => {
+              newPlayer.volume.value = 0;
+            }
+          });
+          
+          setIsPlaying(true);
+        }
+      } catch (error) {
+        console.error('[AudioContext] Error en seekToAudio con Tone.js:', error);
+      }
+      return;
+    }
+    
+    // PRIORIDAD 2: Fallback a Howler.js
     if (useMultipleElements && howlInstancesRef.current.length > 0) {
       const wasPlaying = isPlaying;
       const currentHowl = howlInstancesRef.current[currentIndex];
@@ -1783,6 +1841,18 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
 
   // Función para obtener el tiempo transcurrido total
   const getTotalElapsed = () => {
+    // PRIORIDAD 1: Usar Tone.js en móviles con múltiples audios
+    if (useMultipleElements && tonePlayersRef.current) {
+      try {
+        const Transport = Tone.getTransport();
+        return Transport.seconds;
+      } catch (error) {
+        console.error('[AudioContext] Error obteniendo tiempo con Tone.js:', error);
+        return 0;
+      }
+    }
+    
+    // PRIORIDAD 2: Fallback a Howler.js
     if (useMultipleElements && howlInstancesRef.current.length > 0) {
       const howl = howlInstancesRef.current[currentIndex];
       if (!howl || audioDurations.length === 0) return 0;
@@ -1794,6 +1864,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       return previousTime + (howl.seek() || 0);
     }
     
+    // PRIORIDAD 3: Desktop - elementos audio normales
     if (!currentAudioRef.current || audioDurations.length === 0) return 0;
     
     const previousTime = audioDurations
