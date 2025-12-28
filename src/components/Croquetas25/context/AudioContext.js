@@ -27,9 +27,20 @@ if (typeof window !== 'undefined') {
 }
 
 export const AudioProvider = ({ children, audioSrcs = [] }) => {
+  // Detectar si estamos en iOS/Android Safari (donde cambiar src causa problemas)
+  const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isAndroid = typeof window !== 'undefined' && /Android/.test(navigator.userAgent);
+  const isSafari = typeof window !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  const isMobileSafari = isIOS || (isAndroid && isSafari);
+  // Solo usar múltiples elementos en iOS/Android Safari con múltiples audios
+  // Se recalcula cuando cambia audioSrcs
+  const useMultipleElements = isMobileSafari && audioSrcs.length > 1;
+  
   // Dos elementos audio: uno actual y uno siguiente para transiciones suaves
+  // O array de elementos Audio si estamos en iOS/Android Safari con múltiples audios
   const currentAudioRef = useRef(null);
   const nextAudioRef = useRef(null);
+  const audioElementsRef = useRef([]); // Array de elementos Audio (solo para iOS/Android Safari con múltiples audios)
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -268,23 +279,71 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
 
       setAudioDurations(durations);
       
-      // Pre-cargar todos los audios cuando hay múltiples (funciona en todos los SO)
-      // En iOS/Android Safari, simplificar la pre-carga para evitar bloqueos
+      // Pre-cargar todos los audios cuando hay múltiples
       if (audioSrcs.length > 1) {
         console.log('[AudioContext] Múltiples audios detectados: iniciando pre-carga...');
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        const isAndroid = /Android/.test(navigator.userAgent);
-        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
         
-        // En iOS/Android Safari, marcar como pre-cargado inmediatamente y no bloquear
-        if ((isIOS || (isAndroid && isSafari)) && audioSrcs.length > 1) {
-          console.log('[AudioContext] iOS/Android Safari: Marcando audios como pre-cargados inmediatamente para evitar bloqueos');
-          setPreloadedAudios(true);
-          setPreloadProgress(100);
-          // Pre-cargar en background sin bloquear (opcional)
-          preloadAllAudios(audioSrcs).catch(err => {
-            console.warn('[AudioContext] Error en pre-carga en background:', err);
-          });
+        // En iOS/Android Safari, crear elementos Audio separados y pre-cargarlos
+        if (useMultipleElements) {
+          console.log('[AudioContext] iOS/Android Safari: Creando elementos Audio separados...');
+          const createElements = async () => {
+            const elements = [];
+            for (let i = 0; i < audioSrcs.length; i++) {
+              const audioSrc = audioSrcs[i];
+              let audioSrcString = typeof audioSrc === 'string' ? audioSrc : (audioSrc?.default || audioSrc);
+              
+              const audio = new Audio();
+              audio.preload = 'auto';
+              audio.src = audioSrcString;
+              audio.volume = 0;
+              audio.muted = false;
+              audio.playsInline = true;
+              audio.crossOrigin = 'anonymous';
+              
+              elements.push(audio);
+              
+              // Pre-cargar con timeout de seguridad
+              try {
+                await new Promise((resolve) => {
+                  let resolved = false;
+                  const timeout = setTimeout(() => {
+                    if (!resolved) {
+                      resolved = true;
+                      resolve();
+                    }
+                  }, 5000);
+                  
+                  const handleReady = () => {
+                    if (!resolved) {
+                      resolved = true;
+                      clearTimeout(timeout);
+                      resolve();
+                    }
+                  };
+                  
+                  audio.addEventListener('loadedmetadata', handleReady, { once: true });
+                  audio.addEventListener('canplay', handleReady, { once: true });
+                  audio.addEventListener('error', handleReady, { once: true });
+                  audio.load();
+                });
+              } catch (e) {
+                console.warn(`[AudioContext] Error pre-cargando elemento ${i}:`, e);
+              }
+              
+              const progress = Math.round(((i + 1) / audioSrcs.length) * 100);
+              setPreloadProgress(progress);
+            }
+            
+            audioElementsRef.current = elements;
+            if (elements.length > 0) {
+              currentAudioRef.current = elements[0];
+            }
+            setPreloadedAudios(true);
+            setPreloadProgress(100);
+            console.log(`[AudioContext] ${elements.length} elementos Audio creados y pre-cargados`);
+          };
+          
+          createElements();
         } else {
           // En otros navegadores, pre-cargar normalmente
           preloadAllAudios(audioSrcs);
@@ -392,8 +451,26 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           const nextSrcString = typeof nextSrc === 'string' ? nextSrc : (nextSrc?.default || nextSrc);
           
           console.log(`[AudioContext] Estableciendo nuevo src: ${nextSrcString}`);
-          currentAudio.src = nextSrcString;
-          currentAudio.load();
+          
+          // En iOS/Android Safari con múltiples audios, usar el siguiente elemento del array
+          if (useMultipleElements && audioElementsRef.current.length > 0) {
+            const nextAudio = audioElementsRef.current[nextIndex];
+            if (nextAudio) {
+              // Cambiar al siguiente elemento
+              currentAudioRef.current = nextAudio;
+              currentIndexRef.current = nextIndex;
+              
+              console.log(`[AudioContext] Cambiado a elemento Audio ${nextIndex} (iOS/Android Safari)`);
+            } else {
+              // Fallback: cambiar src normalmente
+              currentAudio.src = nextSrcString;
+              currentAudio.load();
+            }
+          } else {
+            // En otros casos, cambiar src normalmente
+            currentAudio.src = nextSrcString;
+            currentAudio.load();
+          }
           
           // En iOS, el AudioContext se reconectará automáticamente en setupAudioContext cuando el audio esté listo
           
@@ -410,14 +487,23 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           fadeOutTweenRef.current = null;
           
           // Esperar a que el nuevo audio esté listo y reproducir con fade in breve
-          // En iOS, el AudioContext se reconectará automáticamente en el useEffect principal
+          // En iOS/Android Safari con múltiples elementos, el audio ya está pre-cargado
           const tryPlay = async () => {
-            if (currentAudio.readyState >= 2) {
+            const audioToPlay = currentAudioRef.current;
+            if (!audioToPlay) {
+              setTimeout(tryPlay, 50);
+              return;
+            }
+            
+            // En iOS/Android Safari con múltiples elementos, el audio ya está pre-cargado
+            const minReadyState = (useMultipleElements && audioElementsRef.current.length > 0) ? 1 : 2;
+            
+            if (audioToPlay.readyState >= minReadyState) {
               console.log('[AudioContext] Reproduciendo siguiente audio');
               try {
-                await currentAudio.play();
-                currentAudio.volume = 0;
-                fadeInTweenRef.current = gsap.to(currentAudio, {
+                await audioToPlay.play();
+                audioToPlay.volume = 0;
+                fadeInTweenRef.current = gsap.to(audioToPlay, {
                   volume: 1,
                   duration: 0.4, // Fade in breve
                   ease: 'power2.out',
@@ -433,9 +519,9 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
                 if (isIOS) {
                   setTimeout(async () => {
                     try {
-                      await currentAudio.play();
-                      currentAudio.volume = 0;
-                      fadeInTweenRef.current = gsap.to(currentAudio, {
+                      await audioToPlay.play();
+                      audioToPlay.volume = 0;
+                      fadeInTweenRef.current = gsap.to(audioToPlay, {
                         volume: 1,
                         duration: 0.4,
                         ease: 'power2.out',
@@ -473,9 +559,6 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
 
     const currentSrc = audioSrcs[currentIndex];
     if (!currentSrc) return;
-
-    const audio = currentAudioRef.current;
-    if (!audio) return;
     
     // Si estamos cambiando desde handleEnded, no hacer nada aquí para evitar interferencia
     if (isChangingFromEndedRef.current) {
@@ -483,73 +566,102 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       return;
     }
     
-    // Verificar si el src ya está configurado correctamente (para evitar resetear cuando handleEnded cambia el src)
-    // En iOS, asegurar que las rutas se conviertan correctamente a URLs absolutas
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    let currentSrcString = typeof currentSrc === 'string' ? currentSrc : (currentSrc?.default || currentSrc);
-    
-    // En iOS, convertir rutas relativas a URLs absolutas si es necesario
-    if (isIOS && currentSrcString && typeof currentSrcString === 'string' && !currentSrcString.startsWith('http') && !currentSrcString.startsWith('data:')) {
-      // Si es una ruta relativa, convertirla a URL absoluta
-      try {
-        // Si ya es una URL válida (empieza con /), dejarla así
-        // Si es una ruta de require.context, debería ser una URL válida ya
-        if (currentSrcString.startsWith('/')) {
-          // Ya es una ruta absoluta relativa al dominio
-        } else if (currentSrcString.includes('./') || currentSrcString.includes('../')) {
-          // Es una ruta relativa, convertir a absoluta
-          const baseUrl = window.location.origin;
-          const absolutePath = currentSrcString.startsWith('.') 
-            ? currentSrcString.replace(/^\./, '')
-            : '/' + currentSrcString;
-          currentSrcString = baseUrl + absolutePath;
-        }
-      } catch (e) {
-        console.warn('[AudioContext] Error normalizando ruta de audio en iOS:', e);
-      }
-    }
-    
-    const currentAudioSrc = audio.src || '';
-    // Comparar normalizando las URLs (pueden ser absolutas o relativas)
-    // En iOS, usar comparación más estricta con rutas completas
-    const normalizedCurrentSrc = isIOS 
-      ? currentAudioSrc 
-      : (currentAudioSrc.split('/').pop() || currentAudioSrc);
-    const normalizedNewSrc = isIOS 
-      ? currentSrcString 
-      : (currentSrcString.split('/').pop() || currentSrcString);
-    
-    // En iOS con múltiples audios, ser más estricto con la verificación
-    const hasMultipleAudios = audioSrcs.length > 1;
-    
-    if ((normalizedCurrentSrc === normalizedNewSrc || currentAudioSrc === currentSrcString) && audio.readyState >= 1) {
-      // En iOS con múltiples audios, verificar que realmente esté listo (readyState 2 y duration válida)
-      if (isIOS && hasMultipleAudios) {
-        if (audio.readyState < 2 || !audio.duration || !isFinite(audio.duration) || audio.duration <= 0) {
-          // Forzar recarga si no está suficientemente cargado
-          console.log('[AudioContext] iOS múltiples audios: readyState o duration insuficiente, forzando recarga');
-          // No hacer return, continuar con la configuración
-        } else {
-          // El src ya está configurado y está realmente listo
-          return;
-        }
-      } else {
-        // El src ya está configurado y tiene metadata, no hacer nada
-        return;
-      }
-    }
-
+    // Declarar variables que se usarán en el cleanup
     let progressIntervalId = null;
     let audioCleanup = null;
-
-    // Detección mejorada de navegadores y dispositivos (isIOS ya está definido arriba)
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
-    const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
-    audio.volume = 0;
-    audio.muted = false;
+    // En iOS/Android Safari con múltiples audios, usar elementos diferentes
+    if (useMultipleElements && audioElementsRef.current.length > 0) {
+      const audio = audioElementsRef.current[currentIndex];
+      if (!audio) {
+        console.warn(`[AudioContext] No hay elemento Audio para índice ${currentIndex}`);
+        return;
+      }
+      
+      // Si ya es el elemento actual, no hacer nada
+      if (currentAudioRef.current === audio) {
+        return;
+      }
+      
+      // Pausar el elemento anterior
+      if (currentAudioRef.current && currentAudioRef.current !== audio) {
+        currentAudioRef.current.pause();
+        currentAudioRef.current.currentTime = 0;
+      }
+      
+      // Establecer el nuevo elemento como actual
+      currentAudioRef.current = audio;
+      console.log(`[AudioContext] Cambiado a elemento Audio ${currentIndex}/${audioElementsRef.current.length} (iOS/Android Safari)`);
+      // Continuar con la configuración normal del audio (setupAudioContext, etc.)
+    } else {
+      // Lógica normal: cambiar src del mismo elemento
+      const audio = currentAudioRef.current;
+      if (!audio) return;
+      
+      // Verificar si el src ya está configurado correctamente (para evitar resetear cuando handleEnded cambia el src)
+      // En iOS, asegurar que las rutas se conviertan correctamente a URLs absolutas
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      let currentSrcString = typeof currentSrc === 'string' ? currentSrc : (currentSrc?.default || currentSrc);
+      
+      // En iOS, convertir rutas relativas a URLs absolutas si es necesario
+      if (isIOS && currentSrcString && typeof currentSrcString === 'string' && !currentSrcString.startsWith('http') && !currentSrcString.startsWith('data:')) {
+        // Si es una ruta relativa, convertirla a URL absoluta
+        try {
+          // Si ya es una URL válida (empieza con /), dejarla así
+          // Si es una ruta de require.context, debería ser una URL válida ya
+          if (currentSrcString.startsWith('/')) {
+            // Ya es una ruta absoluta relativa al dominio
+          } else if (currentSrcString.includes('./') || currentSrcString.includes('../')) {
+            // Es una ruta relativa, convertir a absoluta
+            const baseUrl = window.location.origin;
+            const absolutePath = currentSrcString.startsWith('.') 
+              ? currentSrcString.replace(/^\./, '')
+              : '/' + currentSrcString;
+            currentSrcString = baseUrl + absolutePath;
+          }
+        } catch (e) {
+          console.warn('[AudioContext] Error normalizando ruta de audio en iOS:', e);
+        }
+      }
+      
+      const currentAudioSrc = audio.src || '';
+      // Comparar normalizando las URLs (pueden ser absolutas o relativas)
+      // En iOS, usar comparación más estricta con rutas completas
+      const normalizedCurrentSrc = isIOS 
+        ? currentAudioSrc 
+        : (currentAudioSrc.split('/').pop() || currentAudioSrc);
+      const normalizedNewSrc = isIOS 
+        ? currentSrcString 
+        : (currentSrcString.split('/').pop() || currentSrcString);
+      
+      // En iOS con múltiples audios, ser más estricto con la verificación
+      const hasMultipleAudios = audioSrcs.length > 1;
+      
+      if ((normalizedCurrentSrc === normalizedNewSrc || currentAudioSrc === currentSrcString) && audio.readyState >= 1) {
+        // En iOS con múltiples audios, verificar que realmente esté listo (readyState 2 y duration válida)
+        if (isIOS && hasMultipleAudios) {
+          if (audio.readyState < 2 || !audio.duration || !isFinite(audio.duration) || audio.duration <= 0) {
+            // Forzar recarga si no está suficientemente cargado
+            console.log('[AudioContext] iOS múltiples audios: readyState o duration insuficiente, forzando recarga');
+            // No hacer return, continuar con la configuración
+          } else {
+            // El src ya está configurado y está realmente listo
+            return;
+          }
+        } else {
+          // El src ya está configurado y tiene metadata, no hacer nada
+          return;
+      }
+      }
+
+      // Detección mejorada de navegadores y dispositivos (isIOS ya está definido arriba)
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+      const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      audio.volume = 0;
+      audio.muted = false;
     // Usar 'auto' para mejor compatibilidad, pero manejar la carga manualmente
     audio.preload = 'auto';
     audio.loop = false; // No loop, manejamos la playlist manualmente
@@ -993,7 +1105,8 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           }
         }
       }
-    }, progressInterval);
+      }, progressInterval);
+    }
 
     return () => {
       if (progressIntervalId) {
