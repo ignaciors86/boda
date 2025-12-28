@@ -315,56 +315,79 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
               const playersList = [...players._players.values()];
               const totalCount = playersList.length;
               
+              // Función para verificar y procesar un buffer cargado
+              const checkAndProcessBuffer = (player, i) => {
+                if (player.buffer.loaded) {
+                  if (loadedCount < totalCount) { // Evitar procesar múltiples veces
+                    loadedCount++;
+                    
+                    if (player.buffer.duration && isFinite(player.buffer.duration) && player.buffer.duration > 0) {
+                      durations[i] = player.buffer.duration;
+                      console.log(`[AudioContext] Tone Player ${i} cargado: ${player.buffer.duration.toFixed(2)}s`);
+                    } else {
+                      durations[i] = 0;
+                    }
+                    
+                    const progress = Math.round((loadedCount / totalCount) * 100);
+                    setPreloadProgress(progress);
+                    
+                    if (loadedCount === totalCount) {
+                      tonePlayersRef.current = players;
+                      setAudioDurations(durations);
+                      setPreloadedAudios(true);
+                      setPreloadProgress(100);
+                      setIsLoaded(true); // IMPORTANTE: Marcar isLoaded como true para Tone.js
+                      console.log(`[AudioContext] ${totalCount} Tone Players creados y pre-cargados`);
+                    }
+                  }
+                  return true;
+                }
+                return false;
+              };
+              
               playersList.forEach((player, i) => {
-                // Escuchar el evento onload del buffer (patrón de interactivo-orquesta)
-                player.buffer.onload = () => {
-                  loadedCount++;
-                  
-                  if (player.buffer.duration && isFinite(player.buffer.duration) && player.buffer.duration > 0) {
-                    durations[i] = player.buffer.duration;
-                    console.log(`[AudioContext] Tone Player ${i} cargado: ${player.buffer.duration.toFixed(2)}s`);
-                  } else {
-                    durations[i] = 0;
-                  }
-                  
-                  const progress = Math.round((loadedCount / totalCount) * 100);
-                  setPreloadProgress(progress);
-                  
-                  if (loadedCount === totalCount) {
-                    tonePlayersRef.current = players;
-                    setAudioDurations(durations);
-                    setPreloadedAudios(true);
-                    setPreloadProgress(100);
-                    setIsLoaded(true); // IMPORTANTE: Marcar isLoaded como true para Tone.js
-                    console.log(`[AudioContext] ${totalCount} Tone Players creados y pre-cargados`);
-                  }
-                };
+                // Verificar inmediatamente si ya está cargado
+                if (!checkAndProcessBuffer(player, i)) {
+                  // Si no está cargado, escuchar el evento onload del buffer (patrón de interactivo-orquesta)
+                  player.buffer.onload = () => {
+                    checkAndProcessBuffer(player, i);
+                  };
+                }
                 
                 // Manejar errores de carga
                 player.buffer.onerror = (error) => {
                   console.warn(`[AudioContext] Error cargando Tone Player ${i}:`, error);
-                  loadedCount++;
-                  durations[i] = 0;
-                  const progress = Math.round((loadedCount / totalCount) * 100);
-                  setPreloadProgress(progress);
-                  
-                  if (loadedCount === totalCount) {
-                    tonePlayersRef.current = players;
-                    setAudioDurations(durations);
-                    setPreloadedAudios(true);
-                    setPreloadProgress(100);
-                    setIsLoaded(true); // IMPORTANTE: Marcar isLoaded como true incluso con errores
+                  if (loadedCount < totalCount) { // Evitar procesar múltiples veces
+                    loadedCount++;
+                    durations[i] = 0;
+                    const progress = Math.round((loadedCount / totalCount) * 100);
+                    setPreloadProgress(progress);
+                    
+                    if (loadedCount === totalCount) {
+                      tonePlayersRef.current = players;
+                      setAudioDurations(durations);
+                      setPreloadedAudios(true);
+                      setPreloadProgress(100);
+                      setIsLoaded(true); // IMPORTANTE: Marcar isLoaded como true incluso con errores
+                    }
                   }
                 };
               });
               
-              // Si todos ya están cargados (poco probable pero posible)
-              if (loadedCount === totalCount) {
-                tonePlayersRef.current = players;
-                setAudioDurations(durations);
-                setPreloadedAudios(true);
-                setPreloadProgress(100);
-                setIsLoaded(true);
+              // Verificación final: si todos ya están cargados (poco probable pero posible)
+              // Esto maneja el caso donde todos se cargaron antes de asignar los handlers
+              let allLoaded = true;
+              playersList.forEach((player, i) => {
+                if (!player.buffer.loaded) {
+                  allLoaded = false;
+                }
+              });
+              
+              if (allLoaded && loadedCount < totalCount) {
+                // Procesar todos los que faltan
+                playersList.forEach((player, i) => {
+                  checkAndProcessBuffer(player, i);
+                });
               }
               
             } catch (error) {
