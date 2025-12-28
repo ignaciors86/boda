@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getTrackAudios, getTrackAudiosBySubfolder, audioImports } from '../assets/tracks/audioImports';
 
 const normalizeName = (name) => name?.toLowerCase().replace(/\s+/g, '-') || '';
 
@@ -38,7 +39,6 @@ export const useTracks = () => {
     const loadTracks = () => {
       try {
         const imagesContext = require.context('../assets/tracks', true, /\.(jpg|jpeg|png|gif|webp)$/);
-        const audioContext = require.context('../assets/tracks', true, /\.(mp3|MP3)$/);
         const guionContext = require.context('../assets/tracks', true, /guion\.js$/);
         
         const tracksTemp = {};
@@ -79,54 +79,32 @@ export const useTracks = () => {
           });
         });
 
-        // Procesar audio - organizar por subcarpeta
-        const audioFiles = audioContext.keys().sort((a, b) => a.localeCompare(b));
-        const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        // Procesar audio - usar imports estáticos como Timeline
+        // Esto asegura que webpack los incluya correctamente en producción
+        // Primero, obtener todos los tracks que tienen audios disponibles
+        const availableTracks = Object.keys(audioImports);
         
-        audioFiles.forEach(file => {
-          const pathParts = file.split('/').filter(p => p && p !== '.');
-          const trackNameOriginal = pathParts[0];
-          // Filtrar carpetas que no deberían ser tracks
-          if (!isValidTrackName(trackNameOriginal)) {
-            console.log(`[useTracks] Ignorando carpeta no válida: ${trackNameOriginal}`);
-            return;
-          }
-          // Normalizar el nombre para usar como clave (evitar problemas case-sensitive en móviles)
-          const trackNameKey = normalizeName(trackNameOriginal);
+        availableTracks.forEach(trackName => {
+          const trackNameKey = normalizeName(trackName);
+          
+          // Si el track no existe aún, crearlo
           if (!tracksTemp[trackNameKey]) {
-            tracksTemp[trackNameKey] = createTrack(trackNameOriginal);
+            tracksTemp[trackNameKey] = createTrack(trackName);
           }
           
-          const subfolder = pathParts.length > 2 ? pathParts[1] : '__root__';
+          const trackAudiosBySubfolder = getTrackAudiosBySubfolder(trackName);
           
-          if (!tracksTemp[trackNameKey].audioBySubfolder) {
+          if (Object.keys(trackAudiosBySubfolder).length > 0) {
             tracksTemp[trackNameKey].audioBySubfolder = {};
+            
+            Object.keys(trackAudiosBySubfolder).forEach(subfolder => {
+              const audios = trackAudiosBySubfolder[subfolder];
+              if (audios && audios.length > 0) {
+                tracksTemp[trackNameKey].audioBySubfolder[subfolder] = audios;
+                console.log(`[useTracks] Audio cargado estáticamente - Track: ${trackName}, Subcarpeta: ${subfolder}, Audios: ${audios.length}`);
+              }
+            });
           }
-          if (!tracksTemp[trackNameKey].audioBySubfolder[subfolder]) {
-            tracksTemp[trackNameKey].audioBySubfolder[subfolder] = [];
-          }
-          
-          // Obtener la URL del audio desde require.context
-          let audioUrl = audioContext(file);
-          
-          // Convertir a string si es necesario (require.context puede devolver objetos)
-          if (typeof audioUrl !== 'string') {
-            audioUrl = audioUrl?.default || audioUrl;
-          }
-          
-          // NO normalizar las URLs de webpack - require.context ya devuelve URLs válidas
-          // Webpack maneja las rutas correctamente, incluyendo subcarpetas
-          // Solo loguear para diagnóstico en iOS
-          if (isIOS && subfolder !== '__root__') {
-            console.log(`[useTracks] iOS: Audio de subcarpeta - Track: ${trackNameOriginal}, Subcarpeta: ${subfolder}, URL: ${audioUrl}`);
-          }
-          
-          // Logging adicional para subcarpetas en iOS
-          if (isIOS && subfolder !== '__root__') {
-            console.log(`[useTracks] iOS: Procesando audio de subcarpeta - Track: ${trackNameOriginal}, Subcarpeta: ${subfolder}, Ruta original: ${file}, URL normalizada: ${audioUrl}`);
-          }
-          
-          tracksTemp[trackNameKey].audioBySubfolder[subfolder].push(audioUrl);
         });
 
         // Procesar guiones - organizar por subcarpeta
@@ -200,14 +178,13 @@ export const useTracks = () => {
                 const sortedAudios = audios.sort((a, b) => String(a).localeCompare(String(b)));
                 track.subfolderToAudioIndex[subfolder] = audioIndex;
                 
-                // Obtener la URL del audio (require.context ya devuelve URLs válidas de webpack)
+                // Obtener la URL del audio (imports estáticos, webpack procesa las URLs correctamente)
                 let audioSrc = sortedAudios[0];
+                // Los imports estáticos ya son strings con URLs válidas procesadas por webpack
+                // Igual que Timeline, que funciona perfectamente en producción
                 if (typeof audioSrc !== 'string') {
                   audioSrc = audioSrc?.default || audioSrc;
                 }
-                
-                // NO normalizar - webpack ya maneja las rutas correctamente
-                // Las URLs de require.context son válidas tal cual
                 
                 track.audioSrcs.push(audioSrc);
                 audioIndex++;

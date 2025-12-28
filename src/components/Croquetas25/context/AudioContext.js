@@ -131,6 +131,12 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       
       console.log(`[AudioContext] Pre-cargando audio ${i + 1}/${srcs.length}: ${audioSrcString}`);
       
+      // Verificar que la URL sea válida antes de crear el elemento de audio
+      if (!audioSrcString || audioSrcString === '' || (!audioSrcString.includes('.mp3') && !audioSrcString.includes('.wav') && !audioSrcString.includes('.ogg'))) {
+        console.warn(`[AudioContext] URL de audio inválida, saltando: ${audioSrcString}`);
+        continue;
+      }
+      
       const audio = new Audio();
       audio.preload = 'auto';
       audio.src = audioSrcString;
@@ -1169,6 +1175,22 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           if (currentRetries >= maxRetries) {
             console.error(`[AudioContext] Máximo de reintentos alcanzado (${maxRetries}) para: ${audioSrc}`);
             console.error('[AudioContext] El archivo de audio no se puede cargar. Verificar que existe y es accesible.');
+            // Verificar si el archivo realmente existe haciendo una petición HEAD
+            fetch(audioSrc, { method: 'HEAD' })
+              .then(response => {
+                if (!response.ok) {
+                  console.error(`[AudioContext] El archivo no existe en el servidor (HTTP ${response.status}). El build puede necesitar actualizarse.`);
+                  // Marcar como no disponible para evitar más intentos
+                  setIsLoaded(false);
+                  setLoadingProgress(0);
+                }
+              })
+              .catch(err => {
+                console.error('[AudioContext] Error al verificar existencia del archivo:', err);
+                // Marcar como no disponible para evitar más intentos
+                setIsLoaded(false);
+                setLoadingProgress(0);
+              });
             return;
           }
           
