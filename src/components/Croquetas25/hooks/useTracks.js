@@ -79,23 +79,37 @@ export const useTracks = () => {
           // Obtener la URL del audio desde require.context
           let audioUrl = audioContext(file);
           
-          // En iOS, especialmente con subcarpetas, verificar y normalizar la ruta
-          if (isIOS && subfolder !== '__root__') {
-            // Convertir a string si es necesario
-            if (typeof audioUrl !== 'string') {
-              audioUrl = audioUrl?.default || audioUrl;
-            }
-            
-            // Logging para diagnóstico
-            console.log(`[useTracks] iOS: Procesando audio de subcarpeta - Track: ${trackName}, Subcarpeta: ${subfolder}, Ruta original: ${file}, URL generada: ${audioUrl}`);
-            
-            // Verificar que la URL sea válida
-            if (audioUrl && typeof audioUrl === 'string') {
-              // require.context debería devolver URLs válidas, pero verificar
-              if (!audioUrl.startsWith('http') && !audioUrl.startsWith('data:') && !audioUrl.startsWith('/')) {
-                console.warn(`[useTracks] iOS: URL de audio de subcarpeta puede ser problemática: ${audioUrl}`);
+          // Normalizar todas las rutas a URLs absolutas (Opción 5)
+          // Convertir a string si es necesario
+          if (typeof audioUrl !== 'string') {
+            audioUrl = audioUrl?.default || audioUrl;
+          }
+          
+          // Normalizar a URL absoluta si no lo es ya
+          if (audioUrl && typeof audioUrl === 'string') {
+            if (!audioUrl.startsWith('http') && !audioUrl.startsWith('data:')) {
+              // Si no es una URL absoluta, convertirla
+              if (audioUrl.startsWith('/')) {
+                // Ya es una ruta absoluta relativa al dominio
+                audioUrl = window.location.origin + audioUrl;
+              } else if (audioUrl.startsWith('./') || audioUrl.startsWith('../')) {
+                // Es una ruta relativa, convertir a absoluta
+                const baseUrl = window.location.origin;
+                const absolutePath = audioUrl.startsWith('.') 
+                  ? audioUrl.replace(/^\./, '')
+                  : '/' + audioUrl;
+                audioUrl = baseUrl + absolutePath;
+              } else {
+                // Ruta sin prefijo, asumir que es relativa a la raíz
+                audioUrl = window.location.origin + '/' + audioUrl;
               }
+              console.log(`[useTracks] Ruta normalizada: ${file} -> ${audioUrl}`);
             }
+          }
+          
+          // Logging adicional para subcarpetas en iOS
+          if (isIOS && subfolder !== '__root__') {
+            console.log(`[useTracks] iOS: Procesando audio de subcarpeta - Track: ${trackName}, Subcarpeta: ${subfolder}, Ruta original: ${file}, URL normalizada: ${audioUrl}`);
           }
           
           tracksTemp[trackName].audioBySubfolder[subfolder].push(audioUrl);

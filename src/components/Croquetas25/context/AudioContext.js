@@ -286,48 +286,150 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       if (audioSrcs.length > 1) {
         console.log('[AudioContext] Múltiples audios detectados: iniciando pre-carga...');
         
-        // En iOS/Android Safari, usar Howler.js para múltiples audios
+        // En iOS/Android Safari, crear elementos <audio> reales para cada archivo (Opción 4)
         if (useMultipleElements) {
-          console.log('[AudioContext] iOS/Android Safari: Creando instancias Howl con Howler.js...');
-          const createHowlInstances = () => {
-            const instances = [];
+          console.log('[AudioContext] iOS/Android Safari: Creando elementos <audio> reales para cada archivo...');
+          const createAudioElements = async () => {
+            const elements = [];
             const durations = [];
             
             for (let i = 0; i < audioSrcs.length; i++) {
               const audioSrc = audioSrcs[i];
               let audioSrcString = typeof audioSrc === 'string' ? audioSrc : (audioSrc?.default || audioSrc);
               
+              // Normalizar ruta a URL absoluta si no lo es (Opción 5)
+              if (audioSrcString && typeof audioSrcString === 'string') {
+                if (!audioSrcString.startsWith('http') && !audioSrcString.startsWith('data:')) {
+                  if (audioSrcString.startsWith('/')) {
+                    audioSrcString = window.location.origin + audioSrcString;
+                  } else if (audioSrcString.startsWith('./') || audioSrcString.startsWith('../')) {
+                    const baseUrl = window.location.origin;
+                    const absolutePath = audioSrcString.startsWith('.') 
+                      ? audioSrcString.replace(/^\./, '')
+                      : '/' + audioSrcString;
+                    audioSrcString = baseUrl + absolutePath;
+                  } else {
+                    audioSrcString = window.location.origin + '/' + audioSrcString;
+                  }
+                }
+              }
+              
+              // Crear elemento <audio> real
+              const audio = document.createElement('audio');
+              audio.preload = 'auto';
+              audio.src = audioSrcString;
+              audio.volume = 0;
+              audio.muted = false;
+              audio.setAttribute('playsinline', 'true');
+              audio.crossOrigin = 'anonymous';
+              audio.style.display = 'none';
+              
+              // Agregar al DOM para que funcione correctamente en móviles
+              document.body.appendChild(audio);
+              
+              elements.push(audio);
+              
+              // Pre-cargar con eventos
+              try {
+                await new Promise((resolve) => {
+                  let resolved = false;
+                  const timeout = setTimeout(() => {
+                    if (!resolved) {
+                      resolved = true;
+                      resolve();
+                    }
+                  }, 10000); // Timeout de 10 segundos
+                  
+                  const handleReady = () => {
+                    if (!resolved) {
+                      resolved = true;
+                      clearTimeout(timeout);
+                      if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
+                        durations[i] = audio.duration;
+                        console.log(`[AudioContext] Audio ${i} pre-cargado: ${audio.duration.toFixed(2)}s`);
+                      } else {
+                        durations[i] = 0;
+                      }
+                      const progress = Math.round(((i + 1) / audioSrcs.length) * 100);
+                      setPreloadProgress(progress);
+                      resolve();
+                    }
+                  };
+                  
+                  audio.addEventListener('loadedmetadata', handleReady, { once: true });
+                  audio.addEventListener('canplay', handleReady, { once: true });
+                  audio.addEventListener('error', (e) => {
+                    console.warn(`[AudioContext] Error pre-cargando audio ${i}:`, audio.error);
+                    if (!resolved) {
+                      resolved = true;
+                      clearTimeout(timeout);
+                      durations[i] = 0;
+                      const progress = Math.round(((i + 1) / audioSrcs.length) * 100);
+                      setPreloadProgress(progress);
+                      resolve();
+                    }
+                  }, { once: true });
+                  
+                  audio.load();
+                });
+              } catch (e) {
+                console.warn(`[AudioContext] Error pre-cargando elemento ${i}:`, e);
+                durations[i] = 0;
+                const progress = Math.round(((i + 1) / audioSrcs.length) * 100);
+                setPreloadProgress(progress);
+              }
+            }
+            
+            audioElementsRef.current = elements;
+            if (elements.length > 0) {
+              currentAudioRef.current = elements[0];
+            }
+            setAudioDurations(durations);
+            setPreloadedAudios(true);
+            setPreloadProgress(100);
+            console.log(`[AudioContext] ${elements.length} elementos <audio> creados y pre-cargados`);
+          };
+          
+          createAudioElements();
+          
+          // También crear instancias Howler.js como fallback (Opción 1)
+          console.log('[AudioContext] Creando instancias Howl como fallback...');
+          const createHowlInstances = () => {
+            const instances = [];
+            
+            for (let i = 0; i < audioSrcs.length; i++) {
+              const audioSrc = audioSrcs[i];
+              let audioSrcString = typeof audioSrc === 'string' ? audioSrc : (audioSrc?.default || audioSrc);
+              
+              // Normalizar ruta
+              if (audioSrcString && typeof audioSrcString === 'string') {
+                if (!audioSrcString.startsWith('http') && !audioSrcString.startsWith('data:')) {
+                  if (audioSrcString.startsWith('/')) {
+                    audioSrcString = window.location.origin + audioSrcString;
+                  } else if (audioSrcString.startsWith('./') || audioSrcString.startsWith('../')) {
+                    const baseUrl = window.location.origin;
+                    const absolutePath = audioSrcString.startsWith('.') 
+                      ? audioSrcString.replace(/^\./, '')
+                      : '/' + audioSrcString;
+                    audioSrcString = baseUrl + absolutePath;
+                  } else {
+                    audioSrcString = window.location.origin + '/' + audioSrcString;
+                  }
+                }
+              }
+              
               const howl = new Howl({
                 src: [audioSrcString],
-                html5: false, // Usar Web Audio API para mejor compatibilidad
+                html5: true, // Opción 1: Usar HTML5 en móviles para mejor compatibilidad
                 preload: true,
                 volume: 0,
-                onload: () => {
-                  durations[i] = howl.duration();
-                  console.log(`[AudioContext] Howl ${i} cargado: ${durations[i].toFixed(2)}s`);
-                  const progress = Math.round(((i + 1) / audioSrcs.length) * 100);
-                  setPreloadProgress(progress);
-                  
-                  // Si todos están cargados
-                  if (durations.filter(d => d !== undefined).length === audioSrcs.length) {
-                    setAudioDurations(durations);
-                    setPreloadedAudios(true);
-                    setPreloadProgress(100);
-                    console.log(`[AudioContext] ${instances.length} instancias Howl creadas y pre-cargadas`);
-                  }
-                },
-                onloaderror: (id, error) => {
-                  console.warn(`[AudioContext] Error cargando Howl ${i}:`, error);
-                  durations[i] = 0;
-                  const progress = Math.round(((i + 1) / audioSrcs.length) * 100);
-                  setPreloadProgress(progress);
-                  
-                  // Si todos están procesados (cargados o con error)
-                  if (durations.filter(d => d !== undefined).length === audioSrcs.length) {
-                    setAudioDurations(durations);
-                    setPreloadedAudios(true);
-                    setPreloadProgress(100);
-                  }
+                onplayerror: function() {
+                  // Manejar desbloqueo de audio (Opción 1)
+                  console.log('[AudioContext] Howl playerror, esperando unlock...');
+                  howl.once('unlock', function() {
+                    console.log('[AudioContext] Howl desbloqueado, intentando reproducir...');
+                    howl.play();
+                  });
                 }
               });
               
@@ -335,13 +437,11 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
             }
             
             howlInstancesRef.current = instances;
-            setPreloadedAudios(true);
-            setPreloadProgress(100);
-            console.log(`[AudioContext] ${instances.length} instancias Howl creadas`);
+            console.log(`[AudioContext] ${instances.length} instancias Howl creadas como fallback`);
           };
           
           createHowlInstances();
-          return; // Salir temprano para evitar el código de elementos Audio
+          return; // Salir temprano para evitar el código de elementos Audio de desktop
         }
         
         // Código original para desktop (mantener como fallback)
@@ -1479,7 +1579,35 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
 
   const pause = () => {
     return new Promise((resolve) => {
-      // Si estamos usando Howler.js en iOS/Android
+      // Opción 4: Usar elementos <audio> reales en iOS/Android (prioridad)
+      if (useMultipleElements && audioElementsRef.current.length > 0) {
+        const audio = audioElementsRef.current[currentIndex];
+        if (audio && !audio.paused) {
+          if (volumeTweenRef.current) {
+            volumeTweenRef.current.kill();
+            volumeTweenRef.current = null;
+          }
+          
+          volumeTweenRef.current = gsap.to(audio, {
+            volume: 0,
+            duration: 0.6,
+            ease: 'power2.in',
+            onComplete: () => {
+              audio.pause();
+              audio.volume = 0;
+              volumeTweenRef.current = null;
+              setIsPlaying(false);
+              resolve();
+            }
+          });
+          return;
+        } else {
+          resolve();
+          return;
+        }
+      }
+      
+      // Fallback: Si estamos usando Howler.js en iOS/Android
       if (useMultipleElements && howlInstancesRef.current.length > 0) {
         const howl = howlInstancesRef.current[currentIndex];
         if (howl && howl.playing()) {
@@ -1788,19 +1916,40 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
   return (
     <AudioContextReact.Provider value={value}>
       {children}
-      <audio
-        ref={currentAudioRef}
-        crossOrigin="anonymous"
-        playsInline
-        className="audio-context"
-      />
-      <audio
-        ref={nextAudioRef}
-        crossOrigin="anonymous"
-        playsInline
-        className="audio-context"
-        style={{ display: 'none' }}
-      />
+      {/* Opción 4: Renderizar elementos <audio> reales para móviles */}
+      {useMultipleElements && audioElementsRef.current.length > 0 ? (
+        audioElementsRef.current.map((audio, index) => {
+          // Asignar ref solo al elemento actual
+          const audioRef = index === currentIndex ? currentAudioRef : null;
+          return (
+            <audio
+              key={`audio-mobile-${index}`}
+              ref={audioRef}
+              crossOrigin="anonymous"
+              playsInline
+              className="audio-context"
+              style={{ display: 'none' }}
+            />
+          );
+        })
+      ) : (
+        <>
+          {/* Desktop: elementos audio normales */}
+          <audio
+            ref={currentAudioRef}
+            crossOrigin="anonymous"
+            playsInline
+            className="audio-context"
+          />
+          <audio
+            ref={nextAudioRef}
+            crossOrigin="anonymous"
+            playsInline
+            className="audio-context"
+            style={{ display: 'none' }}
+          />
+        </>
+      )}
     </AudioContextReact.Provider>
   );
 };
