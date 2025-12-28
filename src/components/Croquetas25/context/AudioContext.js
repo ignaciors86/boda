@@ -310,48 +310,35 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
               
               // Esperar a que todos los buffers estén cargados
               let loadedCount = 0;
-              const totalCount = audioSrcs.length;
               
-              players._players.forEach((player, i) => {
-                const checkBuffer = () => {
-                  if (player.buffer.loaded) {
-                    loadedCount++;
-                    if (player.buffer.duration && isFinite(player.buffer.duration) && player.buffer.duration > 0) {
-                      durations[i] = player.buffer.duration;
-                      console.log(`[AudioContext] Tone Player ${i} cargado: ${player.buffer.duration.toFixed(2)}s`);
-                    } else {
-                      durations[i] = 0;
-                    }
-                    
-                    const progress = Math.round((loadedCount / totalCount) * 100);
-                    setPreloadProgress(progress);
-                    
-                    if (loadedCount === totalCount) {
-                      tonePlayersRef.current = players;
-                      setAudioDurations(durations);
-                      setPreloadedAudios(true);
-                      setPreloadProgress(100);
-                      console.log(`[AudioContext] ${totalCount} Tone Players creados y pre-cargados`);
-                    }
+              // Usar el patrón de interactivo-orquesta: escuchar onload directamente
+              const playersList = [...players._players.values()];
+              const totalCount = playersList.length;
+              
+              playersList.forEach((player, i) => {
+                // Escuchar el evento onload del buffer (patrón de interactivo-orquesta)
+                player.buffer.onload = () => {
+                  loadedCount++;
+                  
+                  if (player.buffer.duration && isFinite(player.buffer.duration) && player.buffer.duration > 0) {
+                    durations[i] = player.buffer.duration;
+                    console.log(`[AudioContext] Tone Player ${i} cargado: ${player.buffer.duration.toFixed(2)}s`);
                   } else {
-                    // Si aún no está cargado, esperar un poco y volver a verificar
-                    setTimeout(checkBuffer, 100);
+                    durations[i] = 0;
+                  }
+                  
+                  const progress = Math.round((loadedCount / totalCount) * 100);
+                  setPreloadProgress(progress);
+                  
+                  if (loadedCount === totalCount) {
+                    tonePlayersRef.current = players;
+                    setAudioDurations(durations);
+                    setPreloadedAudios(true);
+                    setPreloadProgress(100);
+                    setIsLoaded(true); // IMPORTANTE: Marcar isLoaded como true para Tone.js
+                    console.log(`[AudioContext] ${totalCount} Tone Players creados y pre-cargados`);
                   }
                 };
-                
-                // Intentar verificar inmediatamente
-                checkBuffer();
-                
-                // También escuchar el evento onload del buffer
-                if (player.buffer.onload) {
-                  const originalOnload = player.buffer.onload;
-                  player.buffer.onload = () => {
-                    if (originalOnload) originalOnload();
-                    checkBuffer();
-                  };
-                } else {
-                  player.buffer.onload = checkBuffer;
-                }
                 
                 // Manejar errores de carga
                 player.buffer.onerror = (error) => {
@@ -366,6 +353,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
                     setAudioDurations(durations);
                     setPreloadedAudios(true);
                     setPreloadProgress(100);
+                    setIsLoaded(true); // IMPORTANTE: Marcar isLoaded como true incluso con errores
                   }
                 };
               });
@@ -376,12 +364,14 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
                 setAudioDurations(durations);
                 setPreloadedAudios(true);
                 setPreloadProgress(100);
+                setIsLoaded(true);
               }
               
             } catch (error) {
               console.error('[AudioContext] Error creando Tone Players:', error);
               setPreloadedAudios(true);
               setPreloadProgress(100);
+              setIsLoaded(true); // IMPORTANTE: Marcar isLoaded como true incluso con errores
             }
           };
           
@@ -611,6 +601,17 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     // Declarar variables que se usarán en el cleanup
     let progressIntervalId = null;
     let audioCleanup = null;
+    
+    // IMPORTANTE: Si estamos usando Tone.js, no intentar usar currentAudioRef.current
+    if (useMultipleElements && tonePlayersRef.current) {
+      console.log('[AudioContext] Usando Tone.js, no configurando currentAudioRef.current');
+      // Asegurar que isLoaded esté marcado como true si los players están listos
+      if (preloadedAudios && !isLoaded) {
+        setIsLoaded(true);
+        setLoadingProgress(100);
+      }
+      return;
+    }
     
     // En iOS/Android Safari con múltiples audios, usar elementos diferentes
     if (useMultipleElements && audioElementsRef.current.length > 0) {
@@ -1230,16 +1231,28 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           setIsPlaying(true);
           console.log(`[AudioContext] Reproduciendo con Tone.js: ${playerKey}`);
           
-          // Manejar cuando termine (usando el buffer duration)
-          const duration = player.buffer.duration;
-          setTimeout(() => {
+          // Manejar cuando termine usando el buffer duration y eventos
+          const duration = player.buffer.duration || 0;
+          if (duration > 0) {
+            setTimeout(() => {
+              setIsPlaying(false);
+              const nextIndex = (currentIndex + 1) % audioSrcs.length;
+              if (nextIndex !== currentIndex) {
+                currentIndexRef.current = nextIndex;
+                setCurrentIndex(nextIndex);
+              }
+            }, duration * 1000);
+          }
+          
+          // Escuchar cuando el player se detenga (fallback)
+          player.onstop = () => {
             setIsPlaying(false);
             const nextIndex = (currentIndex + 1) % audioSrcs.length;
             if (nextIndex !== currentIndex) {
               currentIndexRef.current = nextIndex;
               setCurrentIndex(nextIndex);
             }
-          }, duration * 1000);
+          };
           
           resolve();
         } catch (error) {
@@ -1296,6 +1309,14 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           console.error('[AudioContext] Error reproduciendo con Howler.js:', error);
           resolve();
         }
+        return;
+      }
+      
+      // IMPORTANTE: Si estamos usando Tone.js, no intentar usar currentAudioRef.current
+      if (useMultipleElements && tonePlayersRef.current) {
+        // Ya manejado arriba, no debería llegar aquí
+        console.warn('[AudioContext] Tone.js ya debería haber manejado la reproducción');
+        resolve();
         return;
       }
       
