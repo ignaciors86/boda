@@ -113,16 +113,13 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     
     for (let i = 0; i < srcs.length; i++) {
       const audioSrc = srcs[i];
+      // Los imports estáticos de webpack ya vienen como strings con URLs válidas
       let audioSrcString = typeof audioSrc === 'string' ? audioSrc : (audioSrc?.default || audioSrc);
       
-      // En iOS, asegurar que las rutas de subcarpetas se conviertan correctamente
-      if (isIOS && audioSrcString && typeof audioSrcString === 'string' && !audioSrcString.startsWith('http') && !audioSrcString.startsWith('data:')) {
-        // Si es una ruta relativa, asegurar que sea una URL válida
-        // require.context ya debería devolver URLs válidas, pero en iOS puede haber problemas con subcarpetas
-        if (!audioSrcString.startsWith('/') && !audioSrcString.startsWith('./') && !audioSrcString.startsWith('../')) {
-          // Si no tiene prefijo, podría ser una ruta de subcarpeta que necesita normalización
-          // require.context debería devolver una URL válida, así que dejarlo como está
-        }
+      // Asegurar que sea string (webpack siempre devuelve strings para imports estáticos)
+      if (typeof audioSrcString !== 'string') {
+        console.warn(`[AudioContext] Audio src ${i} no es string:`, audioSrcString);
+        audioSrcString = String(audioSrcString);
       }
       
       console.log(`[AudioContext] Pre-cargando audio ${i + 1}/${srcs.length}: ${audioSrcString}`);
@@ -676,45 +673,23 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       if (!audio) return;
       
       // Verificar si el src ya está configurado correctamente (para evitar resetear cuando handleEnded cambia el src)
-      // En iOS, asegurar que las rutas se conviertan correctamente a URLs absolutas
+      // Los imports estáticos de webpack ya vienen como URLs válidas (como Timeline)
+      // NO normalizar - webpack ya procesa las URLs correctamente
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       let currentSrcString = typeof currentSrc === 'string' ? currentSrc : (currentSrc?.default || currentSrc);
       
-      // En iOS, convertir rutas relativas a URLs absolutas si es necesario
-      if (isIOS && currentSrcString && typeof currentSrcString === 'string' && !currentSrcString.startsWith('http') && !currentSrcString.startsWith('data:')) {
-        // Si es una ruta relativa, convertirla a URL absoluta
-        try {
-          // Si ya es una URL válida (empieza con /), dejarla así
-          // Si es una ruta de require.context, debería ser una URL válida ya
-          if (currentSrcString.startsWith('/')) {
-            // Ya es una ruta absoluta relativa al dominio
-          } else if (currentSrcString.includes('./') || currentSrcString.includes('../')) {
-            // Es una ruta relativa, convertir a absoluta
-            const baseUrl = window.location.origin;
-            const absolutePath = currentSrcString.startsWith('.') 
-              ? currentSrcString.replace(/^\./, '')
-              : '/' + currentSrcString;
-            currentSrcString = baseUrl + absolutePath;
-          }
-        } catch (e) {
-          console.warn('[AudioContext] Error normalizando ruta de audio en iOS:', e);
-        }
+      // Asegurar que sea string (webpack siempre devuelve strings para imports estáticos)
+      if (typeof currentSrcString !== 'string') {
+        console.warn('[AudioContext] Audio src no es string:', currentSrcString);
+        currentSrcString = String(currentSrcString);
       }
       
       const currentAudioSrc = audio.src || '';
-      // Comparar normalizando las URLs (pueden ser absolutas o relativas)
-      // En iOS, usar comparación más estricta con rutas completas
-      const normalizedCurrentSrc = isIOS 
-        ? currentAudioSrc 
-        : (currentAudioSrc.split('/').pop() || currentAudioSrc);
-      const normalizedNewSrc = isIOS 
-        ? currentSrcString 
-        : (currentSrcString.split('/').pop() || currentSrcString);
-      
-      // En iOS con múltiples audios, ser más estricto con la verificación
+      // Comparar URLs directamente (webpack ya las procesa correctamente)
+      // NO normalizar - las URLs de webpack ya son correctas
       const hasMultipleAudios = audioSrcs.length > 1;
       
-      if ((normalizedCurrentSrc === normalizedNewSrc || currentAudioSrc === currentSrcString) && audio.readyState >= 1) {
+      if (currentAudioSrc === currentSrcString && audio.readyState >= 1) {
         // En iOS con múltiples audios, verificar que realmente esté listo (readyState 2 y duration válida)
         if (isIOS && hasMultipleAudios) {
           if (audio.readyState < 2 || !audio.duration || !isFinite(audio.duration) || audio.duration <= 0) {
@@ -1033,7 +1008,9 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
             console.error(`[AudioContext] Máximo de reintentos alcanzado (${maxRetries}) para: ${audioSrc}`);
             console.error('[AudioContext] El archivo de audio no se puede cargar. Verificar que existe y es accesible.');
             // Verificar si el archivo realmente existe haciendo una petición HEAD
-            const fullUrl = audioSrc.startsWith('http') ? audioSrc : `${window.location.origin}${audioSrc}`;
+            // Usar la URL directamente (webpack ya la procesa correctamente)
+            // Solo construir URL completa si es necesario (no para rutas relativas de webpack)
+            const fullUrl = audioSrc.startsWith('http') ? audioSrc : audioSrc;
             fetch(fullUrl, { method: 'HEAD', cache: 'no-cache' })
               .then(response => {
                 if (!response.ok) {
@@ -1145,29 +1122,13 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
 
     // El handleEnded ahora está en un useEffect separado para evitar problemas de closure
 
-    // Configurar el src del audio actual solo si ha cambiado (currentSrcString ya está declarado arriba)
-    if (normalizedCurrentSrc !== normalizedNewSrc && currentAudioSrc !== currentSrcString) {
-      console.log(`[AudioContext] Cambiando src de ${normalizedCurrentSrc} a ${normalizedNewSrc}`);
-      console.log(`[AudioContext] Ruta completa: ${currentSrcString}`);
+    // Configurar el src del audio actual solo si ha cambiado
+    if (audio.src !== currentSrcString) {
+      console.log(`[AudioContext] Cambiando src de ${audio.src || ''} a ${currentSrcString}`);
       console.log(`[AudioContext] Índice actual: ${currentIndex}, Total audios: ${audioSrcs.length}`);
       
-      // En iOS, especialmente con audios en subcarpetas, asegurar que la ruta sea válida
-      if (isIOS) {
-        // Verificar que la ruta sea accesible antes de establecerla
-        const testAudio = new Audio();
-        testAudio.src = currentSrcString;
-        testAudio.addEventListener('error', (e) => {
-          console.error(`[AudioContext] Error con ruta de audio en iOS: ${currentSrcString}`, e);
-          console.error(`[AudioContext] Error code: ${testAudio.error?.code}, Message: ${testAudio.error?.message}`);
-        }, { once: true });
-        testAudio.load();
-        // Limpiar el audio de prueba después de un momento
-        setTimeout(() => {
-          testAudio.src = '';
-          testAudio.load();
-        }, 1000);
-      }
-      
+      // Los imports estáticos de webpack ya vienen como URLs válidas
+      // NO hacer tests adicionales - confiar en webpack como Timeline
       audio.src = currentSrcString;
       audio.load();
     }

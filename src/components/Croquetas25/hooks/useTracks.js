@@ -183,15 +183,22 @@ export const useTracks = () => {
                 track.subfolderToAudioIndex[subfolder] = audioIndex;
                 
                 // Obtener la URL del audio (imports estáticos, webpack procesa las URLs correctamente)
-                let audioSrc = sortedAudios[0];
-                // Los imports estáticos ya son strings con URLs válidas procesadas por webpack
                 // Igual que Timeline, que funciona perfectamente en producción
+                let audioSrc = sortedAudios[0];
+                
+                // Webpack procesa los imports estáticos y devuelve strings directamente
+                // Si viene como objeto (poco probable), extraer el default
                 if (typeof audioSrc !== 'string') {
                   audioSrc = audioSrc?.default || audioSrc;
+                  // Asegurar que sea string
+                  if (typeof audioSrc !== 'string') {
+                    console.warn(`[useTracks] Audio src no es string para ${track.name}:`, audioSrc);
+                    audioSrc = String(audioSrc);
+                  }
                 }
                 
                 // Logging para verificar la URL generada
-                console.log(`[useTracks] Agregando audio a track ${track.name}: ${audioSrc}`);
+                console.log(`[useTracks] Agregando audio a track ${track.name}: ${audioSrc} (tipo: ${typeof audioSrc})`);
                 
                 track.audioSrcs.push(audioSrc);
                 audioIndex++;
