@@ -223,11 +223,32 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       // Actualizar progreso
       const progress = Math.round(((i + 1) / srcs.length) * 100);
       setPreloadProgress(progress);
+      
+      // En Safari iOS, si el audio tiene metadata (readyState >= 1), considerarlo listo
+      // Esto ayuda a que el loading no se quede atascado
+      if (isIOS && audio.readyState >= 1 && i === srcs.length - 1) {
+        // Si es el último audio y tiene metadata, marcar como cargado
+        console.log('[AudioContext] Último audio pre-cargado con metadata, marcando como cargado');
+        setPreloadedAudios(true);
+        setPreloadProgress(100);
+        setIsLoaded(true);
+      }
     }
     
     console.log('[AudioContext] Todos los audios pre-cargados');
     setPreloadedAudios(true);
     setPreloadProgress(100);
+    
+    // IMPORTANTE: En Safari iOS con múltiples audios, asegurar que isLoaded esté marcado
+    // incluso si algunos audios no tienen readyState completo
+    if (isIOS && srcs.length > 1) {
+      // Verificar si al menos el primer audio tiene metadata
+      const firstAudio = iosPreloadAudioElementsRef.current[0];
+      if (firstAudio && firstAudio.readyState >= 1) {
+        console.log('[AudioContext] Safari iOS: Primer audio tiene metadata, marcando como cargado');
+        setIsLoaded(true);
+      }
+    }
   };
 
   // Cargar duraciones de todos los audios

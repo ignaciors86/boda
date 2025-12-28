@@ -545,10 +545,32 @@ const UnifiedLoadingIndicator = ({ imagesLoading, imagesProgress, isDirectUri, a
   const fadeoutStartedRef = useRef(false);
   const hasCheckedReadyRef = useRef(false);
   
-  const audioHasMetadata = audioRef?.current && audioRef.current.readyState >= 2;
+  // Detectar móviles y navegadores
+  const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
+  const isSafariIOS = isIOS && !isChromeIOS;
+  const isMobile = typeof window !== 'undefined' && (
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (window.innerWidth <= 768)
+  );
+  
+  // En móviles, ser más permisivo con readyState (iOS puede funcionar con readyState 1)
+  // En Safari iOS especialmente, readyState 1 es suficiente para metadata
+  const minReadyState = (isIOS || isSafariIOS) ? 1 : 2;
+  const audioHasMetadata = audioRef?.current && audioRef.current.readyState >= minReadyState;
+  
   // Solo requerir que las imágenes iniciales estén listas (no todas), y que el audio esté listo
-  const imagesReady = !imagesLoading && imagesProgress >= 20; // Al menos 20% (imágenes iniciales)
-  const everythingReady = imagesReady && audioLoaded && audioHasMetadata;
+  // En móviles, ser más permisivo con el progreso de imágenes
+  const minImagesProgress = isMobile ? 10 : 20; // Menos imágenes iniciales en móviles
+  const imagesReady = !imagesLoading && imagesProgress >= minImagesProgress;
+  
+  // En móviles, especialmente Chrome iOS, ser más permisivo con audioLoaded
+  // Si el audio tiene metadata (readyState >= minReadyState), considerarlo listo
+  const audioReady = isMobile 
+    ? (audioLoaded || audioHasMetadata) 
+    : (audioLoaded && audioHasMetadata);
+  
+  const everythingReady = imagesReady && audioReady;
   
   // Debug logging
   useEffect(() => {
@@ -556,12 +578,16 @@ const UnifiedLoadingIndicator = ({ imagesLoading, imagesProgress, isDirectUri, a
       imagesLoading,
       imagesProgress,
       audioLoaded,
-      audioHasMetadata: audioRef?.current?.readyState >= 2,
+      audioHasMetadata: audioRef?.current?.readyState >= minReadyState,
       audioReadyState: audioRef?.current?.readyState,
       audioProgress,
-      everythingReady
+      everythingReady,
+      isMobile,
+      isIOS,
+      isChromeIOS,
+      isSafariIOS
     });
-  }, [imagesLoading, imagesProgress, audioLoaded, audioProgress, everythingReady, audioRef]);
+  }, [imagesLoading, imagesProgress, audioLoaded, audioProgress, everythingReady, audioRef, minReadyState, isMobile, isIOS, isChromeIOS, isSafariIOS]);
   
   useEffect(() => {
     if (selectedTrack) {
@@ -570,32 +596,75 @@ const UnifiedLoadingIndicator = ({ imagesLoading, imagesProgress, isDirectUri, a
       setLoadingFadedOut(false);
       if (loadingRef.current) {
         // Fade-in suave del loading cuando aparece
-        gsap.set(loadingRef.current, { opacity: 0 });
-        gsap.to(loadingRef.current, {
-          opacity: 1,
-          duration: 0.6,
-          ease: 'power2.out'
-        });
+        // En móviles, asegurar que el loading sea visible inmediatamente
+        gsap.set(loadingRef.current, { opacity: isMobile ? 1 : 0 });
+        if (!isMobile) {
+          gsap.to(loadingRef.current, {
+            opacity: 1,
+            duration: 0.6,
+            ease: 'power2.out'
+          });
+        }
       }
     }
-  }, [selectedTrack, setLoadingFadedOut]);
+  }, [selectedTrack, setLoadingFadedOut, isMobile]);
   
   useEffect(() => {
     if (everythingReady && !fadeoutStartedRef.current && !hasCheckedReadyRef.current && loadingRef.current && !loadingFadedOut) {
       hasCheckedReadyRef.current = true;
       fadeoutStartedRef.current = true;
       
-      gsap.to(loadingRef.current, {
-        opacity: 0,
-        duration: 0.8,
-        ease: 'power2.out',
-        onComplete: () => {
-          setLoadingFadedOut(true);
-        }
-      });
+      // En móviles, dar un pequeño delay antes de hacer fade out para asegurar que todo esté listo
+      const fadeOutDelay = isMobile ? 300 : 0;
+      
+      setTimeout(() => {
+        gsap.to(loadingRef.current, {
+          opacity: 0,
+          duration: 0.8,
+          ease: 'power2.out',
+          onComplete: () => {
+            setLoadingFadedOut(true);
+          }
+        });
+      }, fadeOutDelay);
     }
-  }, [everythingReady, loadingFadedOut, setLoadingFadedOut]);
+  }, [everythingReady, loadingFadedOut, setLoadingFadedOut, isMobile]);
   
+  // Timeout de seguridad: si el loading lleva mucho tiempo, forzar el fade out
+  // Esto previene que el loading se quede atascado en móviles
+  useEffect(() => {
+    if (!selectedTrack || audioStarted || loadingFadedOut) return;
+    
+    const safetyTimeout = setTimeout(() => {
+      // Si después de 10 segundos (móviles) o 15 segundos (desktop) no se ha completado
+      // y tenemos al menos algo de progreso, forzar el fade out
+      const maxWaitTime = isMobile ? 10000 : 15000;
+      const minProgress = isMobile ? 30 : 50; // Mínimo progreso requerido
+      
+      if (loadingRef.current && !loadingFadedOut && !fadeoutStartedRef.current) {
+        const currentProgress = Math.round((imagesProgress + audioProgress) / 2);
+        if (currentProgress >= minProgress) {
+          console.warn('[UnifiedLoadingIndicator] Timeout de seguridad: forzando fade out del loading');
+          hasCheckedReadyRef.current = true;
+          fadeoutStartedRef.current = true;
+          
+          gsap.to(loadingRef.current, {
+            opacity: 0,
+            duration: 0.8,
+            ease: 'power2.out',
+            onComplete: () => {
+              setLoadingFadedOut(true);
+            }
+          });
+        }
+      }
+    }, isMobile ? 10000 : 15000);
+    
+    return () => clearTimeout(safetyTimeout);
+  }, [selectedTrack, audioStarted, loadingFadedOut, imagesProgress, audioProgress, isMobile, setLoadingFadedOut]);
+  
+  // En móviles, especialmente Chrome iOS, asegurar que el loading siempre se muestre
+  // incluso si everythingReady es false inicialmente
   if (audioStarted || loadingFadedOut) {
     return null;
   }
@@ -603,10 +672,13 @@ const UnifiedLoadingIndicator = ({ imagesLoading, imagesProgress, isDirectUri, a
   const combinedProgress = everythingReady ? 100 : Math.round((imagesProgress + audioProgress) / 2);
   const showFast = combinedProgress >= 95;
   
+  // En móviles, asegurar que el loading tenga al menos un progreso mínimo visible
+  const displayProgress = isMobile && combinedProgress === 0 ? 5 : combinedProgress;
+  
   return (
     <div className="image-preloader" ref={loadingRef}>
       <div className="image-preloader__content">
-        <KITTLoader fast={showFast} progress={combinedProgress} />
+        <KITTLoader fast={showFast} progress={displayProgress} />
       </div>
     </div>
   );
@@ -630,10 +702,30 @@ const UnifiedContentManager = ({
   const buttonRef = useRef(null);
   const buttonAnimationStartedRef = useRef(false);
   
-  const audioHasMetadata = audioRef?.current && audioRef.current.readyState >= 2;
+  // Detectar móviles y navegadores
+  const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
+  const isSafariIOS = isIOS && !isChromeIOS;
+  const isMobile = typeof window !== 'undefined' && (
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (window.innerWidth <= 768)
+  );
+  
+  // En móviles, ser más permisivo con readyState
+  const minReadyState = (isIOS || isSafariIOS) ? 1 : 2;
+  const audioHasMetadata = audioRef?.current && audioRef.current.readyState >= minReadyState;
+  
   // Solo requerir que las imágenes iniciales estén listas (no todas), y que el audio esté listo
-  const imagesReady = !imagesLoading && imagesProgress >= 20; // Al menos 20% (imágenes iniciales)
-  const everythingReady = imagesReady && isLoaded && audioHasMetadata;
+  // En móviles, ser más permisivo con el progreso de imágenes
+  const minImagesProgress = isMobile ? 10 : 20;
+  const imagesReady = !imagesLoading && imagesProgress >= minImagesProgress;
+  
+  // En móviles, especialmente Chrome iOS, ser más permisivo con audioLoaded
+  const audioReady = isMobile 
+    ? (isLoaded || audioHasMetadata) 
+    : (isLoaded && audioHasMetadata);
+  
+  const everythingReady = imagesReady && audioReady;
   
   useEffect(() => {
     if (!everythingReady || !loadingFadedOut) return;
