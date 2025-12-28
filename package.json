@@ -40,12 +40,13 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "npm run generate-audio-imports && react-scripts start",
+    "build": "npm run generate-audio-imports && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "dev": "concurrently \"npm run start\"",
-    "start:prod": "npm run build && serve -s build"
+    "dev": "npm run generate-audio-imports && concurrently \"npm run start\"",
+    "start:prod": "npm run build && serve -s build",
+    "generate-audio-imports": "node src/components/Croquetas25/assets/tracks/generateAudioImports.js"
   },
   "eslintConfig": {
     "extends": [

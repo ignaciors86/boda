@@ -124,6 +124,17 @@ const Croquetas25 = () => {
   const { isLoading: imagesLoading, preloadProgress: imagesProgress, seekToImagePosition } = useGallery(selectedTrack, handleSubfolderComplete, handleAllComplete);
   const audioSrcs = selectedTrack?.srcs || (selectedTrack?.src ? [selectedTrack.src] : []);
   const isDirectUri = !!trackId;
+  
+  // Logging para debug en producción
+  useEffect(() => {
+    if (selectedTrack && audioSrcs.length > 0) {
+      console.log(`[Croquetas25] Track seleccionado: ${selectedTrack.name}`);
+      console.log(`[Croquetas25] AudioSrcs:`, audioSrcs);
+      audioSrcs.forEach((src, idx) => {
+        console.log(`[Croquetas25] Audio ${idx}: ${src} (tipo: ${typeof src})`);
+      });
+    }
+  }, [selectedTrack, audioSrcs]);
 
   const handleTrackSelect = (track) => {
     setSelectedTrack(track);

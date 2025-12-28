@@ -130,11 +130,18 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       }
       
       console.log(`[AudioContext] Pre-cargando audio ${i + 1}/${srcs.length}: ${audioSrcString}`);
+      console.log(`[AudioContext] Tipo de audioSrc: ${typeof audioSrc}, Tipo de audioSrcString: ${typeof audioSrcString}`);
       
       // Verificar que la URL sea válida antes de crear el elemento de audio
       if (!audioSrcString || audioSrcString === '' || (!audioSrcString.includes('.mp3') && !audioSrcString.includes('.wav') && !audioSrcString.includes('.ogg'))) {
         console.warn(`[AudioContext] URL de audio inválida, saltando: ${audioSrcString}`);
         continue;
+      }
+      
+      // Logging adicional para debug en producción
+      if (audioSrcString.includes('thunderstruck')) {
+        console.log(`[AudioContext] DEBUG thunderstruck - URL completa: ${audioSrcString}`);
+        console.log(`[AudioContext] DEBUG thunderstruck - Es string: ${typeof audioSrcString === 'string'}`);
       }
       
       const audio = new Audio();

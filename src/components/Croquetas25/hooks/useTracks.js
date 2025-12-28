@@ -101,7 +101,11 @@ export const useTracks = () => {
               const audios = trackAudiosBySubfolder[subfolder];
               if (audios && audios.length > 0) {
                 tracksTemp[trackNameKey].audioBySubfolder[subfolder] = audios;
-                console.log(`[useTracks] Audio cargado estáticamente - Track: ${trackName}, Subcarpeta: ${subfolder}, Audios: ${audios.length}`);
+                // Logging detallado para debug
+                audios.forEach((audio, idx) => {
+                  const audioUrl = typeof audio === 'string' ? audio : (audio?.default || audio);
+                  console.log(`[useTracks] Audio cargado estáticamente - Track: ${trackName}, Subcarpeta: ${subfolder}, Audio ${idx + 1}: ${audioUrl}`);
+                });
               }
             });
           }
@@ -185,6 +189,9 @@ export const useTracks = () => {
                 if (typeof audioSrc !== 'string') {
                   audioSrc = audioSrc?.default || audioSrc;
                 }
+                
+                // Logging para verificar la URL generada
+                console.log(`[useTracks] Agregando audio a track ${track.name}: ${audioSrc}`);
                 
                 track.audioSrcs.push(audioSrc);
                 audioIndex++;
