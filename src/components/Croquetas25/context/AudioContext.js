@@ -297,22 +297,9 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
               const audioSrc = audioSrcs[i];
               let audioSrcString = typeof audioSrc === 'string' ? audioSrc : (audioSrc?.default || audioSrc);
               
-              // Normalizar ruta a URL absoluta si no lo es (Opción 5)
-              if (audioSrcString && typeof audioSrcString === 'string') {
-                if (!audioSrcString.startsWith('http') && !audioSrcString.startsWith('data:')) {
-                  if (audioSrcString.startsWith('/')) {
-                    audioSrcString = window.location.origin + audioSrcString;
-                  } else if (audioSrcString.startsWith('./') || audioSrcString.startsWith('../')) {
-                    const baseUrl = window.location.origin;
-                    const absolutePath = audioSrcString.startsWith('.') 
-                      ? audioSrcString.replace(/^\./, '')
-                      : '/' + audioSrcString;
-                    audioSrcString = baseUrl + absolutePath;
-                  } else {
-                    audioSrcString = window.location.origin + '/' + audioSrcString;
-                  }
-                }
-              }
+              // NO normalizar - las URLs de require.context ya son válidas
+              // Webpack maneja las rutas correctamente, incluyendo subcarpetas
+              // Solo convertir a string si es necesario
               
               // Crear elemento <audio> real
               const audio = document.createElement('audio');

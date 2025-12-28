@@ -2,6 +2,18 @@ import { useState, useEffect } from 'react';
 
 const normalizeName = (name) => name?.toLowerCase().replace(/\s+/g, '-') || '';
 
+// Carpetas que NO deben ser tracks (ignorar)
+const IGNORED_FOLDERS = ['components', 'backups', 'node_modules', '.git'];
+
+const isValidTrackName = (trackName) => {
+  if (!trackName) return false;
+  // Ignorar carpetas que no deberían ser tracks
+  if (IGNORED_FOLDERS.includes(trackName.toLowerCase())) return false;
+  // Ignorar nombres que empiezan con punto (archivos ocultos)
+  if (trackName.startsWith('.')) return false;
+  return true;
+};
+
 const createTrack = (trackName) => ({
   id: normalizeName(trackName),
   name: trackName,
@@ -38,6 +50,11 @@ export const useTracks = () => {
         imageFiles.forEach(file => {
           const pathParts = file.split('/').filter(p => p && p !== '.');
           const trackName = pathParts[0];
+          // Filtrar carpetas que no deberían ser tracks
+          if (!isValidTrackName(trackName)) {
+            console.log(`[useTracks] Ignorando carpeta no válida: ${trackName}`);
+            return;
+          }
           if (!tracksTemp[trackName]) tracksTemp[trackName] = createTrack(trackName);
           
           // Determinar subcarpeta: si hay más de 2 partes (track/subcarpeta/archivo), usar subcarpeta
@@ -65,6 +82,11 @@ export const useTracks = () => {
         audioFiles.forEach(file => {
           const pathParts = file.split('/').filter(p => p && p !== '.');
           const trackName = pathParts[0];
+          // Filtrar carpetas que no deberían ser tracks
+          if (!isValidTrackName(trackName)) {
+            console.log(`[useTracks] Ignorando carpeta no válida: ${trackName}`);
+            return;
+          }
           if (!tracksTemp[trackName]) tracksTemp[trackName] = createTrack(trackName);
           
           const subfolder = pathParts.length > 2 ? pathParts[1] : '__root__';
@@ -79,32 +101,16 @@ export const useTracks = () => {
           // Obtener la URL del audio desde require.context
           let audioUrl = audioContext(file);
           
-          // Normalizar todas las rutas a URLs absolutas (Opción 5)
-          // Convertir a string si es necesario
+          // Convertir a string si es necesario (require.context puede devolver objetos)
           if (typeof audioUrl !== 'string') {
             audioUrl = audioUrl?.default || audioUrl;
           }
           
-          // Normalizar a URL absoluta si no lo es ya
-          if (audioUrl && typeof audioUrl === 'string') {
-            if (!audioUrl.startsWith('http') && !audioUrl.startsWith('data:')) {
-              // Si no es una URL absoluta, convertirla
-              if (audioUrl.startsWith('/')) {
-                // Ya es una ruta absoluta relativa al dominio
-                audioUrl = window.location.origin + audioUrl;
-              } else if (audioUrl.startsWith('./') || audioUrl.startsWith('../')) {
-                // Es una ruta relativa, convertir a absoluta
-                const baseUrl = window.location.origin;
-                const absolutePath = audioUrl.startsWith('.') 
-                  ? audioUrl.replace(/^\./, '')
-                  : '/' + audioUrl;
-                audioUrl = baseUrl + absolutePath;
-              } else {
-                // Ruta sin prefijo, asumir que es relativa a la raíz
-                audioUrl = window.location.origin + '/' + audioUrl;
-              }
-              console.log(`[useTracks] Ruta normalizada: ${file} -> ${audioUrl}`);
-            }
+          // NO normalizar las URLs de webpack - require.context ya devuelve URLs válidas
+          // Webpack maneja las rutas correctamente, incluyendo subcarpetas
+          // Solo loguear para diagnóstico en iOS
+          if (isIOS && subfolder !== '__root__') {
+            console.log(`[useTracks] iOS: Audio de subcarpeta - Track: ${trackName}, Subcarpeta: ${subfolder}, URL: ${audioUrl}`);
           }
           
           // Logging adicional para subcarpetas en iOS
@@ -120,6 +126,11 @@ export const useTracks = () => {
         guionFiles.forEach(file => {
           const pathParts = file.split('/').filter(p => p && p !== '.');
           const trackName = pathParts[0];
+          // Filtrar carpetas que no deberían ser tracks
+          if (!isValidTrackName(trackName)) {
+            console.log(`[useTracks] Ignorando carpeta no válida: ${trackName}`);
+            return;
+          }
           if (!tracksTemp[trackName]) tracksTemp[trackName] = createTrack(trackName);
           
           const subfolder = pathParts.length > 2 ? pathParts[1] : '__root__';
