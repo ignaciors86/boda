@@ -187,7 +187,29 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           if (!resolved) {
             resolved = true;
             cleanup();
-            console.warn(`[AudioContext] Error pre-cargando audio ${i}, continuando...`);
+            const error = audio.error;
+            if (error) {
+              console.error(`[AudioContext] Error pre-cargando audio ${i}:`, {
+                code: error.code,
+                message: error.message,
+                src: audio.src,
+                networkState: audio.networkState,
+                readyState: audio.readyState
+              });
+              // Si es un error de demuxer (código 4), el archivo no existe o está corrupto
+              if (error.code === 4) {
+                console.error(`[AudioContext] Error DEMUXER: El archivo no se puede abrir. Verificar que existe en: ${audio.src}`);
+                // Intentar recargar con un delay
+                setTimeout(() => {
+                  if (audio.src) {
+                    console.log(`[AudioContext] Reintentando cargar audio ${i}...`);
+                    audio.load();
+                  }
+                }, 2000);
+              }
+            } else {
+              console.warn(`[AudioContext] Error pre-cargando audio ${i} (sin detalles), continuando...`);
+            }
             resolve();
           }
         };
@@ -1087,6 +1109,29 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
         console.error('[AudioContext] Audio src que causó el error:', audio.src);
         console.error('[AudioContext] Current index:', currentIndex, 'Total audios:', audioSrcs.length);
         console.error('[AudioContext] Audio en subcarpeta:', hasMultipleAudios && currentIndex > 0);
+        console.error('[AudioContext] Network state:', audio.networkState, '| Ready state:', audio.readyState);
+        
+        // Si es un error de demuxer (código 4), el archivo no existe o está corrupto
+        if (error.code === 4) {
+          console.error('[AudioContext] Error DEMUXER: El archivo no se puede abrir. Verificar que existe en:', audio.src);
+          // Intentar recargar con diferentes estrategias
+          setTimeout(() => {
+            if (audio.src) {
+              console.log('[AudioContext] Reintentando cargar audio después de error DEMUXER...');
+              const currentSrc = audio.src;
+              // Limpiar completamente
+              audio.src = '';
+              audio.load();
+              setTimeout(() => {
+                // Intentar con la misma URL
+                audio.src = currentSrc;
+                audio.load();
+                console.log('[AudioContext] Audio recargado después de error DEMUXER');
+              }, 500);
+            }
+          }, 2000);
+          return;
+        }
         
         // En iOS, especialmente con audios en subcarpetas, puede haber problemas con las rutas
         if (isIOS) {

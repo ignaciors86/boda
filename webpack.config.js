@@ -16,6 +16,19 @@ module.exports = {
             }
           }
         ]
+      },
+      {
+        test: /\.(mp3|MP3|wav|WAV|ogg|OGG)$/,
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              name: '[name].[hash].[ext]',
+              outputPath: 'static/media/',
+              publicPath: '/static/media/'
+            }
+          }
+        ]
       }
     ]
   },
