@@ -26,11 +26,6 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
   const lastAudioIndexRef = useRef(null);
   const isLastImageRef = useRef(false); // Flag para indicar si la próxima imagen es la última
   
-  // Para Croquetas25: rastrear índices por colección para rotación
-  const collectionIndicesRef = useRef(new Map()); // Map<collectionName, currentIndex>
-  const collectionImagesRef = useRef(new Map()); // Map<collectionName, imagePaths[]>
-  const lastCollectionRef = useRef(null);
-  
   // Detectar dispositivo móvil (especialmente iPhone)
   const isMobile = typeof window !== 'undefined' && (
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
@@ -65,7 +60,6 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
           resolve({ status: 'fulfilled', value: imagePath });
       };
       img.onerror = () => {
-        console.warn('Gallery: Error al precargar imagen:', imagePath);
         updateState('error');
         resolve({ status: 'rejected', reason: `Failed to load ${imagePath}` });
       };
@@ -113,7 +107,6 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
               setTimeout(() => loadWithConcurrencyLimit(), 50);
         } else {
           backgroundLoadingRef.current = false;
-          console.log('Gallery: Todas las imágenes procesadas en background');
           if (onProgress) {
             onProgress(100);
           }
@@ -133,7 +126,6 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
             setTimeout(() => loadWithConcurrencyLimit(), 10);
           } else if (activeLoads === 0) {
             backgroundLoadingRef.current = false;
-            console.log('Gallery: Todas las imágenes procesadas en background');
             if (onProgress) {
               onProgress(100);
             }
@@ -189,60 +181,43 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
         lastAudioIndexRef.current = null; // Resetear para que el efecto se ejecute en la primera carga
         isLastImageRef.current = false; // Resetear flag de última imagen
         
-        // Construir estructura plana: mapear cada subcarpeta a sus índices de imágenes
-        // IMPORTANTE: Inicializar imageStatesRef ANTES de organizar por colección
+        // Detectar si es Croquetas25 (usa flag del track)
+        const isCroquetas25 = selectedTrack?.isCroquetas25 === true;
+        
+        // Construir estructura: para Croquetas25 todas las imágenes, para tracks normales por subcarpeta
         imagesList.forEach((img, index) => {
           const imageObj = typeof img === 'object' ? img : { path: img, originalPath: img, subfolder: null };
           const imagePath = imageObj.path || img;
           const subfolder = imageObj.subfolder || null;
           const normalizedSubfolder = subfolder === null ? '__root__' : subfolder;
           
-          // Inicializar estado de imagen como 'pending' - CRÍTICO para que funcione
+          // Inicializar estado de imagen
           imageStatesRef.current.set(imagePath, { state: 'pending', imgElement: null });
           imagesBySubfolderRef.current.set(imagePath, subfolder);
           
-          // Agregar índice a la lista de índices de esta subcarpeta
-          if (!subfolderImageIndicesRef.current.has(normalizedSubfolder)) {
-            subfolderImageIndicesRef.current.set(normalizedSubfolder, []);
-            // NO inicializar subfolderCurrentIndexRef aquí, se inicializará cuando sea necesario
+          // Para tracks normales: organizar por subcarpeta
+          // Para Croquetas25: todas las imágenes en un solo índice
+          if (isCroquetas25) {
+            // Croquetas25: todas las imágenes mezcladas
+            if (!subfolderImageIndicesRef.current.has('__all__')) {
+              subfolderImageIndicesRef.current.set('__all__', []);
+            }
+            subfolderImageIndicesRef.current.get('__all__').push(index);
+          } else {
+            // Track normal: organizar por subcarpeta
+            if (!subfolderImageIndicesRef.current.has(normalizedSubfolder)) {
+              subfolderImageIndicesRef.current.set(normalizedSubfolder, []);
+            }
+            subfolderImageIndicesRef.current.get(normalizedSubfolder).push(index);
           }
-          subfolderImageIndicesRef.current.get(normalizedSubfolder).push(index);
           
+          // Contadores por subcarpeta
           if (!subfolderCountsRef.current.has(subfolder)) {
             subfolderCountsRef.current.set(subfolder, { total: 0, used: 0 });
           }
           const counts = subfolderCountsRef.current.get(subfolder);
           counts.total++;
         });
-        
-        // Para Croquetas25 con rotación de colecciones, organizar imágenes por colección
-        // HACER ESTO DESPUÉS de inicializar imageStatesRef para asegurar que todas las imágenes estén registradas
-        if (selectedTrack?.useCollectionRotation) {
-          collectionIndicesRef.current.clear();
-          collectionImagesRef.current.clear();
-          lastCollectionRef.current = null;
-          
-          imagesList.forEach((img, index) => {
-            const imageObj = typeof img === 'object' ? img : { path: img, originalPath: img, subfolder: null };
-            const imagePath = imageObj.path || img;
-            const collection = imageObj.collection || 'croquetas25';
-            
-            if (!collectionImagesRef.current.has(collection)) {
-              collectionImagesRef.current.set(collection, []);
-              collectionIndicesRef.current.set(collection, 0);
-            }
-            // Asegurar que solo agregamos imágenes que ya están en imageStatesRef
-            if (imageStatesRef.current.has(imagePath)) {
-              collectionImagesRef.current.get(collection).push(imagePath);
-            } else {
-              console.warn(`[Gallery] Croquetas25: Imagen ${imagePath} no está en imageStatesRef, saltando`);
-            }
-          });
-          
-          console.log('[Gallery] Croquetas25: Organizadas por colección:', Array.from(collectionImagesRef.current.entries()).map(([col, imgs]) => `${col}: ${imgs.length} imágenes`));
-        }
-        
-        console.log('[Gallery] Estructura de subcarpetas:', Array.from(subfolderImageIndicesRef.current.entries()).map(([sf, indices]) => `${sf}: ${indices.length} imágenes`));
 
         setAllImages(imagesList);
         setPreloadProgress(0);
@@ -252,8 +227,6 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
         const initialImages = imagesList.slice(0, initialCount).map(img => {
           return typeof img === 'object' ? (img.path || img) : img;
         });
-
-        console.log(`Gallery: Precargando ${initialCount} imágenes iniciales de ${imagesList.length} totales (móvil: ${isMobile}, iOS: ${isIOS})...`);
 
         // Precargar imágenes iniciales con límite de concurrencia
         let loadedInitialCount = 0;
@@ -283,7 +256,6 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
               if (loadedInitialCount >= Math.min(3, initialCount) && !initialLoadingComplete) {
                 initialLoadingComplete = true;
                 setIsLoading(false);
-                console.log(`Gallery: ${loadedInitialCount} imágenes iniciales listas. Continuando en background...`);
               }
               
               // Continuar cargando
@@ -295,7 +267,6 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
                   .filter(s => s.state === 'ready' || s.state === 'error').length;
                 const finalProgress = (finalLoadedCount / imagesList.length) * 100;
                 
-                console.log(`Gallery: ${loadedInitialCount} imágenes iniciales listas. Continuando en background...`);
                 setIsLoading(false);
                 setPreloadProgress(finalProgress);
           
@@ -332,7 +303,6 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
           }
         }, isMobile ? 1000 : 500);
       } catch (error) {
-        console.error('Gallery: Error al cargar las galerías:', error);
         setAllImages([]);
         setIsLoading(false);
         setPreloadProgress(100);
@@ -343,9 +313,16 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
   }, [selectedTrack, preloadImage, loadImagesInBatches]);
 
   // Determinar la subcarpeta actual basándose en el audio
+  // Para Croquetas25 siempre retorna null (usa todas las imágenes)
+  // Para tracks normales retorna la subcarpeta del audio actual
   const getCurrentSubfolder = useCallback(() => {
+    // Croquetas25: no filtrar por subcarpeta
+    if (selectedTrack?.isCroquetas25 === true) {
+      return null;
+    }
+    
     if (currentAudioIndex === null || currentAudioIndex === undefined || !selectedTrack?.subfolderToAudioIndex) {
-      return null; // Sin filtrado
+      return null;
     }
     
     // Buscar la subcarpeta que corresponde al audio actual
@@ -355,7 +332,7 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
       }
     }
     
-    // Si no se encontró mapeo y el índice es 0, usar la primera subcarpeta en subfolderOrder o __root__
+    // Si no se encontró mapeo y el índice es 0, usar la primera subcarpeta
     if (currentAudioIndex === 0 && selectedTrack?.subfolderOrder && selectedTrack.subfolderOrder.length > 0) {
       const firstSubfolder = selectedTrack.subfolderOrder[0];
       return firstSubfolder === '__root__' ? null : firstSubfolder;
@@ -368,171 +345,122 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
   useEffect(() => {
     if (allImages.length === 0) return;
     
+    // Detectar si es Croquetas25
+    const isCroquetas25 = selectedTrack?.isCroquetas25 === true;
+    
     // Solo procesar si realmente cambió el índice de audio
     if (lastAudioIndexRef.current === currentAudioIndex) {
-      return; // No hacer nada si el audio no cambió
+      return;
     }
     
-    const currentSubfolder = getCurrentSubfolder();
-    const normalizedSubfolder = currentSubfolder === null ? '__root__' : currentSubfolder;
-    
-    console.log(`[Gallery] useEffect: Audio cambió de ${lastAudioIndexRef.current} a ${currentAudioIndex}, subcarpeta: ${currentSubfolder || '__root__'}`);
-    
-    // Resetear imágenes y índice cuando se vuelve a una subcarpeta (para poder volver a verlas)
-    if (subfolderImageIndicesRef.current.has(normalizedSubfolder)) {
-      const indices = subfolderImageIndicesRef.current.get(normalizedSubfolder);
-      if (indices.length > 0) {
-        // Resetear todas las imágenes de esta subcarpeta a "ready" para poder volver a mostrarlas
-        indices.forEach(idx => {
-          const imgObj = allImages[idx];
-          const imgPath = typeof imgObj === 'object' ? (imgObj.path || imgObj) : imgObj;
-          const state = imageStatesRef.current.get(imgPath);
-          if (state && state.state === 'used') {
-            imageStatesRef.current.set(imgPath, { ...state, state: 'ready' });
-          }
-        });
-        
-        // Resetear contador de usadas para esta subcarpeta
-        const imageSubfolder = currentSubfolder;
-        if (imageSubfolder !== null && subfolderCountsRef.current.has(imageSubfolder)) {
-          subfolderCountsRef.current.get(imageSubfolder).used = 0;
-        }
-        
-        // Resetear índice a 0 para empezar desde el principio
-        subfolderCurrentIndexRef.current.set(normalizedSubfolder, 0);
-        currentIndexRef.current = indices[0];
-        console.log(`[Gallery] useEffect: Reseteando subcarpeta ${currentSubfolder || '__root__'} (audio ${currentAudioIndex}) - imágenes reseteadas a ready, índice a 0`);
-      }
-    } else if (currentSubfolder === null) {
-      // Si no hay subcarpeta específica, resetear todas las imágenes
-      allImages.forEach((imgObj, idx) => {
+    // Para Croquetas25, usar todas las imágenes sin filtrar por subcarpeta
+    if (isCroquetas25) {
+      const allIndices = subfolderImageIndicesRef.current.get('__all__') || 
+        Array.from({ length: allImages.length }, (_, i) => i);
+      
+      // Resetear todas las imágenes a "ready"
+      allIndices.forEach(idx => {
+        const imgObj = allImages[idx];
         const imgPath = typeof imgObj === 'object' ? (imgObj.path || imgObj) : imgObj;
         const state = imageStatesRef.current.get(imgPath);
         if (state && state.state === 'used') {
           imageStatesRef.current.set(imgPath, { ...state, state: 'ready' });
         }
       });
-      subfolderCurrentIndexRef.current.set('__root__', 0);
-      currentIndexRef.current = 0;
-      console.log(`[Gallery] useEffect: Reseteando todas las imágenes (audio ${currentAudioIndex}) - índice a 0`);
+      
+      // Resetear índice a 0
+      subfolderCurrentIndexRef.current.set('__all__', 0);
+      currentIndexRef.current = allIndices[0] || 0;
+    } else {
+      // Lógica original: filtrar por subcarpeta
+      const currentSubfolder = getCurrentSubfolder();
+      const normalizedSubfolder = currentSubfolder === null ? '__root__' : currentSubfolder;
+      
+      // Resetear imágenes y índice cuando se vuelve a una subcarpeta (para poder volver a verlas)
+      if (subfolderImageIndicesRef.current.has(normalizedSubfolder)) {
+        const indices = subfolderImageIndicesRef.current.get(normalizedSubfolder);
+        if (indices.length > 0) {
+          // Resetear todas las imágenes de esta subcarpeta a "ready" para poder volver a mostrarlas
+          indices.forEach(idx => {
+            const imgObj = allImages[idx];
+            const imgPath = typeof imgObj === 'object' ? (imgObj.path || imgObj) : imgObj;
+            const state = imageStatesRef.current.get(imgPath);
+            if (state && state.state === 'used') {
+              imageStatesRef.current.set(imgPath, { ...state, state: 'ready' });
+            }
+          });
+          
+          // Resetear contador de usadas para esta subcarpeta
+          const imageSubfolder = currentSubfolder;
+          if (imageSubfolder !== null && subfolderCountsRef.current.has(imageSubfolder)) {
+            subfolderCountsRef.current.get(imageSubfolder).used = 0;
+          }
+          
+          // Resetear índice a 0 para empezar desde el principio
+          subfolderCurrentIndexRef.current.set(normalizedSubfolder, 0);
+          currentIndexRef.current = indices[0];
+        }
+      } else if (currentSubfolder === null) {
+        // Si no hay subcarpeta específica, resetear todas las imágenes
+        allImages.forEach((imgObj, idx) => {
+          const imgPath = typeof imgObj === 'object' ? (imgObj.path || imgObj) : imgObj;
+          const state = imageStatesRef.current.get(imgPath);
+          if (state && state.state === 'used') {
+            imageStatesRef.current.set(imgPath, { ...state, state: 'ready' });
+          }
+        });
+        subfolderCurrentIndexRef.current.set('__root__', 0);
+        currentIndexRef.current = 0;
+      }
     }
     
     lastAudioIndexRef.current = currentAudioIndex;
-  }, [currentAudioIndex, allImages.length, getCurrentSubfolder]);
+  }, [currentAudioIndex, allImages.length, getCurrentSubfolder, selectedTrack]);
 
   // Función para obtener la siguiente imagen disponible
   const getNextImage = useCallback(() => {
-    console.log(`[Gallery] getNextImage llamado | allImages.length: ${allImages.length} | currentAudioIndex: ${currentAudioIndex}`);
     if (allImages.length === 0) {
-      console.warn('Gallery: No hay imágenes disponibles aún');
       return null;
     }
 
-    // Para Croquetas25 con rotación de colecciones, usar lógica especial
-    if (selectedTrack?.useCollectionRotation) {
-      const collections = Array.from(collectionImagesRef.current.keys());
-      if (collections.length === 0) {
-        console.warn('[Gallery] Croquetas25: No hay colecciones disponibles');
-        return null;
+    // Detectar si es Croquetas25
+    const isCroquetas25 = selectedTrack?.isCroquetas25 === true;
+    
+    let imageIndices;
+    let normalizedSubfolder;
+    
+    if (isCroquetas25) {
+      // Croquetas25: usar todas las imágenes mezcladas
+      imageIndices = subfolderImageIndicesRef.current.get('__all__') || 
+        Array.from({ length: allImages.length }, (_, i) => i);
+      normalizedSubfolder = '__all__';
+    } else {
+      // Track normal: filtrar por subcarpeta según el audio actual
+      const currentSubfolder = getCurrentSubfolder();
+      normalizedSubfolder = currentSubfolder === null ? '__root__' : currentSubfolder;
+      
+      imageIndices = subfolderImageIndicesRef.current.get(normalizedSubfolder);
+      
+      // Fallback: si no hay índices para esta subcarpeta, usar todas
+      if (!imageIndices || imageIndices.length === 0) {
+        imageIndices = Array.from({ length: allImages.length }, (_, i) => i);
       }
-      
-      // Intentar encontrar una imagen lista, rotando entre colecciones
-      let attempts = 0;
-      const maxAttempts = collections.length * 2; // Máximo 2 vueltas completas
-      
-      while (attempts < maxAttempts) {
-        // Determinar la siguiente colección en la rotación
-        let nextCollection = null;
-        if (lastCollectionRef.current === null) {
-          // Primera vez: empezar con la primera colección
-          nextCollection = collections[0];
-        } else {
-          // Encontrar el índice de la última colección usada
-          const lastIndex = collections.indexOf(lastCollectionRef.current);
-          // Siguiente colección en la rotación (circular)
-          nextCollection = collections[(lastIndex + 1) % collections.length];
-        }
-        
-        // Obtener el índice actual de esta colección
-        const collectionIndex = collectionIndicesRef.current.get(nextCollection) || 0;
-        const collectionImages = collectionImagesRef.current.get(nextCollection);
-        
-        if (!collectionImages || collectionImages.length === 0) {
-          console.warn(`[Gallery] Croquetas25: Colección ${nextCollection} no tiene imágenes`);
-          lastCollectionRef.current = nextCollection;
-          attempts++;
-          continue;
-        }
-        
-        // Si hemos usado todas las imágenes de esta colección, resetear
-        if (collectionIndex >= collectionImages.length) {
-          collectionIndicesRef.current.set(nextCollection, 0);
-          lastCollectionRef.current = nextCollection;
-          attempts++;
-          continue;
-        }
-        
-        // Obtener la imagen de esta colección
-        const imagePath = collectionImages[collectionIndex];
-        const imageState = imageStatesRef.current.get(imagePath);
-        
-        // Si la imagen está lista, usarla
-        if (imageState && imageState.state === 'ready') {
-          // Marcar como usada
-          imageStatesRef.current.set(imagePath, { ...imageState, state: 'used' });
-          
-          // Avanzar índice de esta colección
-          collectionIndicesRef.current.set(nextCollection, collectionIndex + 1);
-          lastCollectionRef.current = nextCollection;
-          
-          console.log(`[Gallery] Croquetas25: Imagen de colección ${nextCollection}, índice ${collectionIndex}/${collectionImages.length}`);
-          
-          return imagePath;
-        }
-        
-        // Si no está lista, avanzar índice y continuar con la siguiente colección
-        collectionIndicesRef.current.set(nextCollection, collectionIndex + 1);
-        lastCollectionRef.current = nextCollection;
-        attempts++;
-      }
-      
-      // Si no encontramos ninguna imagen lista después de todos los intentos
-      console.warn('[Gallery] Croquetas25: No se encontró ninguna imagen lista después de todos los intentos');
-      return null;
-    }
-
-    const currentSubfolder = getCurrentSubfolder();
-    const normalizedSubfolder = currentSubfolder === null ? '__root__' : currentSubfolder;
-    
-    console.log(`[Gallery] getNextImage: currentSubfolder=${currentSubfolder}, normalizedSubfolder=${normalizedSubfolder}, currentAudioIndex=${currentAudioIndex}`);
-    
-    // Obtener índices de imágenes de la subcarpeta actual
-    let imageIndices = subfolderImageIndicesRef.current.get(normalizedSubfolder);
-    
-    // Si no hay subcarpeta específica o no hay índices, usar todas las imágenes
-    if (!imageIndices || imageIndices.length === 0) {
-      imageIndices = Array.from({ length: allImages.length }, (_, i) => i);
     }
     
     // Obtener índice actual de esta subcarpeta (inicializar si no existe)
     if (!subfolderCurrentIndexRef.current.has(normalizedSubfolder)) {
       subfolderCurrentIndexRef.current.set(normalizedSubfolder, 0);
-      console.log(`[Gallery] getNextImage: Inicializando índice para subcarpeta ${currentSubfolder || '__root__'} a 0`);
     }
     let subfolderIndex = subfolderCurrentIndexRef.current.get(normalizedSubfolder);
-    console.log(`[Gallery] getNextImage: Índice leído de ref: ${subfolderIndex} para subcarpeta ${currentSubfolder || '__root__'}`);
     if (subfolderIndex >= imageIndices.length) {
       subfolderIndex = 0;
       subfolderCurrentIndexRef.current.set(normalizedSubfolder, 0);
-      console.log(`[Gallery] getNextImage: Índice ${subfolderIndex} >= ${imageIndices.length}, reseteado a 0`);
     }
     
     const targetImageIndex = imageIndices[subfolderIndex];
     const targetImageObj = allImages[targetImageIndex];
     const targetImagePath = typeof targetImageObj === 'object' ? (targetImageObj.path || targetImageObj) : targetImageObj;
     const targetImageState = imageStatesRef.current.get(targetImagePath);
-    
-    console.log(`[Gallery] getNextImage: Subcarpeta ${currentSubfolder || '__root__'}, índice: ${subfolderIndex}/${imageIndices.length}, imagen en allImages: ${targetImageIndex}, estado: ${targetImageState?.state || 'undefined'}, path: ${targetImagePath}`);
     
     // Buscar la siguiente imagen lista en esta subcarpeta
     let attempts = 0;
@@ -590,7 +518,6 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
           const prevCounts = subfolderCountsRef.current.get(previousSubfolder);
           if (actuallyUsedCount >= prevCounts.total && prevCounts.total > 0) {
             completedSubfoldersRef.current.add(previousSubfolder);
-            console.log(`[Gallery] Subcarpeta ${previousSubfolder} completada (${actuallyUsedCount}/${prevCounts.total} imágenes)`);
             if (onSubfolderComplete) {
               onSubfolderComplete(previousSubfolder);
             }
@@ -622,10 +549,8 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
             
             // Marcar esta subcarpeta como completada al menos una vez
             subfoldersCompletedAtLeastOnceRef.current.add(normalizedImageSubfolder);
-            console.log(`[Gallery] Subcarpeta ${imageSubfolder || '__root__'} completó un ciclo completo`);
           } else {
             // Si es el último tramo y llegamos al final, marcar que la próxima imagen será la última
-            console.log('[Gallery] Último tramo completado, próxima imagen será la última');
             subfolderIndex = imageIndices.length; // Mantener en el final para evitar más iteraciones
             // Guardar índice antes de salir
             subfolderCurrentIndexRef.current.set(normalizedSubfolder, subfolderIndex);
@@ -640,8 +565,6 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
         // Guardar índice actualizado ANTES de verificar completitud
         subfolderCurrentIndexRef.current.set(normalizedSubfolder, subfolderIndex);
         currentIndexRef.current = imageIndices[subfolderIndex] || imageIndices[0] || 0;
-        const savedIndex = subfolderCurrentIndexRef.current.get(normalizedSubfolder);
-        console.log(`[Gallery] getNextImage: Imagen encontrada y marcada como usada. Subcarpeta: ${currentSubfolder || '__root__'}, índice avanzado a: ${subfolderIndex}/${imageIndices.length}, guardado: ${savedIndex}, próxima imagen índice en allImages: ${imageIndices[subfolderIndex] || imageIndices[0]}, path actual: ${imagePath}`);
         
         // Verificar si todas las subcarpetas han completado al menos un ciclo
         // Esto es más confiable que verificar imágenes "used" porque se resetean
@@ -654,7 +577,6 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
           );
         
         if (allSubfoldersComplete && onAllComplete) {
-          console.log('[Gallery] Todas las subcarpetas completaron al menos un ciclo, llamando onAllComplete');
           onAllComplete();
         }
         
@@ -672,10 +594,8 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
     
     // Guardar índice actualizado incluso si no encontramos imagen lista
     subfolderCurrentIndexRef.current.set(normalizedSubfolder, subfolderIndex);
-    console.log(`[Gallery] getNextImage: No se encontró imagen lista después de ${attempts} intentos. Índice guardado: ${subfolderIndex}`);
 
     // Si ninguna está lista, devolver null
-    console.warn(`Gallery: No hay imágenes listas disponibles en subcarpeta ${currentSubfolder || '__root__'}`);
     return null;
   }, [allImages, onSubfolderComplete, onAllComplete, getCurrentSubfolder, selectedTrack]);
 
@@ -733,12 +653,10 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
   // Función para hacer seek a una posición de imagen usando tiempos auxiliares
   const seekToImagePosition = useCallback((targetTime, selectedTrack) => {
     if (!selectedTrack || !selectedTrack.seekTimeMap || selectedTrack.seekTimeMap.size === 0) {
-      console.warn('[Gallery] seekToImagePosition: seekTimeMap no disponible');
       return;
     }
     
     if (allImages.length === 0) {
-      console.warn('[Gallery] seekToImagePosition: no hay imágenes disponibles');
       return;
     }
     
@@ -770,7 +688,6 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
     if (!subfolderIndices || subfolderIndices.length === 0) {
       // Si no hay índices para esta subcarpeta, usar todas las imágenes
       currentIndexRef.current = closestIndex;
-      console.log(`[Gallery] Seek a tiempo ${targetTime.toFixed(2)}s: imagen ${closestIndex} (sin subcarpeta específica)`);
       return;
     }
     
@@ -788,7 +705,6 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
       });
       subfolderCurrentIndexRef.current.set(normalizedTargetSubfolder, closestPosition);
       currentIndexRef.current = subfolderIndices[closestPosition];
-      console.log(`[Gallery] Seek a tiempo ${targetTime.toFixed(2)}s: imagen ${closestIndex}, ajustado a posición ${closestPosition} en subcarpeta ${targetSubfolder || '__root__'}`);
       return;
     }
     
@@ -820,8 +736,6 @@ export const useGallery = (selectedTrack = null, onSubfolderComplete = null, onA
     // Actualizar índice de la subcarpeta
     subfolderCurrentIndexRef.current.set(normalizedTargetSubfolder, positionInSubfolder);
     currentIndexRef.current = closestIndex;
-    
-    console.log(`[Gallery] Seek a tiempo ${targetTime.toFixed(2)}s: imagen ${closestIndex}, subcarpeta ${targetSubfolder || '__root__'}, posición en subcarpeta ${positionInSubfolder}`);
   }, [allImages]);
   
   return { 

@@ -118,26 +118,12 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       
       // Asegurar que sea string (webpack siempre devuelve strings para imports estáticos)
       if (typeof audioSrcString !== 'string') {
-        console.warn(`[AudioContext] Audio src ${i} no es string:`, audioSrcString);
         audioSrcString = String(audioSrcString);
       }
       
-      console.log(`[AudioContext] Pre-cargando audio ${i + 1}/${srcs.length}: ${audioSrcString}`);
-      console.log(`[AudioContext] Tipo de audioSrc: ${typeof audioSrc}, Tipo de audioSrcString: ${typeof audioSrcString}`);
-      
       // Verificar que la URL sea válida antes de crear el elemento de audio
       if (!audioSrcString || audioSrcString === '' || (!audioSrcString.includes('.mp3') && !audioSrcString.includes('.wav') && !audioSrcString.includes('.ogg'))) {
-        console.warn(`[AudioContext] URL de audio inválida, saltando: ${audioSrcString}`);
         continue;
-      }
-      
-      // Logging adicional para debug en producción
-      if (audioSrcString.includes('thunderstruck')) {
-        console.log(`[AudioContext] DEBUG thunderstruck - URL completa: ${audioSrcString}`);
-        console.log(`[AudioContext] DEBUG thunderstruck - Es string: ${typeof audioSrcString === 'string'}`);
-        console.log(`[AudioContext] DEBUG thunderstruck - ¿Es URL absoluta?: ${audioSrcString?.startsWith('http')}`);
-        console.log(`[AudioContext] DEBUG thunderstruck - ¿Es URL relativa?: ${audioSrcString?.startsWith('/')}`);
-        console.log(`[AudioContext] DEBUG thunderstruck - window.location.origin: ${window.location.origin}`);
       }
       
       const audio = new Audio();
@@ -160,7 +146,6 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           if (!resolved && audio.readyState >= 2) {
             resolved = true;
             cleanup();
-            console.log(`[AudioContext] Audio ${i} pre-cargado (canplay, readyState: ${audio.readyState})`);
             resolve();
           }
         };
@@ -1131,10 +1116,6 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     if (audio.src !== currentSrcString) {
       console.log(`[AudioContext] Cambiando src de ${audio.src || ''} a ${currentSrcString}`);
       console.log(`[AudioContext] Índice actual: ${currentIndex}, Total audios: ${audioSrcs.length}`);
-      console.log(`[AudioContext] DEBUG thunderstruck - URL completa: ${currentSrcString}`);
-      console.log(`[AudioContext] DEBUG thunderstruck - Tipo de audioSrc: ${typeof audioSrcs[currentIndex]}`);
-      console.log(`[AudioContext] DEBUG thunderstruck - audioSrcs[${currentIndex}]:`, audioSrcs[currentIndex]);
-      console.log(`[AudioContext] DEBUG thunderstruck - Hash extraído: ${currentSrcString.match(/\.([a-f0-9]+)\.mp3$/)?.[1] || 'no encontrado'}`);
       
       // Los imports estáticos de webpack ya vienen como URLs válidas
       // NO hacer tests adicionales - confiar en webpack como Timeline
