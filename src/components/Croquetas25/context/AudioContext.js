@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useRef, useState, useEffect } from 'react';
 import { gsap } from 'gsap';
 import { Howl, Howler } from 'howler';
-import * as Tone from 'tone';
 import './AudioContext.scss';
 
 const AudioContextReact = createContext(null);
@@ -50,9 +49,6 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
   const nextAudioRef = useRef(null);
   const audioElementsRef = useRef([]); // Array de elementos Audio (solo para iOS/Android Safari con múltiples audios)
   const howlInstancesRef = useRef([]); // Array de instancias Howl (para iOS/Android con múltiples audios)
-  const tonePlayersRef = useRef(null); // Tone.Players para múltiples audios en móviles
-  const toneStartedRef = useRef(false); // Flag para saber si Tone.start() ya fue llamado
-  const toneCurrentPlayerRef = useRef(null); // Player actual de Tone.js
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -411,155 +407,9 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       if (audioSrcs.length > 1) {
         console.log('[AudioContext] Múltiples audios detectados: iniciando pre-carga...');
         
-        // En iOS/Android Safari, usar Tone.js para múltiples audios (basado en interactivo-orquesta)
-        if (useMultipleElements) {
-          console.log('[AudioContext] iOS/Android Safari: Usando Tone.js para múltiples audios...');
-          const createTonePlayers = async () => {
-            try {
-              // Crear objeto con las URLs de audio (Tone.Players requiere un objeto)
-              const playersObj = {};
-              
-              audioSrcs.forEach((audioSrc, i) => {
-                let audioSrcString = typeof audioSrc === 'string' ? audioSrc : (audioSrc?.default || audioSrc);
-                // NO normalizar - las URLs de require.context ya son válidas
-                playersObj[`audio_${i}`] = audioSrcString;
-              });
-              
-              // Crear Tone.Players (similar a interactivo-orquesta)
-              const players = new Tone.Players(playersObj);
-              const durations = [];
-              
-              // Esperar a que todos los buffers estén cargados
-              let loadedCount = 0;
-              let safetyTimeoutId = null;
-              
-              // Usar el patrón de interactivo-orquesta: escuchar onload directamente
-              const playersList = [...players._players.values()];
-              const totalCount = playersList.length;
-              
-              // Timeout de seguridad para Safari iOS: si después de 8 segundos no todos están cargados,
-              // marcar como listo si al menos el primero está cargado
-              safetyTimeoutId = setTimeout(() => {
-                if (loadedCount < totalCount && !tonePlayersRef.current) {
-                  const firstPlayer = playersList[0];
-                  if (firstPlayer && firstPlayer.buffer.loaded) {
-                    console.warn(`[AudioContext] Safari iOS: Timeout de seguridad - solo ${loadedCount}/${totalCount} buffers cargados, pero el primero está listo. Marcando como cargado.`);
-                    tonePlayersRef.current = players;
-                    setAudioDurations(durations);
-                    setPreloadedAudios(true);
-                    setPreloadProgress(100);
-                    setIsLoaded(true);
-                  }
-                }
-              }, 8000);
-              
-              // Función para verificar y procesar un buffer cargado
-              const checkAndProcessBuffer = (player, i) => {
-                if (player.buffer.loaded) {
-                  if (loadedCount < totalCount) { // Evitar procesar múltiples veces
-                    loadedCount++;
-                    
-                    if (player.buffer.duration && isFinite(player.buffer.duration) && player.buffer.duration > 0) {
-                      durations[i] = player.buffer.duration;
-                      console.log(`[AudioContext] Tone Player ${i} cargado: ${player.buffer.duration.toFixed(2)}s`);
-                    } else {
-                      durations[i] = 0;
-                    }
-                    
-                    const progress = Math.round((loadedCount / totalCount) * 100);
-                    setPreloadProgress(progress);
-                    
-                    // En Safari iOS, ser más permisivo: marcar como listo cuando al menos el 70% esté cargado
-                    // o cuando el primer audio esté listo (para colecciones con múltiples audios)
-                    const minRequiredForSafari = Math.max(1, Math.ceil(totalCount * 0.7)); // Al menos 70% o 1
-                    const shouldMarkAsLoaded = loadedCount === totalCount || 
-                      (isSafariIOS && loadedCount >= minRequiredForSafari && i === 0); // Si el primero está listo y tenemos 70%
-                    
-                    if (shouldMarkAsLoaded && !tonePlayersRef.current) {
-                      if (safetyTimeoutId) clearTimeout(safetyTimeoutId);
-                      tonePlayersRef.current = players;
-                      setAudioDurations(durations);
-                      setPreloadedAudios(true);
-                      setPreloadProgress(100);
-                      setIsLoaded(true); // IMPORTANTE: Marcar isLoaded como true para Tone.js
-                      console.log(`[AudioContext] ${loadedCount}/${totalCount} Tone Players cargados - marcando como listo (Safari iOS: ${isSafariIOS})`);
-                    }
-                  }
-                  return true;
-                }
-                return false;
-              };
-              
-              playersList.forEach((player, i) => {
-                // Verificar inmediatamente si ya está cargado
-                if (!checkAndProcessBuffer(player, i)) {
-                  // Si no está cargado, escuchar el evento onload del buffer (patrón de interactivo-orquesta)
-                  player.buffer.onload = () => {
-                    checkAndProcessBuffer(player, i);
-                  };
-                }
-                
-                // Manejar errores de carga
-                player.buffer.onerror = (error) => {
-                  console.warn(`[AudioContext] Error cargando Tone Player ${i}:`, error);
-                  if (loadedCount < totalCount) { // Evitar procesar múltiples veces
-                    loadedCount++;
-                    durations[i] = 0;
-                    const progress = Math.round((loadedCount / totalCount) * 100);
-                    setPreloadProgress(progress);
-                    
-                    // En Safari iOS, ser más permisivo: marcar como listo cuando al menos el 70% esté cargado
-                    const minRequiredForSafari = Math.max(1, Math.ceil(totalCount * 0.7));
-                    const shouldMarkAsLoaded = loadedCount === totalCount || 
-                      (isSafariIOS && loadedCount >= minRequiredForSafari);
-                    
-                    if (shouldMarkAsLoaded && !tonePlayersRef.current) {
-                      if (safetyTimeoutId) clearTimeout(safetyTimeoutId);
-                      tonePlayersRef.current = players;
-                      setAudioDurations(durations);
-                      setPreloadedAudios(true);
-                      setPreloadProgress(100);
-                      setIsLoaded(true); // IMPORTANTE: Marcar isLoaded como true incluso con errores
-                      console.log(`[AudioContext] ${loadedCount}/${totalCount} Tone Players procesados (con errores) - marcando como listo`);
-                    }
-                  }
-                };
-              });
-              
-              // Verificación final: si todos ya están cargados (poco probable pero posible)
-              // Esto maneja el caso donde todos se cargaron antes de asignar los handlers
-              let allLoaded = true;
-              playersList.forEach((player, i) => {
-                if (!player.buffer.loaded) {
-                  allLoaded = false;
-                }
-              });
-              
-              if (allLoaded && loadedCount < totalCount) {
-                // Procesar todos los que faltan
-                playersList.forEach((player, i) => {
-                  checkAndProcessBuffer(player, i);
-                });
-              }
-              
-            } catch (error) {
-              console.error('[AudioContext] Error creando Tone Players:', error);
-              setPreloadedAudios(true);
-              setPreloadProgress(100);
-              setIsLoaded(true); // IMPORTANTE: Marcar isLoaded como true incluso con errores
-            }
-          };
-          
-          createTonePlayers();
-        } else if (isChromeIOS && audioSrcs.length > 1) {
-          // Chrome iOS: usar elementos audio nativos en lugar de Tone.js
-          // Chrome iOS tiene problemas con Tone.js, usar preloadAllAudios
-          console.log('[AudioContext] Chrome iOS: Usando elementos audio nativos para múltiples audios...');
-          preloadAllAudios(audioSrcs);
-        } else {
-          // Para desktop con múltiples audios, usar la función preloadAllAudios
-          preloadAllAudios(audioSrcs);
-        }
+        // Para múltiples audios, usar elementos audio nativos (sin Tone.js)
+        console.log('[AudioContext] Usando elementos audio nativos para múltiples audios...');
+        preloadAllAudios(audioSrcs);
     } else {
       setPreloadedAudios(true); // Si solo hay un audio, marcar como listo
       setPreloadProgress(100);
@@ -792,16 +642,6 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       // El src se configurará en el flujo normal más abajo
     }
     
-    // IMPORTANTE: Si estamos usando Tone.js, no intentar usar currentAudioRef.current
-    if (useMultipleElements && tonePlayersRef.current) {
-      console.log('[AudioContext] Usando Tone.js, no configurando currentAudioRef.current');
-      // Asegurar que isLoaded esté marcado como true si los players están listos
-      if (preloadedAudios && !isLoaded) {
-        setIsLoaded(true);
-        setLoadingProgress(100);
-      }
-      return;
-    }
     
     // En iOS/Android Safari con múltiples audios, usar elementos diferentes
     // También en Chrome iOS con múltiples audios
@@ -1662,101 +1502,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
         return;
       }
       
-      // PRIORIDAD 1: Usar Tone.js en móviles con múltiples audios (basado en interactivo-orquesta)
-      if (useMultipleElements && tonePlayersRef.current) {
-        try {
-          // Asegurar que Tone.start() se haya llamado (requerido por navegadores)
-          if (!toneStartedRef.current) {
-            await Tone.start();
-            toneStartedRef.current = true;
-            console.log('[AudioContext] Tone.start() llamado');
-          }
-          
-          const players = tonePlayersRef.current;
-          const playerKey = `audio_${currentIndex}`;
-          const player = players.player(playerKey);
-          
-          if (!player) {
-            console.warn(`[AudioContext] No hay Tone Player para ${playerKey}`);
-            resolve();
-            return;
-          }
-          
-          // Detener otros players
-          players._players.forEach((p, i) => {
-            if (i !== currentIndex && p.state === 'started') {
-              p.stop();
-            }
-          });
-          
-          // Obtener el tiempo actual del Transport
-          const Transport = Tone.getTransport();
-          const currentTime = Transport.seconds;
-          
-          // Si no está reproduciendo, iniciar el Transport
-          if (Transport.state !== 'started') {
-            Transport.start();
-          }
-          
-          // Reproducir el player actual desde el tiempo correcto
-          player.start("+0.1", currentTime);
-          toneCurrentPlayerRef.current = player;
-          
-          // Fade in con GSAP (ajustar volumen del player)
-          player.volume.value = -Infinity; // Silenciar inicialmente
-          gsap.to({ value: 0 }, {
-            value: 0,
-            duration: 2.5,
-            ease: 'sine.out',
-            onUpdate: function() {
-              // Tone.js usa decibeles, convertir de 0-1 a dB
-              const db = this.targets()[0].value === 0 ? -Infinity : 20 * Math.log10(this.targets()[0].value);
-              player.volume.value = db;
-            },
-            onComplete: () => {
-              player.volume.value = 0; // 0 dB = volumen normal
-            }
-          });
-          
-          setIsPlaying(true);
-          console.log(`[AudioContext] Reproduciendo con Tone.js: ${playerKey}`);
-          
-          // Manejar cuando termine usando el buffer duration y eventos
-          const duration = player.buffer.duration || 0;
-          if (duration > 0) {
-            setTimeout(() => {
-              setIsPlaying(false);
-              const nextIndex = (currentIndex + 1) % audioSrcs.length;
-              if (nextIndex !== currentIndex) {
-                currentIndexRef.current = nextIndex;
-                setCurrentIndex(nextIndex);
-              }
-            }, duration * 1000);
-          }
-          
-          // Escuchar cuando el player se detenga (fallback)
-          player.onstop = () => {
-            setIsPlaying(false);
-            const nextIndex = (currentIndex + 1) % audioSrcs.length;
-            if (nextIndex !== currentIndex) {
-              currentIndexRef.current = nextIndex;
-              setCurrentIndex(nextIndex);
-            }
-          };
-          
-          resolve();
-        } catch (error) {
-          console.error('[AudioContext] Error reproduciendo con Tone.js:', error);
-          // Fallback a Howler.js
-          if (useMultipleElements && howlInstancesRef.current.length > 0) {
-            // ... código de Howler.js fallback
-          }
-          resolve();
-        }
-        return;
-      }
-      
-      // PRIORIDAD 2: Fallback a Howler.js en iOS/Android
+      // PRIORIDAD 1: Fallback a Howler.js en iOS/Android
       if (useMultipleElements && howlInstancesRef.current.length > 0) {
         const howl = howlInstancesRef.current[currentIndex];
         if (!howl) {
@@ -1802,13 +1548,6 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
         return;
       }
       
-      // IMPORTANTE: Si estamos usando Tone.js, no intentar usar currentAudioRef.current
-      if (useMultipleElements && tonePlayersRef.current) {
-        // Ya manejado arriba, no debería llegar aquí
-        console.warn('[AudioContext] Tone.js ya debería haber manejado la reproducción');
-        resolve();
-        return;
-      }
       
       // Chrome iOS con múltiples audios: usar audioElementsRef en lugar de currentAudioRef
       const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
@@ -2126,27 +1865,6 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
         return;
       }
       
-      // PRIORIDAD 1: Usar Tone.js en móviles con múltiples audios
-      if (useMultipleElements && tonePlayersRef.current) {
-        try {
-          const players = tonePlayersRef.current;
-          const Transport = Tone.getTransport();
-          
-          // Pausar el Transport
-          Transport.pause();
-          
-          // Detener todos los players
-          players.stopAll();
-          
-          setIsPlaying(false);
-          console.log('[AudioContext] Pausado con Tone.js');
-          resolve();
-        } catch (error) {
-          console.error('[AudioContext] Error pausando con Tone.js:', error);
-          resolve();
-        }
-        return;
-      }
       
       // PRIORIDAD 2: Usar elementos <audio> reales en iOS/Android (fallback)
       if (useMultipleElements && audioElementsRef.current.length > 0) {
@@ -2255,66 +1973,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       return;
     }
     
-    // PRIORIDAD 1: Usar Tone.js en móviles con múltiples audios
-    if (useMultipleElements && tonePlayersRef.current) {
-      try {
-        const players = tonePlayersRef.current;
-        const Transport = Tone.getTransport();
-        const wasPlaying = isPlaying;
-        
-        // Detener el player actual
-        if (toneCurrentPlayerRef.current) {
-          toneCurrentPlayerRef.current.stop();
-        }
-        
-        // Cambiar al nuevo índice
-        currentIndexRef.current = index;
-        setCurrentIndex(index);
-        
-        const playerKey = `audio_${index}`;
-        const newPlayer = players.player(playerKey);
-        
-        if (newPlayer && wasPlaying) {
-          // Calcular el tiempo total hasta este punto
-          let totalTime = targetTime;
-          for (let i = 0; i < index; i++) {
-            const prevPlayer = players.player(`audio_${i}`);
-            if (prevPlayer && prevPlayer.buffer.loaded) {
-              totalTime += prevPlayer.buffer.duration;
-            }
-          }
-          
-          // Establecer el tiempo del Transport
-          Transport.seconds = totalTime;
-          
-          // Reproducir el nuevo player
-          newPlayer.start("+0.1", targetTime);
-          toneCurrentPlayerRef.current = newPlayer;
-          
-          // Fade in
-          newPlayer.volume.value = -Infinity;
-          gsap.to({ value: 0 }, {
-            value: 0,
-            duration: 0.4,
-            ease: 'power2.out',
-            onUpdate: function() {
-              const db = this.targets()[0].value === 0 ? -Infinity : 20 * Math.log10(this.targets()[0].value);
-              newPlayer.volume.value = db;
-            },
-            onComplete: () => {
-              newPlayer.volume.value = 0;
-            }
-          });
-          
-          setIsPlaying(true);
-        }
-      } catch (error) {
-        console.error('[AudioContext] Error en seekToAudio con Tone.js:', error);
-      }
-      return;
-    }
-    
-    // PRIORIDAD 2: Fallback a Howler.js
+    // PRIORIDAD 1: Fallback a Howler.js
     if (useMultipleElements && howlInstancesRef.current.length > 0) {
       const wasPlaying = isPlaying;
       const currentHowl = howlInstancesRef.current[currentIndex];
@@ -2444,18 +2103,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       return currentAudioRef.current.currentTime || 0;
     }
     
-    // PRIORIDAD 1: Usar Tone.js en móviles con múltiples audios
-    if (useMultipleElements && tonePlayersRef.current) {
-      try {
-        const Transport = Tone.getTransport();
-        return Transport.seconds;
-      } catch (error) {
-        console.error('[AudioContext] Error obteniendo tiempo con Tone.js:', error);
-        return 0;
-      }
-    }
-    
-    // PRIORIDAD 2: Fallback a Howler.js
+    // PRIORIDAD 1: Fallback a Howler.js
     if (useMultipleElements && howlInstancesRef.current.length > 0) {
       const howl = howlInstancesRef.current[currentIndex];
       if (!howl || audioDurations.length === 0) return 0;

@@ -156,19 +156,6 @@ const Croquetas25 = () => {
       // En iOS, necesitamos iniciar el audio DIRECTAMENTE desde el click (no async)
       // iOS requiere que play() se llame sincrónicamente desde el evento de usuario
       if (isIOS || isChromeIOS || isSafariIOS) {
-        // Si usamos Tone.js, llamar Tone.start() aquí (requerido por navegadores)
-        // Importar Tone dinámicamente para evitar problemas de carga
-        import('tone').then((ToneModule) => {
-          const Tone = ToneModule.default || ToneModule;
-          Tone.start().then(() => {
-            console.log('[Croquetas25] Tone.start() llamado desde click del usuario');
-          }).catch(err => {
-            console.warn('[Croquetas25] Error llamando Tone.start():', err);
-          });
-        }).catch(err => {
-          console.warn('[Croquetas25] Error importando Tone:', err);
-        });
-        
         // Obtener el contexto de audio si está disponible
         const audioContext = window.__globalAudioContext;
         if (audioContext && audioContext.state === 'suspended') {
