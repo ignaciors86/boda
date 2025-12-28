@@ -33,10 +33,15 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
   const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   const isAndroid = typeof window !== 'undefined' && /Android/.test(navigator.userAgent);
   const isSafari = typeof window !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
+  const isSafariIOS = isIOS && !isChromeIOS;
   const isMobileSafari = isIOS || (isAndroid && isSafari);
-  // Solo usar múltiples elementos en iOS/Android Safari con múltiples audios
+  
+  // IMPORTANTE: Chrome iOS tiene problemas con Tone.js y múltiples audios
+  // Usar estrategia diferente: elementos audio nativos en lugar de Tone.js
+  // Solo usar múltiples elementos en Safari iOS (no Chrome iOS) con múltiples audios
   // Se recalcula cuando cambia audioSrcs
-  const useMultipleElements = isMobileSafari && audioSrcs.length > 1;
+  const useMultipleElements = isSafariIOS && audioSrcs.length > 1;
   
   // Dos elementos audio: uno actual y uno siguiente para transiciones suaves
   // O array de elementos Audio si estamos en iOS/Android Safari con múltiples audios
@@ -92,10 +97,22 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       }
     });
     iosPreloadAudioElementsRef.current = [];
+    
+    // También limpiar audioElementsRef si se está usando
+    audioElementsRef.current.forEach(audio => {
+      if (audio) {
+        audio.pause();
+        audio.src = '';
+        audio.load();
+      }
+    });
+    audioElementsRef.current = [];
+    
     setPreloadProgress(0);
     
     // Crear y pre-cargar cada audio de forma secuencial
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isChromeIOSLocal = isIOS && /CriOS/.test(navigator.userAgent);
     
     for (let i = 0; i < srcs.length; i++) {
       const audioSrc = srcs[i];
@@ -196,6 +213,12 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       
       // Guardar referencia al audio pre-cargado
       iosPreloadAudioElementsRef.current.push(audio);
+      
+      // IMPORTANTE: También guardar en audioElementsRef para Chrome iOS y otros casos
+      // donde necesitamos renderizar múltiples elementos audio
+      if (isChromeIOSLocal || (isIOS && srcs.length > 1)) {
+        audioElementsRef.current.push(audio);
+      }
       
       // Actualizar progreso
       const progress = Math.round(((i + 1) / srcs.length) * 100);
@@ -399,6 +422,11 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           };
           
           createTonePlayers();
+        } else if (isChromeIOS && audioSrcs.length > 1) {
+          // Chrome iOS: usar elementos audio nativos en lugar de Tone.js
+          // Chrome iOS tiene problemas con Tone.js, usar preloadAllAudios
+          console.log('[AudioContext] Chrome iOS: Usando elementos audio nativos para múltiples audios...');
+          preloadAllAudios(audioSrcs);
         } else {
           // Para desktop con múltiples audios, usar la función preloadAllAudios
           preloadAllAudios(audioSrcs);
@@ -2015,11 +2043,15 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     getTotalElapsed
   };
 
+  // Determinar si debemos renderizar múltiples elementos audio
+  // Chrome iOS también necesita múltiples elementos cuando hay múltiples audios
+  const shouldRenderMultipleAudios = (isSafariIOS && audioSrcs.length > 1) || (isChromeIOS && audioSrcs.length > 1);
+  
   return (
     <AudioContextReact.Provider value={value}>
       {children}
-      {/* Opción 4: Renderizar elementos <audio> reales para móviles */}
-      {useMultipleElements && audioElementsRef.current.length > 0 ? (
+      {/* Renderizar elementos <audio> reales para móviles con múltiples audios */}
+      {shouldRenderMultipleAudios && audioElementsRef.current.length > 0 ? (
         audioElementsRef.current.map((audio, index) => {
           // Asignar ref solo al elemento actual
           const audioRef = index === currentIndex ? currentAudioRef : null;
