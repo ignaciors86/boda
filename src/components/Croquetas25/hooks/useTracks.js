@@ -49,26 +49,30 @@ export const useTracks = () => {
         
         imageFiles.forEach(file => {
           const pathParts = file.split('/').filter(p => p && p !== '.');
-          const trackName = pathParts[0];
+          const trackNameOriginal = pathParts[0];
           // Filtrar carpetas que no deberían ser tracks
-          if (!isValidTrackName(trackName)) {
-            console.log(`[useTracks] Ignorando carpeta no válida: ${trackName}`);
+          if (!isValidTrackName(trackNameOriginal)) {
+            console.log(`[useTracks] Ignorando carpeta no válida: ${trackNameOriginal}`);
             return;
           }
-          if (!tracksTemp[trackName]) tracksTemp[trackName] = createTrack(trackName);
+          // Normalizar el nombre para usar como clave (evitar problemas case-sensitive en móviles)
+          const trackNameKey = normalizeName(trackNameOriginal);
+          if (!tracksTemp[trackNameKey]) {
+            tracksTemp[trackNameKey] = createTrack(trackNameOriginal);
+          }
           
           // Determinar subcarpeta: si hay más de 2 partes (track/subcarpeta/archivo), usar subcarpeta
           // Si solo hay 2 partes (track/archivo), está en la raíz
           const subfolder = pathParts.length > 2 ? pathParts[1] : '__root__';
           
-          if (!tracksTemp[trackName].imagesBySubfolder) {
-            tracksTemp[trackName].imagesBySubfolder = {};
+          if (!tracksTemp[trackNameKey].imagesBySubfolder) {
+            tracksTemp[trackNameKey].imagesBySubfolder = {};
           }
-          if (!tracksTemp[trackName].imagesBySubfolder[subfolder]) {
-            tracksTemp[trackName].imagesBySubfolder[subfolder] = [];
+          if (!tracksTemp[trackNameKey].imagesBySubfolder[subfolder]) {
+            tracksTemp[trackNameKey].imagesBySubfolder[subfolder] = [];
           }
           
-          tracksTemp[trackName].imagesBySubfolder[subfolder].push({
+          tracksTemp[trackNameKey].imagesBySubfolder[subfolder].push({
             path: imagesContext(file),
             originalPath: file,
             subfolder: subfolder
@@ -81,21 +85,25 @@ export const useTracks = () => {
         
         audioFiles.forEach(file => {
           const pathParts = file.split('/').filter(p => p && p !== '.');
-          const trackName = pathParts[0];
+          const trackNameOriginal = pathParts[0];
           // Filtrar carpetas que no deberían ser tracks
-          if (!isValidTrackName(trackName)) {
-            console.log(`[useTracks] Ignorando carpeta no válida: ${trackName}`);
+          if (!isValidTrackName(trackNameOriginal)) {
+            console.log(`[useTracks] Ignorando carpeta no válida: ${trackNameOriginal}`);
             return;
           }
-          if (!tracksTemp[trackName]) tracksTemp[trackName] = createTrack(trackName);
+          // Normalizar el nombre para usar como clave (evitar problemas case-sensitive en móviles)
+          const trackNameKey = normalizeName(trackNameOriginal);
+          if (!tracksTemp[trackNameKey]) {
+            tracksTemp[trackNameKey] = createTrack(trackNameOriginal);
+          }
           
           const subfolder = pathParts.length > 2 ? pathParts[1] : '__root__';
           
-          if (!tracksTemp[trackName].audioBySubfolder) {
-            tracksTemp[trackName].audioBySubfolder = {};
+          if (!tracksTemp[trackNameKey].audioBySubfolder) {
+            tracksTemp[trackNameKey].audioBySubfolder = {};
           }
-          if (!tracksTemp[trackName].audioBySubfolder[subfolder]) {
-            tracksTemp[trackName].audioBySubfolder[subfolder] = [];
+          if (!tracksTemp[trackNameKey].audioBySubfolder[subfolder]) {
+            tracksTemp[trackNameKey].audioBySubfolder[subfolder] = [];
           }
           
           // Obtener la URL del audio desde require.context
@@ -110,40 +118,44 @@ export const useTracks = () => {
           // Webpack maneja las rutas correctamente, incluyendo subcarpetas
           // Solo loguear para diagnóstico en iOS
           if (isIOS && subfolder !== '__root__') {
-            console.log(`[useTracks] iOS: Audio de subcarpeta - Track: ${trackName}, Subcarpeta: ${subfolder}, URL: ${audioUrl}`);
+            console.log(`[useTracks] iOS: Audio de subcarpeta - Track: ${trackNameOriginal}, Subcarpeta: ${subfolder}, URL: ${audioUrl}`);
           }
           
           // Logging adicional para subcarpetas en iOS
           if (isIOS && subfolder !== '__root__') {
-            console.log(`[useTracks] iOS: Procesando audio de subcarpeta - Track: ${trackName}, Subcarpeta: ${subfolder}, Ruta original: ${file}, URL normalizada: ${audioUrl}`);
+            console.log(`[useTracks] iOS: Procesando audio de subcarpeta - Track: ${trackNameOriginal}, Subcarpeta: ${subfolder}, Ruta original: ${file}, URL normalizada: ${audioUrl}`);
           }
           
-          tracksTemp[trackName].audioBySubfolder[subfolder].push(audioUrl);
+          tracksTemp[trackNameKey].audioBySubfolder[subfolder].push(audioUrl);
         });
 
         // Procesar guiones - organizar por subcarpeta
         const guionFiles = guionContext.keys().sort((a, b) => a.localeCompare(b));
         guionFiles.forEach(file => {
           const pathParts = file.split('/').filter(p => p && p !== '.');
-          const trackName = pathParts[0];
+          const trackNameOriginal = pathParts[0];
           // Filtrar carpetas que no deberían ser tracks
-          if (!isValidTrackName(trackName)) {
-            console.log(`[useTracks] Ignorando carpeta no válida: ${trackName}`);
+          if (!isValidTrackName(trackNameOriginal)) {
+            console.log(`[useTracks] Ignorando carpeta no válida: ${trackNameOriginal}`);
             return;
           }
-          if (!tracksTemp[trackName]) tracksTemp[trackName] = createTrack(trackName);
+          // Normalizar el nombre para usar como clave (evitar problemas case-sensitive en móviles)
+          const trackNameKey = normalizeName(trackNameOriginal);
+          if (!tracksTemp[trackNameKey]) {
+            tracksTemp[trackNameKey] = createTrack(trackNameOriginal);
+          }
           
           const subfolder = pathParts.length > 2 ? pathParts[1] : '__root__';
           
-          if (!tracksTemp[trackName].guionesBySubfolder) {
-            tracksTemp[trackName].guionesBySubfolder = {};
+          if (!tracksTemp[trackNameKey].guionesBySubfolder) {
+            tracksTemp[trackNameKey].guionesBySubfolder = {};
           }
           
           try {
             const module = guionContext(file);
-            tracksTemp[trackName].guionesBySubfolder[subfolder] = module.default || module;
+            tracksTemp[trackNameKey].guionesBySubfolder[subfolder] = module.default || module;
           } catch (error) {
-            console.warn(`Error al cargar guion para ${trackName}:`, error);
+            console.warn(`Error al cargar guion para ${trackNameOriginal}:`, error);
           }
         });
 
