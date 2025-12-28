@@ -135,6 +135,9 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       if (audioSrcString.includes('thunderstruck')) {
         console.log(`[AudioContext] DEBUG thunderstruck - URL completa: ${audioSrcString}`);
         console.log(`[AudioContext] DEBUG thunderstruck - Es string: ${typeof audioSrcString === 'string'}`);
+        console.log(`[AudioContext] DEBUG thunderstruck - ¿Es URL absoluta?: ${audioSrcString?.startsWith('http')}`);
+        console.log(`[AudioContext] DEBUG thunderstruck - ¿Es URL relativa?: ${audioSrcString?.startsWith('/')}`);
+        console.log(`[AudioContext] DEBUG thunderstruck - window.location.origin: ${window.location.origin}`);
       }
       
       const audio = new Audio();
@@ -1009,9 +1012,11 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
             console.error('[AudioContext] El archivo de audio no se puede cargar. Verificar que existe y es accesible.');
             // Verificar si el archivo realmente existe haciendo una petición HEAD
             // Usar la URL directamente (webpack ya la procesa correctamente)
-            // Solo construir URL completa si es necesario (no para rutas relativas de webpack)
+            // NO construir URL completa - webpack ya genera URLs relativas correctas
+            // Si es una URL relativa, el navegador la resolverá automáticamente
             const fullUrl = audioSrc.startsWith('http') ? audioSrc : audioSrc;
-            fetch(fullUrl, { method: 'HEAD', cache: 'no-cache' })
+            console.log(`[AudioContext] Verificando existencia del archivo: ${fullUrl}`);
+            fetch(fullUrl, { method: 'HEAD', cache: 'no-store' })
               .then(response => {
                 if (!response.ok) {
                   console.error(`[AudioContext] El archivo no existe en el servidor (HTTP ${response.status}). URL: ${fullUrl}`);

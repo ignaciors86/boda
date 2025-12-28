@@ -199,6 +199,9 @@ export const useTracks = () => {
                 
                 // Logging para verificar la URL generada
                 console.log(`[useTracks] Agregando audio a track ${track.name}: ${audioSrc} (tipo: ${typeof audioSrc})`);
+                console.log(`[useTracks] URL completa del audio:`, audioSrc);
+                console.log(`[useTracks] ¿Es URL absoluta?:`, audioSrc?.startsWith('http'));
+                console.log(`[useTracks] ¿Es URL relativa?:`, audioSrc?.startsWith('/'));
                 
                 track.audioSrcs.push(audioSrc);
                 audioIndex++;
