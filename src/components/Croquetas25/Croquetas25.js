@@ -409,6 +409,7 @@ const Croquetas25 = () => {
             showStartButton={showStartButton}
             loadingFadedOut={loadingFadedOut}
             setLoadingFadedOut={setLoadingFadedOut}
+            setAudioStarted={setAudioStarted}
             selectedTrack={selectedTrack}
           />
           <UnifiedContentManager
@@ -539,7 +540,7 @@ const AudioStarter = ({ audioStarted }) => {
   return null;
 };
 
-const UnifiedLoadingIndicator = ({ imagesLoading, imagesProgress, isDirectUri, audioStarted, loadingFadedOut, setLoadingFadedOut, selectedTrack }) => {
+const UnifiedLoadingIndicator = ({ imagesLoading, imagesProgress, isDirectUri, audioStarted, loadingFadedOut, setLoadingFadedOut, setAudioStarted, selectedTrack }) => {
   const { loadingProgress: audioProgress, isLoaded: audioLoaded, audioRef } = useAudio();
   const loadingRef = useRef(null);
   const fadeoutStartedRef = useRef(false);
@@ -644,7 +645,7 @@ const UnifiedLoadingIndicator = ({ imagesLoading, imagesProgress, isDirectUri, a
       if (loadingRef.current && !loadingFadedOut && !fadeoutStartedRef.current) {
         const currentProgress = Math.round((imagesProgress + audioProgress) / 2);
         if (currentProgress >= minProgress) {
-          console.warn('[UnifiedLoadingIndicator] Timeout de seguridad: forzando fade out del loading');
+          console.warn('[UnifiedLoadingIndicator] Timeout de seguridad: forzando fade out del loading y iniciando audio');
           hasCheckedReadyRef.current = true;
           fadeoutStartedRef.current = true;
           
@@ -654,6 +655,12 @@ const UnifiedLoadingIndicator = ({ imagesLoading, imagesProgress, isDirectUri, a
             ease: 'power2.out',
             onComplete: () => {
               setLoadingFadedOut(true);
+              // IMPORTANTE: Cuando el loading se quita por timeout, forzar el inicio del audio
+              // Esto asegura que el audio se inicie incluso si everythingReady es false
+              if (!audioStarted) {
+                console.log('[UnifiedLoadingIndicator] Iniciando audio después de timeout de seguridad');
+                setAudioStarted(true);
+              }
             }
           });
         }
@@ -661,7 +668,7 @@ const UnifiedLoadingIndicator = ({ imagesLoading, imagesProgress, isDirectUri, a
     }, isMobile ? 10000 : 15000);
     
     return () => clearTimeout(safetyTimeout);
-  }, [selectedTrack, audioStarted, loadingFadedOut, imagesProgress, audioProgress, isMobile, setLoadingFadedOut]);
+  }, [selectedTrack, audioStarted, loadingFadedOut, imagesProgress, audioProgress, isMobile, setLoadingFadedOut, setAudioStarted]);
   
   // En móviles, especialmente Chrome iOS, asegurar que el loading siempre se muestre
   // incluso si everythingReady es false inicialmente

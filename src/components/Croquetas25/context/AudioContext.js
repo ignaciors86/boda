@@ -216,7 +216,12 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       
       // IMPORTANTE: También guardar en audioElementsRef para Chrome iOS y otros casos
       // donde necesitamos renderizar múltiples elementos audio
-      if (isChromeIOSLocal || (isIOS && srcs.length > 1)) {
+      // Chrome iOS siempre necesita múltiples elementos cuando hay múltiples audios
+      if (isChromeIOSLocal && srcs.length > 1) {
+        audioElementsRef.current.push(audio);
+        console.log(`[AudioContext] Chrome iOS: Audio ${i} guardado en audioElementsRef`);
+      } else if (isIOS && srcs.length > 1 && !isChromeIOSLocal) {
+        // Safari iOS también puede necesitarlo
         audioElementsRef.current.push(audio);
       }
       
@@ -722,7 +727,11 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     }
     
     // En iOS/Android Safari con múltiples audios, usar elementos diferentes
-    if (useMultipleElements && audioElementsRef.current.length > 0) {
+    // También en Chrome iOS con múltiples audios
+    const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
+    const shouldUseMultipleElements = (useMultipleElements || (isChromeIOS && audioSrcs.length > 1)) && audioElementsRef.current.length > 0;
+    
+    if (shouldUseMultipleElements) {
       const audio = audioElementsRef.current[currentIndex];
       if (!audio) {
         console.warn(`[AudioContext] No hay elemento Audio para índice ${currentIndex}`);
@@ -742,7 +751,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       
       // Establecer el nuevo elemento como actual
       currentAudioRef.current = audio;
-      console.log(`[AudioContext] Cambiado a elemento Audio ${currentIndex}/${audioElementsRef.current.length} (iOS/Android Safari)`);
+      console.log(`[AudioContext] Cambiado a elemento Audio ${currentIndex}/${audioElementsRef.current.length} (${isChromeIOS ? 'Chrome iOS' : 'Safari iOS'})`);
       // Continuar con la configuración normal del audio (setupAudioContext, etc.)
     } else {
       // Lógica normal: cambiar src del mismo elemento
@@ -1426,6 +1435,64 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
         console.warn('[AudioContext] Tone.js ya debería haber manejado la reproducción');
         resolve();
         return;
+      }
+      
+      // Chrome iOS con múltiples audios: usar audioElementsRef en lugar de currentAudioRef
+      const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
+      if (isChromeIOS && audioElementsRef.current.length > 0 && audioElementsRef.current[currentIndex]) {
+        const audio = audioElementsRef.current[currentIndex];
+        if (audio && audio.paused) {
+          try {
+            // Asegurar que el AudioContext esté resumido
+            if (globalAudioContext && globalAudioContext.state === 'suspended') {
+              await globalAudioContext.resume();
+            }
+            
+            // En Chrome iOS, ser más permisivo con readyState
+            if (audio.readyState >= 1) {
+              audio.volume = 0;
+              await audio.play();
+              console.log('[AudioContext] Chrome iOS: Audio reproducido desde audioElementsRef');
+              
+              // Fade in
+              volumeTweenRef.current = gsap.to(audio, {
+                volume: 1,
+                duration: 2.5,
+                ease: 'sine.out',
+                onComplete: () => {
+                  volumeTweenRef.current = null;
+                  resolve();
+                }
+              });
+            } else {
+              // Esperar a que tenga metadata
+              await new Promise((resolveWait) => {
+                const handleCanPlay = () => {
+                  audio.removeEventListener('canplay', handleCanPlay);
+                  resolveWait();
+                };
+                audio.addEventListener('canplay', handleCanPlay);
+                if (audio.readyState >= 1) resolveWait();
+              });
+              
+              audio.volume = 0;
+              await audio.play();
+              volumeTweenRef.current = gsap.to(audio, {
+                volume: 1,
+                duration: 2.5,
+                ease: 'sine.out',
+                onComplete: () => {
+                  volumeTweenRef.current = null;
+                  resolve();
+                }
+              });
+            }
+          } catch (error) {
+            console.error('[AudioContext] Error en Chrome iOS con múltiples audios:', error);
+            resolve();
+          }
+          return;
+        }
       }
       
       if (currentAudioRef.current && currentAudioRef.current.paused) {
