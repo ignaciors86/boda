@@ -149,6 +149,14 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
         continue;
       }
       
+      // Asegurar que la URL sea absoluta si es relativa (para producción)
+      if (!audioSrcString.startsWith('http') && !audioSrcString.startsWith('data:')) {
+        // Si es una URL relativa, asegurarse de que empiece con /
+        if (!audioSrcString.startsWith('/')) {
+          audioSrcString = '/' + audioSrcString;
+        }
+      }
+      
       const audio = new Audio();
       audio.preload = 'auto';
       audio.src = audioSrcString;
@@ -355,6 +363,15 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
         const audioSrc = validAudioSrcs[i];
         // En iOS, asegurar que las rutas se conviertan correctamente
         let audioSrcString = typeof audioSrc === 'string' ? audioSrc : (audioSrc?.default || audioSrc);
+        
+        // Asegurar que la URL sea absoluta si es relativa (para producción)
+        if (!audioSrcString.startsWith('http') && !audioSrcString.startsWith('data:')) {
+          // Si es una URL relativa, asegurarse de que empiece con /
+          if (!audioSrcString.startsWith('/')) {
+            audioSrcString = '/' + audioSrcString;
+          }
+        }
+        
         const audio = new Audio(audioSrcString);
         
         try {
@@ -1022,7 +1039,8 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
             // Usar la URL directamente (webpack ya la procesa correctamente)
             // NO construir URL completa - webpack ya genera URLs relativas correctas
             // Si es una URL relativa, el navegador la resolverá automáticamente
-            const fullUrl = audioSrc.startsWith('http') ? audioSrc : audioSrc;
+            // Construir URL completa si es relativa
+            const fullUrl = audioSrc.startsWith('http') ? audioSrc : (window.location.origin + audioSrc);
             console.log(`[AudioContext] Verificando existencia del archivo: ${fullUrl}`);
             fetch(fullUrl, { method: 'HEAD', cache: 'no-store' })
               .then(response => {
@@ -1033,7 +1051,14 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
                   setIsLoaded(false);
                   setLoadingProgress(0);
                 } else {
+                  const contentType = response.headers.get('Content-Type');
+                  const contentLength = response.headers.get('Content-Length');
+                  const acceptRanges = response.headers.get('Accept-Ranges');
                   console.log(`[AudioContext] El archivo existe en el servidor pero no se puede cargar. Posible problema de formato o CORS.`);
+                  console.log(`[AudioContext] Headers: Content-Type=${contentType}, Content-Length=${contentLength}, Accept-Ranges=${acceptRanges}`);
+                  if (contentType && !contentType.includes('audio')) {
+                    console.error(`[AudioContext] ERROR: Content-Type incorrecto. Esperado: audio/mpeg, Obtenido: ${contentType}`);
+                  }
                 }
               })
               .catch(err => {
@@ -1140,9 +1165,18 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       console.log(`[AudioContext] Cambiando src de ${audio.src || ''} a ${currentSrcString}`);
       console.log(`[AudioContext] Índice actual: ${currentIndex}, Total audios: ${validAudioSrcs.length}`);
       
+      // Asegurar que la URL sea absoluta si es relativa (para producción)
+      let finalSrc = currentSrcString;
+      if (!finalSrc.startsWith('http') && !finalSrc.startsWith('data:')) {
+        // Si es una URL relativa, asegurarse de que empiece con /
+        if (!finalSrc.startsWith('/')) {
+          finalSrc = '/' + finalSrc;
+        }
+      }
+      
       // Los imports estáticos de webpack ya vienen como URLs válidas
       // NO hacer tests adicionales - confiar en webpack como Timeline
-      audio.src = currentSrcString;
+      audio.src = finalSrc;
       audio.load();
     }
 
