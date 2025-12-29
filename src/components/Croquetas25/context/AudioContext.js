@@ -209,7 +209,8 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           return null;
         }
         
-        const audio = new Audio(audioSrc);
+        // Crear elemento de audio sin src inicialmente para mejor compatibilidad
+        const audio = new Audio();
         audio.preload = 'auto';
         audio.crossOrigin = 'anonymous'; // Necesario para CORS en análisis de audio
         
@@ -221,8 +222,21 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
         // Agregar clase para estilos
         audio.className = 'audio-context';
         
+        // Configurar src después de crear el elemento
+        // Esto ayuda en algunos navegadores, especialmente móviles
+        try {
+          audio.src = audioSrc;
+        } catch (e) {
+          console.error(`[AudioContext] Error configurando src para audio ${index}:`, e);
+          return null;
+        }
+        
         // Log para debug
-        console.log(`[AudioContext] Creando audio ${index}:`, audioSrc);
+        console.log(`[AudioContext] Creando audio ${index}:`, audioSrc, {
+          finalSrc: audio.src,
+          networkState: audio.networkState,
+          readyState: audio.readyState
+        });
         
         return audio;
       }).filter(audio => audio !== null); // Filtrar audios nulos
@@ -272,12 +286,30 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           const onError = (e) => {
             if (!resolved) {
               resolved = true;
-              console.error(`[AudioContext] Error cargando audio ${index}:`, e, {
+              const errorInfo = {
                 src: audio.src,
+                currentSrc: audio.currentSrc,
                 error: audio.error,
+                errorCode: audio.error?.code,
+                errorMessage: audio.error?.message,
                 networkState: audio.networkState,
                 readyState: audio.readyState
-              });
+              };
+              
+              console.error(`[AudioContext] Error cargando audio ${index}:`, e, errorInfo);
+              
+              // Si es un error de red (networkState 3 = NETWORK_NO_SOURCE), intentar recargar
+              if (audio.networkState === 3 && audio.src) {
+                console.warn(`[AudioContext] Reintentando cargar audio ${index}...`);
+                // Intentar recargar después de un pequeño delay
+                setTimeout(() => {
+                  try {
+                    audio.load();
+                  } catch (loadErr) {
+                    console.error(`[AudioContext] Error en reload de audio ${index}:`, loadErr);
+                  }
+                }, 500);
+              }
               
               // Establecer duración como 0 si hay error
               setAudioDurations(prev => {
