@@ -1,0 +1,203 @@
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { gsap } from 'gsap';
+import Croqueta from '../Croqueta/Croqueta';
+import './Intro.scss';
+
+const MAINCLASS = 'intro';
+
+const Intro = ({ tracks, onTrackSelect, selectedTrackId = null, isVisible = true }) => {
+  const titleRef = useRef(null);
+  const buttonsRef = useRef([]);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const overlayRef = useRef(null);
+  const containerRef = useRef(null);
+
+  const normalizeId = useCallback((id) => id?.toLowerCase().replace(/\s+/g, '-') || null, []);
+
+  const isMainCroqueta = useCallback((track) => {
+    if (!selectedTrackId || !track) return false;
+    const normalizedId = normalizeId(selectedTrackId);
+    return normalizeId(track.id) === normalizedId || normalizeId(track.name) === normalizedId;
+  }, [selectedTrackId, normalizeId]);
+
+  const setButtonRef = useCallback((index) => (el) => {
+    if (el) {
+      buttonsRef.current[index] = el;
+    }
+  }, []);
+
+  const handleTrackSelect = useCallback((track, index) => {
+    if (isAnimating) return;
+    
+    setIsAnimating(true);
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        setIsAnimating(false);
+        onTrackSelect?.(track);
+      }
+    });
+
+    const fadeOut = { opacity: 0, ease: 'power2.in' };
+    titleRef.current && tl.to(titleRef.current, { ...fadeOut, y: -30, duration: 1.2 });
+
+    buttonsRef.current.forEach((buttonRef, i) => {
+      if (!buttonRef) return;
+      tl.to(buttonRef, {
+        ...fadeOut,
+        scale: 0,
+        rotation: `+=${i === index ? 180 : 0}`,
+        duration: 0.8,
+        transformOrigin: 'center center'
+      }, i === index ? 0 : Math.abs(i - index) * 0.1);
+    });
+  }, [isAnimating, onTrackSelect]);
+
+  const handleCroquetaClick = useCallback((track, index) => (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    handleTrackSelect(track, index);
+  }, [handleTrackSelect]);
+
+  useEffect(() => {
+    if (!overlayRef.current || !containerRef.current) return;
+    
+    if (isVisible) {
+      if (titleRef.current) {
+        gsap.set(titleRef.current, { 
+          opacity: 0, 
+          y: 0, 
+          rotation: 0,
+          clearProps: 'all'
+        });
+      }
+      
+      buttonsRef.current.forEach((buttonRef) => {
+        if (buttonRef) {
+          gsap.set(buttonRef, { 
+            opacity: 0, 
+            scale: 0, 
+            rotation: 0,
+            clearProps: 'all'
+          });
+        }
+      });
+      
+      gsap.set(overlayRef.current, { 
+        opacity: 0,
+        display: 'flex',
+        y: 0,
+        rotation: 0
+      });
+      
+      gsap.set(containerRef.current, { 
+        y: '100%', 
+        rotation: -15, 
+        opacity: 0
+      });
+      
+      const tl = gsap.timeline();
+      
+      tl.to(overlayRef.current, {
+        opacity: 1,
+        duration: 0.8,
+        ease: 'power2.out'
+      });
+      
+      tl.to(containerRef.current, {
+        y: '0%',
+        rotation: 0,
+        opacity: 1,
+        duration: 1.2,
+        ease: 'back.out(1.4)'
+      }, '-=0.6');
+      
+      if (titleRef.current) {
+        tl.to(titleRef.current, {
+          opacity: 1,
+          y: 0,
+          rotation: 0,
+          duration: 1.0,
+          ease: 'power2.out'
+        }, '-=0.8');
+      }
+      
+      buttonsRef.current.forEach((buttonRef, index) => {
+        if (buttonRef) {
+          const delay = 0.4 + (index * 0.1);
+          tl.to(buttonRef, {
+            opacity: 1,
+            scale: 1,
+            rotation: 0,
+            duration: 0.6,
+            ease: 'back.out(1.7)'
+          }, delay);
+        }
+      });
+    } else {
+      const tl = gsap.timeline({
+        onComplete: () => {
+          if (overlayRef.current) {
+            gsap.set(overlayRef.current, { display: 'none' });
+          }
+        }
+      });
+      
+      [titleRef.current, ...buttonsRef.current.filter(Boolean)].forEach((ref, i) => {
+        if (ref) {
+          tl.to(ref, {
+            y: '+=50',
+            opacity: 0,
+            rotation: `+=${15 + i * 5}`,
+            duration: 0.6,
+            ease: 'power2.in'
+          }, i * 0.05);
+        }
+      });
+      
+      tl.to(containerRef.current, {
+        y: '100%',
+        rotation: 15,
+        opacity: 0,
+        duration: 1.0,
+        ease: 'power2.in'
+      }, '-=0.3');
+      
+      tl.to(overlayRef.current, {
+        opacity: 0,
+        duration: 0.5,
+        ease: 'power2.in'
+      }, '-=0.3');
+    }
+  }, [isVisible]);
+
+  return (
+    <div 
+      className={MAINCLASS} 
+      ref={overlayRef}
+      onClick={(e) => e.target === overlayRef.current && e.preventDefault()}
+    >
+      <div className={`${MAINCLASS}__container`} ref={containerRef}>
+        <h2 ref={titleRef} className={`${MAINCLASS}__title`}>Coge una croqueta</h2>
+        
+        <div className={`${MAINCLASS}__buttons`}>
+          {tracks.map((track, index) => {
+            return (
+              <Croqueta
+                key={track.id}
+                index={index}
+                text={track.name}
+                onClick={handleCroquetaClick(track, index)}
+                rotation={0}
+                className={`${MAINCLASS}__button`}
+                ref={setButtonRef(index)}
+              />
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Intro;

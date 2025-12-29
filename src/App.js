@@ -15,6 +15,7 @@ import Kudos from './components/GaticosYMonetes/Kudos';
 import Controles from './components/GaticosYMonetes/Controles';
 import SimpleWebRTCTest from './components/SimpleWebRTCTest/SimpleWebRTCTest';
 import Croquetas25 from './components/Croquetas25/Croquetas25';
+import Croquetas from './components/Croquetas/Croquetas';
 import MapaMesas from './components/MapaMesas/MapaMesas';
 
 const App = () => {
@@ -191,6 +192,7 @@ const App = () => {
             <Route path="/gaticos-y-monetes/kudos" element={<Kudos />} />
             <Route path="/gaticos-y-monetes/controles" element={<Controles />} />
             <Route path="/nachitos-de-nochevieja/:trackId?" element={<Croquetas25 />} />
+            <Route path="/croquetas/:trackId?" element={<Croquetas />} />
             <Route path="/emitter" element={<SimpleWebRTCTest isEmitting={true} />} />
             <Route path="/receiver" element={<SimpleWebRTCTest isEmitting={false} />} />
             <Route path="/:documentId" element={<LoadInvitado />} />
