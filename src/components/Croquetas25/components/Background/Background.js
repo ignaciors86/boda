@@ -23,10 +23,24 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
   }, [isLoading, allImages.length, preloadNextImages]);
   
   useEffect(() => {
-    if (!onTriggerCallbackRef || showOnlyDiagonales) return;
+    console.log('[Background] useEffect onTriggerCallbackRef ejecutado', {
+      hasRef: !!onTriggerCallbackRef,
+      showOnlyDiagonales,
+      hasCurrent: !!onTriggerCallbackRef?.current
+    });
+    
+    if (!onTriggerCallbackRef || showOnlyDiagonales) {
+      // Limpiar callback si no hay ref o solo se muestran diagonales
+      if (onTriggerCallbackRef) {
+        onTriggerCallbackRef.current = null;
+      }
+      return;
+    }
     
     const createCallback = () => {
+      console.log('[Background] Configurando callback de triggerSquare');
       onTriggerCallbackRef.current = (type, data = {}) => {
+        console.log('[Background] Callback triggerSquare llamado', { type, data });
       const id = `square-${Date.now()}-${Math.random()}`;
       const lgtbColors = [
         '#FF0080', '#FF8000', '#FFFF00', '#00FF00', '#0080FF', '#8000FF',
@@ -154,7 +168,32 @@ const Background = ({ onTriggerCallbackRef, analyserRef, dataArrayRef, isInitial
     };
     
     createCallback();
-  }, [onTriggerCallbackRef, getNextImage, preloadNextImages]);
+    
+    // Log para verificar que el callback se configuró
+    console.log('[Background] Callback configurado:', {
+      hasCallback: !!onTriggerCallbackRef?.current,
+      callbackType: typeof onTriggerCallbackRef?.current,
+      showOnlyDiagonales,
+      hasRef: !!onTriggerCallbackRef,
+      selectedTrack: !!selectedTrack
+    });
+    
+    // Verificar que el callback se configuró correctamente después de un pequeño delay
+    // Esto ayuda cuando audioStarted cambia y los refs se pasan
+    const verifyTimeout = setTimeout(() => {
+      if (onTriggerCallbackRef && !showOnlyDiagonales && !onTriggerCallbackRef.current) {
+        console.warn('[Background] Callback no se configuró, reintentando...');
+        createCallback();
+      }
+    }, 100);
+    
+    return () => {
+      clearTimeout(verifyTimeout);
+      if (onTriggerCallbackRef) {
+        onTriggerCallbackRef.current = null;
+      }
+    };
+  }, [onTriggerCallbackRef, getNextImage, preloadNextImages, isLastImageRef, showOnlyDiagonales, selectedTrack]);
 
   useEffect(() => {
     squares.forEach(square => {

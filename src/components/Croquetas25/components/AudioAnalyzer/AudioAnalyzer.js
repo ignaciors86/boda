@@ -3,7 +3,7 @@ import { useAudio } from '../../context/AudioContext';
 import './AudioAnalyzer.scss';
 
 const AudioAnalyzer = ({ onBeat, onVoice, onAudioData }) => {
-  const { audioRef, audioContextRef, analyserRef, dataArrayRef, timeDataArrayRef, isInitialized } = useAudio();
+  const { audioRef, audioContextRef, analyserRef, dataArrayRef, timeDataArrayRef, isInitialized, isPlaying, currentIndex } = useAudio();
   const lastBeatTimeRef = useRef(0);
   const lastVoiceTimeRef = useRef(0);
   const energyHistoryRef = useRef([]);
@@ -47,24 +47,45 @@ const AudioAnalyzer = ({ onBeat, onVoice, onAudioData }) => {
     const audioContext = audioContextRef?.current;
     const audio = audioRef?.current;
     
+    // Si el AudioContext está cerrado, no intentar usarlo
+    if (audioContext && audioContext.state === 'closed') {
+      console.warn(`[AudioAnalyzer] AudioContext está cerrado, no se puede analizar`);
+      return;
+    }
+    
     if (audioContext && audioContext.state !== 'running') {
       console.log(`[AudioAnalyzer] AudioContext is ${audioContext.state}, waiting for it to be running...`);
-      // Intentar resumir el AudioContext
-      audioContext.resume().then(() => {
-        console.log(`[AudioAnalyzer] AudioContext resumed, state: ${audioContext.state}`);
-      }).catch(err => {
-        console.error(`[AudioAnalyzer] Error resuming AudioContext:`, err);
-      });
+      // Intentar resumir el AudioContext (solo si no está cerrado)
+      if (audioContext.state !== 'closed') {
+        audioContext.resume().then(() => {
+          console.log(`[AudioAnalyzer] AudioContext resumed, state: ${audioContext.state}`);
+        }).catch(err => {
+          // Solo loggear si no es porque está cerrado
+          if (err.name !== 'InvalidStateError' || !err.message.includes('closed')) {
+            console.error(`[AudioAnalyzer] Error resuming AudioContext:`, err);
+          }
+        });
+      }
       return;
     }
 
     // Verificar que el audio esté realmente reproduciéndose antes de analizar
-    if (audio && (audio.paused || audio.readyState < 3)) {
-      console.log(`[AudioAnalyzer] Audio not ready yet | paused: ${audio.paused} | readyState: ${audio.readyState}`);
+    // Usar isPlaying del contexto y también verificar el estado del audio
+    // Ser más permisivo: si el audio existe y tiene datos, intentar analizar
+    const isAudioPlaying = audio && !audio.paused && (isPlaying || audio.currentTime > 0);
+    const minReadyState = 2; // readyState 2 = HAVE_CURRENT_DATA (suficiente para análisis)
+    
+    if (!audio || audio.readyState < minReadyState) {
+      console.log(`[AudioAnalyzer] Audio not ready yet | isPlaying: ${isPlaying} | paused: ${audio?.paused} | readyState: ${audio?.readyState} | currentTime: ${audio?.currentTime}`);
+      return;
+    }
+    
+    if (!isAudioPlaying) {
+      console.log(`[AudioAnalyzer] Audio not playing | isPlaying: ${isPlaying} | paused: ${audio?.paused} | currentTime: ${audio?.currentTime}`);
       return;
     }
 
-    console.log(`[AudioAnalyzer] Starting analysis loop | analyser.fftSize: ${analyserRef.current.fftSize} | frequencyBinCount: ${analyserRef.current.frequencyBinCount} | dataArray.length: ${dataArrayRef.current.length}`);
+    console.log(`[AudioAnalyzer] Starting analysis loop | analyser.fftSize: ${analyserRef.current.fftSize} | frequencyBinCount: ${analyserRef.current.frequencyBinCount} | dataArray.length: ${dataArrayRef.current.length} | isPlaying: ${isPlaying} | audio.paused: ${audio?.paused} | onBeat exists: ${!!onBeat} | onVoice exists: ${!!onVoice}`);
     let animationFrameId;
 
     // Función auxiliar para calcular el centroide espectral
@@ -96,6 +117,12 @@ const AudioAnalyzer = ({ onBeat, onVoice, onAudioData }) => {
       frameCount++;
       if (frameCount % 60 === 0) {
         console.log(`[AudioAnalyzer] Analysis running | frame: ${frameCount} | analyser exists: ${!!analyserRef.current} | dataArray exists: ${!!dataArrayRef.current} | timestamp: ${Date.now()}`);
+      }
+      
+      // Verificar que tenemos datos válidos
+      const hasData = dataArrayRef.current.some(val => val > 0);
+      if (!hasData && frameCount % 60 === 0) {
+        console.warn(`[AudioAnalyzer] No hay datos de audio en el array | maxValue: ${Math.max(...dataArrayRef.current)}`);
       }
       
       analyserRef.current.getByteFrequencyData(dataArrayRef.current);
@@ -171,10 +198,10 @@ const AudioAnalyzer = ({ onBeat, onVoice, onAudioData }) => {
       const solidSquareDetected = sharpEnergy > trebleThreshold || trebleSpike;
       
       // Detección de ritmos para cuadros - SENSIBILIDAD MUY AUMENTADA
-      const rhythmSensitivity = 0.02 + (0.2 * (1 - normalizedVolume)); // Aún más sensible: 0.02-0.22
-      const rhythmThreshold = averageRhythmEnergy + (Math.sqrt(rhythmVariance) * rhythmSensitivity * 0.2); // Reducido multiplicador a 0.2
-      const rhythmSpikeThreshold = 0.1 + (0.08 * (1 - normalizedVolume)); // Más sensible: 0.1-0.18
-      const rhythmSpikeMultiplier = 0.5 + (0.12 * (1 - normalizedVolume)); // Más sensible: 0.5-0.62
+      const rhythmSensitivity = 0.01 + (0.1 * (1 - normalizedVolume)); // Muy sensible: 0.01-0.11
+      const rhythmThreshold = averageRhythmEnergy + (Math.sqrt(rhythmVariance) * rhythmSensitivity * 0.1); // Muy reducido multiplicador a 0.1
+      const rhythmSpikeThreshold = 0.05 + (0.05 * (1 - normalizedVolume)); // Muy sensible: 0.05-0.1
+      const rhythmSpikeMultiplier = 0.3 + (0.1 * (1 - normalizedVolume)); // Muy sensible: 0.3-0.4
       const recentRhythm = energyHistoryRef.current.slice(-5);
       const maxRecentRhythm = Math.max(...recentRhythm);
       const rhythmSpike = rhythmEnergy > maxRecentRhythm * rhythmSpikeThreshold && rhythmEnergy > averageRhythmEnergy * rhythmSpikeMultiplier;
@@ -194,10 +221,10 @@ const AudioAnalyzer = ({ onBeat, onVoice, onAudioData }) => {
         : 0;
       
       // Detección de voces extremadamente sensible
-      const voiceSensitivity = 0.05 + (0.3 * (1 - normalizedVolume));
-      const voiceThreshold = averageVoiceEnergy + (Math.sqrt(voiceVariance) * voiceSensitivity * 0.3);
-      const voiceSpikeThreshold = 0.25 + (0.1 * (1 - normalizedVolume));
-      const voiceSpikeMultiplier = 0.65 + (0.15 * (1 - normalizedVolume));
+      const voiceSensitivity = 0.01 + (0.15 * (1 - normalizedVolume)); // Más sensible
+      const voiceThreshold = averageVoiceEnergy + (Math.sqrt(voiceVariance) * voiceSensitivity * 0.15); // Más sensible
+      const voiceSpikeThreshold = 0.1 + (0.05 * (1 - normalizedVolume)); // Más sensible: 0.1-0.15
+      const voiceSpikeMultiplier = 0.4 + (0.1 * (1 - normalizedVolume)); // Más sensible: 0.4-0.5
       const recentVoice = voiceHistory.slice(-5);
       const maxRecentVoice = Math.max(...recentVoice);
       const voiceSpike = voiceEnergy > maxRecentVoice * voiceSpikeThreshold && voiceEnergy > averageVoiceEnergy * voiceSpikeMultiplier;
@@ -208,15 +235,24 @@ const AudioAnalyzer = ({ onBeat, onVoice, onAudioData }) => {
       const minTimeBetweenBeats = 15 + (35 * (1 - normalizedVolume)); // Muy reducido: 15-50ms para máxima frecuencia
       const rhythmDetected = (rhythmEnergy > rhythmThreshold || rhythmSpike) && timeSinceLastBeat > minTimeBetweenBeats;
       
+      // Log cada 60 frames para debug
+      if (frameCount % 60 === 0) {
+        console.log(`[AudioAnalyzer] Analysis values | rhythmEnergy: ${rhythmEnergy.toFixed(2)} | rhythmThreshold: ${rhythmThreshold.toFixed(2)} | rhythmSpike: ${rhythmSpike} | normalizedVolume: ${normalizedVolume.toFixed(2)} | timeSinceLastBeat: ${timeSinceLastBeat}ms`);
+      }
+      
       if (rhythmDetected) {
         lastBeatTimeRef.current = now;
+        console.log(`[AudioAnalyzer] Beat detected | intensity: ${normalizedVolume} | shouldBeSolid: ${solidSquareDetected} | onBeat exists: ${!!onBeat}`);
         if (onBeat) {
           try {
             // Pasar información sobre si debe ser cuadro sólido basado en análisis de frecuencias agudas
             onBeat(normalizedVolume, solidSquareDetected);
+            console.log(`[AudioAnalyzer] onBeat called successfully`);
           } catch (error) {
-            console.error(`[AudioAnalyzer] ERROR in onBeat callback: ${error.message}`);
+            console.error(`[AudioAnalyzer] ERROR in onBeat callback: ${error.message} | stack: ${error.stack}`);
           }
+        } else {
+          console.warn(`[AudioAnalyzer] onBeat callback is null`);
         }
       }
       
@@ -295,7 +331,7 @@ const AudioAnalyzer = ({ onBeat, onVoice, onAudioData }) => {
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [isInitialized, onBeat, onVoice, onAudioData, analyserRef, dataArrayRef, timeDataArrayRef, audioContextRef, audioRef]);
+  }, [isInitialized, isPlaying, currentIndex, onBeat, onVoice, onAudioData, analyserRef, dataArrayRef, timeDataArrayRef, audioContextRef, audioRef]);
 
   return null;
 };
