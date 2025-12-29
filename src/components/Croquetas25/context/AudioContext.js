@@ -306,7 +306,9 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
               console.error(`[AudioContext] Error cargando audio ${index}:`, e, errorInfo);
               
               // Si es un error de red (networkState 3 = NETWORK_NO_SOURCE) o error de demuxer
-              if ((audio.networkState === 3 || (audio.error && audio.error.code === 4)) && audio.src) {
+              // Solo intentar recargar una vez para evitar loops infinitos
+              if ((audio.networkState === 3 || (audio.error && audio.error.code === 4)) && audio.src && !audio.dataset.reloadAttempted) {
+                audio.dataset.reloadAttempted = 'true';
                 console.warn(`[AudioContext] Error de carga en audio ${index}, intentando recargar...`, {
                   src: audio.src,
                   currentSrc: audio.currentSrc,
@@ -327,7 +329,15 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
                   } catch (loadErr) {
                     console.error(`[AudioContext] Error en reload de audio ${index}:`, loadErr);
                   }
-                }, 500);
+                }, 1000);
+              } else if (audio.error && audio.error.code === 4) {
+                // Si ya intentamos recargar y sigue fallando, el archivo probablemente no existe o está corrupto
+                console.error(`[AudioContext] Audio ${index} no se puede cargar después de reintento. Verificar que el archivo existe:`, {
+                  src: audio.src,
+                  currentSrc: audio.currentSrc,
+                  errorCode: audio.error.code,
+                  errorMessage: audio.error.message
+                });
               }
               
               // Establecer duración como 0 si hay error

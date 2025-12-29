@@ -82,13 +82,18 @@ const AudioAnalyzer = ({ onBeat, onVoice, onAudioData }) => {
     
     // Verificar que el audio no tenga errores de carga
     if (audio.error) {
-      console.warn(`[AudioAnalyzer] Audio has error:`, {
-        error: audio.error,
-        code: audio.error?.code,
-        message: audio.error?.message,
-        networkState: audio.networkState,
-        readyState: audio.readyState
-      });
+      // Solo loggear el error una vez cada 60 frames para no saturar la consola
+      if (frameCount === 0 || frameCount % 60 === 0) {
+        console.warn(`[AudioAnalyzer] Audio has error (frame ${frameCount}):`, {
+          error: audio.error,
+          code: audio.error?.code,
+          message: audio.error?.message,
+          networkState: audio.networkState,
+          readyState: audio.readyState,
+          src: audio.src,
+          currentSrc: audio.currentSrc
+        });
+      }
       return;
     }
     
