@@ -223,26 +223,6 @@ const Diagonales = ({ squares, analyserRef, dataArrayRef, isInitialized, onVoice
     }
     
     onVoiceCallbackRef.current = voiceCallbackHandlerRef.current;
-    console.log('[Diagonales] Callback de voz configurado:', {
-      hasCallback: !!onVoiceCallbackRef?.current,
-      callbackType: typeof onVoiceCallbackRef?.current,
-      hasRef: !!onVoiceCallbackRef
-    });
-    
-    // Verificar que el callback se configuró correctamente después de un pequeño delay
-    const verifyTimeout = setTimeout(() => {
-      if (onVoiceCallbackRef && !onVoiceCallbackRef.current && voiceCallbackHandlerRef.current) {
-        console.warn('[Diagonales] Callback de voz no se configuró, reintentando...');
-        onVoiceCallbackRef.current = voiceCallbackHandlerRef.current;
-      }
-    }, 100);
-    
-    return () => {
-      clearTimeout(verifyTimeout);
-      if (onVoiceCallbackRef) {
-        onVoiceCallbackRef.current = null;
-      }
-    };
   }, [onVoiceCallbackRef]);
 
   // Inicializar rotación de todas las diagonales - se ejecuta cuando cambian las diagonales

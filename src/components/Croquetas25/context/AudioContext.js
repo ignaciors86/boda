@@ -1,782 +1,1956 @@
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import React, { createContext, useContext, useRef, useState, useEffect } from 'react';
+import { gsap } from 'gsap';
+import { Howl, Howler } from 'howler';
 import './AudioContext.scss';
 
-const AudioContext = createContext();
+const AudioContextReact = createContext(null);
 
-/**
- * AudioProvider para Croquetas25
- * Maneja uno o varios archivos de audio con soporte completo para dispositivos móviles
- * Similar a cómo funciona Timeline en producción, pero con Web Audio API para análisis
- */
+export const useAudio = () => {
+  const context = useContext(AudioContextReact);
+  if (!context) {
+    throw new Error('useAudio must be used within AudioProvider');
+  }
+  return context;
+};
+
+// Singleton para el AudioContext global - SOLO UNO
+let globalAudioContext = null;
+let globalSourceNode = null;
+let globalAnalyser = null;
+let connectedAudioElement = null;
+
+// Exponer el AudioContext global en window para acceso desde handlers de eventos del usuario
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, '__globalAudioContext', {
+    get: () => globalAudioContext,
+    configurable: true
+  });
+}
+
 export const AudioProvider = ({ children, audioSrcs = [] }) => {
-  // Referencias a elementos de audio
-  const audioRefs = useRef([]);
-  const audioRef = useRef(null); // Referencia al audio actual
-  const audioContextRef = useRef(null);
-  const analyserRef = useRef(null);
-  const sourceNodeRef = useRef(null);
-  const dataArrayRef = useRef(null);
-  const timeDataArrayRef = useRef(null);
-  
-  // Estados
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
-  const [audioDurations, setAudioDurations] = useState([]);
-  const [isInitialized, setIsInitialized] = useState(false);
-  
-  // Detección de dispositivo móvil
-  const isMobile = typeof window !== 'undefined' && (
-    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-    (window.innerWidth <= 768)
-  );
+  // Validar y normalizar audioSrcs al inicio
+  const validAudioSrcs = React.useMemo(() => {
+    if (!audioSrcs || !Array.isArray(audioSrcs)) return [];
+    
+    return audioSrcs
+      .map(src => {
+        // Convertir a string si es necesario
+        if (typeof src === 'string') return src;
+        if (src?.default) return src.default;
+        if (src && typeof src === 'object') {
+          // Intentar obtener la propiedad default o cualquier propiedad string
+          const defaultVal = src.default;
+          if (typeof defaultVal === 'string') return defaultVal;
+        }
+        return String(src);
+      })
+      .filter(src => {
+        // Filtrar solo strings válidos con extensiones de audio
+        return typeof src === 'string' && 
+               src.length > 0 && 
+               (src.includes('.mp3') || src.includes('.wav') || src.includes('.ogg') || src.includes('/static/media/'));
+      });
+  }, [audioSrcs]);
+  // Detectar si estamos en iOS/Android Safari (donde cambiar src causa problemas)
   const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isAndroid = typeof window !== 'undefined' && /Android/.test(navigator.userAgent);
+  const isSafari = typeof window !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
   const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
   const isSafariIOS = isIOS && !isChromeIOS;
+  const isMobileSafari = isIOS || (isAndroid && isSafari);
   
-  // Referencias para manejo de eventos
-  const loadingPromisesRef = useRef([]);
-  const hasUserInteractedRef = useRef(false);
-  const isInitializingRef = useRef(false);
-  const connectedAudioElementsRef = useRef(new WeakMap()); // Rastrear elementos ya conectados
-  const isUnmountingRef = useRef(false);
+  // SIMPLIFICACIÓN: Para un solo audio, usar la misma lógica simple que Timeline
+  // NO usar Tone.js ni complejidad innecesaria
+  // Solo usar múltiples elementos en Safari iOS con múltiples audios
+  const useMultipleElements = isSafariIOS && validAudioSrcs.length > 1;
+  const useSimpleAudio = validAudioSrcs.length === 1; // Usar lógica simple como Timeline para un solo audio
   
-  /**
-   * Inicializar AudioContext y Analyser
-   */
-  const initializeAudioContext = useCallback(async () => {
-    if (isInitializingRef.current || audioContextRef.current) return;
+  // Dos elementos audio: uno actual y uno siguiente para transiciones suaves
+  // O array de elementos Audio si estamos en iOS/Android Safari con múltiples audios
+  // O array de instancias Howl si usamos Howler.js
+  const currentAudioRef = useRef(null);
+  const nextAudioRef = useRef(null);
+  const audioElementsRef = useRef([]); // Array de elementos Audio (solo para iOS/Android Safari con múltiples audios)
+  const howlInstancesRef = useRef([]); // Array de instancias Howl (para iOS/Android con múltiples audios)
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [audioDurations, setAudioDurations] = useState([]);
+  const [preloadedAudios, setPreloadedAudios] = useState(false); // Estado para audios pre-cargados (todos los SO)
+  const [preloadProgress, setPreloadProgress] = useState(0); // Progreso de pre-carga (0-100)
+  
+  // Refs que se compartirán con los componentes
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const dataArrayRef = useRef(null);
+  const timeDataArrayRef = useRef(null);
+  const volumeTweenRef = useRef(null);
+  const fadeOutTweenRef = useRef(null);
+  const fadeInTweenRef = useRef(null);
+  const transitionTimeoutRef = useRef(null);
+  const handleEndedRef = useRef(null); // Ref estable para handleEnded
+  const audioSrcsRef = useRef(validAudioSrcs); // Ref para audioSrcs
+  const currentIndexRef = useRef(currentIndex); // Ref para currentIndex
+  const isChangingFromEndedRef = useRef(false); // Flag para evitar interferencia del useEffect principal
+  const iosPreloadAudioElementsRef = useRef([]); // Refs para elementos Audio de pre-carga en iOS
+
+  // El audioRef que se expone es siempre el actual
+  const audioRef = currentAudioRef;
+
+  // Función para pre-cargar todos los audios cuando hay múltiples (funciona en todos los SO)
+  const preloadAllAudios = async (srcs) => {
+    if (srcs.length <= 1) {
+      setPreloadedAudios(true);
+      setPreloadProgress(100);
+      return;
+    }
     
-    try {
-      isInitializingRef.current = true;
+    // Limpiar audios anteriores si existen
+    iosPreloadAudioElementsRef.current.forEach(audio => {
+      if (audio) {
+        audio.pause();
+        audio.src = '';
+        audio.load();
+      }
+    });
+    iosPreloadAudioElementsRef.current = [];
+    
+    // También limpiar audioElementsRef si se está usando
+    audioElementsRef.current.forEach(audio => {
+      if (audio) {
+        audio.pause();
+        audio.src = '';
+        audio.load();
+      }
+    });
+    audioElementsRef.current = [];
+    
+    setPreloadProgress(0);
+    
+    // Crear y pre-cargar cada audio de forma secuencial
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isChromeIOSLocal = isIOS && /CriOS/.test(navigator.userAgent);
+    
+    for (let i = 0; i < srcs.length; i++) {
+      const audioSrc = srcs[i];
+      // Los imports estáticos de webpack ya vienen como strings con URLs válidas
+      let audioSrcString = typeof audioSrc === 'string' ? audioSrc : (audioSrc?.default || audioSrc);
       
-      // Crear AudioContext (compatible con iOS)
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      if (!AudioContextClass) {
-        console.warn('[AudioContext] Web Audio API no disponible');
+      // Asegurar que sea string (webpack siempre devuelve strings para imports estáticos)
+      if (typeof audioSrcString !== 'string') {
+        audioSrcString = String(audioSrcString);
+      }
+      
+      // Verificar que la URL sea válida antes de crear el elemento de audio
+      if (!audioSrcString || audioSrcString === '' || (!audioSrcString.includes('.mp3') && !audioSrcString.includes('.wav') && !audioSrcString.includes('.ogg'))) {
+        continue;
+      }
+      
+      // Asegurar que la URL sea absoluta si es relativa (para producción)
+      if (!audioSrcString.startsWith('http') && !audioSrcString.startsWith('data:')) {
+        // Si es una URL relativa, asegurarse de que empiece con /
+        if (!audioSrcString.startsWith('/')) {
+          audioSrcString = '/' + audioSrcString;
+        }
+      }
+      
+      const audio = new Audio();
+      audio.preload = 'auto';
+      audio.src = audioSrcString;
+      
+      // Esperar a que el audio esté suficientemente cargado usando eventos, no timeouts
+      await new Promise((resolve) => {
+        let resolved = false;
+        
+        const cleanup = () => {
+          audio.removeEventListener('canplay', handleCanPlay);
+          audio.removeEventListener('canplaythrough', handleCanPlayThrough);
+          audio.removeEventListener('loadeddata', handleLoadedData);
+          audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+          audio.removeEventListener('error', handleError);
+        };
+        
+        const handleCanPlay = () => {
+          if (!resolved && audio.readyState >= 2) {
+            resolved = true;
+            cleanup();
+            resolve();
+          }
+        };
+        
+        const handleCanPlayThrough = () => {
+          if (!resolved && audio.readyState >= 3) {
+            resolved = true;
+            cleanup();
+            console.log(`[AudioContext] Audio ${i} pre-cargado (canplaythrough, readyState: ${audio.readyState})`);
+            resolve();
+          }
+        };
+        
+        const handleLoadedData = () => {
+          if (!resolved && audio.readyState >= 2) {
+            resolved = true;
+            cleanup();
+            console.log(`[AudioContext] Audio ${i} pre-cargado (loadeddata, readyState: ${audio.readyState})`);
+            resolve();
+          }
+        };
+        
+        const handleLoadedMetadata = () => {
+          // Si tenemos metadata y duration, considerar listo
+          if (!resolved && audio.readyState >= 1 && audio.duration && isFinite(audio.duration) && audio.duration > 0) {
+            resolved = true;
+            cleanup();
+            console.log(`[AudioContext] Audio ${i} pre-cargado (loadedmetadata, readyState: ${audio.readyState})`);
+            resolve();
+          }
+        };
+        
+        const handleError = () => {
+          if (!resolved) {
+            resolved = true;
+            cleanup();
+            // Log simple del error, sin reintentos
+            if (audio.error) {
+              console.warn(`[AudioContext] Error pre-cargando audio ${i}:`, audio.error.message);
+            }
+            resolve();
+          }
+        };
+        
+        audio.addEventListener('canplay', handleCanPlay);
+        audio.addEventListener('canplaythrough', handleCanPlayThrough);
+        audio.addEventListener('loadeddata', handleLoadedData);
+        audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+        audio.addEventListener('error', handleError);
+        
+        // Intentar cargar
+        try {
+          audio.load();
+        } catch (error) {
+          console.warn(`[AudioContext] Error al llamar load() en audio ${i}:`, error);
+          if (!resolved) {
+            resolved = true;
+            cleanup();
+            resolve();
+          }
+        }
+      });
+      
+      // Guardar referencia al audio pre-cargado
+      iosPreloadAudioElementsRef.current.push(audio);
+      
+      // IMPORTANTE: También guardar en audioElementsRef para Chrome iOS y otros casos
+      // donde necesitamos renderizar múltiples elementos audio
+      // Chrome iOS siempre necesita múltiples elementos cuando hay múltiples audios
+      if (isChromeIOSLocal && srcs.length > 1) {
+        audioElementsRef.current.push(audio);
+        console.log(`[AudioContext] Chrome iOS: Audio ${i} guardado en audioElementsRef`);
+      } else if (isIOS && srcs.length > 1 && !isChromeIOSLocal) {
+        // Safari iOS también puede necesitarlo
+        audioElementsRef.current.push(audio);
+      }
+      
+      // Actualizar progreso
+      const progress = Math.round(((i + 1) / srcs.length) * 100);
+      setPreloadProgress(progress);
+      
+      // En Safari iOS, si el audio tiene metadata (readyState >= 1), considerarlo listo
+      // Esto ayuda a que el loading no se quede atascado
+      if (isIOS && audio.readyState >= 1 && i === srcs.length - 1) {
+        // Si es el último audio y tiene metadata, marcar como cargado
+        console.log('[AudioContext] Último audio pre-cargado con metadata, marcando como cargado');
+        setPreloadedAudios(true);
+        setPreloadProgress(100);
+        setIsLoaded(true);
+      }
+    }
+    
+    console.log('[AudioContext] Todos los audios pre-cargados');
+    setPreloadedAudios(true);
+    setPreloadProgress(100);
+    
+    // IMPORTANTE: En Safari iOS, asegurar que isLoaded esté marcado
+    // incluso si algunos audios no tienen readyState completo
+    if (isIOS) {
+      // Verificar si al menos el primer audio tiene metadata
+      const firstAudio = iosPreloadAudioElementsRef.current[0];
+      if (firstAudio && firstAudio.readyState >= 1) {
+        console.log('[AudioContext] Safari iOS: Primer audio tiene metadata, marcando como cargado');
+        setIsLoaded(true);
+      } else if (srcs.length === 1) {
+        // Si solo hay un audio y no tiene metadata aún, darle un poco más de tiempo
+        // pero marcar como cargado de todas formas (Safari puede cargar bajo demanda)
+        console.log('[AudioContext] Safari iOS: Un solo audio, marcando como cargado (carga bajo demanda)');
+        setIsLoaded(true);
+      }
+    }
+  };
+
+  // Cargar duraciones de todos los audios
+  useEffect(() => {
+    // Resetear estado de pre-carga cuando cambian los audios
+    setPreloadedAudios(false);
+    setPreloadProgress(0);
+    
+    if (!validAudioSrcs || validAudioSrcs.length === 0) {
+      setAudioDurations([]);
+      setPreloadedAudios(true); // Si no hay audios, marcar como listo
+      setPreloadProgress(100);
+      return;
+    }
+
+    const loadDurations = async () => {
+      const durations = [];
+      
+      // Cargar duraciones usando eventos, no timeouts
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      
+      for (let i = 0; i < validAudioSrcs.length; i++) {
+        const audioSrc = validAudioSrcs[i];
+        // En iOS, asegurar que las rutas se conviertan correctamente
+        let audioSrcString = typeof audioSrc === 'string' ? audioSrc : (audioSrc?.default || audioSrc);
+        
+        // Asegurar que la URL sea absoluta si es relativa (para producción)
+        if (!audioSrcString.startsWith('http') && !audioSrcString.startsWith('data:')) {
+          // Si es una URL relativa, asegurarse de que empiece con /
+          if (!audioSrcString.startsWith('/')) {
+            audioSrcString = '/' + audioSrcString;
+          }
+        }
+        
+        const audio = new Audio(audioSrcString);
+        
+        try {
+          await new Promise((resolve) => {
+            let resolved = false;
+            
+            const cleanup = () => {
+              audio.removeEventListener('loadedmetadata', handleLoaded);
+              audio.removeEventListener('error', handleError);
+              audio.removeEventListener('canplay', handleCanPlay);
+            };
+
+            const handleLoaded = () => {
+              if (!resolved) {
+                cleanup();
+                resolved = true;
+                if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
+                  durations[i] = audio.duration;
+                  console.log(`[AudioContext] Duration loaded for audio ${i}: ${audio.duration.toFixed(2)}s`);
+                } else {
+                  durations[i] = 0;
+                }
+                resolve();
+              }
+            };
+
+            const handleError = () => {
+              if (!resolved) {
+                cleanup();
+                resolved = true;
+                durations[i] = 0;
+                resolve();
+              }
+            };
+            
+            // Escuchar 'canplay' como fallback
+            const handleCanPlay = () => {
+              if (!resolved && audio.duration && isFinite(audio.duration) && audio.duration > 0) {
+                handleLoaded();
+              }
+            };
+
+            audio.addEventListener('loadedmetadata', handleLoaded);
+            audio.addEventListener('error', handleError);
+            audio.addEventListener('canplay', handleCanPlay);
+            audio.load();
+          });
+        } catch (error) {
+          console.warn(`[AudioContext] Error loading duration for audio ${i}:`, error);
+          durations[i] = 0;
+        }
+      }
+
+      setAudioDurations(durations);
+      
+      // Pre-cargar todos los audios cuando hay múltiples
+      if (validAudioSrcs.length > 1) {
+        console.log('[AudioContext] Múltiples audios detectados: iniciando pre-carga...');
+        
+        // Para múltiples audios, usar elementos audio nativos (sin Tone.js)
+        console.log('[AudioContext] Usando elementos audio nativos para múltiples audios...');
+        preloadAllAudios(validAudioSrcs);
+    } else {
+      setPreloadedAudios(true); // Si solo hay un audio, marcar como listo
+      setPreloadProgress(100);
+    }
+    };
+
+    loadDurations();
+  }, [audioSrcs]);
+
+  // Sincronizar refs cuando cambian desde fuera (seekToAudio, etc.)
+  useEffect(() => {
+    // Solo actualizar si no estamos en medio de un cambio desde handleEnded
+    if (!isChangingFromEndedRef.current) {
+      audioSrcsRef.current = validAudioSrcs;
+      // Actualizar currentIndexRef solo si realmente cambió (para evitar sobrescribir cambios de seekToAudio que ya lo actualizaron)
+      if (currentIndexRef.current !== currentIndex) {
+        console.log(`[AudioContext] Sincronizando currentIndexRef: ${currentIndexRef.current} -> ${currentIndex}`);
+        currentIndexRef.current = currentIndex;
+      }
+    }
+  }, [validAudioSrcs, currentIndex]);
+
+  // Precargar el siguiente audio
+  useEffect(() => {
+    if (!validAudioSrcs || validAudioSrcs.length === 0) return;
+    
+    const nextIndex = (currentIndex + 1) % validAudioSrcs.length;
+    const nextSrc = validAudioSrcs[nextIndex];
+    
+    if (nextAudioRef.current && nextSrc && validAudioSrcs.length > 1) {
+      nextAudioRef.current.src = nextSrc;
+      nextAudioRef.current.load();
+    }
+  }, [audioSrcs, currentIndex]);
+
+  // Listener estable para el evento 'ended' - separado del useEffect principal
+  useEffect(() => {
+    const audio = currentAudioRef.current;
+    if (!audio) return;
+
+    const handleEnded = () => {
+      console.log('[AudioContext] Audio ended event fired');
+      const currentAudio = currentAudioRef.current;
+      if (!currentAudio) return;
+      
+      setIsPlaying(false);
+      
+      // Usar refs para obtener valores actuales sin depender de closures
+      const srcs = validAudioSrcs;
+      const idx = currentIndexRef.current;
+      
+      if (!srcs || srcs.length <= 1) {
+        console.log('[AudioContext] Solo hay un audio, no cambiar');
         return;
       }
       
-      const audioContext = new AudioContextClass();
-      audioContextRef.current = audioContext;
+      console.log(`[AudioContext] Cambiando de audio ${idx} a ${(idx + 1) % srcs.length}`);
       
-      // Exponer globalmente para acceso desde eventos de usuario (iOS)
-      if (typeof window !== 'undefined') {
-        window.__globalAudioContext = audioContext;
+      // Hacer fade out breve del actual
+      if (fadeOutTweenRef.current) {
+        fadeOutTweenRef.current.kill();
       }
       
-      // Crear AnalyserNode
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 2048;
-      analyser.smoothingTimeConstant = 0.8;
-      analyserRef.current = analyser;
-      
-      // Crear arrays para datos de frecuencia y tiempo
-      const bufferLength = analyser.frequencyBinCount;
-      dataArrayRef.current = new Uint8Array(bufferLength);
-      timeDataArrayRef.current = new Uint8Array(bufferLength);
-      
-      console.log('[AudioContext] AudioContext inicializado:', {
-        state: audioContext.state,
-        sampleRate: audioContext.sampleRate,
-        fftSize: analyser.fftSize
-      });
-      
-      // En iOS, el AudioContext puede empezar suspendido
-      if (audioContext.state === 'suspended') {
-        console.log('[AudioContext] AudioContext suspendido, esperando interacción del usuario');
-      }
-      
-      setIsInitialized(true);
-    } catch (error) {
-      console.error('[AudioContext] Error inicializando AudioContext:', error);
-      isInitializingRef.current = false;
-    }
-  }, []);
-  
-  /**
-   * Conectar audio element al AudioContext para análisis
-   */
-  const connectAudioToContext = useCallback((audioElement) => {
-    if (!audioElement || !audioContextRef.current || !analyserRef.current) return;
-    
-    // Verificar que el AudioContext no esté cerrado
-    if (audioContextRef.current.state === 'closed') {
-      console.warn('[AudioContext] AudioContext está cerrado, no se puede conectar');
-      return;
-    }
-    
-    // Verificar si este elemento ya está conectado
-    if (connectedAudioElementsRef.current.has(audioElement)) {
-      console.log('[AudioContext] Audio element ya está conectado, reutilizando conexión');
-      sourceNodeRef.current = connectedAudioElementsRef.current.get(audioElement);
-      return;
-    }
-    
-    try {
-      // Si ya hay una conexión de otro elemento, desconectarla primero
-      // WeakMap no es iterable, así que simplemente desconectamos el sourceNode actual
-      // si existe y es diferente del que queremos conectar
-      if (sourceNodeRef.current) {
-        // Verificar si el sourceNode actual corresponde a un elemento diferente
-        // Si el audioElement ya está en el mapa, no deberíamos llegar aquí
-        // Si llegamos aquí, significa que hay un sourceNode de otro elemento
-        try {
-          sourceNodeRef.current.disconnect();
-        } catch (e) {
-          // Ignorar errores de desconexión
-        }
-        sourceNodeRef.current = null;
-      }
-      
-      // Verificar estado del AudioContext antes de crear el source
-      if (audioContextRef.current.state === 'suspended') {
-        audioContextRef.current.resume().catch(err => {
-          console.warn('[AudioContext] Error resumiendo AudioContext antes de conectar:', err);
-        });
-      }
-      
-      // Crear MediaElementSource
-      const source = audioContextRef.current.createMediaElementSource(audioElement);
-      sourceNodeRef.current = source;
-      
-      // Guardar en el mapa de elementos conectados (usando el elemento como clave)
-      connectedAudioElementsRef.current.set(audioElement, source);
-      
-      // Conectar: source -> analyser -> destination
-      source.connect(analyserRef.current);
-      analyserRef.current.connect(audioContextRef.current.destination);
-      
-      console.log('[AudioContext] Audio conectado al AudioContext');
-    } catch (error) {
-      // Si el error es porque ya está conectado, intentar reutilizar
-      if (error.message && error.message.includes('already connected')) {
-        console.log('[AudioContext] Audio ya estaba conectado, continuando...');
-        // El audio seguirá funcionando sin análisis
-      } else {
-        console.warn('[AudioContext] Error conectando audio al AudioContext:', error);
-      }
-    }
-  }, []);
-  
-  /**
-   * Cargar todos los archivos de audio
-   */
-  const loadAudios = useCallback(async () => {
-    if (!audioSrcs || audioSrcs.length === 0) {
-      setIsLoaded(true);
-      setLoadingProgress(100);
-      return;
-    }
-    
-    // Limpiar audios anteriores antes de cargar nuevos
-    audioRefs.current.forEach(audio => {
-      if (audio) {
-        try {
-          audio.pause();
-          audio.src = '';
-          audio.load();
-          // Remover del mapa de elementos conectados
-          connectedAudioElementsRef.current.delete(audio);
-        } catch (e) {
-          // Ignorar errores
-        }
-      }
-    });
-    
-    // Limpiar conexión anterior
-    if (sourceNodeRef.current) {
-      try {
-        sourceNodeRef.current.disconnect();
-      } catch (e) {
-        // Ignorar errores
-      }
-      sourceNodeRef.current = null;
-    }
-    
-    try {
-      setIsLoaded(false);
-      setLoadingProgress(0);
-      
-      // Crear elementos de audio para cada fuente
-      const audios = audioSrcs.map((src, index) => {
-        // Asegurar que src sea un string válido
-        const audioSrc = typeof src === 'string' ? src : (src?.default || String(src));
-        
-        if (!audioSrc || audioSrc.length === 0) {
-          console.warn(`[AudioContext] Fuente de audio ${index} inválida:`, src);
-          return null;
-        }
-        
-        const audio = new Audio(audioSrc);
-        audio.preload = 'auto';
-        audio.crossOrigin = 'anonymous'; // Necesario para CORS en análisis de audio
-        
-        // Configuración específica para móviles
-        if (isMobile) {
-          audio.setAttribute('playsinline', 'true'); // Importante para iOS
-        }
-        
-        // Agregar clase para estilos
-        audio.className = 'audio-context';
-        
-        // Log para debug
-        console.log(`[AudioContext] Creando audio ${index}:`, audioSrc);
-        
-        return audio;
-      }).filter(audio => audio !== null); // Filtrar audios nulos
-      
-      audioRefs.current = audios;
-      audioRef.current = audios[0] || null;
-      
-      // Cargar duraciones y esperar a que estén listos
-      const loadPromises = audios.map((audio, index) => {
-        return new Promise((resolve, reject) => {
-          let resolved = false;
+      fadeOutTweenRef.current = gsap.to(currentAudio, {
+        volume: 0,
+        duration: 0.3, // Fade out breve
+        ease: 'power2.in',
+        onComplete: () => {
+          // Cambiar al siguiente audio
+          const nextIndex = (idx + 1) % srcs.length;
+          const nextSrc = srcs[nextIndex];
           
-          const onCanPlay = () => {
-            if (!resolved) {
-              resolved = true;
-              const duration = audio.duration || 0;
-              setAudioDurations(prev => {
-                const newDurations = [...prev];
-                newDurations[index] = duration;
-                return newDurations;
-              });
-              
-              // Actualizar progreso
-              setLoadingProgress(prev => {
-                const loaded = audios.filter(a => a.readyState >= 2).length;
-                return Math.min(100, (loaded / audios.length) * 100);
-              });
-              
-              audio.removeEventListener('canplay', onCanPlay);
-              audio.removeEventListener('canplaythrough', onCanPlay);
-              audio.removeEventListener('loadedmetadata', onMetadata);
-              resolve();
+          console.log(`[AudioContext] Audio ${idx} terminó. Cambiando a índice ${nextIndex} de ${srcs.length} audios`);
+          console.log(`[AudioContext] Src actual: ${currentAudio.src}`);
+          console.log(`[AudioContext] Src siguiente: ${nextSrc}`);
+          
+          // Marcar que estamos cambiando desde handleEnded para evitar interferencia
+          isChangingFromEndedRef.current = true;
+          
+          // Actualizar refs ANTES de cambiar el src para evitar que el useEffect principal interfiera
+          currentIndexRef.current = nextIndex;
+          audioSrcsRef.current = validAudioSrcs; // Asegurar que el ref esté actualizado
+          
+          // Cambiar el src del audio actual
+          // En iOS, desconectar el AudioContext antes de cambiar el src para evitar problemas
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+          
+          if (isIOS && globalSourceNode) {
+            try {
+              console.log('[AudioContext] iOS: Desconectando AudioContext antes de cambiar src');
+              globalSourceNode.disconnect();
+              globalSourceNode = null;
+              connectedAudioElement = null;
+            } catch (e) {
+              console.warn('[AudioContext] Error desconectando AudioContext en iOS:', e);
             }
-          };
+          }
           
-          const onMetadata = () => {
-            const duration = audio.duration || 0;
-            if (duration > 0 && !resolved) {
-              setAudioDurations(prev => {
-                const newDurations = [...prev];
-                newDurations[index] = duration;
-                return newDurations;
-              });
-            }
-          };
+          currentAudio.pause();
+          currentAudio.currentTime = 0; // Resetear el tiempo
+          const nextSrcString = typeof nextSrc === 'string' ? nextSrc : (nextSrc?.default || nextSrc);
           
-          const onError = (e) => {
-            if (!resolved) {
-              resolved = true;
-              console.error(`[AudioContext] Error cargando audio ${index}:`, e, {
-                src: audio.src,
-                error: audio.error,
-                networkState: audio.networkState,
-                readyState: audio.readyState
-              });
+          console.log(`[AudioContext] Estableciendo nuevo src: ${nextSrcString}`);
+          
+          // En iOS/Android Safari con múltiples audios, usar el siguiente elemento del array
+          if (useMultipleElements && audioElementsRef.current.length > 0) {
+            const nextAudio = audioElementsRef.current[nextIndex];
+            if (nextAudio) {
+              // Cambiar al siguiente elemento
+              currentAudioRef.current = nextAudio;
+              currentIndexRef.current = nextIndex;
               
-              // Establecer duración como 0 si hay error
-              setAudioDurations(prev => {
-                const newDurations = [...prev];
-                newDurations[index] = 0;
-                return newDurations;
-              });
-              
-              audio.removeEventListener('canplay', onCanPlay);
-              audio.removeEventListener('canplaythrough', onCanPlay);
-              audio.removeEventListener('loadedmetadata', onMetadata);
-              audio.removeEventListener('error', onError);
-              // Resolver de todas formas para no bloquear
-              resolve();
+              console.log(`[AudioContext] Cambiado a elemento Audio ${nextIndex} (iOS/Android Safari)`);
+            } else {
+              // Fallback: cambiar src normalmente
+              currentAudio.src = nextSrcString;
+              currentAudio.load();
             }
-          };
+          } else {
+            // En otros casos, cambiar src normalmente
+            currentAudio.src = nextSrcString;
+            currentAudio.load();
+          }
           
-          audio.addEventListener('canplay', onCanPlay);
-          audio.addEventListener('canplaythrough', onCanPlay);
-          audio.addEventListener('loadedmetadata', onMetadata);
-          audio.addEventListener('error', onError);
+          // En iOS, el AudioContext se reconectará automáticamente en setupAudioContext cuando el audio esté listo
           
-          // Forzar carga
-          audio.load();
-          
-          // Timeout de seguridad (especialmente importante en móviles)
+          // Usar setTimeout para asegurar que el cambio de estado no interfiera
           setTimeout(() => {
-            if (!resolved) {
-              resolved = true;
-              console.warn(`[AudioContext] Timeout cargando audio ${index}`);
-              audio.removeEventListener('canplay', onCanPlay);
-              audio.removeEventListener('canplaythrough', onCanPlay);
-              audio.removeEventListener('loadedmetadata', onMetadata);
-              audio.removeEventListener('error', onError);
-              resolve();
+            setCurrentIndex(nextIndex);
+            // Resetear el flag después de un momento para permitir futuros cambios
+            setTimeout(() => {
+              isChangingFromEndedRef.current = false;
+              console.log('[AudioContext] Flag isChangingFromEndedRef reseteado');
+            }, 200);
+          }, 0);
+          
+          fadeOutTweenRef.current = null;
+          
+          // Esperar a que el nuevo audio esté listo y reproducir con fade in breve
+          // En iOS/Android Safari con múltiples elementos, el audio ya está pre-cargado
+          const tryPlay = async () => {
+            const audioToPlay = currentAudioRef.current;
+            if (!audioToPlay) {
+              setTimeout(tryPlay, 50);
+              return;
             }
-          }, isMobile ? 15000 : 10000);
-        });
-      });
-      
-      loadingPromisesRef.current = loadPromises;
-      
-      // Esperar a que al menos el primer audio tenga metadata
-      await Promise.all(loadPromises);
-      
-      // Conectar el audio actual al AudioContext (solo si no se está desmontando)
-      if (!isUnmountingRef.current && audioRef.current && audioContextRef.current) {
-        // Verificar que el AudioContext no esté cerrado
-        if (audioContextRef.current.state !== 'closed') {
-          // Esperar un poco antes de conectar para asegurar que el audio esté listo
-          setTimeout(() => {
-            if (!isUnmountingRef.current && audioRef.current && audioContextRef.current && audioContextRef.current.state !== 'closed') {
-              connectAudioToContext(audioRef.current);
+            
+            // En iOS/Android Safari con múltiples elementos, el audio ya está pre-cargado
+            const minReadyState = (useMultipleElements && audioElementsRef.current.length > 0) ? 1 : 2;
+            
+            if (audioToPlay.readyState >= minReadyState) {
+              console.log('[AudioContext] Reproduciendo siguiente audio');
+              try {
+                await audioToPlay.play();
+                audioToPlay.volume = 0;
+                fadeInTweenRef.current = gsap.to(audioToPlay, {
+                  volume: 1,
+                  duration: 0.4, // Fade in breve
+                  ease: 'power2.out',
+                  onComplete: () => {
+                    fadeInTweenRef.current = null;
+                    setIsPlaying(true);
+                    console.log('[AudioContext] Siguiente audio reproduciéndose');
+                  }
+                });
+              } catch (playErr) {
+                console.warn('[AudioContext] Error playing next audio:', playErr);
+              }
+            } else {
+              setTimeout(tryPlay, 50);
             }
-          }, 100);
+          };
+          
+          setTimeout(tryPlay, 50);
         }
+      });
+    };
+
+    audio.addEventListener('ended', handleEnded);
+
+    return () => {
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, []); // Sin dependencias - el listener se mantiene estable y usa refs para valores actuales
+
+  // Configurar el audio actual
+  useEffect(() => {
+    if (!validAudioSrcs || validAudioSrcs.length === 0) return;
+
+    const currentSrc = validAudioSrcs[currentIndex];
+    if (!currentSrc) return;
+    
+    // Si estamos cambiando desde handleEnded, no hacer nada aquí para evitar interferencia
+    if (isChangingFromEndedRef.current) {
+      console.log('[AudioContext] Ignorando useEffect principal porque el cambio viene de handleEnded');
+      return;
+    }
+    
+    // Declarar variables que se usarán en el cleanup
+    let progressIntervalId = null;
+    let audioCleanup = null;
+    
+    // SIMPLIFICACIÓN: Para un solo audio, inicializar pero seguir el flujo normal
+    if (useSimpleAudio && !currentAudioRef.current) {
+      // Crear elemento Audio directamente como Timeline si no existe
+      const audioSrcString = typeof currentSrc === 'string' ? currentSrc : (currentSrc?.default || currentSrc);
+      console.log(`[AudioContext] Creando Audio simple como Timeline: ${audioSrcString}`);
+      currentAudioRef.current = new Audio();
+      currentAudioRef.current.preload = 'auto';
+      // El src se configurará en el flujo normal más abajo
+    }
+    
+    
+    // En iOS/Android Safari con múltiples audios, usar elementos diferentes
+    // También en Chrome iOS con múltiples audios
+    const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
+    const shouldUseMultipleElements = (useMultipleElements || (isChromeIOS && validAudioSrcs.length > 1)) && audioElementsRef.current.length > 0;
+    
+    if (shouldUseMultipleElements) {
+      const audio = audioElementsRef.current[currentIndex];
+      if (!audio) {
+        console.warn(`[AudioContext] No hay elemento Audio para índice ${currentIndex}`);
+        return;
       }
       
-      // En móviles, ser más permisivo con el estado de carga
-      const minReadyState = (isIOS || isSafariIOS) ? 1 : 2;
-      const allHaveMetadata = audios.every(a => a.readyState >= minReadyState || a.duration > 0);
-      const someHaveMetadata = audios.some(a => a.readyState >= minReadyState || a.duration > 0);
+      // Si ya es el elemento actual, no hacer nada
+      if (currentAudioRef.current === audio) {
+        return;
+      }
       
-      // Marcar como cargado si al menos algunos audios tienen metadata
-      // Esto es importante porque algunos audios pueden fallar pero otros funcionar
-      if (allHaveMetadata || someHaveMetadata) {
-        setIsLoaded(true);
-        setLoadingProgress(100);
-        console.log('[AudioContext] Audios cargados:', {
-          count: audios.length,
-          durations: audioDurations,
-          loadedCount: audios.filter(a => a.readyState >= minReadyState || a.duration > 0).length
-        });
-      } else {
-        // En móviles, marcar como cargado si tenemos al menos metadata
-        if (isMobile && audios.some(a => a.readyState >= 1)) {
+      // Pausar el elemento anterior
+      if (currentAudioRef.current && currentAudioRef.current !== audio) {
+        currentAudioRef.current.pause();
+        currentAudioRef.current.currentTime = 0;
+      }
+      
+      // Establecer el nuevo elemento como actual
+      currentAudioRef.current = audio;
+      console.log(`[AudioContext] Cambiado a elemento Audio ${currentIndex}/${audioElementsRef.current.length} (${isChromeIOS ? 'Chrome iOS' : 'Safari iOS'})`);
+      // Continuar con la configuración normal del audio (setupAudioContext, etc.)
+    } else {
+      // Lógica normal: cambiar src del mismo elemento
+      const audio = currentAudioRef.current;
+      if (!audio) return;
+      
+      // Verificar si el src ya está configurado correctamente (para evitar resetear cuando handleEnded cambia el src)
+      // Los imports estáticos de webpack ya vienen como URLs válidas (como Timeline)
+      // NO normalizar - webpack ya procesa las URLs correctamente
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      let currentSrcString = typeof currentSrc === 'string' ? currentSrc : (currentSrc?.default || currentSrc);
+      
+      // Asegurar que sea string (webpack siempre devuelve strings para imports estáticos)
+      if (typeof currentSrcString !== 'string') {
+        console.warn('[AudioContext] Audio src no es string:', currentSrcString);
+        currentSrcString = String(currentSrcString);
+      }
+      
+      const currentAudioSrc = audio.src || '';
+      // Comparar URLs directamente (webpack ya las procesa correctamente)
+      // NO normalizar - las URLs de webpack ya son correctas
+      const hasMultipleAudios = validAudioSrcs.length > 1;
+      
+      if (currentAudioSrc === currentSrcString && audio.readyState >= 1) {
+        // En iOS con múltiples audios, verificar que realmente esté listo (readyState 2 y duration válida)
+        if (isIOS && hasMultipleAudios) {
+          if (audio.readyState < 2 || !audio.duration || !isFinite(audio.duration) || audio.duration <= 0) {
+            // Forzar recarga si no está suficientemente cargado
+            console.log('[AudioContext] iOS múltiples audios: readyState o duration insuficiente, forzando recarga');
+            // No hacer return, continuar con la configuración
+          } else {
+            // El src ya está configurado y está realmente listo
+            return;
+          }
+        } else {
+          // El src ya está configurado y tiene metadata, no hacer nada
+          return;
+      }
+      }
+
+      // Detección mejorada de navegadores y dispositivos (isIOS ya está definido arriba)
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+      const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      audio.volume = 0;
+      audio.muted = false;
+    // Usar 'auto' para mejor compatibilidad, pero manejar la carga manualmente
+    audio.preload = 'auto';
+    audio.loop = false; // No loop, manejamos la playlist manualmente
+    // Asegurar atributos de compatibilidad
+    audio.crossOrigin = 'anonymous';
+    audio.playsInline = true;
+
+    const updateProgress = () => {
+      if (!audio) return;
+      
+      // Ajustar minReadyState según el navegador para mejor compatibilidad
+      let minReadyState = 2; // Por defecto, esperar metadata y datos
+      if (isIOS || isSafari) {
+        minReadyState = 1; // iOS/Safari puede funcionar con menos datos
+      } else if (isChrome && isMobile) {
+        minReadyState = 2; // Chrome mobile necesita más datos
+      }
+      
+      if (audio.readyState >= minReadyState) {
+        if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
+          if (audio.buffered.length > 0) {
+            const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
+            const progress = Math.min((bufferedEnd / audio.duration) * 100, 100);
+            setLoadingProgress(progress);
+            
+            // Para iOS/Safari, ser más permisivo - no esperar tanto buffer
+            // iOS puede cargar bajo demanda mientras reproduce
+            const isLargeFile = audio.duration > 300; // 5 minutos
+            const loadThreshold = (isIOS || isSafari) 
+              ? (isLargeFile ? 0.5 : 0.3)  // En iOS/Safari, aceptar con menos buffer
+              : 0.95;
+            
+            // En iOS, no requerir buffer mínimo absoluto - puede cargar bajo demanda
+            const minBufferSeconds = 0; // No requerir buffer mínimo en iOS
+            const hasMinBuffer = true; // Siempre true en iOS
+            
+            if ((progress >= (loadThreshold * 100) || bufferedEnd >= audio.duration * loadThreshold) && hasMinBuffer) {
+              if (!isLoaded) {
+                setIsLoaded(true);
+                setLoadingProgress(100);
+                console.log(`[AudioContext] Audio marked as loaded. Progress: ${progress.toFixed(1)}%, Buffer: ${bufferedEnd.toFixed(1)}s/${audio.duration.toFixed(1)}s`);
+              }
+            }
+          } else if (audio.readyState >= 2) {
+            // En iOS/Safari, si tenemos readyState 2, considerar cargado incluso sin buffer
+            if ((isIOS || isSafari) && !isLoaded) {
+              setIsLoaded(true);
+              setLoadingProgress(100);
+              console.log(`[AudioContext] Audio marked as loaded (iOS/Safari, readyState: ${audio.readyState})`);
+            } else if (audio.readyState >= 3 && !isLoaded) {
+              // Otros navegadores necesitan readyState 3
+              setIsLoaded(true);
+              setLoadingProgress(100);
+            }
+          }
+        } else if (audio.readyState >= 2 && (isIOS || isSafari) && !isLoaded) {
+          // En iOS/Safari, si tenemos readyState 2, considerar cargado incluso sin duration
+          setIsLoaded(true);
+          setLoadingProgress(100);
+          console.log(`[AudioContext] Audio marked as loaded (iOS/Safari, readyState: ${audio.readyState}, sin duration aún)`);
+        } else if (audio.readyState >= 3 && !isLoaded) {
+          // Si tenemos suficiente readyState pero no duration, aún considerar cargado
           setIsLoaded(true);
           setLoadingProgress(100);
         }
+      } else {
+        // Calcular progreso basado en readyState
+        const progress = Math.min((audio.readyState / 4) * 100, (isIOS || isSafari) ? 50 : 95);
+        setLoadingProgress(progress);
       }
-    } catch (error) {
-      console.error('[AudioContext] Error cargando audios:', error);
-      setIsLoaded(true);
-      setLoadingProgress(100);
-    }
-  }, [audioSrcs, isMobile, isIOS, isSafariIOS, connectAudioToContext]);
-  
-  /**
-   * Cambiar al audio en el índice especificado
-   */
-  const switchToAudio = useCallback((index, time = 0) => {
-    if (index < 0 || index >= audioRefs.current.length) {
-      console.warn(`[AudioContext] Índice inválido: ${index}`);
-      return;
-    }
-    
-    const wasPlaying = isPlaying;
-    const previousAudio = audioRef.current;
-    
-    // Pausar audio anterior
-    if (previousAudio && !previousAudio.paused) {
-      previousAudio.pause();
-    }
-    
-    // Cambiar al nuevo audio
-    const newAudio = audioRefs.current[index];
-    audioRef.current = newAudio;
-    setCurrentIndex(index);
-    
-    // Establecer tiempo
-    if (time >= 0 && newAudio.duration) {
-      newAudio.currentTime = Math.min(time, newAudio.duration);
-    }
-    
-    // Reconectar al AudioContext (solo si no se está desmontando)
-    if (!isUnmountingRef.current && newAudio && audioContextRef.current) {
-      // Verificar que el AudioContext no esté cerrado
-      if (audioContextRef.current.state !== 'closed') {
-        connectAudioToContext(newAudio);
-      }
-    }
-    
-    // Reanudar reproducción si estaba reproduciéndose
-    if (wasPlaying) {
-      play();
-    }
-  }, [isPlaying, connectAudioToContext]);
-  
-  /**
-   * Reproducir audio
-   */
-  const play = useCallback(async () => {
-    if (!audioRef.current) {
-      console.warn('[AudioContext] No hay audio para reproducir');
-      return;
-    }
-    
-    try {
-      // En iOS, asegurar que el AudioContext esté resumido
-      if (isIOS || isChromeIOS || isSafariIOS) {
-        const audioContext = audioContextRef.current || window.__globalAudioContext;
-        if (audioContext && audioContext.state === 'suspended') {
+    };
+
+    const setupAudioContext = async () => {
+      try {
+        // En iOS con múltiples audios, siempre reconectar si el elemento cambió
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const hasMultipleAudios = validAudioSrcs.length > 1;
+        
+        if (connectedAudioElement === audio && globalAudioContext && globalAnalyser && !(isIOS && hasMultipleAudios)) {
+          console.log('[AudioContext] Reusing existing connection');
+          audioContextRef.current = globalAudioContext;
+          analyserRef.current = globalAnalyser;
+          const bufferLength = globalAnalyser.frequencyBinCount;
+          dataArrayRef.current = new Uint8Array(bufferLength);
+          timeDataArrayRef.current = new Uint8Array(bufferLength);
+          setIsInitialized(true);
+          return;
+        }
+
+        if (globalAudioContext && connectedAudioElement && connectedAudioElement !== audio) {
+          console.log('[AudioContext] Disconnecting previous audio');
           try {
-            await audioContext.resume();
-            console.log('[AudioContext] AudioContext resumido antes de play()');
-          } catch (resumeErr) {
-            console.warn('[AudioContext] Error resumiendo AudioContext:', resumeErr);
+            if (globalSourceNode) {
+              globalSourceNode.disconnect();
+            }
+          } catch (e) {
+            console.warn('[AudioContext] Error disconnecting:', e);
+          }
+          globalSourceNode = null;
+          connectedAudioElement = null;
+        }
+
+        if (!globalAudioContext || globalAudioContext.state === 'closed') {
+          try {
+            globalAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+            console.log('[AudioContext] Created AudioContext | state:', globalAudioContext.state);
+            // Actualizar la referencia en window
+            if (typeof window !== 'undefined') {
+              Object.defineProperty(window, '__globalAudioContext', {
+                get: () => globalAudioContext,
+                configurable: true
+              });
+            }
+          } catch (error) {
+            console.error('[AudioContext] Error creating AudioContext:', error);
+            globalAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+            // Actualizar la referencia en window incluso si hay error
+            if (typeof window !== 'undefined') {
+              Object.defineProperty(window, '__globalAudioContext', {
+                get: () => globalAudioContext,
+                configurable: true
+              });
+            }
+          }
+        }
+
+        if (!globalAnalyser) {
+          globalAnalyser = globalAudioContext.createAnalyser();
+          globalAnalyser.fftSize = 2048;
+          globalAnalyser.smoothingTimeConstant = 0.3;
+          console.log('[AudioContext] Created AnalyserNode');
+        }
+
+        try {
+          globalSourceNode = globalAudioContext.createMediaElementSource(audio);
+          connectedAudioElement = audio;
+
+          globalSourceNode.connect(globalAnalyser);
+          globalAnalyser.connect(globalAudioContext.destination);
+
+          if (globalAudioContext.state === 'suspended') {
+            try {
+              await globalAudioContext.resume();
+              console.log('[AudioContext] AudioContext resumido en setupAudioContext, estado:', globalAudioContext.state);
+              // En Safari iOS con múltiples audios, puede necesitar múltiples intentos
+              if ((isSafari || isIOS) && hasMultipleAudios && globalAudioContext.state === 'suspended') {
+                // Intentar múltiples veces con delays crecientes
+                for (let i = 0; i < 3; i++) {
+                  await new Promise(resolve => setTimeout(resolve, 150 * (i + 1)));
+                  try {
+                    await globalAudioContext.resume();
+                    if (globalAudioContext.state !== 'suspended') {
+                      console.log(`[AudioContext] AudioContext resumido en Safari iOS (intento ${i + 1})`);
+                      break;
+                    }
+                  } catch (e) {
+                    console.warn(`[AudioContext] Error resuming AudioContext (intento ${i + 1}):`, e);
+                  }
+                }
+              } else if (globalAudioContext.state === 'suspended') {
+                setTimeout(async () => {
+                  try {
+                    await globalAudioContext.resume();
+                  } catch (e) {
+                    console.warn('[AudioContext] Error resuming AudioContext (retry):', e);
+                  }
+                }, 100);
+              }
+            } catch (resumeError) {
+              console.warn('[AudioContext] Error resuming AudioContext:', resumeError);
+            }
+          }
+
+          audioContextRef.current = globalAudioContext;
+          analyserRef.current = globalAnalyser;
+          const bufferLength = globalAnalyser.frequencyBinCount;
+          dataArrayRef.current = new Uint8Array(bufferLength);
+          timeDataArrayRef.current = new Uint8Array(bufferLength);
+
+          setIsInitialized(true);
+          console.log('[AudioContext] Setup successful');
+
+        } catch (connectError) {
+          if (connectError.name === 'InvalidStateError') {
+            console.error('[AudioContext] Audio already connected');
+            setIsInitialized(true);
+          } else {
+            throw connectError;
+          }
+        }
+
+      } catch (error) {
+        console.error('[AudioContext] Error setting up AudioContext:', error);
+        setIsInitialized(true);
+      }
+    };
+
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+    
+    const handleCanPlay = async () => {
+      updateProgress();
+      await setupAudioContext();
+      // Marcar como cargado si tenemos suficiente readyState
+      // En iOS/Safari, ser más permisivo
+      if (audio.readyState >= 1) {
+        // En iOS/Safari, readyState 1 es suficiente
+        if (isIOS || isSafari) {
+          if (!isLoaded) {
+            setIsLoaded(true);
+            setLoadingProgress(100);
+            console.log(`[AudioContext] Audio ${currentIndex} marcado como cargado en handleCanPlay (iOS/Safari, readyState: ${audio.readyState})`);
+          }
+        } else if (audio.readyState >= 2) {
+          // Otros navegadores necesitan readyState 2
+          if (!isLoaded) {
+            setIsLoaded(true);
+            setLoadingProgress(100);
           }
         }
       }
+    };
+
+    const handleProgress = () => updateProgress();
+    const handleLoadedData = () => {
+      updateProgress();
+      // Para iOS/Safari, marcar como cargado con readyState 1
+      // Para otros navegadores, esperar readyState 2
+      const minReadyForLoaded = (isIOS || isSafari) ? 1 : 2;
+      if (audio.readyState >= minReadyForLoaded) {
+        if (!isLoaded) {
+          setIsLoaded(true);
+          setLoadingProgress(100);
+          console.log(`[AudioContext] Audio marcado como cargado en handleLoadedData (readyState: ${audio.readyState})`);
+        }
+      }
+    };
+
+    const handleCanPlayThrough = () => {
+      updateProgress();
+      setIsLoaded(true);
+      setLoadingProgress(100);
+    };
+    
+    // Handler adicional para loadedmetadata (importante para Safari/iOS)
+    const handleLoadedMetadata = () => {
+      updateProgress();
+      // En iOS/Safari, loadedmetadata es suficiente para considerar cargado
+      if ((isIOS || isSafari) && audio.readyState >= 1) {
+        if (!isLoaded) {
+          setIsLoaded(true);
+          setLoadingProgress(100);
+          console.log(`[AudioContext] Audio marcado como cargado en handleLoadedMetadata (iOS/Safari)`);
+        }
+      }
+    };
+    
+    const handleError = () => {
+      // Log simple del error, sin reintentos ni lógica compleja
+      if (audio.error) {
+        console.warn('[AudioContext] Audio error:', audio.error.message, '| src:', audio.src);
+      }
+    };
+
+    // El handleEnded ahora está en un useEffect separado para evitar problemas de closure
+
+    // Configurar el src del audio actual solo si ha cambiado
+    if (audio.src !== currentSrcString) {
+      console.log(`[AudioContext] Cambiando src de ${audio.src || ''} a ${currentSrcString}`);
+      console.log(`[AudioContext] Índice actual: ${currentIndex}, Total audios: ${validAudioSrcs.length}`);
       
-      // En móviles, ser más permisivo con readyState
-      const minReadyState = (isIOS || isSafariIOS) ? 1 : 2;
-      if (audioRef.current.readyState < minReadyState) {
-        console.log('[AudioContext] Audio no listo, esperando...', {
-          readyState: audioRef.current.readyState,
-          minReadyState
-        });
-        // Esperar un poco y reintentar
-        setTimeout(() => play(), 100);
+      // Asegurar que la URL sea absoluta si es relativa (para producción)
+      let finalSrc = currentSrcString;
+      if (!finalSrc.startsWith('http') && !finalSrc.startsWith('data:')) {
+        // Si es una URL relativa, asegurarse de que empiece con /
+        if (!finalSrc.startsWith('/')) {
+          finalSrc = '/' + finalSrc;
+        }
+      }
+      
+      // Los imports estáticos de webpack ya vienen como URLs válidas
+      // NO hacer tests adicionales - confiar en webpack como Timeline
+      audio.src = finalSrc;
+      audio.load();
+    }
+
+    // Event listeners (ended está en un useEffect separado)
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('canplay', handleCanPlay);
+    audio.addEventListener('canplaythrough', handleCanPlayThrough);
+    audio.addEventListener('progress', handleProgress);
+    audio.addEventListener('loadeddata', handleLoadedData);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('error', handleError);
+
+    audioCleanup = () => {
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+      // ended se maneja en un useEffect separado
+      audio.removeEventListener('canplay', handleCanPlay);
+      audio.removeEventListener('canplaythrough', handleCanPlayThrough);
+      audio.removeEventListener('progress', handleProgress);
+      audio.removeEventListener('loadeddata', handleLoadedData);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('error', handleError);
+    };
+
+    // En iOS con múltiples audios, siempre forzar load() y dar más tiempo
+    if (audio.readyState === 0 || isIOS || (isIOS && hasMultipleAudios)) {
+      try {
+        console.log(`[AudioContext] Llamando load() para audio ${currentIndex} (iOS: ${isIOS}, múltiples: ${hasMultipleAudios}, readyState: ${audio.readyState})`);
+        audio.load();
+        
+      } catch (loadError) {
+        console.warn('[AudioContext] Error calling load():', loadError);
+      }
+    }
+
+    // Ajustar minReadyState y intervalo según navegador
+    // En iOS con múltiples audios, ser más conservador (necesita readyState 2)
+    const minReadyState = (isIOS || isSafari) 
+      ? (hasMultipleAudios ? 2 : 1)  // Con múltiples audios, esperar más datos
+      : 2;
+    const progressInterval = (isIOS || isSafari) ? 200 : 100;
+    
+    progressIntervalId = setInterval(() => {
+      if (isLoaded) {
+        if (progressIntervalId) {
+          clearInterval(progressIntervalId);
+          progressIntervalId = null;
+        }
         return;
       }
       
-      const playPromise = audioRef.current.play();
+      updateProgress();
       
-      if (playPromise !== undefined) {
+      // Para iOS/Safari, ser más permisivo - readyState 1 es suficiente
+      // Para otros navegadores, ser más estricto
+      const readyThreshold = (isIOS || isSafari) 
+        ? 1  // iOS/Safari puede funcionar con readyState 1
+        : (isChrome && !isMobile) ? 3 : minReadyState;
+      
+      if (audio.readyState >= readyThreshold && !isLoaded) {
+        // En iOS/Safari, no requerir duration - puede cargar bajo demanda
+        if (isIOS || isSafari) {
+          setIsLoaded(true);
+          setLoadingProgress(100);
+          console.log(`[AudioContext] Audio ${currentIndex} marcado como cargado (iOS/Safari, readyState: ${audio.readyState})`);
+          if (progressIntervalId) {
+            clearInterval(progressIntervalId);
+            progressIntervalId = null;
+          }
+        } else {
+          // Otros navegadores pueden necesitar más validación
+          setIsLoaded(true);
+          setLoadingProgress(100);
+          if (progressIntervalId) {
+            clearInterval(progressIntervalId);
+            progressIntervalId = null;
+          }
+        }
+      }
+      }, progressInterval);
+    }
+
+    return () => {
+      if (progressIntervalId) {
+        clearInterval(progressIntervalId);
+      }
+      if (audioCleanup) {
+        audioCleanup();
+      }
+      if (fadeOutTweenRef.current) {
+        fadeOutTweenRef.current.kill();
+      }
+      if (fadeInTweenRef.current) {
+        fadeInTweenRef.current.kill();
+      }
+      if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
+      }
+    };
+  }, [audioSrcs, currentIndex]);
+
+  // useEffect separado para configurar AudioContext cuando el audio simple esté listo
+  useEffect(() => {
+    if (useSimpleAudio && isLoaded && currentAudioRef.current && !isInitialized) {
+      const audio = currentAudioRef.current;
+      
+      const setupAudioContext = async () => {
         try {
-          await playPromise;
-          // Verificar que realmente se está reproduciendo
-          if (audioRef.current.paused) {
-            console.warn('[AudioContext] Audio se pausó inmediatamente después de play()');
-          } else {
-            setIsPlaying(true);
-            hasUserInteractedRef.current = true;
-            console.log('[AudioContext] Audio reproducido correctamente', {
-              paused: audioRef.current.paused,
-              readyState: audioRef.current.readyState,
-              currentTime: audioRef.current.currentTime,
-              duration: audioRef.current.duration
+          if (connectedAudioElement === audio && globalAudioContext && globalAnalyser) {
+            console.log('[AudioContext] Reusing existing connection (simple audio)');
+            audioContextRef.current = globalAudioContext;
+            analyserRef.current = globalAnalyser;
+            const bufferLength = globalAnalyser.frequencyBinCount;
+            dataArrayRef.current = new Uint8Array(bufferLength);
+            timeDataArrayRef.current = new Uint8Array(bufferLength);
+            setIsInitialized(true);
+            return;
+          }
+
+          if (globalAudioContext && connectedAudioElement && connectedAudioElement !== audio) {
+            console.log('[AudioContext] Disconnecting previous audio (simple audio)');
+            try {
+              if (globalSourceNode) {
+                globalSourceNode.disconnect();
+              }
+            } catch (e) {
+              console.warn('[AudioContext] Error disconnecting:', e);
+            }
+            globalSourceNode = null;
+            connectedAudioElement = null;
+          }
+
+          if (!globalAudioContext || globalAudioContext.state === 'closed') {
+            try {
+              globalAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+              console.log('[AudioContext] Created AudioContext (simple audio) | state:', globalAudioContext.state);
+              if (typeof window !== 'undefined') {
+                Object.defineProperty(window, '__globalAudioContext', {
+                  get: () => globalAudioContext,
+                  configurable: true
+                });
+              }
+            } catch (error) {
+              console.error('[AudioContext] Error creating AudioContext:', error);
+              globalAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+              if (typeof window !== 'undefined') {
+                Object.defineProperty(window, '__globalAudioContext', {
+                  get: () => globalAudioContext,
+                  configurable: true
+                });
+              }
+            }
+          }
+
+          if (!globalAnalyser) {
+            globalAnalyser = globalAudioContext.createAnalyser();
+            globalAnalyser.fftSize = 2048;
+            globalAnalyser.smoothingTimeConstant = 0.3;
+            console.log('[AudioContext] Created AnalyserNode (simple audio)');
+          }
+
+          try {
+            globalSourceNode = globalAudioContext.createMediaElementSource(audio);
+            connectedAudioElement = audio;
+
+            globalSourceNode.connect(globalAnalyser);
+            globalAnalyser.connect(globalAudioContext.destination);
+
+            if (globalAudioContext.state === 'suspended') {
+              try {
+                await globalAudioContext.resume();
+                console.log('[AudioContext] AudioContext resumido (simple audio), estado:', globalAudioContext.state);
+              } catch (resumeError) {
+                console.warn('[AudioContext] Error resuming AudioContext:', resumeError);
+              }
+            }
+
+            audioContextRef.current = globalAudioContext;
+            analyserRef.current = globalAnalyser;
+            const bufferLength = globalAnalyser.frequencyBinCount;
+            dataArrayRef.current = new Uint8Array(bufferLength);
+            timeDataArrayRef.current = new Uint8Array(bufferLength);
+
+            setIsInitialized(true);
+            console.log('[AudioContext] Setup successful (simple audio)');
+
+          } catch (connectError) {
+            if (connectError.name === 'InvalidStateError') {
+              console.error('[AudioContext] Audio already connected (simple audio)');
+              setIsInitialized(true);
+            } else {
+              throw connectError;
+            }
+          }
+
+        } catch (error) {
+          console.error('[AudioContext] Error setting up AudioContext (simple audio):', error);
+          setIsInitialized(true);
+        }
+      };
+
+      setupAudioContext();
+    }
+  }, [useSimpleAudio, isLoaded, isInitialized]);
+
+  const play = async () => {
+    return new Promise(async (resolve) => {
+      // SIMPLIFICACIÓN: Para un solo audio, usar play() simple como Timeline pero con volumen y AudioContext
+      if (useSimpleAudio && currentAudioRef.current) {
+        try {
+          const audio = currentAudioRef.current;
+          
+          // Configurar AudioContext si no está inicializado
+          if (!isInitialized) {
+            console.log('[AudioContext] Configurando AudioContext para audio simple antes de reproducir...');
+            try {
+              // Crear AudioContext si no existe
+              if (!globalAudioContext || globalAudioContext.state === 'closed') {
+                globalAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+                console.log('[AudioContext] Created AudioContext (simple audio in play)');
+              }
+              
+              // Crear Analyser si no existe
+              if (!globalAnalyser) {
+                globalAnalyser = globalAudioContext.createAnalyser();
+                globalAnalyser.fftSize = 2048;
+                globalAnalyser.smoothingTimeConstant = 0.3;
+                console.log('[AudioContext] Created AnalyserNode (simple audio in play)');
+              }
+              
+              // Conectar el audio al AudioContext
+              if (connectedAudioElement !== audio) {
+                if (globalSourceNode) {
+                  try {
+                    globalSourceNode.disconnect();
+                  } catch (e) {
+                    console.warn('[AudioContext] Error disconnecting previous source:', e);
+                  }
+                }
+                
+                try {
+                  globalSourceNode = globalAudioContext.createMediaElementSource(audio);
+                  connectedAudioElement = audio;
+                  globalSourceNode.connect(globalAnalyser);
+                  globalAnalyser.connect(globalAudioContext.destination);
+                  console.log('[AudioContext] Audio conectado al AudioContext (simple audio in play)');
+                } catch (connectError) {
+                  if (connectError.name === 'InvalidStateError') {
+                    console.warn('[AudioContext] Audio already connected (simple audio in play)');
+                  } else {
+                    throw connectError;
+                  }
+                }
+              }
+              
+              // Resumir AudioContext si está suspendido
+              if (globalAudioContext.state === 'suspended') {
+                await globalAudioContext.resume();
+                console.log('[AudioContext] AudioContext resumido (simple audio in play)');
+              }
+              
+              // Configurar refs
+              audioContextRef.current = globalAudioContext;
+              analyserRef.current = globalAnalyser;
+              const bufferLength = globalAnalyser.frequencyBinCount;
+              dataArrayRef.current = new Uint8Array(bufferLength);
+              timeDataArrayRef.current = new Uint8Array(bufferLength);
+              
+              setIsInitialized(true);
+              console.log('[AudioContext] AudioContext configurado correctamente (simple audio in play)');
+            } catch (error) {
+              console.error('[AudioContext] Error configurando AudioContext (simple audio in play):', error);
+            }
+          } else if (globalAudioContext && globalAudioContext.state === 'suspended') {
+            await globalAudioContext.resume();
+            console.log('[AudioContext] AudioContext resumido antes de reproducir audio simple');
+          }
+          
+          // Configurar volumen y hacer fade in como en el flujo normal
+          audio.volume = 0;
+          console.log('[AudioContext] Reproduciendo audio simple como Timeline');
+          await audio.play();
+          setIsPlaying(true);
+          
+          // Fade in con GSAP
+          if (volumeTweenRef.current) {
+            volumeTweenRef.current.kill();
+          }
+          volumeTweenRef.current = gsap.to(audio, {
+            volume: 1,
+            duration: 2.5,
+            ease: 'sine.out',
+            onComplete: () => {
+              volumeTweenRef.current = null;
+              resolve();
+            }
+          });
+        } catch (error) {
+          console.error('[AudioContext] Error reproduciendo audio simple:', error);
+          resolve();
+        }
+        return;
+      }
+      
+      // PRIORIDAD 1: Fallback a Howler.js en iOS/Android
+      if (useMultipleElements && howlInstancesRef.current.length > 0) {
+        const howl = howlInstancesRef.current[currentIndex];
+        if (!howl) {
+          console.warn('[AudioContext] No hay instancia Howl para reproducir');
+          resolve();
+          return;
+        }
+        
+        try {
+          // Detener otras instancias
+          howlInstancesRef.current.forEach((h, i) => {
+            if (i !== currentIndex && h.playing()) {
+              h.stop();
+            }
+          });
+          
+          // Reproducir con Howler.js
+          const soundId = howl.play();
+          howl.volume(0, soundId);
+          
+          // Fade in con Howler.js
+          howl.fade(0, 1, 2500, soundId);
+          
+          setIsPlaying(true);
+          console.log('[AudioContext] Reproduciendo con Howler.js');
+          
+          // Manejar cuando termine
+          howl.once('end', () => {
+            setIsPlaying(false);
+            // Cambiar al siguiente audio
+            const nextIndex = (currentIndex + 1) % howlInstancesRef.current.length;
+            if (nextIndex !== currentIndex) {
+              currentIndexRef.current = nextIndex;
+              setCurrentIndex(nextIndex);
+            }
+          });
+          
+          resolve();
+        } catch (error) {
+          console.error('[AudioContext] Error reproduciendo con Howler.js:', error);
+          resolve();
+        }
+        return;
+      }
+      
+      
+      // Chrome iOS con múltiples audios: usar audioElementsRef en lugar de currentAudioRef
+      const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
+      if (isChromeIOS && audioElementsRef.current.length > 0 && audioElementsRef.current[currentIndex]) {
+        const audio = audioElementsRef.current[currentIndex];
+        if (audio && audio.paused) {
+          try {
+            // Asegurar que el AudioContext esté resumido
+            if (globalAudioContext && globalAudioContext.state === 'suspended') {
+              await globalAudioContext.resume();
+            }
+            
+            // En Chrome iOS, ser más permisivo con readyState
+            if (audio.readyState >= 1) {
+              audio.volume = 0;
+              await audio.play();
+              console.log('[AudioContext] Chrome iOS: Audio reproducido desde audioElementsRef');
+              
+              // Fade in
+              volumeTweenRef.current = gsap.to(audio, {
+                volume: 1,
+                duration: 2.5,
+                ease: 'sine.out',
+                onComplete: () => {
+                  volumeTweenRef.current = null;
+                  resolve();
+                }
+              });
+            } else {
+              // Esperar a que tenga metadata
+              await new Promise((resolveWait) => {
+                const handleCanPlay = () => {
+                  audio.removeEventListener('canplay', handleCanPlay);
+                  resolveWait();
+                };
+                audio.addEventListener('canplay', handleCanPlay);
+                if (audio.readyState >= 1) resolveWait();
+              });
+              
+              audio.volume = 0;
+              await audio.play();
+              volumeTweenRef.current = gsap.to(audio, {
+                volume: 1,
+                duration: 2.5,
+                ease: 'sine.out',
+                onComplete: () => {
+                  volumeTweenRef.current = null;
+                  resolve();
+                }
+              });
+            }
+          } catch (error) {
+            console.error('[AudioContext] Error en Chrome iOS con múltiples audios:', error);
+            resolve();
+          }
+          return;
+        }
+      }
+      
+      if (currentAudioRef.current && currentAudioRef.current.paused) {
+        try {
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+          const isAndroid = /Android/.test(navigator.userAgent);
+          const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+          const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
+          const isMobileSafari = (isIOS || (isAndroid && isSafari));
+          const hasMultipleAudios = audioSrcsRef.current.length > 1;
+          
+          // En iOS/Android Safari, NO bloquear por pre-carga - pueden cargar audios bajo demanda
+          // Solo esperar pre-carga en otros navegadores y solo un tiempo limitado
+          if (hasMultipleAudios && !preloadedAudios && !isMobileSafari) {
+            console.log('[AudioContext] Múltiples audios: esperando a que todos estén pre-cargados...');
+            const maxWaitTime = 3000; // Solo 3 segundos máximo
+            const startTime = Date.now();
+            
+            // Esperar usando un efecto que observe el estado preloadedAudios
+            await new Promise((resolveWait) => {
+              const checkInterval = setInterval(() => {
+                if (preloadedAudios) {
+                  clearInterval(checkInterval);
+                  console.log('[AudioContext] Todos los audios pre-cargados, continuando con play()');
+                  resolveWait();
+                } else if (Date.now() - startTime > maxWaitTime) {
+                  clearInterval(checkInterval);
+                  console.warn('[AudioContext] Timeout esperando pre-carga, continuando de todas formas...');
+                  resolveWait();
+                }
+              }, 100);
+            });
+          } else if (hasMultipleAudios && !preloadedAudios && isMobileSafari) {
+            // En iOS/Android Safari, no esperar - continuar inmediatamente
+            console.log('[AudioContext] iOS/Android Safari: No esperando pre-carga completa, continuando inmediatamente...');
+          }
+          
+          if (volumeTweenRef.current) {
+            volumeTweenRef.current.kill();
+            volumeTweenRef.current = null;
+          }
+          
+          if (globalAudioContext) {
+            if (globalAudioContext.state === 'suspended') {
+              try {
+                await globalAudioContext.resume();
+                console.log('[AudioContext] AudioContext resumido, estado:', globalAudioContext.state);
+                // En Chrome iOS, puede necesitar múltiples intentos
+                if ((isIOS || isChromeIOS) && globalAudioContext.state === 'suspended') {
+                  // Intentar múltiples veces con delays crecientes
+                  for (let i = 0; i < 3; i++) {
+                    await new Promise(resolve => setTimeout(resolve, 100 * (i + 1)));
+                    try {
+                      await globalAudioContext.resume();
+                      if (globalAudioContext.state !== 'suspended') {
+                        console.log(`[AudioContext] AudioContext resumido en intento ${i + 1}`);
+                        break;
+                      }
+                    } catch (e) {
+                      console.warn(`[AudioContext] Error resuming AudioContext (intento ${i + 1}):`, e);
+                    }
+                  }
+                }
+              } catch (resumeError) {
+                console.warn('[AudioContext] Error resuming AudioContext in play:', resumeError);
+              }
+            }
+          }
+          
+          // Esperar a que el audio esté listo usando eventos, no timeouts
+          // En iOS/Android Safari con múltiples audios, ser más permisivo con readyState
+          const minReadyState = (isMobileSafari && hasMultipleAudios) ? 1 : 2;
+          if (currentAudioRef.current.readyState < minReadyState) {
+            await new Promise((resolveWait) => {
+              const audio = currentAudioRef.current;
+              let resolved = false;
+              
+              const cleanup = () => {
+                audio.removeEventListener('canplay', handleCanPlay);
+                audio.removeEventListener('loadeddata', handleLoadedData);
+                audio.removeEventListener('error', handleError);
+              };
+              
+              const handleCanPlay = () => {
+                if (!resolved && audio.readyState >= minReadyState) {
+                  resolved = true;
+                  cleanup();
+                  console.log(`[AudioContext] Audio listo (canplay, readyState: ${audio.readyState})`);
+                  resolveWait();
+                }
+              };
+              
+              const handleLoadedData = () => {
+                if (!resolved && audio.readyState >= minReadyState) {
+                  resolved = true;
+                  cleanup();
+                  console.log(`[AudioContext] Audio listo (loadeddata, readyState: ${audio.readyState})`);
+                  resolveWait();
+                }
+              };
+              
+              const handleError = () => {
+                if (!resolved) {
+                  resolved = true;
+                  cleanup();
+                  console.warn('[AudioContext] Error esperando audio listo, continuando...');
+                  resolveWait();
+                }
+              };
+              
+              // Si ya está listo, resolver inmediatamente
+              if (audio.readyState >= minReadyState) {
+                resolveWait();
+                return;
+              }
+              
+              audio.addEventListener('canplay', handleCanPlay);
+              audio.addEventListener('loadeddata', handleLoadedData);
+              audio.addEventListener('error', handleError);
+              
+              // Verificar periódicamente el estado (solo como fallback, los eventos deberían dispararse)
+              const checkInterval = setInterval(() => {
+                if (audio.readyState >= 2 && !resolved) {
+                  resolved = true;
+                  clearInterval(checkInterval);
+                  cleanup();
+                  console.log(`[AudioContext] Audio listo (verificación periódica, readyState: ${audio.readyState})`);
+                  resolveWait();
+                }
+              }, 100);
             });
           }
-        } catch (playError) {
-          console.error('[AudioContext] Error en playPromise:', playError);
-          throw playError;
+          
+          currentAudioRef.current.volume = 0;
+          
+          // Intentar reproducir una sola vez, como Timeline
+          try {
+            // En Chrome iOS, asegurar que el AudioContext esté resumido
+            if (isChromeIOS && globalAudioContext && globalAudioContext.state === 'suspended') {
+              try {
+                await globalAudioContext.resume();
+              } catch (resumeErr) {
+                // Ignorar error de resume
+              }
+            }
+            
+            await currentAudioRef.current.play();
+            console.log('[AudioContext] Audio reproducido exitosamente');
+          } catch (playError) {
+            console.warn('[AudioContext] Error en play():', playError);
+            resolve();
+            return;
+          }
+                    
+          await new Promise(resolve => setTimeout(resolve, isIOS ? 100 : 50));
+          
+          volumeTweenRef.current = gsap.to(currentAudioRef.current, {
+            volume: 1,
+            duration: 2.5,
+            ease: 'sine.out',
+            onComplete: () => {
+              volumeTweenRef.current = null;
+              resolve();
+            }
+          });
+        } catch (error) {
+          console.error('[AudioContext] Error playing:', error);
+          resolve();
         }
       } else {
-        // Si no hay promesa, verificar el estado
-        if (!audioRef.current.paused) {
-          setIsPlaying(true);
-          hasUserInteractedRef.current = true;
-          console.log('[AudioContext] Audio ya estaba reproduciéndose');
-        }
+        resolve();
       }
-    } catch (error) {
-      console.error('[AudioContext] Error reproduciendo audio:', error);
-      
-      // En iOS, si es NotAllowedError, puede necesitar más tiempo
-      if (isIOS && error.name === 'NotAllowedError') {
-        console.warn('[AudioContext] NotAllowedError en iOS, reintentando...');
-        setTimeout(async () => {
-          try {
-            const audioContext = audioContextRef.current || window.__globalAudioContext;
-            if (audioContext && audioContext.state === 'suspended') {
-              await audioContext.resume();
-            }
-            await play();
-          } catch (retryErr) {
-            console.error('[AudioContext] Error en reintento:', retryErr);
-          }
-        }, 300);
-      }
-    }
-  }, [isIOS, isChromeIOS, isSafariIOS]);
-  
-  /**
-   * Pausar audio con fade out
-   */
-  const pause = useCallback(async () => {
-    if (!audioRef.current) {
-      return;
-    }
-    
-    try {
-      // Fade out suave antes de pausar
-      const audio = audioRef.current;
-      const initialVolume = audio.volume;
-      const fadeDuration = 500; // 500ms
-      const steps = 20;
-      const stepTime = fadeDuration / steps;
-      const volumeStep = initialVolume / steps;
-      
-      for (let i = 0; i < steps; i++) {
-        await new Promise(resolve => setTimeout(resolve, stepTime));
-        audio.volume = Math.max(0, initialVolume - (volumeStep * (i + 1)));
-      }
-      
-      audio.pause();
-      audio.volume = initialVolume; // Restaurar volumen
-      setIsPlaying(false);
-      console.log('[AudioContext] Audio pausado');
-    } catch (error) {
-      console.error('[AudioContext] Error pausando audio:', error);
-      if (audioRef.current) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-      }
-    }
-  }, []);
-  
-  /**
-   * Seek a una posición específica en un audio específico
-   */
-  const seekToAudio = useCallback(async (audioIndex, timeInAudio = 0) => {
-    if (audioIndex < 0 || audioIndex >= audioRefs.current.length) {
-      console.warn(`[AudioContext] Índice de audio inválido: ${audioIndex}`);
-      return;
-    }
-    
-    const wasPlaying = isPlaying;
-    
-    // Si estamos cambiando de audio, hacer switch
-    if (audioIndex !== currentIndex) {
-      switchToAudio(audioIndex, timeInAudio);
-      return;
-    }
-    
-    // Si es el mismo audio, solo hacer seek
-    if (audioRef.current) {
-      const targetTime = Math.max(0, Math.min(timeInAudio, audioRef.current.duration || 0));
-      audioRef.current.currentTime = targetTime;
-      
-      // Si estaba reproduciéndose, asegurar que siga reproduciéndose
-      if (wasPlaying && audioRef.current.paused) {
-        await play();
-      }
-    }
-  }, [currentIndex, isPlaying, switchToAudio, play]);
-  
-  /**
-   * Obtener duración total de todos los audios
-   */
-  const getTotalDuration = useCallback(() => {
-    return audioDurations.reduce((total, duration) => total + (duration || 0), 0);
-  }, [audioDurations]);
-  
-  /**
-   * Obtener tiempo transcurrido total
-   */
-  const getTotalElapsed = useCallback(() => {
-    if (!audioRef.current || audioDurations.length === 0) return 0;
-    
-    let elapsed = 0;
-    
-    // Sumar duraciones de audios anteriores
-    for (let i = 0; i < currentIndex; i++) {
-      elapsed += audioDurations[i] || 0;
-    }
-    
-    // Agregar tiempo del audio actual
-    elapsed += audioRef.current.currentTime || 0;
-    
-    return elapsed;
-  }, [currentIndex, audioDurations]);
-  
-  /**
-   * Manejar cuando un audio termina
-   */
-  const handleAudioEnd = useCallback(() => {
-    // Si hay más audios, pasar al siguiente
-    if (currentIndex < audioRefs.current.length - 1) {
-      switchToAudio(currentIndex + 1, 0);
-    } else {
-      // Último audio terminado
-      setIsPlaying(false);
-    }
-  }, [currentIndex, switchToAudio]);
-  
-  // Inicializar AudioContext al montar
-  useEffect(() => {
-    isUnmountingRef.current = false;
-    initializeAudioContext();
-    
-    return () => {
-      // Marcar que se está desmontando
-      isUnmountingRef.current = true;
-      
-      // Limpiar al desmontar
-      if (sourceNodeRef.current) {
-        try {
-          sourceNodeRef.current.disconnect();
-        } catch (e) {
-          // Ignorar errores
-        }
-        sourceNodeRef.current = null;
-      }
-      
-      // Limpiar mapa de elementos conectados
-      connectedAudioElementsRef.current = new WeakMap();
-      
-      // Pausar todos los audios
-      audioRefs.current.forEach(audio => {
-        if (audio) {
-          try {
-            audio.pause();
-            audio.src = '';
-            audio.load(); // Resetear
-          } catch (e) {
-            // Ignorar errores
-          }
-        }
-      });
-      
-      // Cerrar AudioContext solo al desmontar completamente
-      // IMPORTANTE: Solo cerrar si realmente se está desmontando el componente
-      // No cerrar si solo están cambiando las fuentes de audio
-      // Usar un pequeño delay para asegurar que no se cierre prematuramente
-      const contextToClose = audioContextRef.current;
-      if (contextToClose && contextToClose.state !== 'closed') {
-        setTimeout(() => {
-          // Verificar nuevamente que realmente se está desmontando
-          if (isUnmountingRef.current && contextToClose && contextToClose.state !== 'closed') {
-            contextToClose.close().catch(console.warn);
-          }
-        }, 200);
-      }
-    };
-  }, []); // Sin dependencias para que solo se ejecute al montar/desmontar
-  
-  // Cargar audios cuando cambian las fuentes
-  useEffect(() => {
-    // Solo cargar si no se está desmontando y hay fuentes
-    if (!isUnmountingRef.current && audioSrcs && audioSrcs.length > 0) {
-      loadAudios();
-    }
-  }, [audioSrcs, loadAudios]);
-  
-  // Configurar eventos de los audios
-  useEffect(() => {
-    const audios = audioRefs.current;
-    const cleanupFunctions = [];
-    
-    audios.forEach((audio, index) => {
-      if (!audio) return;
-      
-      const handlePlay = () => {
-        // Solo actualizar si es el audio actual
-        if (index === currentIndex) {
-          setIsPlaying(true);
-        }
-      };
-      
-      const handlePause = () => {
-        // Solo actualizar si es el audio actual
-        if (index === currentIndex) {
-          setIsPlaying(false);
-        }
-      };
-      
-      const handleEnded = () => {
-        // Solo manejar si es el audio actual
-        if (index === currentIndex) {
-          handleAudioEnd();
-        }
-      };
-      
-      const handleTimeUpdate = () => {
-        // Actualizar progreso de carga si es necesario
-        if (!isLoaded && audio.readyState >= 2) {
-          setLoadingProgress(prev => Math.max(prev, 95));
-        }
-      };
-      
-      audio.addEventListener('play', handlePlay);
-      audio.addEventListener('pause', handlePause);
-      audio.addEventListener('ended', handleEnded);
-      audio.addEventListener('timeupdate', handleTimeUpdate);
-      
-      cleanupFunctions.push(() => {
-        audio.removeEventListener('play', handlePlay);
-        audio.removeEventListener('pause', handlePause);
-        audio.removeEventListener('ended', handleEnded);
-        audio.removeEventListener('timeupdate', handleTimeUpdate);
-      });
     });
+  };
+
+  const pause = () => {
+    return new Promise((resolve) => {
+      // SIMPLIFICACIÓN: Para un solo audio, usar pause() simple como Timeline
+      if (useSimpleAudio && currentAudioRef.current) {
+        try {
+          console.log('[AudioContext] Pausando audio simple como Timeline');
+          currentAudioRef.current.pause();
+          setIsPlaying(false);
+          resolve();
+        } catch (error) {
+          console.error('[AudioContext] Error pausando audio simple:', error);
+          resolve();
+        }
+        return;
+      }
+      
+      
+      // PRIORIDAD 2: Usar elementos <audio> reales en iOS/Android (fallback)
+      if (useMultipleElements && audioElementsRef.current.length > 0) {
+        const audio = audioElementsRef.current[currentIndex];
+        if (audio && !audio.paused) {
+          if (volumeTweenRef.current) {
+            volumeTweenRef.current.kill();
+            volumeTweenRef.current = null;
+          }
+          
+          volumeTweenRef.current = gsap.to(audio, {
+            volume: 0,
+            duration: 0.6,
+            ease: 'power2.in',
+            onComplete: () => {
+              audio.pause();
+              audio.volume = 0;
+              volumeTweenRef.current = null;
+              setIsPlaying(false);
+              resolve();
+            }
+          });
+          return;
+        } else {
+          resolve();
+          return;
+        }
+      }
+      
+      // Fallback: Si estamos usando Howler.js en iOS/Android
+      if (useMultipleElements && howlInstancesRef.current.length > 0) {
+        const howl = howlInstancesRef.current[currentIndex];
+        if (howl && howl.playing()) {
+          // Fade out y pausar
+          const soundId = howl.playing() ? howl._sounds[0]._id : null;
+          if (soundId !== null) {
+            howl.fade(howl.volume(soundId), 0, 600, soundId);
+            setTimeout(() => {
+              howl.pause(soundId);
+              setIsPlaying(false);
+              resolve();
+            }, 600);
+          } else {
+            howl.stop();
+            setIsPlaying(false);
+            resolve();
+          }
+        } else {
+          resolve();
+        }
+        return;
+      }
+      
+      if (currentAudioRef.current && !currentAudioRef.current.paused) {
+        console.log('[AudioContext] pause() llamado, iniciando fade out del volumen');
+        if (volumeTweenRef.current) {
+          volumeTweenRef.current.kill();
+          volumeTweenRef.current = null;
+        }
+        
+        const currentVolume = currentAudioRef.current.volume;
+        console.log('[AudioContext] Volumen actual:', currentVolume);
+        
+        volumeTweenRef.current = gsap.to(currentAudioRef.current, {
+          volume: 0,
+          duration: 0.6,
+          ease: 'power2.in',
+          onComplete: () => {
+            console.log('[AudioContext] Fade out del volumen completado');
+            if (currentAudioRef.current) {
+              currentAudioRef.current.pause();
+              currentAudioRef.current.volume = 0;
+            }
+            volumeTweenRef.current = null;
+            resolve();
+          }
+        });
+      } else {
+        console.log('[AudioContext] pause() llamado pero el audio ya está pausado o no existe');
+        resolve();
+      }
+    });
+  };
+
+  const togglePlayPause = async () => {
+    if (isPlaying) {
+      await pause();
+    } else {
+      await play();
+    }
+  };
+
+  // Función para cambiar a un audio específico de la playlist
+  const seekToAudio = async (index, targetTime = 0) => {
+    if (index < 0 || index >= validAudioSrcs.length) return;
+    if (index === currentIndex && targetTime === 0) return; // Si es el mismo y no hay tiempo específico, no hacer nada
     
-    return () => {
-      cleanupFunctions.forEach(cleanup => cleanup());
-    };
-  }, [currentIndex, isLoaded, handleAudioEnd]);
-  
-  // Manejar cambios de visibilidad (pausar cuando la pestaña está oculta)
+    // SIMPLIFICACIÓN: Para un solo audio, usar currentTime simple como Timeline
+    if (useSimpleAudio && currentAudioRef.current) {
+      try {
+        console.log(`[AudioContext] Seek en audio simple: ${targetTime}s`);
+        currentAudioRef.current.currentTime = targetTime;
+      } catch (error) {
+        console.error('[AudioContext] Error en seek de audio simple:', error);
+      }
+      return;
+    }
+    
+    // PRIORIDAD 1: Fallback a Howler.js
+    if (useMultipleElements && howlInstancesRef.current.length > 0) {
+      const wasPlaying = isPlaying;
+      const currentHowl = howlInstancesRef.current[currentIndex];
+      
+      // Detener el actual
+      if (currentHowl && currentHowl.playing()) {
+        currentHowl.stop();
+      }
+      
+      // Cambiar al nuevo
+      currentIndexRef.current = index;
+      setCurrentIndex(index);
+      
+      const newHowl = howlInstancesRef.current[index];
+      if (newHowl && wasPlaying) {
+        const soundId = newHowl.play();
+        if (targetTime > 0) {
+          newHowl.seek(targetTime, soundId);
+        }
+        newHowl.volume(0, soundId);
+        newHowl.fade(0, 1, 400, soundId);
+        setIsPlaying(true);
+      }
+      return;
+    }
+    
+    const audio = currentAudioRef.current;
+    if (!audio) return;
+    
+    const wasPlaying = isPlaying && !audio.paused;
+    
+    if (index === currentIndex) {
+      // Mismo audio, solo cambiar el tiempo
+      if (audio.readyState >= 2) {
+        audio.currentTime = targetTime;
+      } else {
+        // Esperar a que esté listo
+        const setTimeWhenReady = () => {
+          if (audio.readyState >= 2) {
+            audio.currentTime = targetTime;
+            audio.removeEventListener('canplay', setTimeWhenReady);
+            audio.removeEventListener('loadedmetadata', setTimeWhenReady);
+          }
+        };
+        audio.addEventListener('canplay', setTimeWhenReady);
+        audio.addEventListener('loadedmetadata', setTimeWhenReady);
+      }
+      return;
+    }
+    
+    // Cambiar de audio
+    if (!audio.paused) {
+      // Fade out breve del actual
+      if (fadeOutTweenRef.current) {
+        fadeOutTweenRef.current.kill();
+      }
+      
+      fadeOutTweenRef.current = gsap.to(audio, {
+        volume: 0,
+        duration: 0.3, // Fade out breve
+        ease: 'power2.in',
+        onComplete: () => {
+          audio.pause();
+          audio.currentTime = 0;
+          // Actualizar el ref ANTES de setCurrentIndex para que handleEnded use el valor correcto
+          currentIndexRef.current = index;
+          setCurrentIndex(index);
+          fadeOutTweenRef.current = null;
+          
+          // Esperar a que el nuevo audio esté listo
+          const waitAndPlay = () => {
+            const newAudio = currentAudioRef.current;
+            if (newAudio && newAudio.readyState >= 2) {
+              if (targetTime > 0) {
+                newAudio.currentTime = targetTime;
+              }
+              if (wasPlaying) {
+                newAudio.play().then(() => {
+                  newAudio.volume = 0;
+                  fadeInTweenRef.current = gsap.to(newAudio, {
+                    volume: 1,
+                    duration: 0.4,
+                    ease: 'power2.out',
+                    onComplete: () => {
+                      fadeInTweenRef.current = null;
+                    }
+                  });
+                }).catch(err => console.warn('[AudioContext] Error playing after seek:', err));
+              }
+            } else {
+              setTimeout(waitAndPlay, 50);
+            }
+          };
+          
+          setTimeout(waitAndPlay, 50);
+        }
+      });
+    } else {
+      // Si está pausado, cambiar directamente
+      // Actualizar el ref ANTES de setCurrentIndex para que handleEnded use el valor correcto
+      currentIndexRef.current = index;
+      setCurrentIndex(index);
+      if (targetTime > 0) {
+        setTimeout(() => {
+          const newAudio = currentAudioRef.current;
+          if (newAudio && newAudio.readyState >= 2) {
+            newAudio.currentTime = targetTime;
+          }
+        }, 100);
+      }
+    }
+  };
+
+  // Función para obtener el tiempo total de la playlist
+  const getTotalDuration = () => {
+    // SIMPLIFICACIÓN: Para un solo audio, usar duration simple como Timeline
+    if (useSimpleAudio && currentAudioRef.current) {
+      return currentAudioRef.current.duration || 0;
+    }
+    return audioDurations.reduce((sum, dur) => sum + dur, 0);
+  };
+
+  // Función para obtener el tiempo transcurrido total
+  const getTotalElapsed = () => {
+    // SIMPLIFICACIÓN: Para un solo audio, usar currentTime simple como Timeline
+    if (useSimpleAudio && currentAudioRef.current) {
+      return currentAudioRef.current.currentTime || 0;
+    }
+    
+    // PRIORIDAD 1: Fallback a Howler.js
+    if (useMultipleElements && howlInstancesRef.current.length > 0) {
+      const howl = howlInstancesRef.current[currentIndex];
+      if (!howl || audioDurations.length === 0) return 0;
+      
+      const previousTime = audioDurations
+        .slice(0, currentIndex)
+        .reduce((sum, dur) => sum + dur, 0);
+      
+      return previousTime + (howl.seek() || 0);
+    }
+    
+    // PRIORIDAD 3: Desktop - elementos audio normales
+    if (!currentAudioRef.current || audioDurations.length === 0) return 0;
+    
+    const previousTime = audioDurations
+      .slice(0, currentIndex)
+      .reduce((sum, dur) => sum + dur, 0);
+    
+    return previousTime + (currentAudioRef.current.currentTime || 0);
+  };
+
+  // Controles de teclado para audio
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden && audioRef.current && !audioRef.current.paused) {
-        // No pausar completamente, solo reducir volumen (similar a Timeline)
-        audioRef.current.volume = 0;
-      } else if (!document.hidden && audioRef.current && isPlaying) {
-        audioRef.current.volume = 1;
+    if (!audioSrcs || audioSrcs.length === 0) return;
+
+    const handleKeyDown = (e) => {
+      // Ignorar si el usuario está escribiendo en un input
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+        return;
+      }
+
+      const audio = currentAudioRef.current;
+      if (!audio) return;
+
+      switch (e.key) {
+        case 'ArrowLeft': {
+          e.preventDefault();
+          // Retroceder 5 segundos
+          if (audio.readyState >= 2 && audio.duration) {
+            audio.currentTime = Math.max(0, audio.currentTime - 5);
+          }
+          break;
+        }
+        case 'ArrowRight': {
+          e.preventDefault();
+          // Avanzar 5 segundos
+          if (audio.readyState >= 2 && audio.duration) {
+            audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
+          }
+          break;
+        }
+        case 'ArrowUp': {
+          e.preventDefault();
+          // Aumentar volumen (con suavidad usando GSAP)
+          if (volumeTweenRef.current) {
+            volumeTweenRef.current.kill();
+          }
+          const newVolume = Math.min(1, audio.volume + 0.1);
+          volumeTweenRef.current = gsap.to(audio, {
+            volume: newVolume,
+            duration: 0.2,
+            ease: 'power2.out',
+            onComplete: () => {
+              volumeTweenRef.current = null;
+            }
+          });
+          break;
+        }
+        case 'ArrowDown': {
+          e.preventDefault();
+          // Disminuir volumen (con suavidad usando GSAP)
+          if (volumeTweenRef.current) {
+            volumeTweenRef.current.kill();
+          }
+          const newVolume = Math.max(0, audio.volume - 0.1);
+          volumeTweenRef.current = gsap.to(audio, {
+            volume: newVolume,
+            duration: 0.2,
+            ease: 'power2.out',
+            onComplete: () => {
+              volumeTweenRef.current = null;
+            }
+          });
+          break;
+        }
+        default:
+          break;
       }
     };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
+
+    window.addEventListener('keydown', handleKeyDown);
+
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isPlaying]);
-  
+  }, [audioSrcs]);
+
   const value = {
-    // Referencias
     audioRef,
-    audioRefs,
     audioContextRef,
     analyserRef,
     dataArrayRef,
     timeDataArrayRef,
-    
-    // Estados
-    currentIndex,
     isPlaying,
-    isLoaded,
-    loadingProgress,
-    audioDurations,
-    audioSrcs,
     isInitialized,
-    
-    // Métodos
+    loadingProgress,
+    isLoaded,
     play,
     pause,
+    togglePlayPause,
+    currentIndex,
+    audioSrcs,
+    audioDurations,
     seekToAudio,
-    switchToAudio,
     getTotalDuration,
-    getTotalElapsed,
-    
-    // Utilidades
-    isMobile,
-    isIOS,
-    isChromeIOS,
-    isSafariIOS
+    getTotalElapsed
   };
+
+  // Determinar si debemos renderizar múltiples elementos audio
+  // Chrome iOS también necesita múltiples elementos cuando hay múltiples audios
+  const shouldRenderMultipleAudios = (isSafariIOS && audioSrcs.length > 1) || (isChromeIOS && audioSrcs.length > 1);
   
   return (
-    <AudioContext.Provider value={value}>
+    <AudioContextReact.Provider value={value}>
       {children}
-      {/* Los elementos de audio se crean dinámicamente, no necesitan renderizarse aquí */}
-    </AudioContext.Provider>
+      {/* Renderizar elementos <audio> reales para móviles con múltiples audios */}
+      {shouldRenderMultipleAudios && audioElementsRef.current.length > 0 ? (
+        audioElementsRef.current.map((audio, index) => {
+          // Asignar ref solo al elemento actual
+          const audioRef = index === currentIndex ? currentAudioRef : null;
+          return (
+            <audio
+              key={`audio-mobile-${index}`}
+              ref={audioRef}
+              crossOrigin="anonymous"
+              playsInline
+              className="audio-context"
+              style={{ display: 'none' }}
+            />
+          );
+        })
+      ) : (
+        <>
+          {/* Desktop: elementos audio normales */}
+          <audio
+            ref={currentAudioRef}
+            crossOrigin="anonymous"
+            playsInline
+            className="audio-context"
+          />
+          <audio
+            ref={nextAudioRef}
+            crossOrigin="anonymous"
+            playsInline
+            className="audio-context"
+            style={{ display: 'none' }}
+          />
+        </>
+      )}
+    </AudioContextReact.Provider>
   );
-};
-
-/**
- * Hook para usar el AudioContext
- */
-export const useAudio = () => {
-  const context = useContext(AudioContext);
-  
-  if (!context) {
-    throw new Error('useAudio debe usarse dentro de AudioProvider');
-  }
-  
-  return context;
 };
 

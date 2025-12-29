@@ -303,46 +303,22 @@ const Croquetas25 = () => {
   const lastDiagonalTimeRef = useRef(0);
   const minTimeBetweenDiagonals = 500; // 0.5 segundos - permitir más diagonales
 
-  const triggerSquare = useCallback((type, data) => {
-    console.log('[Croquetas25] triggerSquare llamado', { type, data, audioStarted });
-    if (!audioStarted) {
-      console.log('[Croquetas25] triggerSquare: audioStarted es false, retornando');
-      return;
-    }
+  const triggerSquare = (type, data) => {
+    if (!audioStarted) return;
     
     const timestamp = Date.now();
     const timeSinceLastSquare = timestamp - lastSquareTimeRef.current;
-    
-    if (timeSinceLastSquare < minTimeBetweenSquares) {
-      console.log(`[Croquetas25] triggerSquare: muy pronto desde el último (${timeSinceLastSquare}ms < ${minTimeBetweenSquares}ms)`);
-      return;
+    if (timeSinceLastSquare >= minTimeBetweenSquares && triggerCallbackRef.current) {
+      try {
+        triggerCallbackRef.current(type, { timestamp, ...data });
+        lastSquareTimeRef.current = timestamp;
+      } catch (error) {
+        console.error(`[Croquetas25] ${type} square callback ERROR:`, error.message);
+      }
     }
-    
-    if (!triggerCallbackRef.current) {
-      console.warn('[Croquetas25] triggerSquare: triggerCallbackRef.current es null', {
-        hasRef: !!triggerCallbackRef,
-        hasCurrent: !!triggerCallbackRef?.current,
-        type: typeof triggerCallbackRef?.current
-      });
-      return;
-    }
-    
-    try {
-      console.log('[Croquetas25] triggerSquare: llamando triggerCallbackRef.current', { type, data });
-      triggerCallbackRef.current(type, { timestamp, ...data });
-      lastSquareTimeRef.current = timestamp;
-    } catch (error) {
-      console.error(`[Croquetas25] ${type} square callback ERROR:`, error.message, error.stack);
-    }
-  }, [audioStarted]);
+  };
 
-  const triggerDiagonal = useCallback((intensity, voiceEnergy = 0, type = '') => {
-    console.log('[Croquetas25] triggerDiagonal llamado', { intensity, voiceEnergy, type, audioStarted });
-    if (!audioStarted) {
-      console.log('[Croquetas25] triggerDiagonal: audioStarted es false, retornando');
-      return;
-    }
-    
+  const triggerDiagonal = (intensity, voiceEnergy = 0, type = '') => {
     const timestamp = Date.now();
     const timeSinceLastDiagonal = timestamp - lastDiagonalTimeRef.current;
     
@@ -351,51 +327,29 @@ const Croquetas25 = () => {
     // Esto permite más diagonales cuando la música es más intensa
     const dynamicMinTime = 100 + (1900 * (1 - intensity));
     
-    if (timeSinceLastDiagonal < dynamicMinTime) {
-      console.log(`[Croquetas25] triggerDiagonal: muy pronto desde el último (${timeSinceLastDiagonal}ms < ${dynamicMinTime}ms)`);
-      return;
+    if (timeSinceLastDiagonal >= dynamicMinTime && 
+        voiceCallbackRef.current && 
+        typeof voiceCallbackRef.current === 'function') {
+      try {
+        voiceCallbackRef.current(intensity, voiceEnergy);
+        lastDiagonalTimeRef.current = timestamp;
+      } catch (error) {
+        console.error(`[Croquetas25] ${type} diagonal callback ERROR:`, error.message);
+      }
     }
-    
-    if (!voiceCallbackRef.current || typeof voiceCallbackRef.current !== 'function') {
-      console.warn('[Croquetas25] triggerDiagonal: voiceCallbackRef.current no es una función', {
-        hasRef: !!voiceCallbackRef,
-        hasCurrent: !!voiceCallbackRef?.current,
-        type: typeof voiceCallbackRef?.current
-      });
-      return;
-    }
-    
-    try {
-      console.log('[Croquetas25] triggerDiagonal: llamando voiceCallbackRef.current', { intensity, voiceEnergy });
-      voiceCallbackRef.current(intensity, voiceEnergy);
-      lastDiagonalTimeRef.current = timestamp;
-    } catch (error) {
-      console.error(`[Croquetas25] ${type} diagonal callback ERROR:`, error.message, error.stack);
-    }
-  }, [audioStarted]);
+  };
 
-  // Handlers para beats y voces - llaman directamente a los triggers
-  const handleBeat = useCallback((intensity = 0.5, shouldBeSolid = false) => {
-    console.log('[Croquetas25] handleBeat llamado', { intensity, shouldBeSolid, isPausedByHold, audioStarted });
-    if (isPausedByHold || !audioStarted) {
-      console.log('[Croquetas25] handleBeat: condiciones no cumplidas, retornando');
-      return;
-    }
-    console.log('[Croquetas25] handleBeat: llamando triggerSquare y triggerDiagonal');
+  const handleBeat = (intensity = 0.5, shouldBeSolid = false) => {
+    if (isPausedByHold || !audioStarted) return;
     triggerSquare('beat', { intensity, shouldBeSolid });
     triggerDiagonal(intensity, 0, 'beat');
-  }, [isPausedByHold, audioStarted, triggerSquare, triggerDiagonal]);
+  };
 
-  const handleVoice = useCallback((intensity = 0.5, voiceEnergy = 0) => {
-    console.log('[Croquetas25] handleVoice llamado', { intensity, voiceEnergy, isPausedByHold, audioStarted });
-    if (isPausedByHold || !audioStarted) {
-      console.log('[Croquetas25] handleVoice: condiciones no cumplidas, retornando');
-      return;
-    }
-    console.log('[Croquetas25] handleVoice: llamando triggerDiagonal y triggerSquare');
+  const handleVoice = (intensity = 0.5, voiceEnergy = 0) => {
+    if (isPausedByHold || !audioStarted) return;
     triggerDiagonal(intensity, voiceEnergy, 'voice');
     triggerSquare('voice', { intensity, voiceEnergy });
-  }, [isPausedByHold, audioStarted, triggerSquare, triggerDiagonal]);
+  };
 
   // Controles de teclado para audio - se manejan dentro de AudioProvider
 
@@ -463,9 +417,7 @@ const Croquetas25 = () => {
             typewriterInstanceRef={typewriterInstanceRef}
           />
           <LoadingProgressHandler onTriggerCallbackRef={triggerCallbackRef} audioStarted={audioStarted} />
-          {audioStarted && (
-            <AudioAnalyzer onBeat={handleBeat} onVoice={handleVoice} />
-          )}
+          <AudioAnalyzer onBeat={handleBeat} onVoice={handleVoice} />
           <SeekWrapper />
           {audioStarted && selectedTrack && (
             <SubfolderAudioController selectedTrack={selectedTrack} />
@@ -846,17 +798,6 @@ const UnifiedContentManager = ({
 const BackgroundWrapper = ({ onTriggerCallbackRef, onVoiceCallbackRef, selectedTrack, showOnlyDiagonales = false, onAllComplete }) => {
   const { analyserRef, dataArrayRef, isInitialized, currentIndex, pause } = useAudio();
   
-  // Log para debug
-  useEffect(() => {
-    console.log('[BackgroundWrapper] Props actualizados:', {
-      hasTriggerRef: !!onTriggerCallbackRef,
-      hasVoiceRef: !!onVoiceCallbackRef,
-      showOnlyDiagonales,
-      triggerRefCurrent: !!onTriggerCallbackRef?.current,
-      voiceRefCurrent: !!onVoiceCallbackRef?.current
-    });
-  }, [onTriggerCallbackRef, onVoiceCallbackRef, showOnlyDiagonales]);
-  
   return (
     <Background 
       onTriggerCallbackRef={showOnlyDiagonales ? null : onTriggerCallbackRef} 
@@ -1014,47 +955,29 @@ const GuionManager = ({ selectedTrack, typewriterInstanceRef, isPausedByHold }) 
 };
 
 const PromptWrapper = ({ textos, typewriterInstanceRef, isPausedByHold }) => {
-  const { audioRef, analyserRef, getTotalElapsed, getTotalDuration, audioDurations } = useAudio();
+  const { audioRef, analyserRef } = useAudio();
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   
   useEffect(() => {
     if (!audioRef?.current) return;
     
+    const audio = audioRef.current;
     const updateTime = () => {
-      // Usar getTotalElapsed para obtener el tiempo total de todos los audios
-      const totalElapsed = getTotalElapsed();
-      const totalDuration = getTotalDuration();
-      
-      setCurrentTime(totalElapsed);
-      if (totalDuration > 0) {
-        setDuration(totalDuration);
-      }
+      setCurrentTime(audio.currentTime);
+      if (audio.duration) setDuration(audio.duration);
     };
     
-    const audio = audioRef.current;
     audio.addEventListener('timeupdate', updateTime);
     audio.addEventListener('loadedmetadata', () => {
-      const totalDuration = getTotalDuration();
-      if (totalDuration > 0) {
-        setDuration(totalDuration);
-      }
+      if (audio.duration) setDuration(audio.duration);
     });
-    
-    // Actualizar inmediatamente
-    updateTime();
-    
-    // También actualizar cuando cambian las duraciones
-    const totalDuration = getTotalDuration();
-    if (totalDuration > 0) {
-      setDuration(totalDuration);
-    }
     
     return () => {
       audio.removeEventListener('timeupdate', updateTime);
       audio.removeEventListener('loadedmetadata', () => {});
     };
-  }, [audioRef, getTotalElapsed, getTotalDuration, audioDurations]);
+  }, [audioRef]);
   
   return (
     <Prompt 
