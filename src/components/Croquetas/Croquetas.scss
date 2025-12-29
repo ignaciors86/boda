@@ -18,3 +18,23 @@
     -ms-user-select: none;
   }
 }
+
+.croquetas-start-croqueta {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1500;
+  cursor: pointer;
+  pointer-events: auto;
+  will-change: opacity, transform;
+}
+
+.croquetas-start-croqueta__button {
+  width: 20vw;
+  height: 20vw;
+  min-width: 15vw;
+  min-height: 15vw;
+  max-width: 25vw;
+  max-height: 25vw;
+}

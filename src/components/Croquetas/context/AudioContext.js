@@ -21,38 +21,90 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
   const volumeRef = useRef(1);
   const playAudioRef = useRef(null);
 
+  // Logging para debug
+  useEffect(() => {
+    if (audioSrcs.length > 0) {
+      console.log('[AudioContext] AudioSrcs recibidos:', audioSrcs);
+      audioSrcs.forEach((src, idx) => {
+        console.log(`[AudioContext] Audio ${idx}: ${src} (tipo: ${typeof src})`);
+      });
+    }
+  }, [audioSrcs]);
+
   // Crear elementos de audio para cada src
   useEffect(() => {
     // Limpiar audios anteriores
     audioElementsRef.current.forEach(audio => {
       if (audio) {
         audio.pause();
+        audio.removeEventListener('loadedmetadata', () => {});
+        audio.removeEventListener('error', () => {});
+        audio.removeEventListener('ended', () => {});
         audio.src = '';
         audio.load();
       }
     });
     audioElementsRef.current = [];
+    setAudioDurations([]);
 
     // Crear nuevos elementos de audio
-    const validSrcs = audioSrcs.filter(src => typeof src === 'string' && src.length > 0);
+    const validSrcs = audioSrcs.filter(src => {
+      if (typeof src !== 'string' || src.length === 0) {
+        console.warn('[AudioContext] Fuente de audio inválida (no es string o está vacía):', src);
+        return false;
+      }
+      // Verificar que la URL sea válida
+      try {
+        // Si es una URL absoluta, validarla
+        if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('//')) {
+          new URL(src);
+        }
+        // Si es relativa, también es válida
+        return true;
+      } catch (e) {
+        console.warn('[AudioContext] URL de audio inválida:', src, e);
+        return false;
+      }
+    });
+    
+    if (validSrcs.length === 0) {
+      console.warn('[AudioContext] No hay fuentes de audio válidas. AudioSrcs recibidos:', audioSrcs);
+      return;
+    }
+    
+    console.log('[AudioContext] Creando', validSrcs.length, 'elementos de audio');
     
     validSrcs.forEach((src, index) => {
       const audio = new Audio();
-      audio.src = src;
-      audio.preload = 'auto';
-      audio.volume = 0;
       
-      audio.addEventListener('loadedmetadata', () => {
-        setAudioDurations(prev => {
-          const newDurations = [...prev];
-          newDurations[index] = audio.duration;
-          return newDurations;
+      // Manejar errores de carga
+      const handleError = (e) => {
+        console.error(`[AudioContext] Error cargando audio ${index} (${src}):`, e);
+        console.error(`[AudioContext] Error details:`, {
+          code: audio.error?.code,
+          message: audio.error?.message,
+          networkState: audio.networkState,
+          readyState: audio.readyState
         });
-      });
-
-      audio.addEventListener('ended', () => {
-        // Cuando termina un audio, pasar al siguiente
-        // Solo si este es el audio actual
+      };
+      
+      audio.addEventListener('error', handleError);
+      
+      // Manejar metadata cargada
+      const handleLoadedMetadata = () => {
+        if (audio.duration && isFinite(audio.duration)) {
+          setAudioDurations(prev => {
+            const newDurations = [...prev];
+            newDurations[index] = audio.duration;
+            return newDurations;
+          });
+        }
+      };
+      
+      audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+      
+      // Manejar cuando el audio termina
+      const handleEnded = () => {
         setCurrentIndex(prevIndex => {
           if (prevIndex === index && index < validSrcs.length - 1 && playAudioRef.current) {
             playAudioRef.current(index + 1, 0);
@@ -60,7 +112,21 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           }
           return prevIndex;
         });
-      });
+      };
+      
+      audio.addEventListener('ended', handleEnded);
+      
+      // Configurar audio
+      audio.preload = 'auto';
+      audio.volume = 0;
+      
+      // Intentar cargar el audio
+      try {
+        audio.src = src;
+        audio.load();
+      } catch (error) {
+        console.error(`[AudioContext] Error configurando audio ${index}:`, error);
+      }
 
       audioElementsRef.current.push(audio);
     });
@@ -69,6 +135,9 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       audioElementsRef.current.forEach(audio => {
         if (audio) {
           audio.pause();
+          audio.removeEventListener('loadedmetadata', () => {});
+          audio.removeEventListener('error', () => {});
+          audio.removeEventListener('ended', () => {});
           audio.src = '';
           audio.load();
         }
@@ -104,9 +173,17 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
 
   // Reproducir audio en un índice específico
   const playAudio = useCallback(async (index, startTime = 0) => {
-    if (index < 0 || index >= audioElementsRef.current.length) return;
+    if (index < 0 || index >= audioElementsRef.current.length) {
+      console.warn('[AudioContext] Índice de audio inválido:', index);
+      return;
+    }
 
     const newAudio = audioElementsRef.current[index];
+    if (!newAudio) {
+      console.warn('[AudioContext] No hay audio en el índice:', index);
+      return;
+    }
+
     const oldIndex = currentIndex;
     const oldAudio = audioElementsRef.current[oldIndex];
 
@@ -118,6 +195,49 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           resolve();
         }, oldIndex);
       });
+    }
+
+    // Verificar que el nuevo audio esté listo
+    if (newAudio.readyState === 0) {
+      console.warn('[AudioContext] Audio no está listo (readyState: 0), esperando...');
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Timeout esperando a que el audio se cargue'));
+        }, 5000);
+        
+        const handleCanPlay = () => {
+          clearTimeout(timeout);
+          newAudio.removeEventListener('canplay', handleCanPlay);
+          newAudio.removeEventListener('error', handleError);
+          resolve();
+        };
+        
+        const handleError = (e) => {
+          clearTimeout(timeout);
+          newAudio.removeEventListener('canplay', handleCanPlay);
+          newAudio.removeEventListener('error', handleError);
+          reject(new Error(`Error cargando audio: ${newAudio.error?.message || 'Unknown error'}`));
+        };
+        
+        if (newAudio.readyState >= 2) {
+          clearTimeout(timeout);
+          resolve();
+        } else {
+          newAudio.addEventListener('canplay', handleCanPlay);
+          newAudio.addEventListener('error', handleError);
+        }
+      });
+    }
+
+    // Verificar que no haya errores
+    if (newAudio.error) {
+      console.error('[AudioContext] Error en el audio:', {
+        code: newAudio.error.code,
+        message: newAudio.error.message,
+        src: newAudio.src
+      });
+      setIsPlaying(false);
+      return;
     }
 
     // Cambiar índice
@@ -136,6 +256,12 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       fadeVolume(1, 0.5, null, index);
     } catch (error) {
       console.error('[AudioContext] Error playing audio:', error);
+      console.error('[AudioContext] Audio state:', {
+        readyState: newAudio.readyState,
+        networkState: newAudio.networkState,
+        error: newAudio.error,
+        src: newAudio.src
+      });
       setIsPlaying(false);
     }
   }, [fadeVolume, currentIndex]);
@@ -162,7 +288,52 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
   // Reanudar con fade in
   const play = useCallback(async () => {
     const currentAudio = audioElementsRef.current[currentIndex];
-    if (!currentAudio) return;
+    if (!currentAudio) {
+      console.warn('[AudioContext] No hay audio disponible en el índice', currentIndex);
+      return;
+    }
+
+    // Verificar que el audio esté listo
+    if (currentAudio.readyState === 0) {
+      console.warn('[AudioContext] Audio no está listo (readyState: 0), esperando...');
+      // Esperar a que el audio se cargue
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Timeout esperando a que el audio se cargue'));
+        }, 5000);
+        
+        const handleCanPlay = () => {
+          clearTimeout(timeout);
+          currentAudio.removeEventListener('canplay', handleCanPlay);
+          currentAudio.removeEventListener('error', handleError);
+          resolve();
+        };
+        
+        const handleError = (e) => {
+          clearTimeout(timeout);
+          currentAudio.removeEventListener('canplay', handleCanPlay);
+          currentAudio.removeEventListener('error', handleError);
+          reject(new Error(`Error cargando audio: ${currentAudio.error?.message || 'Unknown error'}`));
+        };
+        
+        if (currentAudio.readyState >= 2) {
+          clearTimeout(timeout);
+          resolve();
+        } else {
+          currentAudio.addEventListener('canplay', handleCanPlay);
+          currentAudio.addEventListener('error', handleError);
+        }
+      });
+    }
+
+    // Verificar que no haya errores
+    if (currentAudio.error) {
+      console.error('[AudioContext] Error en el audio:', {
+        code: currentAudio.error.code,
+        message: currentAudio.error.message
+      });
+      return;
+    }
 
     try {
       await currentAudio.play();
@@ -170,6 +341,12 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       fadeVolume(1, 0.5, null, currentIndex);
     } catch (error) {
       console.error('[AudioContext] Error resuming audio:', error);
+      console.error('[AudioContext] Audio state:', {
+        readyState: currentAudio.readyState,
+        networkState: currentAudio.networkState,
+        error: currentAudio.error,
+        src: currentAudio.src
+      });
     }
   }, [fadeVolume, currentIndex]);
 
