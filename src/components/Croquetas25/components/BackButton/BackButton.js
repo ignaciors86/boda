@@ -1,13 +1,16 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { gsap } from 'gsap';
+import { useAudio } from '../../context/AudioContext';
 import Croqueta from '../Croqueta/Croqueta';
 import './BackButton.scss';
 
 const MAINCLASS = 'backButton';
 
-const BackButton = ({ onBack, audioRef, pause }) => {
+const BackButton = ({ onBack }) => {
   const navigate = useNavigate();
+  // useAudio está disponible porque BackButton se renderiza dentro de AudioProvider
+  const { pause, audioRef } = useAudio();
   const buttonRef = React.useRef(null);
   const croquetaWrapperRef = React.useRef(null);
   const animationRef = React.useRef(null);
@@ -45,6 +48,7 @@ const BackButton = ({ onBack, audioRef, pause }) => {
     const exitTimeline = gsap.timeline();
     exitTimeline.to(buttonRef.current, exitProps);
     
+    // Pausar audio si está disponible y está reproduciéndose
     if (pause && typeof pause === 'function' && audioRef?.current && !audioRef.current.paused) {
       try {
         await pause();
