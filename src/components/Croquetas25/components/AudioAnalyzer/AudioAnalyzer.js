@@ -72,34 +72,14 @@ const AudioAnalyzer = ({ onBeat, onVoice, onAudioData }) => {
     // Verificar que el audio esté realmente reproduciéndose antes de analizar
     // Usar isPlaying del contexto y también verificar el estado del audio
     // Ser más permisivo: si el audio existe y tiene datos, intentar analizar
+    const isAudioPlaying = audio && !audio.paused && (isPlaying || audio.currentTime > 0);
     const minReadyState = 2; // readyState 2 = HAVE_CURRENT_DATA (suficiente para análisis)
     
-    // Verificar que el audio existe y tiene datos cargados
-    if (!audio) {
-      console.log(`[AudioAnalyzer] No audio element available`);
+    if (!audio || audio.readyState < minReadyState) {
+      console.log(`[AudioAnalyzer] Audio not ready yet | isPlaying: ${isPlaying} | paused: ${audio?.paused} | readyState: ${audio?.readyState} | currentTime: ${audio?.currentTime}`);
       return;
     }
     
-    // Verificar que el audio no tenga errores de carga
-    if (audio.error) {
-      console.warn(`[AudioAnalyzer] Audio has error:`, {
-        error: audio.error,
-        code: audio.error?.code,
-        message: audio.error?.message,
-        networkState: audio.networkState,
-        readyState: audio.readyState
-      });
-      return;
-    }
-    
-    // Verificar que el audio tenga datos cargados
-    if (audio.readyState < minReadyState) {
-      console.log(`[AudioAnalyzer] Audio not ready yet | isPlaying: ${isPlaying} | paused: ${audio?.paused} | readyState: ${audio?.readyState} | currentTime: ${audio?.currentTime} | networkState: ${audio?.networkState}`);
-      return;
-    }
-    
-    // Verificar que el audio esté reproduciéndose
-    const isAudioPlaying = !audio.paused && (isPlaying || audio.currentTime > 0);
     if (!isAudioPlaying) {
       console.log(`[AudioAnalyzer] Audio not playing | isPlaying: ${isPlaying} | paused: ${audio?.paused} | currentTime: ${audio?.currentTime}`);
       return;
