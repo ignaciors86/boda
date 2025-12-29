@@ -24,7 +24,7 @@ const AudioAnalyzer = ({ onBeat, onVoice, onAudioData }) => {
   };
 
   useEffect(() => {
-    console.log(`[AudioAnalyzer] useEffect triggered | analyserRef.current exists: ${!!analyserRef.current} | dataArrayRef.current exists: ${!!dataArrayRef.current} | isInitialized: ${isInitialized} | currentIndex: ${currentIndex} | isPlaying: ${isPlaying} | onBeat exists: ${!!onBeat} | timestamp: ${Date.now()}`);
+    console.log(`[AudioAnalyzer] useEffect triggered | analyserRef.current exists: ${!!analyserRef.current} | dataArrayRef.current exists: ${!!dataArrayRef.current} | isInitialized: ${isInitialized} | onBeat exists: ${!!onBeat} | timestamp: ${Date.now()}`);
     
     // Esperar a que los refs estén disponibles y el audio esté realmente funcionando
     if (!isInitialized) {
@@ -105,7 +105,7 @@ const AudioAnalyzer = ({ onBeat, onVoice, onAudioData }) => {
       return;
     }
 
-    console.log(`[AudioAnalyzer] Starting analysis loop | analyser.fftSize: ${analyserRef.current.fftSize} | frequencyBinCount: ${analyserRef.current.frequencyBinCount} | dataArray.length: ${dataArrayRef.current.length} | isPlaying: ${isPlaying} | audio.paused: ${audio?.paused} | currentIndex: ${currentIndex} | onBeat exists: ${!!onBeat} | onVoice exists: ${!!onVoice}`);
+    console.log(`[AudioAnalyzer] Starting analysis loop | analyser.fftSize: ${analyserRef.current.fftSize} | frequencyBinCount: ${analyserRef.current.frequencyBinCount} | dataArray.length: ${dataArrayRef.current.length} | isPlaying: ${isPlaying} | audio.paused: ${audio?.paused} | onBeat exists: ${!!onBeat} | onVoice exists: ${!!onVoice}`);
     let animationFrameId;
 
     // Función auxiliar para calcular el centroide espectral

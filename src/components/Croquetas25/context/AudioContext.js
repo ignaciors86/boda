@@ -398,6 +398,47 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
   }, [audioSrcs, isMobile, isIOS, isSafariIOS, connectAudioToContext]);
   
   /**
+   * Cambiar al audio en el índice especificado
+   */
+  const switchToAudio = useCallback((index, time = 0) => {
+    if (index < 0 || index >= audioRefs.current.length) {
+      console.warn(`[AudioContext] Índice inválido: ${index}`);
+      return;
+    }
+    
+    const wasPlaying = isPlaying;
+    const previousAudio = audioRef.current;
+    
+    // Pausar audio anterior
+    if (previousAudio && !previousAudio.paused) {
+      previousAudio.pause();
+    }
+    
+    // Cambiar al nuevo audio
+    const newAudio = audioRefs.current[index];
+    audioRef.current = newAudio;
+    setCurrentIndex(index);
+    
+    // Establecer tiempo
+    if (time >= 0 && newAudio.duration) {
+      newAudio.currentTime = Math.min(time, newAudio.duration);
+    }
+    
+    // Reconectar al AudioContext (solo si no se está desmontando)
+    if (!isUnmountingRef.current && newAudio && audioContextRef.current) {
+      // Verificar que el AudioContext no esté cerrado
+      if (audioContextRef.current.state !== 'closed') {
+        connectAudioToContext(newAudio);
+      }
+    }
+    
+    // Reanudar reproducción si estaba reproduciéndose
+    if (wasPlaying) {
+      play();
+    }
+  }, [isPlaying, connectAudioToContext]);
+  
+  /**
    * Reproducir audio
    */
   const play = useCallback(async () => {
@@ -519,51 +560,6 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
   }, []);
   
   /**
-   * Cambiar al audio en el índice especificado
-   */
-  const switchToAudio = useCallback(async (index, time = 0) => {
-    if (index < 0 || index >= audioRefs.current.length) {
-      console.warn(`[AudioContext] Índice inválido: ${index}`);
-      return;
-    }
-    
-    const wasPlaying = isPlaying;
-    const previousAudio = audioRef.current;
-    
-    // Pausar audio anterior
-    if (previousAudio && !previousAudio.paused) {
-      previousAudio.pause();
-    }
-    
-    // Cambiar al nuevo audio
-    const newAudio = audioRefs.current[index];
-    audioRef.current = newAudio;
-    setCurrentIndex(index);
-    
-    // Establecer tiempo
-    if (time >= 0 && newAudio.duration) {
-      newAudio.currentTime = Math.min(time, newAudio.duration);
-    }
-    
-    // Reconectar al AudioContext (solo si no se está desmontando)
-    if (!isUnmountingRef.current && newAudio && audioContextRef.current) {
-      // Verificar que el AudioContext no esté cerrado
-      if (audioContextRef.current.state !== 'closed') {
-        console.log(`[AudioContext] Reconectando audio ${index} al AudioContext`);
-        connectAudioToContext(newAudio);
-        // Dar un pequeño delay para asegurar que la conexión se complete
-        await new Promise(resolve => setTimeout(resolve, 100));
-        console.log(`[AudioContext] Audio ${index} reconectado, readyState: ${newAudio.readyState}`);
-      }
-    }
-    
-    // Reanudar reproducción si estaba reproduciéndose
-    if (wasPlaying) {
-      await play();
-    }
-  }, [isPlaying, connectAudioToContext, play]);
-  
-  /**
    * Seek a una posición específica en un audio específico
    */
   const seekToAudio = useCallback(async (audioIndex, timeInAudio = 0) => {
@@ -576,8 +572,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     
     // Si estamos cambiando de audio, hacer switch
     if (audioIndex !== currentIndex) {
-      console.log(`[AudioContext] Cambiando de audio ${currentIndex} a ${audioIndex}`);
-      await switchToAudio(audioIndex, timeInAudio);
+      switchToAudio(audioIndex, timeInAudio);
       return;
     }
     
@@ -586,17 +581,12 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       const targetTime = Math.max(0, Math.min(timeInAudio, audioRef.current.duration || 0));
       audioRef.current.currentTime = targetTime;
       
-      // Asegurar que el audio esté conectado al AudioContext
-      if (!isUnmountingRef.current && audioContextRef.current && audioContextRef.current.state !== 'closed') {
-        connectAudioToContext(audioRef.current);
-      }
-      
       // Si estaba reproduciéndose, asegurar que siga reproduciéndose
       if (wasPlaying && audioRef.current.paused) {
         await play();
       }
     }
-  }, [currentIndex, isPlaying, switchToAudio, play, connectAudioToContext]);
+  }, [currentIndex, isPlaying, switchToAudio, play]);
   
   /**
    * Obtener duración total de todos los audios
