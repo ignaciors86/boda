@@ -85,20 +85,48 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           message: audio.error?.message,
           networkState: audio.networkState,
           readyState: audio.readyState,
-          src: audio.src
+          src: audio.src,
+          crossOrigin: audio.crossOrigin
         });
         
-        // Intentar verificar si el archivo existe
-        fetch(src, { method: 'HEAD' })
+        // Si es un error de CORS y estamos usando crossOrigin, intentar sin él
+        if (audio.error && audio.error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED && audio.crossOrigin) {
+          console.warn(`[AudioContext] Posible error CORS, intentando sin crossOrigin para audio ${index}`);
+          audio.crossOrigin = null;
+          audio.src = '';
+          audio.src = src.startsWith('/') || src.startsWith('http') ? src : `/${src}`;
+          audio.load();
+          return;
+        }
+        
+        // Verificar si el archivo existe y si hay problemas de CORS
+        const audioSrc = src.startsWith('/') || src.startsWith('http') ? src : `/${src}`;
+        fetch(audioSrc, { method: 'HEAD', mode: 'cors' })
           .then(response => {
             if (!response.ok) {
-              console.error(`[AudioContext] Archivo no encontrado o no accesible: ${src} (Status: ${response.status})`);
+              console.error(`[AudioContext] Archivo no encontrado o no accesible: ${audioSrc} (Status: ${response.status})`);
             } else {
-              console.warn(`[AudioContext] Archivo existe pero no se puede cargar en audio element: ${src}`);
+              const corsHeader = response.headers.get('Access-Control-Allow-Origin');
+              console.warn(`[AudioContext] Archivo existe pero no se puede cargar. CORS header: ${corsHeader || 'no presente'}`);
+              if (!corsHeader && audio.crossOrigin) {
+                console.warn(`[AudioContext] El servidor no envía headers CORS. Intentando sin crossOrigin...`);
+                audio.crossOrigin = null;
+                audio.src = '';
+                audio.src = audioSrc;
+                audio.load();
+              }
             }
           })
           .catch(fetchError => {
-            console.error(`[AudioContext] Error verificando archivo: ${src}`, fetchError);
+            console.error(`[AudioContext] Error verificando archivo: ${audioSrc}`, fetchError);
+            // Si fetch falla por CORS, intentar sin crossOrigin
+            if (fetchError.name === 'TypeError' && audio.crossOrigin) {
+              console.warn(`[AudioContext] Error CORS detectado, intentando sin crossOrigin para audio ${index}`);
+              audio.crossOrigin = null;
+              audio.src = '';
+              audio.src = audioSrc;
+              audio.load();
+            }
           });
       };
       
@@ -148,13 +176,30 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       // Configurar audio
       audio.preload = 'auto';
       audio.volume = 0;
-      audio.crossOrigin = 'anonymous'; // Permitir CORS si es necesario
+      
+      // Determinar si necesitamos CORS basado en la URL
+      const isSameOrigin = !src.startsWith('http://') && !src.startsWith('https://') && !src.startsWith('//');
+      
+      // Para archivos estáticos en el mismo origen (como /tracks/...), NO usar crossOrigin
+      // Esto evita problemas de CORS innecesarios ya que Vercel ya envía los headers CORS
+      // Solo usar crossOrigin para URLs externas
+      if (!isSameOrigin) {
+        // URL externa: necesitamos crossOrigin
+        audio.crossOrigin = 'anonymous';
+        console.log(`[AudioContext] URL externa detectada, usando crossOrigin='anonymous' para audio ${index}`);
+      } else {
+        // Mismo origen: NO usar crossOrigin (los headers CORS de Vercel son suficientes)
+        audio.crossOrigin = null;
+        console.log(`[AudioContext] Mismo origen detectado, sin crossOrigin para audio ${index}`);
+      }
       
       // Intentar cargar el audio
       try {
         // Asegurar que la URL sea absoluta si es relativa
         const audioSrc = src.startsWith('/') || src.startsWith('http') ? src : `/${src}`;
-        console.log(`[AudioContext] Configurando audio ${index} con src:`, audioSrc);
+        console.log(`[AudioContext] Configurando audio ${index} con src:`, audioSrc, 'crossOrigin:', audio.crossOrigin || 'null (same-origin)');
+        
+        // Configurar src y cargar
         audio.src = audioSrc;
         audio.load();
       } catch (error) {
