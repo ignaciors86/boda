@@ -95,7 +95,6 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
   const currentIndexRef = useRef(currentIndex); // Ref para currentIndex
   const isChangingFromEndedRef = useRef(false); // Flag para evitar interferencia del useEffect principal
   const iosPreloadAudioElementsRef = useRef([]); // Refs para elementos Audio de pre-carga en iOS
-  const audioRetryCountRef = useRef(new Map()); // Contador de reintentos por URL de audio para evitar bucles infinitos
 
   // El audioRef que se expone es siempre el actual
   const audioRef = currentAudioRef;
@@ -213,57 +212,9 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           if (!resolved) {
             resolved = true;
             cleanup();
-            const error = audio.error;
-            if (error) {
-              const audioSrc = audio.src;
-              const maxRetries = 2; // Máximo de 2 reintentos en pre-carga
-              const currentRetries = audioRetryCountRef.current.get(audioSrc) || 0;
-              
-              console.error(`[AudioContext] Error pre-cargando audio ${i}:`, {
-                code: error.code,
-                message: error.message,
-                src: audioSrc,
-                networkState: audio.networkState,
-                readyState: audio.readyState,
-                retries: `${currentRetries}/${maxRetries}`
-              });
-              
-              // Si es un error de demuxer (código 4), el archivo no existe o está corrupto
-              if (error.code === 4) {
-                // Validar que la URL sea válida
-                const isValidUrl = audioSrc && 
-                  (audioSrc.startsWith('http://') || 
-                   audioSrc.startsWith('https://') || 
-                   audioSrc.startsWith('/static/') ||
-                   audioSrc.startsWith('data:') ||
-                   audioSrc.includes('.mp3'));
-                
-                if (!isValidUrl) {
-                  console.error(`[AudioContext] Error DEMUXER: URL de audio inválida (parece ser una ruta de navegación): ${audioSrc}`);
-                  resolve();
-                  return;
-                }
-                
-                // Si ya se intentó demasiadas veces, no reintentar
-                if (currentRetries >= maxRetries) {
-                  console.error(`[AudioContext] Error DEMUXER: Máximo de reintentos alcanzado (${maxRetries}) para: ${audioSrc}`);
-                  resolve();
-                  return;
-                }
-                
-                // Incrementar contador de reintentos
-                audioRetryCountRef.current.set(audioSrc, currentRetries + 1);
-                
-                // Intentar recargar con un delay (solo si no se ha excedido el límite)
-                setTimeout(() => {
-                  if (audio.src && audioRetryCountRef.current.get(audio.src) <= maxRetries) {
-                    console.log(`[AudioContext] Reintentando cargar audio ${i} (intento ${currentRetries + 1}/${maxRetries})...`);
-                    audio.load();
-                  }
-                }, 2000);
-              }
-            } else {
-              console.warn(`[AudioContext] Error pre-cargando audio ${i} (sin detalles), continuando...`);
+            // Log simple del error, sin reintentos
+            if (audio.error) {
+              console.warn(`[AudioContext] Error pre-cargando audio ${i}:`, audio.error.message);
             }
             resolve();
           }
@@ -343,8 +294,6 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     // Resetear estado de pre-carga cuando cambian los audios
     setPreloadedAudios(false);
     setPreloadProgress(0);
-    // Resetear contadores de reintentos cuando cambian los audios
-    audioRetryCountRef.current.clear();
     
     if (!validAudioSrcs || validAudioSrcs.length === 0) {
       setAudioDurations([]);
@@ -398,11 +347,10 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
               }
             };
 
-            const handleError = (e) => {
+            const handleError = () => {
               if (!resolved) {
                 cleanup();
                 resolved = true;
-                console.warn(`[AudioContext] Error loading duration for audio ${i}:`, audio.error);
                 durations[i] = 0;
                 resolve();
               }
@@ -602,26 +550,6 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
                 });
               } catch (playErr) {
                 console.warn('[AudioContext] Error playing next audio:', playErr);
-                // En iOS, reintentar una vez más después de un breve delay
-                if (isIOS) {
-                  setTimeout(async () => {
-                    try {
-                      await audioToPlay.play();
-                      audioToPlay.volume = 0;
-                      fadeInTweenRef.current = gsap.to(audioToPlay, {
-                        volume: 1,
-                        duration: 0.4,
-                        ease: 'power2.out',
-                        onComplete: () => {
-                          fadeInTweenRef.current = null;
-                          setIsPlaying(true);
-                        }
-                      });
-                    } catch (retryErr) {
-                      console.error('[AudioContext] Error en reintento de play en iOS:', retryErr);
-                    }
-                  }, 200);
-                }
               }
             } else {
               setTimeout(tryPlay, 50);
@@ -999,162 +927,10 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       }
     };
     
-    const handleError = (e) => {
-      console.error('[AudioContext] Audio error:', e);
-      const error = audio.error;
-      if (error) {
-        console.error('[AudioContext] Error code:', error.code, '| Message:', error.message);
-        console.error('[AudioContext] Audio src que causó el error:', audio.src);
-        console.error('[AudioContext] Current index:', currentIndex, 'Total audios:', validAudioSrcs.length);
-        console.error('[AudioContext] Audio en subcarpeta:', hasMultipleAudios && currentIndex > 0);
-        console.error('[AudioContext] Network state:', audio.networkState, '| Ready state:', audio.readyState);
-        
-        // Si es un error de demuxer (código 4), el archivo no existe o está corrupto
-        if (error.code === 4) {
-          const audioSrc = audio.src;
-          const maxRetries = 3; // Máximo de 3 reintentos
-          const currentRetries = audioRetryCountRef.current.get(audioSrc) || 0;
-          
-          console.error('[AudioContext] Error DEMUXER: El archivo no se puede abrir. Verificar que existe en:', audioSrc);
-          console.error(`[AudioContext] Reintentos actuales: ${currentRetries}/${maxRetries}`);
-          
-          // Validar que la URL sea válida (no sea una ruta de navegación)
-          const isValidUrl = audioSrc && 
-            (audioSrc.startsWith('http://') || 
-             audioSrc.startsWith('https://') || 
-             audioSrc.startsWith('/static/') ||
-             audioSrc.startsWith('data:') ||
-             audioSrc.includes('.mp3'));
-          
-          if (!isValidUrl) {
-            console.error('[AudioContext] URL de audio inválida (parece ser una ruta de navegación):', audioSrc);
-            return; // No intentar recargar si la URL es inválida
-          }
-          
-          // Si ya se intentó demasiadas veces, no reintentar
-          if (currentRetries >= maxRetries) {
-            console.error(`[AudioContext] Máximo de reintentos alcanzado (${maxRetries}) para: ${audioSrc}`);
-            console.error('[AudioContext] El archivo de audio no se puede cargar. Verificar que existe y es accesible.');
-            // Verificar si el archivo realmente existe haciendo una petición HEAD
-            // Usar la URL directamente (webpack ya la procesa correctamente)
-            // NO construir URL completa - webpack ya genera URLs relativas correctas
-            // Si es una URL relativa, el navegador la resolverá automáticamente
-            // Construir URL completa si es relativa
-            const fullUrl = audioSrc.startsWith('http') ? audioSrc : (window.location.origin + audioSrc);
-            console.log(`[AudioContext] Verificando existencia del archivo: ${fullUrl}`);
-            fetch(fullUrl, { method: 'HEAD', cache: 'no-store' })
-              .then(response => {
-                if (!response.ok) {
-                  console.error(`[AudioContext] El archivo no existe en el servidor (HTTP ${response.status}). URL: ${fullUrl}`);
-                  console.error(`[AudioContext] El build puede necesitar actualizarse. Hash del archivo: ${audioSrc.match(/\.([a-f0-9]+)\.mp3$/)?.[1] || 'no encontrado'}`);
-                  // Marcar como no disponible para evitar más intentos
-                  setIsLoaded(false);
-                  setLoadingProgress(0);
-                } else {
-                  const contentType = response.headers.get('Content-Type');
-                  const contentLength = response.headers.get('Content-Length');
-                  const acceptRanges = response.headers.get('Accept-Ranges');
-                  console.log(`[AudioContext] El archivo existe en el servidor pero no se puede cargar. Posible problema de formato o CORS.`);
-                  console.log(`[AudioContext] Headers: Content-Type=${contentType}, Content-Length=${contentLength}, Accept-Ranges=${acceptRanges}`);
-                  if (contentType && !contentType.includes('audio')) {
-                    console.error(`[AudioContext] ERROR: Content-Type incorrecto. Esperado: audio/mpeg, Obtenido: ${contentType}`);
-                  }
-                }
-              })
-              .catch(err => {
-                console.error('[AudioContext] Error al verificar existencia del archivo:', err);
-                console.error(`[AudioContext] URL intentada: ${fullUrl}`);
-                // Marcar como no disponible para evitar más intentos
-                setIsLoaded(false);
-                setLoadingProgress(0);
-              });
-            return;
-          }
-          
-          // Incrementar contador de reintentos
-          audioRetryCountRef.current.set(audioSrc, currentRetries + 1);
-          
-          // Intentar recargar con diferentes estrategias (solo si no se ha excedido el límite)
-          setTimeout(() => {
-            const currentSrc = audio.src;
-            if (currentSrc && audioRetryCountRef.current.get(currentSrc) <= maxRetries) {
-              console.log(`[AudioContext] Reintentando cargar audio después de error DEMUXER (intento ${currentRetries + 1}/${maxRetries})...`);
-              // Verificar que la URL sea válida antes de recargar
-              if (currentSrc && currentSrc !== '' && currentSrc.includes('.mp3')) {
-                // Forzar recarga sin limpiar el src (evitar problemas con src vacío)
-                audio.load();
-                console.log('[AudioContext] Audio recargado después de error DEMUXER');
-              } else {
-                console.error('[AudioContext] No se puede recargar: URL inválida o vacía');
-              }
-            }
-          }, 2000);
-          return;
-        }
-        
-        // En iOS, especialmente con audios en subcarpetas, puede haber problemas con las rutas
-        if (isIOS) {
-          // Si el error es de src no soportado o red, puede ser un problema de ruta de subcarpeta
-          if (error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED || error.code === MediaError.MEDIA_ERR_NETWORK) {
-            const audioSrc = audio.src;
-            const maxRetries = 2;
-            const currentRetries = audioRetryCountRef.current.get(audioSrc) || 0;
-            
-            if (currentRetries < maxRetries) {
-              audioRetryCountRef.current.set(audioSrc, currentRetries + 1);
-              console.warn(`[AudioContext] iOS: Error de ruta o formato (posible problema con subcarpeta), intentando recargar (${currentRetries + 1}/${maxRetries})...`);
-              // Intentar recargar después de un delay, forzando una recarga completa
-              setTimeout(() => {
-                const currentSrc = audio.src;
-                if (currentSrc && audioRetryCountRef.current.get(currentSrc) <= maxRetries) {
-                  // Verificar que la URL sea válida antes de recargar
-                  if (currentSrc && currentSrc !== '' && currentSrc.includes('.mp3')) {
-                    // Forzar recarga sin limpiar el src (evitar problemas con src vacío)
-                    audio.load();
-                    console.log('[AudioContext] iOS: Audio recargado después de error');
-                  } else {
-                    console.error('[AudioContext] iOS: No se puede recargar: URL inválida o vacía');
-                  }
-                }
-              }, 1000);
-            } else {
-              console.error(`[AudioContext] iOS: Máximo de reintentos alcanzado para: ${audioSrc}`);
-            }
-          }
-        }
-        
-        // En Safari iOS, algunos errores pueden resolverse recargando
-        if ((isIOS || isSafari) && error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
-          const audioSrc = audio.src;
-          const maxRetries = 2;
-          const currentRetries = audioRetryCountRef.current.get(audioSrc) || 0;
-          
-          if (currentRetries < maxRetries) {
-            audioRetryCountRef.current.set(audioSrc, currentRetries + 1);
-            console.warn(`[AudioContext] Format not supported, trying to reload (${currentRetries + 1}/${maxRetries})`);
-            setTimeout(() => {
-              if (audio.src && audioRetryCountRef.current.get(audio.src) <= maxRetries) {
-                audio.load();
-              }
-            }, 1000);
-          }
-        }
-        // En Safari con múltiples audios, puede haber problemas de carga
-        if (isSafari && hasMultipleAudios && (error.code === MediaError.MEDIA_ERR_NETWORK || error.code === MediaError.MEDIA_ERR_ABORTED)) {
-          const audioSrc = audio.src;
-          const maxRetries = 2;
-          const currentRetries = audioRetryCountRef.current.get(audioSrc) || 0;
-          
-          if (currentRetries < maxRetries) {
-            audioRetryCountRef.current.set(audioSrc, currentRetries + 1);
-            console.warn(`[AudioContext] Network/abort error en Safari con múltiples audios, reintentando carga (${currentRetries + 1}/${maxRetries})...`);
-            setTimeout(() => {
-              if (audio.src && audioRetryCountRef.current.get(audio.src) <= maxRetries) {
-                audio.load();
-              }
-            }, 2000);
-          }
-        }
+    const handleError = () => {
+      // Log simple del error, sin reintentos ni lógica compleja
+      if (audio.error) {
+        console.warn('[AudioContext] Audio error:', audio.error.message, '| src:', audio.src);
       }
     };
 
@@ -1208,34 +984,6 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
         console.log(`[AudioContext] Llamando load() para audio ${currentIndex} (iOS: ${isIOS}, múltiples: ${hasMultipleAudios}, readyState: ${audio.readyState})`);
         audio.load();
         
-        // En iOS con múltiples audios, dar más tiempo y reintentar si es necesario
-        if (isIOS && hasMultipleAudios) {
-          // Reintentar múltiples veces si es necesario
-          let retryCount = 0;
-          const maxRetries = 3;
-          const retryInterval = 1500; // 1.5 segundos entre reintentos
-          
-          const retryLoad = () => {
-            setTimeout(() => {
-              if (audio.readyState < 2 && retryCount < maxRetries) {
-                retryCount++;
-                console.warn(`[AudioContext] Audio ${currentIndex} aún no está listo (readyState: ${audio.readyState}), reintentando ${retryCount}/${maxRetries}...`);
-                try {
-                  audio.load();
-                  if (retryCount < maxRetries) {
-                    retryLoad();
-                  }
-                } catch (retryError) {
-                  console.warn('[AudioContext] Error en reintento de load():', retryError);
-                }
-              } else if (audio.readyState >= 2) {
-                console.log(`[AudioContext] Audio ${currentIndex} finalmente listo después de ${retryCount} reintentos`);
-              }
-            }, retryInterval);
-          };
-          
-          retryLoad();
-        }
       } catch (loadError) {
         console.warn('[AudioContext] Error calling load():', loadError);
       }
@@ -1748,94 +1496,25 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           
           currentAudioRef.current.volume = 0;
           
-          // En iOS, especialmente Chrome, intentar reproducir múltiples veces si es necesario
-          let playAttempts = 0;
-          const maxPlayAttempts = (isIOS || isChromeIOS) ? (hasMultipleAudios ? 5 : 3) : 1;
-          
-          while (playAttempts < maxPlayAttempts) {
-            try {
-              // En Chrome iOS, asegurar que el AudioContext esté resumido antes de cada intento
-              if (isChromeIOS && globalAudioContext && globalAudioContext.state === 'suspended') {
-                try {
-                  await globalAudioContext.resume();
-                  console.log('[AudioContext] AudioContext resumido antes de play() en Chrome iOS');
-                } catch (resumeErr) {
-                  console.warn('[AudioContext] Error resumiendo antes de play():', resumeErr);
-                }
-              }
-              
-              await currentAudioRef.current.play();
-              console.log(`[AudioContext] Audio reproducido exitosamente (intento ${playAttempts + 1})`);
-              break; // Éxito, salir del bucle
-            } catch (playError) {
-              playAttempts++;
-              console.warn(`[AudioContext] Error en play() (intento ${playAttempts}/${maxPlayAttempts}):`, playError);
-              
-              if ((isIOS || isChromeIOS) && playError.name === 'NotAllowedError') {
-                console.warn('[AudioContext] Play blocked - user interaction required');
-                // En Chrome iOS, puede ser que necesitemos esperar un poco más
-                if (isChromeIOS && playAttempts < maxPlayAttempts) {
-                  console.log('[AudioContext] Esperando antes de reintentar en Chrome iOS...');
-                  await new Promise(resolve => setTimeout(resolve, 200));
-                  continue;
-                }
-                resolve();
-                return;
-              }
-              
-              // Si hay múltiples audios y aún hay intentos, esperar eventos y reintentar
-              if (hasMultipleAudios && playAttempts < maxPlayAttempts) {
-                console.log(`[AudioContext] Reintentando play() (intento ${playAttempts + 1}/${maxPlayAttempts})...`);
-                
-                // Asegurarse de que el audio esté listo antes de reintentar usando eventos
-                if (currentAudioRef.current.readyState < 2) {
-                  console.log('[AudioContext] Audio no está listo, forzando load() y esperando eventos...');
-                  currentAudioRef.current.load();
-                  
-                  // Esperar a que esté listo usando eventos
-                  await new Promise((resolveReady) => {
-                    const audio = currentAudioRef.current;
-                    let resolved = false;
-                    
-                    const cleanup = () => {
-                      audio.removeEventListener('canplay', handleCanPlay);
-                      audio.removeEventListener('loadeddata', handleLoadedData);
-                    };
-                    
-                    const handleCanPlay = () => {
-                      if (!resolved && audio.readyState >= 2) {
-                        resolved = true;
-                        cleanup();
-                        resolveReady();
-                      }
-                    };
-                    
-                    const handleLoadedData = () => {
-                      if (!resolved && audio.readyState >= 2) {
-                        resolved = true;
-                        cleanup();
-                        resolveReady();
-                      }
-                    };
-                    
-                    if (audio.readyState >= 2) {
-                      resolveReady();
-                      return;
-                    }
-                    
-                    audio.addEventListener('canplay', handleCanPlay);
-                    audio.addEventListener('loadeddata', handleLoadedData);
-                  });
-                }
-              } else {
-                // No más intentos o no es iOS con múltiples audios
-                console.error('[AudioContext] No se pudo reproducir el audio después de todos los intentos');
-                resolve();
-                return;
+          // Intentar reproducir una sola vez, como Timeline
+          try {
+            // En Chrome iOS, asegurar que el AudioContext esté resumido
+            if (isChromeIOS && globalAudioContext && globalAudioContext.state === 'suspended') {
+              try {
+                await globalAudioContext.resume();
+              } catch (resumeErr) {
+                // Ignorar error de resume
               }
             }
+            
+            await currentAudioRef.current.play();
+            console.log('[AudioContext] Audio reproducido exitosamente');
+          } catch (playError) {
+            console.warn('[AudioContext] Error en play():', playError);
+            resolve();
+            return;
           }
-          
+                    
           await new Promise(resolve => setTimeout(resolve, isIOS ? 100 : 50));
           
           volumeTweenRef.current = gsap.to(currentAudioRef.current, {
