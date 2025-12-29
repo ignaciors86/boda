@@ -230,6 +230,11 @@ const Croquetas25 = () => {
 
     // Esperar a que los elementos Audio estén renderizados
     const checkAudios = () => {
+      // Asegurar que audioRefs.current es un array
+      if (!audioRefs.current || !Array.isArray(audioRefs.current)) {
+        audioRefs.current = [];
+      }
+      
       const audios = audioRefs.current.filter(audio => audio !== null && audio !== undefined);
       
       if (audios.length === 0 || audios.length !== audioSrcs.length) {
@@ -240,9 +245,19 @@ const Croquetas25 = () => {
           setTimeout(checkAudios, 100);
         } else {
           isLoadingAudiosRef.current = false;
+          console.warn(`[Croquetas25] No se pudieron encontrar ${audioSrcs.length} elementos Audio después de 10 intentos. Encontrados: ${audios.length}`);
         }
         return;
       }
+
+      // Verificar que todos los audios tengan src asignado y asignarlo si falta
+      audios.forEach((audio, index) => {
+        const expectedSrc = typeof audioSrcs[index] === 'string' ? audioSrcs[index] : (audioSrcs[index]?.default || String(audioSrcs[index]));
+        if (expectedSrc && (!audio.src || audio.src !== expectedSrc)) {
+          console.log(`[Croquetas25] Asignando src a audio ${index}:`, expectedSrc);
+          audio.src = expectedSrc;
+        }
+      });
 
       checkAudios.retryCount = 0;
       isLoadingAudiosRef.current = true;
@@ -256,6 +271,12 @@ const Croquetas25 = () => {
       const loadPromises = audios.map((audio, index) => {
         return new Promise((resolve) => {
           let resolved = false;
+          
+          // Asegurar que el src esté asignado
+          const expectedSrc = typeof audioSrcs[index] === 'string' ? audioSrcs[index] : (audioSrcs[index]?.default || String(audioSrcs[index]));
+          if (expectedSrc && (!audio.src || audio.src !== expectedSrc)) {
+            audio.src = expectedSrc;
+          }
 
           const onCanPlay = () => {
             if (!resolved) {
@@ -294,7 +315,17 @@ const Croquetas25 = () => {
           const onError = (e) => {
             if (!resolved) {
               resolved = true;
-              console.error(`[Croquetas25] Error cargando audio ${index}:`, e);
+              const errorInfo = {
+                src: audio.src,
+                currentSrc: audio.currentSrc,
+                error: audio.error,
+                errorCode: audio.error?.code,
+                errorMessage: audio.error?.message,
+                networkState: audio.networkState,
+                readyState: audio.readyState,
+                expectedSrc: expectedSrc
+              };
+              console.error(`[Croquetas25] Error cargando audio ${index}:`, e, errorInfo);
               setAudioDurations(prev => {
                 const newDurations = [...prev];
                 newDurations[index] = 0;
@@ -312,6 +343,29 @@ const Croquetas25 = () => {
           audio.addEventListener('canplaythrough', onCanPlay);
           audio.addEventListener('loadedmetadata', onMetadata);
           audio.addEventListener('error', onError);
+
+          // Verificar que el src esté asignado antes de cargar
+          if (!audio.src || audio.src.length === 0) {
+            console.warn(`[Croquetas25] Audio ${index} no tiene src asignado, intentando asignar:`, expectedSrc);
+            if (expectedSrc && expectedSrc.length > 0) {
+              audio.src = expectedSrc;
+            } else {
+              console.error(`[Croquetas25] No se puede asignar src a audio ${index}: src inválido`);
+              resolved = true;
+              resolve();
+              return;
+            }
+          }
+          
+          // Verificar que el src sea una URL válida
+          try {
+            new URL(audio.src, window.location.origin);
+          } catch (urlError) {
+            console.error(`[Croquetas25] Audio ${index} tiene src inválido:`, audio.src, urlError);
+            resolved = true;
+            resolve();
+            return;
+          }
 
           audio.load();
 
@@ -353,21 +407,52 @@ const Croquetas25 = () => {
 
   // Funciones de control de audio
   const play = useCallback(async () => {
-    if (!audioRef.current) return;
+    if (!audioRef.current) {
+      console.warn('[Croquetas25] play: audioRef.current es null');
+      return;
+    }
+    
+    const audio = audioRef.current;
     
     try {
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      const minReadyState = isIOS ? 1 : 2;
+      const isSafariIOS = isIOS && !/CriOS/.test(navigator.userAgent);
+      const minReadyState = (isIOS || isSafariIOS) ? 1 : 2;
       
-      if (audioRef.current.readyState < minReadyState) {
+      console.log('[Croquetas25] play: intentando reproducir', {
+        readyState: audio.readyState,
+        minReadyState,
+        paused: audio.paused,
+        src: audio.src,
+        currentSrc: audio.currentSrc,
+        error: audio.error
+      });
+      
+      if (audio.error) {
+        console.error('[Croquetas25] play: audio tiene error', {
+          error: audio.error,
+          code: audio.error?.code,
+          message: audio.error?.message
+        });
+        return;
+      }
+      
+      if (audio.readyState < minReadyState) {
+        console.log(`[Croquetas25] play: audio no está listo (readyState: ${audio.readyState} < ${minReadyState}), reintentando...`);
         setTimeout(() => play(), 100);
         return;
       }
 
-      await audioRef.current.play();
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        await playPromise;
+      }
+      
       setIsPlaying(true);
-        } catch (error) {
+      console.log('[Croquetas25] play: audio reproducido correctamente');
+    } catch (error) {
       console.error('[Croquetas25] Error reproduciendo audio:', error);
+      setIsPlaying(false);
     }
   }, []);
 
@@ -754,14 +839,25 @@ const Croquetas25 = () => {
           {/* Renderizar elementos Audio */}
           {audioSrcs.map((src, index) => {
             const audioSrc = typeof src === 'string' ? src : (src?.default || String(src));
+            if (!audioSrc || audioSrc.length === 0) {
+              console.warn(`[Croquetas25] Audio src inválido en índice ${index}:`, src);
+              return null;
+            }
+            
             return (
               <audio
-                key={index}
+                key={`${selectedTrack?.name || 'track'}-${index}-${audioSrc}`}
                 ref={el => {
-                  if (el && audioRefs.current) {
-                    audioRefs.current[index] = el;
-                    if (index === 0) {
-                      audioRef.current = el;
+                  if (el) {
+                    if (!audioRefs.current || !Array.isArray(audioRefs.current)) {
+                      audioRefs.current = [];
+                    }
+                    // Solo actualizar si el elemento cambió para evitar re-renders innecesarios
+                    if (audioRefs.current[index] !== el) {
+                      audioRefs.current[index] = el;
+                      if (index === 0 && audioRef.current !== el) {
+                        audioRef.current = el;
+                      }
                     }
                   }
                 }}
@@ -888,7 +984,7 @@ const AllCompleteHandler = ({ pause, handleAllCompleteRef }) => {
 };
 
 const AudioStarter = ({ audioStarted, audioProps }) => {
-  const { audioRef, isLoaded, play } = audioProps;
+  const { audioRef, isLoaded, play, audioDurations } = audioProps;
   const hasAttemptedPlayRef = useRef(false);
 
   useEffect(() => {
@@ -898,8 +994,29 @@ const AudioStarter = ({ audioStarted, audioProps }) => {
     }
 
     if (audioStarted && isLoaded && !hasAttemptedPlayRef.current && audioRef?.current) {
-      hasAttemptedPlayRef.current = true;
       const audio = audioRef.current;
+      
+      // Verificar que el audio tenga metadata al menos
+      const hasMetadata = audio.readyState >= 1 || audioDurations.length > 0;
+      
+      if (!hasMetadata) {
+        console.log('[AudioStarter] Esperando metadata del audio...');
+        const checkMetadata = () => {
+          if (audio.readyState >= 1 || audioDurations.length > 0) {
+            hasAttemptedPlayRef.current = true;
+            play().catch(error => {
+              console.error('[AudioStarter] Error playing audio:', error);
+              hasAttemptedPlayRef.current = false;
+            });
+          } else if (audioStarted) {
+            setTimeout(checkMetadata, 100);
+          }
+        };
+        setTimeout(checkMetadata, 100);
+        return;
+      }
+      
+      hasAttemptedPlayRef.current = true;
       
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       const isSafariIOS = isIOS && !/CriOS/.test(navigator.userAgent);
@@ -907,10 +1024,27 @@ const AudioStarter = ({ audioStarted, audioProps }) => {
       const tryPlay = async () => {
         const minReadyState = (isIOS || isSafariIOS) ? 1 : 2;
         
+        console.log('[AudioStarter] Intentando reproducir', {
+          readyState: audio.readyState,
+          minReadyState,
+          paused: audio.paused,
+          hasError: !!audio.error
+        });
+        
+        if (audio.error) {
+          console.error('[AudioStarter] Audio tiene error:', {
+            error: audio.error,
+            code: audio.error?.code,
+            message: audio.error?.message
+          });
+          hasAttemptedPlayRef.current = false;
+          return;
+        }
+        
         if (audio.readyState >= minReadyState) {
           play().catch(error => {
             console.error('[AudioStarter] Error playing audio:', error);
-                  hasAttemptedPlayRef.current = false;
+            hasAttemptedPlayRef.current = false;
           });
         } else if (audioStarted) {
           const waitTime = (isIOS || isSafariIOS) ? 50 : 100;
@@ -920,7 +1054,7 @@ const AudioStarter = ({ audioStarted, audioProps }) => {
       
       tryPlay();
     }
-  }, [audioStarted, isLoaded, play, audioRef]);
+  }, [audioStarted, isLoaded, play, audioRef, audioDurations]);
 
   return null;
 };
