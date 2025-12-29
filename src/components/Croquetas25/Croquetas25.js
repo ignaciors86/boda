@@ -6,7 +6,6 @@ import Background from './components/Background/Background';
 import AudioAnalyzer from './components/AudioAnalyzer/AudioAnalyzer';
 import Seek from './components/Seek/Seek';
 import Intro from './components/Intro/Intro';
-import { AudioProvider, useAudio } from './context/AudioContext';
 import { useGallery } from './components/Gallery/Gallery';
 import { useTracks } from './hooks/useTracks';
 import Prompt from './components/Prompt/Prompt';
@@ -14,17 +13,113 @@ import Croqueta from './components/Croqueta/Croqueta';
 import BackButton from './components/BackButton/BackButton';
 import KITTLoader from './components/KITTLoader/KITTLoader';
 
-const LoadingProgressHandler = ({ onTriggerCallbackRef, audioStarted }) => {
-  const { loadingProgress, isLoaded } = useAudio();
+// Hook simple para crear AudioContext solo para análisis
+const useAudioAnalysis = (audioRef) => {
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const dataArrayRef = useRef(null);
+  const timeDataArrayRef = useRef(null);
+  const sourceNodeRef = useRef(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const connectedAudioRef = useRef(null);
 
   useEffect(() => {
-    if (!audioStarted || !isLoaded || !onTriggerCallbackRef?.current) return;
+    const audio = audioRef?.current;
+    if (!audio) {
+      if (isInitialized) {
+        setIsInitialized(false);
+      }
+      return;
+    }
     
-    // Solo generar cuadros después de que el audio haya empezado y esté cargado
-    // Este handler ya no genera cuadros durante el loading
-  }, [loadingProgress, isLoaded, onTriggerCallbackRef, audioStarted]);
+    // Crear AudioContext solo una vez
+    if (!audioContextRef.current) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) {
+        audioContextRef.current = new AudioContextClass();
+        const analyser = audioContextRef.current.createAnalyser();
+        analyser.fftSize = 2048;
+        analyser.smoothingTimeConstant = 0.8;
+        analyserRef.current = analyser;
+        
+        const bufferLength = analyser.frequencyBinCount;
+        dataArrayRef.current = new Uint8Array(bufferLength);
+        timeDataArrayRef.current = new Uint8Array(bufferLength);
+      }
+    }
 
-  return null;
+    // Si ya está conectado este audio, no hacer nada
+    if (connectedAudioRef.current === audio) {
+      if (!isInitialized) {
+        setIsInitialized(true);
+      }
+      return;
+    }
+
+    // Conectar audio al AudioContext cuando esté listo
+    const connectAudio = () => {
+      if (!audioContextRef.current || !analyserRef.current || !audio) return;
+      
+      // Si el contexto está cerrado, no intentar conectar
+      if (audioContextRef.current.state === 'closed') {
+        console.warn('[useAudioAnalysis] AudioContext está cerrado');
+        return;
+      }
+      
+      try {
+        // Desconectar fuente anterior si existe
+        if (sourceNodeRef.current) {
+          try {
+            sourceNodeRef.current.disconnect();
+          } catch (e) {
+            // Ignorar errores
+          }
+        }
+
+        // Crear nueva fuente
+        const source = audioContextRef.current.createMediaElementSource(audio);
+        sourceNodeRef.current = source;
+        source.connect(analyserRef.current);
+        analyserRef.current.connect(audioContextRef.current.destination);
+        
+        connectedAudioRef.current = audio;
+        setIsInitialized(true);
+        console.log('[useAudioAnalysis] Audio conectado al AudioContext para análisis');
+      } catch (error) {
+        if (error.message && !error.message.includes('already connected')) {
+          console.warn('[useAudioAnalysis] Error conectando audio:', error);
+        } else {
+          // Si ya está conectado, marcar como inicializado
+          connectedAudioRef.current = audio;
+          setIsInitialized(true);
+        }
+      }
+    };
+
+    // Intentar conectar cuando el audio tenga metadata
+    if (audio.readyState >= 1) {
+      connectAudio();
+    } else {
+      const onLoadedMetadata = () => {
+        connectAudio();
+        audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+      };
+      audio.addEventListener('loadedmetadata', onLoadedMetadata);
+      return () => {
+        audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+      };
+    }
+  }, [audioRef?.current]);
+
+  return {
+    audioContextRef,
+    analyserRef,
+    dataArrayRef,
+    timeDataArrayRef,
+    isInitialized,
+    sourceNodeRef,
+    connectedAudioRef
+  };
 };
 
 const Croquetas25 = () => {
@@ -36,6 +131,12 @@ const Croquetas25 = () => {
   const [showStartButton, setShowStartButton] = useState(false);
   const [wasSelectedFromIntro, setWasSelectedFromIntro] = useState(false);
   const [loadingFadedOut, setLoadingFadedOut] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [audioDurations, setAudioDurations] = useState([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  
   const wasPlayingBeforeHoldRef = useRef(false);
   const startButtonRef = useRef(null);
   const triggerCallbackRef = useRef(null);
@@ -44,16 +145,22 @@ const Croquetas25 = () => {
   const minTimeBetweenSquares = 600;
   const typewriterInstanceRef = useRef(null);
   
+  // Refs para elementos Audio
+  const audioRefs = useRef([]);
+  const audioRef = useRef(null);
+  
   const { tracks, isLoading: tracksLoading } = useTracks();
   
-  // Callback para cuando se completa una subcarpeta - cambiar al siguiente audio
+  // Hook para análisis de audio
+  const audioAnalysis = useAudioAnalysis(audioRef);
+  
+  // Callback para cuando se completa una subcarpeta
   const handleSubfolderComplete = useCallback((completedSubfolder) => {
     if (!selectedTrack || !selectedTrack.subfolderToAudioIndex) return;
     
     const audioIndex = selectedTrack.subfolderToAudioIndex[completedSubfolder];
-    if (audioIndex === undefined) return; // Esta subcarpeta no tiene audio
+    if (audioIndex === undefined) return;
     
-    // Buscar siguiente subcarpeta con audio
     const subfolderOrder = selectedTrack.subfolderOrder || [];
     const currentSubfolderIndex = subfolderOrder.indexOf(completedSubfolder);
     
@@ -74,65 +181,353 @@ const Croquetas25 = () => {
     }
   }, [selectedTrack]);
   
-  // Ref para el callback de completado que puede pausar el audio
   const handleAllCompleteRef = useRef(null);
   
-  // Callback para cuando se completa toda la colección - volver a Intro
   const handleAllComplete = useCallback(async () => {
     console.log('[Croquetas25] Todas las subcarpetas completadas, volviendo a Intro');
     
-    // Primero pausar el audio si está disponible
-    if (handleAllCompleteRef.current) {
+    if (handleAllCompleteRef?.current) {
       await handleAllCompleteRef.current();
     }
     
-    // Luego detener todo y volver a la home
     setAudioStarted(false);
     setSelectedTrack(null);
     setShowStartButton(false);
     setWasSelectedFromIntro(false);
     setLoadingFadedOut(false);
     
-    // Navegar inmediatamente (igual que el botón de volver)
     console.log('[Croquetas25] Navegando a /nachitos-de-nochevieja');
     navigate('/nachitos-de-nochevieja', { replace: true });
-    console.log('[Croquetas25] Navegación iniciada');
   }, [navigate]);
-  
-  // Componente que maneja el completado dentro de AudioProvider para poder pausar el audio
-  const AllCompleteHandler = () => {
-    const { pause } = useAudio();
-    
-    useEffect(() => {
-      handleAllCompleteRef.current = async () => {
-        console.log('[AllCompleteHandler] Pausando audio antes de volver a home');
-        try {
-          await pause();
-        } catch (error) {
-          console.warn('[AllCompleteHandler] Error pausando audio:', error);
-        }
-      };
-      
-      return () => {
-        handleAllCompleteRef.current = null;
-      };
-    }, [pause]);
-    
-    return null;
-  };
   
   const { isLoading: imagesLoading, preloadProgress: imagesProgress, seekToImagePosition } = useGallery(selectedTrack, handleSubfolderComplete, handleAllComplete);
   const audioSrcs = selectedTrack?.srcs || (selectedTrack?.src ? [selectedTrack.src] : []);
   const isDirectUri = !!trackId;
   
-  // Logging para debug en producción
+  // Ref para evitar múltiples cargas simultáneas
+  const isLoadingAudiosRef = useRef(false);
+  const currentTrackIdRef = useRef(null);
+
+  // Cargar audios cuando cambian los refs
+  useEffect(() => {
+    const trackId = selectedTrack?.name || selectedTrack?.id;
+    
+    if (!selectedTrack || audioSrcs.length === 0) {
+      if (currentTrackIdRef.current !== null) {
+        setAudioDurations([]);
+        setIsLoaded(false);
+        setLoadingProgress(0);
+        currentTrackIdRef.current = null;
+        isLoadingAudiosRef.current = false;
+      }
+      return;
+    }
+
+    // Si ya estamos cargando este track, no hacer nada
+    if (isLoadingAudiosRef.current && currentTrackIdRef.current === trackId) {
+      return;
+    }
+
+    // Esperar a que los elementos Audio estén renderizados
+    const checkAudios = () => {
+      const audios = audioRefs.current.filter(audio => audio !== null && audio !== undefined);
+      
+      if (audios.length === 0 || audios.length !== audioSrcs.length) {
+        // Reintentar después de un pequeño delay (máximo 10 intentos)
+        const retryCount = checkAudios.retryCount || 0;
+        if (retryCount < 10) {
+          checkAudios.retryCount = retryCount + 1;
+          setTimeout(checkAudios, 100);
+        } else {
+          isLoadingAudiosRef.current = false;
+        }
+        return;
+      }
+
+      checkAudios.retryCount = 0;
+      isLoadingAudiosRef.current = true;
+      currentTrackIdRef.current = trackId;
+      
+      setIsLoaded(false);
+      setLoadingProgress(0);
+      setAudioDurations(new Array(audios.length).fill(0));
+
+      // Cargar todos los audios
+      const loadPromises = audios.map((audio, index) => {
+        return new Promise((resolve) => {
+          let resolved = false;
+
+          const onCanPlay = () => {
+            if (!resolved) {
+              resolved = true;
+              const duration = audio.duration || 0;
+              setAudioDurations(prev => {
+                const newDurations = [...prev];
+                newDurations[index] = duration;
+                return newDurations;
+              });
+
+              setLoadingProgress(prev => {
+                const loaded = audios.filter(a => a.readyState >= 2).length;
+                return Math.min(100, (loaded / audios.length) * 100);
+              });
+
+              audio.removeEventListener('canplay', onCanPlay);
+              audio.removeEventListener('canplaythrough', onCanPlay);
+              audio.removeEventListener('loadedmetadata', onMetadata);
+              audio.removeEventListener('error', onError);
+              resolve();
+            }
+          };
+
+          const onMetadata = () => {
+            const duration = audio.duration || 0;
+            if (duration > 0) {
+              setAudioDurations(prev => {
+                const newDurations = [...prev];
+                newDurations[index] = duration;
+                return newDurations;
+              });
+            }
+          };
+
+          const onError = (e) => {
+            if (!resolved) {
+              resolved = true;
+              console.error(`[Croquetas25] Error cargando audio ${index}:`, e);
+              setAudioDurations(prev => {
+                const newDurations = [...prev];
+                newDurations[index] = 0;
+                return newDurations;
+              });
+              audio.removeEventListener('canplay', onCanPlay);
+              audio.removeEventListener('canplaythrough', onCanPlay);
+              audio.removeEventListener('loadedmetadata', onMetadata);
+              audio.removeEventListener('error', onError);
+              resolve();
+            }
+          };
+
+          audio.addEventListener('canplay', onCanPlay);
+          audio.addEventListener('canplaythrough', onCanPlay);
+          audio.addEventListener('loadedmetadata', onMetadata);
+          audio.addEventListener('error', onError);
+
+          audio.load();
+
+          setTimeout(() => {
+            if (!resolved) {
+              resolved = true;
+              audio.removeEventListener('canplay', onCanPlay);
+              audio.removeEventListener('canplaythrough', onCanPlay);
+              audio.removeEventListener('loadedmetadata', onMetadata);
+              audio.removeEventListener('error', onError);
+              resolve();
+            }
+          }, 10000);
+        });
+      });
+
+      Promise.all(loadPromises).then(() => {
+        const allLoaded = audios.every(a => a.readyState >= 2 || a.duration > 0);
+        if (allLoaded) {
+          setIsLoaded(true);
+          setLoadingProgress(100);
+          isLoadingAudiosRef.current = false;
+          console.log('[Croquetas25] Todos los audios cargados:', {
+            count: audios.length,
+            durations: audioDurations
+          });
+        } else {
+          isLoadingAudiosRef.current = false;
+        }
+      });
+    };
+
+    checkAudios();
+    
+    return () => {
+      isLoadingAudiosRef.current = false;
+    };
+  }, [selectedTrack?.name, selectedTrack?.id, audioSrcs.length]);
+
+  // Funciones de control de audio
+  const play = useCallback(async () => {
+    if (!audioRef.current) return;
+    
+    try {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const minReadyState = isIOS ? 1 : 2;
+      
+      if (audioRef.current.readyState < minReadyState) {
+        setTimeout(() => play(), 100);
+        return;
+      }
+
+      await audioRef.current.play();
+      setIsPlaying(true);
+        } catch (error) {
+      console.error('[Croquetas25] Error reproduciendo audio:', error);
+    }
+  }, []);
+
+  const pause = useCallback(async () => {
+    if (!audioRef.current) return;
+    
+    try {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } catch (error) {
+      console.error('[Croquetas25] Error pausando audio:', error);
+    }
+  }, []);
+
+  const switchToAudio = useCallback(async (index, time = 0) => {
+    if (index < 0 || index >= audioRefs.current.length) {
+      console.warn(`[Croquetas25] switchToAudio: índice inválido ${index}`);
+      return;
+    }
+
+    const wasPlaying = isPlaying;
+    const previousAudio = audioRef.current;
+
+    if (previousAudio && !previousAudio.paused) {
+      previousAudio.pause();
+    }
+
+    const newAudio = audioRefs.current[index];
+    if (!newAudio) {
+      console.warn(`[Croquetas25] switchToAudio: audio en índice ${index} no existe`);
+      return;
+    }
+    
+    console.log(`[Croquetas25] switchToAudio: cambiando a audio ${index}`, {
+      wasPlaying,
+      newAudioReadyState: newAudio.readyState,
+      newAudioDuration: newAudio.duration
+    });
+    
+    // Forzar reconexión al AudioContext para análisis ANTES de cambiar el audio
+    // Desconectar fuente anterior para que el hook se reconecte
+    if (audioAnalysis.sourceNodeRef?.current) {
+      try {
+        audioAnalysis.sourceNodeRef.current.disconnect();
+        audioAnalysis.sourceNodeRef.current = null;
+      } catch (e) {
+        // Ignorar errores
+      }
+    }
+    
+    // Resetear el flag de audio conectado para forzar reconexión
+    if (audioAnalysis.connectedAudioRef) {
+      audioAnalysis.connectedAudioRef.current = null;
+    }
+    
+    // Cambiar el audio actual
+    audioRef.current = newAudio;
+    setCurrentIndex(index);
+
+    if (time >= 0 && newAudio.duration) {
+      newAudio.currentTime = Math.min(time, newAudio.duration);
+    } else if (time >= 0) {
+      // Si no tiene duración aún, esperar a que la tenga
+      const waitForDuration = () => {
+        if (newAudio.duration > 0) {
+          newAudio.currentTime = Math.min(time, newAudio.duration);
+        } else {
+          setTimeout(waitForDuration, 100);
+        }
+      };
+      waitForDuration();
+    }
+
+    // Pequeño delay para asegurar que el hook se reconecte
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    if (wasPlaying) {
+      await play();
+    }
+  }, [isPlaying, play, audioAnalysis]);
+
+  const seekToAudio = useCallback(async (audioIndex, timeInAudio = 0) => {
+    if (audioIndex < 0 || audioIndex >= audioRefs.current.length) return;
+
+    const wasPlaying = isPlaying;
+
+    if (audioIndex !== currentIndex) {
+      await switchToAudio(audioIndex, timeInAudio);
+      return;
+    }
+
+    if (audioRef.current) {
+      const targetTime = Math.max(0, Math.min(timeInAudio, audioRef.current.duration || 0));
+      audioRef.current.currentTime = targetTime;
+
+      if (wasPlaying && audioRef.current.paused) {
+        await play();
+      }
+    }
+  }, [currentIndex, isPlaying, switchToAudio, play]);
+
+  const getTotalDuration = useCallback(() => {
+    return audioDurations.reduce((total, duration) => total + (duration || 0), 0);
+  }, [audioDurations]);
+
+  const getTotalElapsed = useCallback(() => {
+    if (!audioRef.current || audioDurations.length === 0) return 0;
+
+    let elapsed = 0;
+    for (let i = 0; i < currentIndex; i++) {
+      elapsed += audioDurations[i] || 0;
+    }
+    elapsed += audioRef.current.currentTime || 0;
+    return elapsed;
+  }, [currentIndex, audioDurations]);
+
+  // Manejar cuando termina un audio
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleEnded = () => {
+      if (currentIndex < audioRefs.current.length - 1) {
+        switchToAudio(currentIndex + 1, 0);
+      } else {
+        setIsPlaying(false);
+        setCurrentIndex(0);
+        if (audioRef.current) {
+          audioRef.current.currentTime = 0;
+        }
+      }
+    };
+
+    audio.addEventListener('ended', handleEnded);
+      return () => {
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, [currentIndex, switchToAudio]);
+
+  // Sincronizar isPlaying con el estado del audio
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+
+    return () => {
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+    };
+  }, [audioRef.current]);
+
   useEffect(() => {
     if (selectedTrack && audioSrcs.length > 0) {
       console.log(`[Croquetas25] Track seleccionado: ${selectedTrack.name}`);
       console.log(`[Croquetas25] AudioSrcs:`, audioSrcs);
-      audioSrcs.forEach((src, idx) => {
-        console.log(`[Croquetas25] Audio ${idx}: ${src} (tipo: ${typeof src})`);
-      });
     }
   }, [selectedTrack, audioSrcs]);
 
@@ -148,45 +543,15 @@ const Croquetas25 = () => {
 
   const handleClick = async (e) => {
     if (!audioStarted && selectedTrack && showStartButton && startButtonRef.current) {
-      // Detectar iOS (especialmente Chrome en iOS)
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
-      const isSafariIOS = isIOS && !isChromeIOS;
       
-      // En iOS, necesitamos iniciar el audio DIRECTAMENTE desde el click (no async)
-      // iOS requiere que play() se llame sincrónicamente desde el evento de usuario
-      if (isIOS || isChromeIOS || isSafariIOS) {
-        // Obtener el contexto de audio si está disponible
-        const audioContext = window.__globalAudioContext;
-        if (audioContext && audioContext.state === 'suspended') {
-          // Resumir AudioContext - debe ser dentro del evento de usuario
-          audioContext.resume().then(() => {
-            console.log('[Croquetas25] AudioContext resumido desde click del usuario');
-          }).catch(err => {
-            console.warn('[Croquetas25] Error resumiendo AudioContext:', err);
-          });
-        }
-        
-        // Intentar reproducir el audio directamente desde el elemento
-        // Esto DEBE hacerse dentro del handler de click, no en un callback
+      if (isIOS && audioRef.current) {
         try {
-          const audioElement = document.querySelector('.audio-context');
-          if (audioElement) {
-            // En iOS, incluso con readyState bajo, intentar reproducir
-            // El navegador cargará el audio si es necesario
-            if (audioElement.paused) {
-              const playPromise = audioElement.play();
-              if (playPromise !== undefined) {
-                playPromise.then(() => {
-                  console.log('[Croquetas25] Audio iniciado directamente desde click en iOS');
-                }).catch(playErr => {
-                  console.warn('[Croquetas25] Error iniciando audio directamente:', playErr);
-                });
-              }
-            }
+          if (audioRef.current.paused) {
+            await audioRef.current.play();
           }
         } catch (playErr) {
-          console.warn('[Croquetas25] Error iniciando audio directamente:', playErr);
+          console.warn('[Croquetas25] Error iniciando audio:', playErr);
         }
       }
       
@@ -204,7 +569,6 @@ const Croquetas25 = () => {
   };
 
   const HoldToPauseHandler = ({ isPausedByHold, setIsPausedByHold, wasPlayingBeforeHoldRef, typewriterInstanceRef }) => {
-    const { audioRef, isPlaying, pause, play } = useAudio();
     const isPausingRef = useRef(false);
     const eventStartTimeRef = useRef(0);
     const isHoldRef = useRef(false);
@@ -222,7 +586,7 @@ const Croquetas25 = () => {
       if (isPausingRef.current) return;
       isPausingRef.current = true;
       wasPlayingBeforeHoldRef.current = isPlaying;
-      if (audioRef?.current && !audioRef.current.paused) await pause();
+      if (audioRef.current && !audioRef.current.paused) await pause();
       
       const introOverlay = document.querySelector('.intro');
       if (!introOverlay || window.getComputedStyle(introOverlay).opacity === '0' || introOverlay.style.display === 'none') {
@@ -231,7 +595,7 @@ const Croquetas25 = () => {
       if (typewriterInstanceRef?.current) typewriterInstanceRef.current.pause();
       setIsPausedByHold(true);
       isPausingRef.current = false;
-    }, [isPlaying, audioRef, pause, setIsPausedByHold, wasPlayingBeforeHoldRef, typewriterInstanceRef]);
+    }, [isPlaying, pause, setIsPausedByHold, wasPlayingBeforeHoldRef, typewriterInstanceRef]);
 
     const resumeEverything = useCallback(() => {
       if (!isPausedByHold) return;
@@ -239,18 +603,18 @@ const Croquetas25 = () => {
       if (typewriterInstanceRef?.current) typewriterInstanceRef.current.start();
       setIsPausedByHold(false);
       isPausingRef.current = false;
-      if (wasPlayingBeforeHoldRef.current && audioRef?.current?.paused) play();
+      if (wasPlayingBeforeHoldRef.current && audioRef.current?.paused) play();
       wasPlayingBeforeHoldRef.current = false;
-    }, [isPausedByHold, audioRef, play, setIsPausedByHold, wasPlayingBeforeHoldRef, typewriterInstanceRef]);
+    }, [isPausedByHold, play, setIsPausedByHold, wasPlayingBeforeHoldRef, typewriterInstanceRef]);
 
     const togglePauseResume = useCallback(async () => {
-      if (audioRef?.current?.paused || isPausedByHold) {
+      if (audioRef.current?.paused || isPausedByHold) {
         wasPlayingBeforeHoldRef.current = true;
         resumeEverything();
       } else {
         await pauseEverything();
       }
-    }, [audioRef, isPausedByHold, pauseEverything, resumeEverything, wasPlayingBeforeHoldRef]);
+    }, [isPausedByHold, pauseEverything, resumeEverything, wasPlayingBeforeHoldRef]);
 
     const handleStart = useCallback((e) => {
       if (shouldIgnoreEvent(e)) return;
@@ -301,7 +665,7 @@ const Croquetas25 = () => {
   };
 
   const lastDiagonalTimeRef = useRef(0);
-  const minTimeBetweenDiagonals = 500; // 0.5 segundos - permitir más diagonales
+  const minTimeBetweenDiagonals = 500;
 
   const triggerSquare = (type, data) => {
     if (!audioStarted) return;
@@ -322,9 +686,6 @@ const Croquetas25 = () => {
     const timestamp = Date.now();
     const timeSinceLastDiagonal = timestamp - lastDiagonalTimeRef.current;
     
-    // Calcular tiempo mínimo dinámico basado en la intensidad
-    // Intensidad alta (1.0) = 100ms mínimo, intensidad baja (0.0) = 2000ms mínimo
-    // Esto permite más diagonales cuando la música es más intensa
     const dynamicMinTime = 100 + (1900 * (1 - intensity));
     
     if (timeSinceLastDiagonal >= dynamicMinTime && 
@@ -351,7 +712,22 @@ const Croquetas25 = () => {
     triggerSquare('voice', { intensity, voiceEnergy });
   };
 
-  // Controles de teclado para audio - se manejan dentro de AudioProvider
+  // Props de audio para pasar a componentes
+  const audioProps = {
+    audioRef,
+    audioRefs,
+    currentIndex,
+    isPlaying,
+    isLoaded,
+    loadingProgress,
+    audioDurations,
+    play,
+    pause,
+    seekToAudio,
+    getTotalDuration,
+    getTotalElapsed,
+    switchToAudio
+  };
 
   return (
     <div className="croquetas25" onClick={handleClick}>
@@ -373,16 +749,41 @@ const Croquetas25 = () => {
         />
       )}
       
-      {/* Background siempre visible para mostrar diagonales - dentro de AudioProvider si hay track, fuera si no */}
       {selectedTrack && audioSrcs.length > 0 ? (
-        <AudioProvider audioSrcs={audioSrcs}>
-          <AllCompleteHandler />
+        <>
+          {/* Renderizar elementos Audio */}
+          {audioSrcs.map((src, index) => {
+            const audioSrc = typeof src === 'string' ? src : (src?.default || String(src));
+            return (
+              <audio
+                key={index}
+                ref={el => {
+                  if (el && audioRefs.current) {
+                    audioRefs.current[index] = el;
+                    if (index === 0) {
+                      audioRef.current = el;
+                    }
+                  }
+                }}
+                src={audioSrc}
+                preload="auto"
+                crossOrigin="anonymous"
+                playsInline
+                style={{ display: 'none' }}
+              />
+            );
+          })}
+          
+          <AllCompleteHandler pause={pause} handleAllCompleteRef={handleAllCompleteRef} />
           <BackgroundWrapper 
             onTriggerCallbackRef={audioStarted ? triggerCallbackRef : null} 
             onVoiceCallbackRef={audioStarted ? voiceCallbackRef : null}
             selectedTrack={audioStarted ? selectedTrack : null}
             showOnlyDiagonales={!audioStarted}
             onAllComplete={handleAllComplete}
+            audioAnalysis={audioAnalysis}
+            currentAudioIndex={audioStarted ? currentIndex : null}
+            pause={audioStarted ? pause : null}
           />
           <UnifiedLoadingIndicator 
             imagesLoading={imagesLoading}
@@ -394,6 +795,7 @@ const Croquetas25 = () => {
             setLoadingFadedOut={setLoadingFadedOut}
             setAudioStarted={setAudioStarted}
             selectedTrack={selectedTrack}
+            audioProps={audioProps}
           />
           <UnifiedContentManager
             imagesLoading={imagesLoading}
@@ -408,29 +810,44 @@ const Croquetas25 = () => {
             handleClick={handleClick}
             selectedTrack={selectedTrack}
             loadingFadedOut={loadingFadedOut}
+            audioProps={audioProps}
           />
-          <AudioStarter audioStarted={audioStarted} />
+          <AudioStarter audioStarted={audioStarted} audioProps={audioProps} />
           <HoldToPauseHandler 
             isPausedByHold={isPausedByHold}
             setIsPausedByHold={setIsPausedByHold}
             wasPlayingBeforeHoldRef={wasPlayingBeforeHoldRef}
             typewriterInstanceRef={typewriterInstanceRef}
           />
-          <LoadingProgressHandler onTriggerCallbackRef={triggerCallbackRef} audioStarted={audioStarted} />
-          <AudioAnalyzer onBeat={handleBeat} onVoice={handleVoice} />
-          <SeekWrapper />
+          <AudioAnalyzer 
+            onBeat={handleBeat} 
+            onVoice={handleVoice}
+            audioRef={audioRef}
+            audioAnalysis={audioAnalysis}
+            isPlaying={isPlaying}
+            currentIndex={currentIndex}
+          />
+          <SeekWrapper 
+            selectedTrack={selectedTrack}
+            audioProps={audioProps}
+            seekToImagePosition={seekToImagePosition}
+          />
           {audioStarted && selectedTrack && (
-            <SubfolderAudioController selectedTrack={selectedTrack} />
+            <SubfolderAudioController 
+              selectedTrack={selectedTrack}
+              audioProps={audioProps}
+            />
           )}
           {audioStarted && (
             <GuionManager 
               selectedTrack={selectedTrack}
               typewriterInstanceRef={typewriterInstanceRef}
               isPausedByHold={isPausedByHold}
+              audioProps={audioProps}
+              audioAnalysis={audioAnalysis}
             />
           )}
-          {/* Mostrar BackButton siempre si es URI directa (incluso antes de seleccionar track), o cuando audioStarted */}
-          {isDirectUri || audioStarted ? (
+          {(isDirectUri || audioStarted) && (
             <BackButton 
               onBack={() => {
                 setAudioStarted(false);
@@ -439,19 +856,39 @@ const Croquetas25 = () => {
                 setWasSelectedFromIntro(false);
                 setLoadingFadedOut(false);
               }}
+              audioRef={audioRef}
+              pause={pause}
             />
-          ) : null}
-        </AudioProvider>
+          )}
+        </>
       ) : (
-        // Cuando no hay track seleccionado, mostrar solo diagonales sin AudioProvider
         <DiagonalesOnly />
       )}
     </div>
   );
 };
 
-const AudioStarter = ({ audioStarted }) => {
-  const { play, isLoaded, audioRef, audioContextRef } = useAudio();
+const AllCompleteHandler = ({ pause, handleAllCompleteRef }) => {
+  useEffect(() => {
+    handleAllCompleteRef.current = async () => {
+      console.log('[AllCompleteHandler] Pausando audio antes de volver a home');
+      try {
+        await pause();
+      } catch (error) {
+        console.warn('[AllCompleteHandler] Error pausando audio:', error);
+      }
+    };
+    
+    return () => {
+      handleAllCompleteRef.current = null;
+    };
+  }, [pause, handleAllCompleteRef]);
+  
+  return null;
+};
+
+const AudioStarter = ({ audioStarted, audioProps }) => {
+  const { audioRef, isLoaded, play } = audioProps;
   const hasAttemptedPlayRef = useRef(false);
 
   useEffect(() => {
@@ -464,53 +901,18 @@ const AudioStarter = ({ audioStarted }) => {
       hasAttemptedPlayRef.current = true;
       const audio = audioRef.current;
       
-      // Detectar iOS (especialmente Chrome en iOS)
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
-      const isSafariIOS = isIOS && !isChromeIOS;
+      const isSafariIOS = isIOS && !/CriOS/.test(navigator.userAgent);
       
       const tryPlay = async () => {
-        // En iOS/Safari, ser más permisivo con readyState
         const minReadyState = (isIOS || isSafariIOS) ? 1 : 2;
         
         if (audio.readyState >= minReadyState) {
-          // En iOS, asegurar que el AudioContext esté resumido
-          if (isIOS || isChromeIOS || isSafariIOS) {
-            const audioContext = audioContextRef?.current || window.__globalAudioContext;
-            if (audioContext && audioContext.state === 'suspended') {
-              try {
-                await audioContext.resume();
-                console.log('[AudioStarter] AudioContext resumido antes de play()');
-              } catch (resumeErr) {
-                console.warn('[AudioStarter] Error resumiendo AudioContext:', resumeErr);
-              }
-            }
-          }
-          
-          // Llamar a play() del contexto
           play().catch(error => {
             console.error('[AudioStarter] Error playing audio:', error);
-            // En iOS, si es NotAllowedError, puede ser que necesitemos más tiempo
-            if (isIOS && error.name === 'NotAllowedError') {
-              console.warn('[AudioStarter] NotAllowedError en iOS, reintentando después de delay...');
-              setTimeout(async () => {
-                try {
-                  const audioContext = audioContextRef?.current || window.__globalAudioContext;
-                  if (audioContext && audioContext.state === 'suspended') {
-                    await audioContext.resume();
-                  }
-                  await play();
-                } catch (retryErr) {
-                  console.error('[AudioStarter] Error en reintento:', retryErr);
                   hasAttemptedPlayRef.current = false;
-                }
-              }, 300);
-            } else {
-              hasAttemptedPlayRef.current = false;
-            }
           });
         } else if (audioStarted) {
-          // En iOS, esperar menos tiempo
           const waitTime = (isIOS || isSafariIOS) ? 50 : 100;
           setTimeout(tryPlay, waitTime);
         }
@@ -518,60 +920,45 @@ const AudioStarter = ({ audioStarted }) => {
       
       tryPlay();
     }
-  }, [audioStarted, isLoaded, play, audioRef, audioContextRef]);
+  }, [audioStarted, isLoaded, play, audioRef]);
 
   return null;
 };
 
-const UnifiedLoadingIndicator = ({ imagesLoading, imagesProgress, isDirectUri, audioStarted, loadingFadedOut, setLoadingFadedOut, setAudioStarted, selectedTrack }) => {
-  const { loadingProgress: audioProgress, isLoaded: audioLoaded, audioRef } = useAudio();
+const UnifiedLoadingIndicator = ({ 
+  imagesLoading, 
+  imagesProgress, 
+  isDirectUri, 
+  audioStarted, 
+  loadingFadedOut, 
+  setLoadingFadedOut, 
+  setAudioStarted, 
+  selectedTrack,
+  audioProps
+}) => {
+  const { loadingProgress: audioProgress, isLoaded: audioLoaded, audioRef } = audioProps;
   const loadingRef = useRef(null);
   const fadeoutStartedRef = useRef(false);
   const hasCheckedReadyRef = useRef(false);
   
-  // Detectar móviles y navegadores
   const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-  const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
-  const isSafariIOS = isIOS && !isChromeIOS;
+  const isSafariIOS = isIOS && !/CriOS/.test(navigator.userAgent);
   const isMobile = typeof window !== 'undefined' && (
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
     (window.innerWidth <= 768)
   );
   
-  // En móviles, ser más permisivo con readyState (iOS puede funcionar con readyState 1)
-  // En Safari iOS especialmente, readyState 1 es suficiente para metadata
   const minReadyState = (isIOS || isSafariIOS) ? 1 : 2;
   const audioHasMetadata = audioRef?.current && audioRef.current.readyState >= minReadyState;
   
-  // Solo requerir que las imágenes iniciales estén listas (no todas), y que el audio esté listo
-  // En móviles, ser más permisivo con el progreso de imágenes
-  const minImagesProgress = isMobile ? 10 : 20; // Menos imágenes iniciales en móviles
+  const minImagesProgress = isMobile ? 10 : 20;
   const imagesReady = !imagesLoading && imagesProgress >= minImagesProgress;
   
-  // En móviles, especialmente Chrome iOS, ser más permisivo con audioLoaded
-  // Si el audio tiene metadata (readyState >= minReadyState), considerarlo listo
   const audioReady = isMobile 
     ? (audioLoaded || audioHasMetadata) 
     : (audioLoaded && audioHasMetadata);
   
   const everythingReady = imagesReady && audioReady;
-  
-  // Debug logging
-  useEffect(() => {
-    console.log('[UnifiedLoadingIndicator] Estado:', {
-      imagesLoading,
-      imagesProgress,
-      audioLoaded,
-      audioHasMetadata: audioRef?.current?.readyState >= minReadyState,
-      audioReadyState: audioRef?.current?.readyState,
-      audioProgress,
-      everythingReady,
-      isMobile,
-      isIOS,
-      isChromeIOS,
-      isSafariIOS
-    });
-  }, [imagesLoading, imagesProgress, audioLoaded, audioProgress, everythingReady, audioRef, minReadyState, isMobile, isIOS, isChromeIOS, isSafariIOS]);
   
   useEffect(() => {
     if (selectedTrack) {
@@ -579,8 +966,6 @@ const UnifiedLoadingIndicator = ({ imagesLoading, imagesProgress, isDirectUri, a
       hasCheckedReadyRef.current = false;
       setLoadingFadedOut(false);
       if (loadingRef.current) {
-        // Fade-in suave del loading cuando aparece
-        // En móviles, asegurar que el loading sea visible inmediatamente
         gsap.set(loadingRef.current, { opacity: isMobile ? 1 : 0 });
         if (!isMobile) {
           gsap.to(loadingRef.current, {
@@ -598,7 +983,6 @@ const UnifiedLoadingIndicator = ({ imagesLoading, imagesProgress, isDirectUri, a
       hasCheckedReadyRef.current = true;
       fadeoutStartedRef.current = true;
       
-      // En móviles, dar un pequeño delay antes de hacer fade out para asegurar que todo esté listo
       const fadeOutDelay = isMobile ? 300 : 0;
       
       setTimeout(() => {
@@ -614,16 +998,12 @@ const UnifiedLoadingIndicator = ({ imagesLoading, imagesProgress, isDirectUri, a
     }
   }, [everythingReady, loadingFadedOut, setLoadingFadedOut, isMobile]);
   
-  // Timeout de seguridad: si el loading lleva mucho tiempo, forzar el fade out
-  // Esto previene que el loading se quede atascado en móviles
   useEffect(() => {
     if (!selectedTrack || audioStarted || loadingFadedOut) return;
     
     const safetyTimeout = setTimeout(() => {
-      // Si después de 10 segundos (móviles) o 15 segundos (desktop) no se ha completado
-      // y tenemos al menos algo de progreso, forzar el fade out
       const maxWaitTime = isMobile ? 10000 : 15000;
-      const minProgress = isMobile ? 30 : 50; // Mínimo progreso requerido
+      const minProgress = isMobile ? 30 : 50;
       
       if (loadingRef.current && !loadingFadedOut && !fadeoutStartedRef.current) {
         const currentProgress = Math.round((imagesProgress + audioProgress) / 2);
@@ -638,8 +1018,6 @@ const UnifiedLoadingIndicator = ({ imagesLoading, imagesProgress, isDirectUri, a
             ease: 'power2.out',
             onComplete: () => {
               setLoadingFadedOut(true);
-              // IMPORTANTE: Cuando el loading se quita por timeout, forzar el inicio del audio
-              // Esto asegura que el audio se inicie incluso si everythingReady es false
               if (!audioStarted) {
                 console.log('[UnifiedLoadingIndicator] Iniciando audio después de timeout de seguridad');
                 setAudioStarted(true);
@@ -653,16 +1031,12 @@ const UnifiedLoadingIndicator = ({ imagesLoading, imagesProgress, isDirectUri, a
     return () => clearTimeout(safetyTimeout);
   }, [selectedTrack, audioStarted, loadingFadedOut, imagesProgress, audioProgress, isMobile, setLoadingFadedOut, setAudioStarted]);
   
-  // En móviles, especialmente Chrome iOS, asegurar que el loading siempre se muestre
-  // incluso si everythingReady es false inicialmente
   if (audioStarted || loadingFadedOut) {
     return null;
   }
   
   const combinedProgress = everythingReady ? 100 : Math.round((imagesProgress + audioProgress) / 2);
   const showFast = combinedProgress >= 95;
-  
-  // En móviles, asegurar que el loading tenga al menos un progreso mínimo visible
   const displayProgress = isMobile && combinedProgress === 0 ? 5 : combinedProgress;
   
   return (
@@ -686,31 +1060,26 @@ const UnifiedContentManager = ({
   startButtonRef,
   handleClick,
   selectedTrack,
-  loadingFadedOut
+  loadingFadedOut,
+  audioProps
 }) => {
-  const { isLoaded, audioRef, audioContextRef } = useAudio();
+  const { isLoaded, audioRef } = audioProps;
   const buttonRef = useRef(null);
   const buttonAnimationStartedRef = useRef(false);
   
-  // Detectar móviles y navegadores
   const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-  const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
-  const isSafariIOS = isIOS && !isChromeIOS;
+  const isSafariIOS = isIOS && !/CriOS/.test(navigator.userAgent);
   const isMobile = typeof window !== 'undefined' && (
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
     (window.innerWidth <= 768)
   );
   
-  // En móviles, ser más permisivo con readyState
   const minReadyState = (isIOS || isSafariIOS) ? 1 : 2;
   const audioHasMetadata = audioRef?.current && audioRef.current.readyState >= minReadyState;
   
-  // Solo requerir que las imágenes iniciales estén listas (no todas), y que el audio esté listo
-  // En móviles, ser más permisivo con el progreso de imágenes
   const minImagesProgress = isMobile ? 10 : 20;
   const imagesReady = !imagesLoading && imagesProgress >= minImagesProgress;
   
-  // En móviles, especialmente Chrome iOS, ser más permisivo con audioLoaded
   const audioReady = isMobile 
     ? (isLoaded || audioHasMetadata) 
     : (isLoaded && audioHasMetadata);
@@ -729,29 +1098,10 @@ const UnifiedContentManager = ({
         setShowStartButton(false);
       }
       if (!audioStarted && everythingReady && loadingFadedOut) {
-        // En iOS, especialmente Chrome, asegurar que el AudioContext esté resumido antes de iniciar
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        const isChromeIOS = isIOS && /CriOS/.test(navigator.userAgent);
-        
-        if (isIOS || isChromeIOS) {
-          const audioContext = audioContextRef?.current || window.__globalAudioContext;
-          if (audioContext && audioContext.state === 'suspended') {
-            audioContext.resume().then(() => {
-              console.log('[UnifiedContentManager] AudioContext resumido antes de iniciar audio');
-              setAudioStarted(true);
-            }).catch(err => {
-              console.warn('[UnifiedContentManager] Error resumiendo AudioContext:', err);
-              setAudioStarted(true); // Continuar de todas formas
-            });
-          } else {
             setAudioStarted(true);
           }
-        } else {
-          setAudioStarted(true);
         }
-      }
-    }
-  }, [everythingReady, loadingFadedOut, isDirectUri, showStartButton, audioStarted, wasSelectedFromIntro, setShowStartButton, setAudioStarted, audioContextRef]);
+  }, [everythingReady, loadingFadedOut, isDirectUri, showStartButton, audioStarted, wasSelectedFromIntro, setShowStartButton, setAudioStarted]);
   
   useEffect(() => {
     if (isDirectUri && !wasSelectedFromIntro && everythingReady && loadingFadedOut && showStartButton && !audioStarted) {
@@ -795,26 +1145,32 @@ const UnifiedContentManager = ({
   );
 };
 
-const BackgroundWrapper = ({ onTriggerCallbackRef, onVoiceCallbackRef, selectedTrack, showOnlyDiagonales = false, onAllComplete }) => {
-  const { analyserRef, dataArrayRef, isInitialized, currentIndex, pause } = useAudio();
-  
+const BackgroundWrapper = ({ 
+  onTriggerCallbackRef, 
+  onVoiceCallbackRef, 
+  selectedTrack, 
+  showOnlyDiagonales = false, 
+  onAllComplete,
+  audioAnalysis,
+  currentAudioIndex,
+  pause
+}) => {
   return (
     <Background 
       onTriggerCallbackRef={showOnlyDiagonales ? null : onTriggerCallbackRef} 
       onVoiceCallbackRef={showOnlyDiagonales ? null : onVoiceCallbackRef}
-      analyserRef={analyserRef}
-      dataArrayRef={dataArrayRef}
-      isInitialized={isInitialized}
+      analyserRef={audioAnalysis.analyserRef}
+      dataArrayRef={audioAnalysis.dataArrayRef}
+      isInitialized={audioAnalysis.isInitialized}
       selectedTrack={showOnlyDiagonales ? null : selectedTrack}
       showOnlyDiagonales={showOnlyDiagonales}
-      currentAudioIndex={showOnlyDiagonales ? null : currentIndex}
+      currentAudioIndex={currentAudioIndex}
       onAllComplete={onAllComplete}
       pause={showOnlyDiagonales ? null : pause}
     />
   );
 };
 
-// Componente para mostrar solo diagonales sin necesidad de AudioProvider
 const DiagonalesOnly = () => {
   return (
     <Background 
@@ -829,10 +1185,8 @@ const DiagonalesOnly = () => {
   );
 };
 
-const SeekWrapper = ({ selectedTrack }) => {
-  const { analyserRef } = useAudio();
+const SeekWrapper = ({ selectedTrack, audioProps, seekToImagePosition }) => {
   const [squares, setSquares] = useState([]);
-  const { seekToImagePosition } = useGallery(selectedTrack, null, null, null);
   
   useEffect(() => {
     const updateSquares = () => {
@@ -849,13 +1203,11 @@ const SeekWrapper = ({ selectedTrack }) => {
     return () => clearInterval(interval);
   }, []);
   
-  return <Seek squares={squares} seekToImagePosition={seekToImagePosition} selectedTrack={selectedTrack} />;
+  return <Seek squares={squares} seekToImagePosition={seekToImagePosition} selectedTrack={selectedTrack} audioProps={audioProps} />;
 };
 
-// Componente para gestionar el guión según la subcarpeta actual
-// Componente para controlar el cambio de audio cuando se completa una subcarpeta
-const SubfolderAudioController = ({ selectedTrack }) => {
-  const { seekToAudio, currentIndex } = useAudio();
+const SubfolderAudioController = ({ selectedTrack, audioProps }) => {
+  const { seekToAudio, currentIndex } = audioProps;
   const completedSubfoldersRef = useRef(new Set());
 
   useEffect(() => {
@@ -887,18 +1239,16 @@ const SubfolderAudioController = ({ selectedTrack }) => {
   return null;
 };
 
-const GuionManager = ({ selectedTrack, typewriterInstanceRef, isPausedByHold }) => {
+const GuionManager = ({ selectedTrack, typewriterInstanceRef, isPausedByHold, audioProps, audioAnalysis }) => {
   const [currentSubfolder, setCurrentSubfolder] = useState(null);
-  const { currentIndex } = useAudio();
+  const { currentIndex } = audioProps;
   
-  // Rastrear la subcarpeta actual basándose en el audio que está sonando
   useEffect(() => {
     if (!selectedTrack || !selectedTrack.subfolderToAudioIndex || !selectedTrack.subfolderOrder) return;
     
     const subfolderOrder = selectedTrack.subfolderOrder || [];
     let foundSubfolder = null;
     
-    // Buscar la subcarpeta que tiene el audio actual
     for (const subfolder of subfolderOrder) {
       const audioIndex = selectedTrack.subfolderToAudioIndex[subfolder];
       if (audioIndex === currentIndex) {
@@ -907,7 +1257,6 @@ const GuionManager = ({ selectedTrack, typewriterInstanceRef, isPausedByHold }) 
       }
     }
     
-    // Si no encontramos una subcarpeta con el audio actual, usar la primera o __root__
     if (!foundSubfolder && subfolderOrder.length > 0) {
       foundSubfolder = subfolderOrder[0];
     }
@@ -915,19 +1264,16 @@ const GuionManager = ({ selectedTrack, typewriterInstanceRef, isPausedByHold }) 
     setCurrentSubfolder(foundSubfolder);
   }, [selectedTrack, currentIndex]);
   
-  // Obtener el guión: priorizar el de la raíz, luego el de la subcarpeta actual
   const getCurrentGuion = () => {
     if (!selectedTrack || !selectedTrack.guionesBySubfolder) {
       return selectedTrack?.guion;
     }
     
-    // Priorizar guión de la raíz
     const rootGuion = selectedTrack.guionesBySubfolder['__root__'];
     if (rootGuion && rootGuion.textos) {
       return rootGuion;
     }
     
-    // Si no hay guión en la raíz, usar el de la subcarpeta actual
     if (currentSubfolder) {
       const subfolderGuion = selectedTrack.guionesBySubfolder[currentSubfolder];
       if (subfolderGuion && subfolderGuion.textos) {
@@ -935,7 +1281,6 @@ const GuionManager = ({ selectedTrack, typewriterInstanceRef, isPausedByHold }) 
       }
     }
     
-    // Fallback al guión general del track
     return selectedTrack?.guion;
   };
   
@@ -950,12 +1295,14 @@ const GuionManager = ({ selectedTrack, typewriterInstanceRef, isPausedByHold }) 
       textos={currentGuion.textos} 
       typewriterInstanceRef={typewriterInstanceRef} 
       isPausedByHold={isPausedByHold} 
+      audioProps={audioProps}
+      audioAnalysis={audioAnalysis}
     />
   );
 };
 
-const PromptWrapper = ({ textos, typewriterInstanceRef, isPausedByHold }) => {
-  const { audioRef, analyserRef } = useAudio();
+const PromptWrapper = ({ textos, typewriterInstanceRef, isPausedByHold, audioProps, audioAnalysis }) => {
+  const { audioRef } = audioProps;
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   
@@ -986,7 +1333,7 @@ const PromptWrapper = ({ textos, typewriterInstanceRef, isPausedByHold }) => {
       duration={duration}
       typewriterInstanceRef={typewriterInstanceRef}
       isPaused={isPausedByHold}
-      analyser={analyserRef?.current}
+      analyser={audioAnalysis?.analyserRef?.current}
     />
   );
 };

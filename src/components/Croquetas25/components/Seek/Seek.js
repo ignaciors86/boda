@@ -1,24 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useAudio } from '../../context/AudioContext';
 import './Seek.scss';
 
 const MAINCLASS = 'seek';
 
-const Seek = ({ squares, seekToImagePosition, selectedTrack }) => {
+const Seek = ({ squares, seekToImagePosition, selectedTrack, audioProps }) => {
   const { 
     audioRef, 
     currentIndex, 
-    audioSrcs, 
     audioDurations, 
     getTotalDuration, 
     getTotalElapsed,
     seekToAudio 
-  } = useAudio();
+  } = audioProps || {};
   const [progress, setProgress] = useState(0);
   const progressBarRef = useRef(null);
 
   useEffect(() => {
-    if (!audioRef?.current || audioDurations.length === 0) return;
+    if (!audioRef?.current || !audioDurations || audioDurations.length === 0) return;
 
     const updateProgress = () => {
       const totalDuration = getTotalDuration();
@@ -43,7 +41,7 @@ const Seek = ({ squares, seekToImagePosition, selectedTrack }) => {
   }, [audioRef, currentIndex, audioDurations, getTotalDuration, getTotalElapsed]);
 
   const handleProgressClick = async (e) => {
-    if (!audioRef?.current || !progressBarRef.current || audioDurations.length === 0) return;
+    if (!audioRef?.current || !progressBarRef.current || !audioDurations || audioDurations.length === 0) return;
     
     const rect = progressBarRef.current.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
@@ -52,7 +50,6 @@ const Seek = ({ squares, seekToImagePosition, selectedTrack }) => {
     const totalDuration = getTotalDuration();
     const targetTime = (percentage / 100) * totalDuration;
     
-    // Encontrar en qué canción está ese tiempo
     let accumulatedTime = 0;
     let targetAudioIndex = 0;
     let targetTimeInAudio = 0;
@@ -67,28 +64,25 @@ const Seek = ({ squares, seekToImagePosition, selectedTrack }) => {
       accumulatedTime += duration;
     }
 
-    // Usar tiempos auxiliares para reposicionar imágenes ANTES de hacer seek del audio
     if (seekToImagePosition && selectedTrack) {
       seekToImagePosition(targetTime, selectedTrack);
     }
     
-    // Llamar a seekToAudio con el tiempo objetivo
-    await seekToAudio(targetAudioIndex, targetTimeInAudio);
+    if (seekToAudio) {
+      await seekToAudio(targetAudioIndex, targetTimeInAudio);
+    }
   };
 
-
-  // Calcular posiciones y colores de cada tramo
   const getSegmentColors = (index) => {
-    // Paleta de colores para diferentes tramos
     const colors = [
-      { color1: '#FF0080', color2: '#FF8000' }, // Rosa/Naranja
-      { color1: '#FFFF00', color2: '#00FF00' }, // Amarillo/Verde
-      { color1: '#0080FF', color2: '#8000FF' }, // Azul/Morado
-      { color1: '#00FFFF', color2: '#FF00FF' }, // Cyan/Magenta
-      { color1: '#FFB347', color2: '#FFD700' }, // Naranja/Dorado
-      { color1: '#C0C0C0', color2: '#FFFFFF' }, // Plata/Blanco
-      { color1: '#FF6B6B', color2: '#4ECDC4' }, // Rojo/Verde agua
-      { color1: '#95E1D3', color2: '#F38181' }, // Verde agua/Rosa
+      { color1: '#FF0080', color2: '#FF8000' },
+      { color1: '#FFFF00', color2: '#00FF00' },
+      { color1: '#0080FF', color2: '#8000FF' },
+      { color1: '#00FFFF', color2: '#FF00FF' },
+      { color1: '#FFB347', color2: '#FFD700' },
+      { color1: '#C0C0C0', color2: '#FFFFFF' },
+      { color1: '#FF6B6B', color2: '#4ECDC4' },
+      { color1: '#95E1D3', color2: '#F38181' },
     ];
     return colors[index % colors.length];
   };
@@ -129,7 +123,6 @@ const Seek = ({ squares, seekToImagePosition, selectedTrack }) => {
           onClick={handleProgressClick}
           style={{}}
         >
-          {/* Segmentos de fondo con diferentes colores */}
           {segments.map((segment) => (
             <div
               key={segment.index}
