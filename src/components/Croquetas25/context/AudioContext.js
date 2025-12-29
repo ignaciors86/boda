@@ -225,7 +225,13 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
         // Configurar src después de crear el elemento
         // Esto ayuda en algunos navegadores, especialmente móviles
         try {
-          audio.src = audioSrc;
+          // Normalizar la URL - asegurar que sea absoluta si es relativa
+          let normalizedSrc = audioSrc;
+          if (audioSrc && !audioSrc.startsWith('http') && !audioSrc.startsWith('//') && audioSrc.startsWith('/')) {
+            // Es una ruta relativa, mantenerla como está (el navegador la resolverá)
+            normalizedSrc = audioSrc;
+          }
+          audio.src = normalizedSrc;
         } catch (e) {
           console.error(`[AudioContext] Error configurando src para audio ${index}:`, e);
           return null;
@@ -234,6 +240,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
         // Log para debug
         console.log(`[AudioContext] Creando audio ${index}:`, audioSrc, {
           finalSrc: audio.src,
+          currentSrc: audio.currentSrc,
           networkState: audio.networkState,
           readyState: audio.readyState
         });
@@ -298,13 +305,25 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
               
               console.error(`[AudioContext] Error cargando audio ${index}:`, e, errorInfo);
               
-              // Si es un error de red (networkState 3 = NETWORK_NO_SOURCE), intentar recargar
-              if (audio.networkState === 3 && audio.src) {
-                console.warn(`[AudioContext] Reintentando cargar audio ${index}...`);
+              // Si es un error de red (networkState 3 = NETWORK_NO_SOURCE) o error de demuxer
+              if ((audio.networkState === 3 || (audio.error && audio.error.code === 4)) && audio.src) {
+                console.warn(`[AudioContext] Error de carga en audio ${index}, intentando recargar...`, {
+                  src: audio.src,
+                  currentSrc: audio.currentSrc,
+                  errorCode: audio.error?.code,
+                  errorMessage: audio.error?.message
+                });
                 // Intentar recargar después de un pequeño delay
                 setTimeout(() => {
                   try {
+                    // Limpiar src y volver a establecerla
+                    const currentSrc = audio.src;
+                    audio.src = '';
                     audio.load();
+                    setTimeout(() => {
+                      audio.src = currentSrc;
+                      audio.load();
+                    }, 100);
                   } catch (loadErr) {
                     console.error(`[AudioContext] Error en reload de audio ${index}:`, loadErr);
                   }
