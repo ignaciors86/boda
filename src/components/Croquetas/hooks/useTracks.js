@@ -92,6 +92,12 @@ export const useTracks = () => {
                 audioSrc = audioSrc?.default || String(audioSrc);
               }
               if (typeof audioSrc === 'string' && audioSrc.length > 0) {
+                // Asegurar que la URL sea válida
+                // Si no empieza con / o http, agregar /
+                if (!audioSrc.startsWith('/') && !audioSrc.startsWith('http://') && !audioSrc.startsWith('https://')) {
+                  audioSrc = '/' + audioSrc;
+                }
+                console.log(`[useTracks] Agregando audio para ${track.name}/${subfolder}:`, audioSrc);
                 subfolderToAudioIndex[subfolder] = audioIndex;
                 audioSrcs.push(audioSrc);
                 lastAudioIndex = audioIndex;

@@ -84,8 +84,22 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           code: audio.error?.code,
           message: audio.error?.message,
           networkState: audio.networkState,
-          readyState: audio.readyState
+          readyState: audio.readyState,
+          src: audio.src
         });
+        
+        // Intentar verificar si el archivo existe
+        fetch(src, { method: 'HEAD' })
+          .then(response => {
+            if (!response.ok) {
+              console.error(`[AudioContext] Archivo no encontrado o no accesible: ${src} (Status: ${response.status})`);
+            } else {
+              console.warn(`[AudioContext] Archivo existe pero no se puede cargar en audio element: ${src}`);
+            }
+          })
+          .catch(fetchError => {
+            console.error(`[AudioContext] Error verificando archivo: ${src}`, fetchError);
+          });
       };
       
       audio.addEventListener('error', handleError);
@@ -93,6 +107,10 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       // Manejar metadata cargada
       const handleLoadedMetadata = () => {
         if (audio.duration && isFinite(audio.duration)) {
+          console.log(`[AudioContext] Audio ${index} metadata cargada:`, {
+            duration: audio.duration,
+            src: audio.src
+          });
           setAudioDurations(prev => {
             const newDurations = [...prev];
             newDurations[index] = audio.duration;
@@ -102,6 +120,17 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       };
       
       audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+      
+      // Manejar cuando el audio puede reproducirse
+      const handleCanPlay = () => {
+        console.log(`[AudioContext] Audio ${index} listo para reproducir:`, {
+          readyState: audio.readyState,
+          networkState: audio.networkState,
+          src: audio.src
+        });
+      };
+      
+      audio.addEventListener('canplay', handleCanPlay);
       
       // Manejar cuando el audio termina
       const handleEnded = () => {
@@ -119,10 +148,14 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       // Configurar audio
       audio.preload = 'auto';
       audio.volume = 0;
+      audio.crossOrigin = 'anonymous'; // Permitir CORS si es necesario
       
       // Intentar cargar el audio
       try {
-        audio.src = src;
+        // Asegurar que la URL sea absoluta si es relativa
+        const audioSrc = src.startsWith('/') || src.startsWith('http') ? src : `/${src}`;
+        console.log(`[AudioContext] Configurando audio ${index} con src:`, audioSrc);
+        audio.src = audioSrc;
         audio.load();
       } catch (error) {
         console.error(`[AudioContext] Error configurando audio ${index}:`, error);
