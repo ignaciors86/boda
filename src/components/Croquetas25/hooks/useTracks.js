@@ -14,12 +14,9 @@ export const useTracks = () => {
   useEffect(() => {
     const loadTracks = async () => {
       try {
-        // Cargar manifest desde public
-        const response = await fetch('/tracks/tracks-manifest.json');
-        if (!response.ok) {
-          throw new Error(`Failed to load tracks manifest: ${response.status}`);
-        }
-        const manifest = await response.json();
+        // Importar manifest y audioImports directamente (procesados por webpack)
+        const manifest = require('../../../assets/images/tracks/tracks-manifest.json');
+        const { audioImports } = require('../../../assets/images/tracks/audioImports.js');
         const { tracks: tracksData } = manifest;
         const tracksMap = new Map();
 
@@ -53,9 +50,18 @@ export const useTracks = () => {
               })));
             }
             
-            // Procesar audios
+            // Procesar audios - usar imports estáticos de audioImports
             if (subfolderData.audio && subfolderData.audio.length > 0) {
-              track.audioBySubfolder.set(subfolder, subfolderData.audio.map(audio => audio.url));
+              // Obtener los imports estáticos para este track y subfolder
+              const trackImports = audioImports[trackName];
+              if (trackImports && trackImports[subfolder]) {
+                // Usar los imports estáticos (procesados por webpack)
+                track.audioBySubfolder.set(subfolder, trackImports[subfolder]);
+              } else {
+                // Fallback: usar URLs del manifest (pero esto no funcionará bien)
+                console.warn(`[useTracks] No se encontraron imports para ${trackName}/${subfolder}`);
+                track.audioBySubfolder.set(subfolder, subfolderData.audio.map(audio => audio.url));
+              }
             }
             
             // Procesar guiones
@@ -159,13 +165,14 @@ export const useTracks = () => {
           audioSubfolders.forEach(subfolder => {
             const audios = track.audioBySubfolder.get(subfolder);
             if (audios && audios.length > 0) {
-              // Asegurar que el audio sea un string válido
+              // Los imports de webpack pueden ser strings (URLs procesadas) o módulos
+              // Si es un módulo, extraer la URL default
               let audioSrc = audios[0];
               if (typeof audioSrc !== 'string') {
-                audioSrc = audioSrc?.default || String(audioSrc);
+                audioSrc = audioSrc?.default || audioSrc;
               }
-              // Verificar que sea un string válido antes de agregarlo
-              if (typeof audioSrc === 'string' && audioSrc.length > 0) {
+              // Webpack procesa los imports y devuelve URLs válidas
+              if (audioSrc) {
                 subfolderToAudioIndex[subfolder] = audioIndex;
                 audioSrcs.push(audioSrc);
                 lastAudioIndex = audioIndex;
@@ -189,12 +196,9 @@ export const useTracks = () => {
             }
           });
 
-          // Asegurar que todos los audioSrcs sean strings válidos
+          // Asegurar que todos los audioSrcs sean válidos (strings o módulos de webpack)
           const validAudioSrcs = audioSrcs.filter(src => {
-            if (typeof src === 'string' && src.length > 0) {
-              return true;
-            }
-            return false;
+            return src && (typeof src === 'string' || typeof src === 'object');
           });
 
           // Procesar guiones
