@@ -75,70 +75,65 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     console.log('[AudioContext] Creando', validSrcs.length, 'elementos de audio');
     
     validSrcs.forEach((src, index) => {
-      const audio = new Audio();
+      // Normalizar la URL - exactamente como Timeline lo hace
+      const audioSrc = src.startsWith('/') || src.startsWith('http') ? src : `/${src}`;
       
-      // Manejar errores de carga
-      const handleError = (e) => {
-        console.error(`[AudioContext] Error cargando audio ${index} (${src}):`, e);
+      // Crear Audio exactamente como Timeline: new Audio(url) directamente
+      // Timeline NO usa crossOrigin, así que nosotros tampoco
+      const audio = new Audio(audioSrc);
+      audio.preload = 'auto';
+      audio.volume = 0;
+      // NO establecer crossOrigin - Timeline no lo usa y funciona
+      
+      // Manejar errores de carga - intentar cargar como blob si falla
+      const handleError = async (e) => {
+        console.error(`[AudioContext] Error cargando audio ${index} (${audioSrc}):`, e);
         console.error(`[AudioContext] Error details:`, {
           code: audio.error?.code,
           message: audio.error?.message,
           networkState: audio.networkState,
           readyState: audio.readyState,
-          src: audio.src,
-          crossOrigin: audio.crossOrigin
+          src: audio.src
         });
         
-        // Si es un error de CORS y estamos usando crossOrigin, intentar sin él
-        if (audio.error && audio.error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED && audio.crossOrigin) {
-          console.warn(`[AudioContext] Posible error CORS, intentando sin crossOrigin para audio ${index}`);
-          audio.crossOrigin = null;
-          audio.src = '';
-          audio.src = src.startsWith('/') || src.startsWith('http') ? src : `/${src}`;
-          audio.load();
-          return;
+        // Si falla la carga directa, intentar cargar como blob (como fallback)
+        try {
+          console.log(`[AudioContext] Intentando cargar audio ${index} como blob desde:`, audioSrc);
+          const response = await fetch(audioSrc);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          const blob = await response.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          console.log(`[AudioContext] Blob creado para audio ${index}`);
+          
+          // Limpiar listeners del audio anterior
+          audio.removeEventListener('error', handleError);
+          audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+          audio.removeEventListener('ended', handleEnded);
+          
+          // Crear nuevo audio con blob URL
+          const newAudio = new Audio(blobUrl);
+          newAudio.preload = 'auto';
+          newAudio.volume = 0;
+          
+          newAudio.addEventListener('loadedmetadata', handleLoadedMetadata);
+          newAudio.addEventListener('ended', handleEnded);
+          newAudio.oncanplaythrough = handleCanPlayThrough;
+          
+          newAudio.load();
+          audioElementsRef.current[index] = newAudio;
+          console.log(`[AudioContext] Audio ${index} cargado desde blob exitosamente`);
+        } catch (blobError) {
+          console.error(`[AudioContext] Error cargando audio ${index} como blob:`, blobError);
         }
-        
-        // Verificar si el archivo existe y si hay problemas de CORS
-        const audioSrc = src.startsWith('/') || src.startsWith('http') ? src : `/${src}`;
-        fetch(audioSrc, { method: 'HEAD', mode: 'cors' })
-          .then(response => {
-            if (!response.ok) {
-              console.error(`[AudioContext] Archivo no encontrado o no accesible: ${audioSrc} (Status: ${response.status})`);
-            } else {
-              const corsHeader = response.headers.get('Access-Control-Allow-Origin');
-              console.warn(`[AudioContext] Archivo existe pero no se puede cargar. CORS header: ${corsHeader || 'no presente'}`);
-              if (!corsHeader && audio.crossOrigin) {
-                console.warn(`[AudioContext] El servidor no envía headers CORS. Intentando sin crossOrigin...`);
-                audio.crossOrigin = null;
-                audio.src = '';
-                audio.src = audioSrc;
-                audio.load();
-              }
-            }
-          })
-          .catch(fetchError => {
-            console.error(`[AudioContext] Error verificando archivo: ${audioSrc}`, fetchError);
-            // Si fetch falla por CORS, intentar sin crossOrigin
-            if (fetchError.name === 'TypeError' && audio.crossOrigin) {
-              console.warn(`[AudioContext] Error CORS detectado, intentando sin crossOrigin para audio ${index}`);
-              audio.crossOrigin = null;
-              audio.src = '';
-              audio.src = audioSrc;
-              audio.load();
-            }
-          });
       };
       
       audio.addEventListener('error', handleError);
       
-      // Manejar metadata cargada
+      // Manejar metadata cargada - igual que Timeline
       const handleLoadedMetadata = () => {
         if (audio.duration && isFinite(audio.duration)) {
-          console.log(`[AudioContext] Audio ${index} metadata cargada:`, {
-            duration: audio.duration,
-            src: audio.src
-          });
           setAudioDurations(prev => {
             const newDurations = [...prev];
             newDurations[index] = audio.duration;
@@ -149,16 +144,12 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       
       audio.addEventListener('loadedmetadata', handleLoadedMetadata);
       
-      // Manejar cuando el audio puede reproducirse
-      const handleCanPlay = () => {
-        console.log(`[AudioContext] Audio ${index} listo para reproducir:`, {
-          readyState: audio.readyState,
-          networkState: audio.networkState,
-          src: audio.src
-        });
+      // Manejar cuando el audio puede reproducirse - usar oncanplaythrough como Timeline
+      const handleCanPlayThrough = () => {
+        console.log(`[AudioContext] Audio ${index} completamente cargado (canplaythrough)`);
       };
       
-      audio.addEventListener('canplay', handleCanPlay);
+      audio.oncanplaythrough = handleCanPlayThrough;
       
       // Manejar cuando el audio termina
       const handleEnded = () => {
@@ -173,49 +164,31 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       
       audio.addEventListener('ended', handleEnded);
       
-      // Configurar audio
-      audio.preload = 'auto';
-      audio.volume = 0;
-      
-      // Determinar si necesitamos CORS basado en la URL
-      const isSameOrigin = !src.startsWith('http://') && !src.startsWith('https://') && !src.startsWith('//');
-      
-      // Para archivos estáticos en el mismo origen (como /tracks/...), NO usar crossOrigin
-      // Esto evita problemas de CORS innecesarios ya que Vercel ya envía los headers CORS
-      // Solo usar crossOrigin para URLs externas
-      if (!isSameOrigin) {
-        // URL externa: necesitamos crossOrigin
-        audio.crossOrigin = 'anonymous';
-        console.log(`[AudioContext] URL externa detectada, usando crossOrigin='anonymous' para audio ${index}`);
-      } else {
-        // Mismo origen: NO usar crossOrigin (los headers CORS de Vercel son suficientes)
-        audio.crossOrigin = null;
-        console.log(`[AudioContext] Mismo origen detectado, sin crossOrigin para audio ${index}`);
-      }
-      
-      // Intentar cargar el audio
+      // Cargar el audio - exactamente como Timeline: llamar load() después de crear
+      // Timeline hace: audio.load() inmediatamente después de crear el Audio
       try {
-        // Asegurar que la URL sea absoluta si es relativa
-        const audioSrc = src.startsWith('/') || src.startsWith('http') ? src : `/${src}`;
-        console.log(`[AudioContext] Configurando audio ${index} con src:`, audioSrc, 'crossOrigin:', audio.crossOrigin || 'null (same-origin)');
-        
-        // Configurar src y cargar
-        audio.src = audioSrc;
-        audio.load();
+        audio.load(); // Forzar la carga del audio, igual que Timeline
       } catch (error) {
-        console.error(`[AudioContext] Error configurando audio ${index}:`, error);
+        console.error(`[AudioContext] Error en load() para audio ${index}:`, error);
       }
 
       audioElementsRef.current.push(audio);
     });
 
     return () => {
-      audioElementsRef.current.forEach(audio => {
+      audioElementsRef.current.forEach((audio, index) => {
         if (audio) {
           audio.pause();
           audio.removeEventListener('loadedmetadata', () => {});
           audio.removeEventListener('error', () => {});
           audio.removeEventListener('ended', () => {});
+          audio.removeEventListener('canplay', () => {});
+          
+          // Limpiar blob URLs si existen
+          if (audio.src && audio.src.startsWith('blob:')) {
+            URL.revokeObjectURL(audio.src);
+          }
+          
           audio.src = '';
           audio.load();
         }
@@ -249,7 +222,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     });
   }, [currentIndex]);
 
-  // Reproducir audio en un índice específico
+  // Reproducir audio en un índice específico - simplificado
   const playAudio = useCallback(async (index, startTime = 0) => {
     if (index < 0 || index >= audioElementsRef.current.length) {
       console.warn('[AudioContext] Índice de audio inválido:', index);
@@ -275,49 +248,6 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       });
     }
 
-    // Verificar que el nuevo audio esté listo
-    if (newAudio.readyState === 0) {
-      console.warn('[AudioContext] Audio no está listo (readyState: 0), esperando...');
-      await new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error('Timeout esperando a que el audio se cargue'));
-        }, 5000);
-        
-        const handleCanPlay = () => {
-          clearTimeout(timeout);
-          newAudio.removeEventListener('canplay', handleCanPlay);
-          newAudio.removeEventListener('error', handleError);
-          resolve();
-        };
-        
-        const handleError = (e) => {
-          clearTimeout(timeout);
-          newAudio.removeEventListener('canplay', handleCanPlay);
-          newAudio.removeEventListener('error', handleError);
-          reject(new Error(`Error cargando audio: ${newAudio.error?.message || 'Unknown error'}`));
-        };
-        
-        if (newAudio.readyState >= 2) {
-          clearTimeout(timeout);
-          resolve();
-        } else {
-          newAudio.addEventListener('canplay', handleCanPlay);
-          newAudio.addEventListener('error', handleError);
-        }
-      });
-    }
-
-    // Verificar que no haya errores
-    if (newAudio.error) {
-      console.error('[AudioContext] Error en el audio:', {
-        code: newAudio.error.code,
-        message: newAudio.error.message,
-        src: newAudio.src
-      });
-      setIsPlaying(false);
-      return;
-    }
-
     // Cambiar índice
     setCurrentIndex(index);
 
@@ -326,6 +256,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     volumeRef.current = 0;
     newAudio.volume = 0;
 
+    // Timeline simplemente llama a play() sin verificar readyState
     try {
       await newAudio.play();
       setIsPlaying(true);
@@ -334,12 +265,6 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       fadeVolume(1, 0.5, null, index);
     } catch (error) {
       console.error('[AudioContext] Error playing audio:', error);
-      console.error('[AudioContext] Audio state:', {
-        readyState: newAudio.readyState,
-        networkState: newAudio.networkState,
-        error: newAudio.error,
-        src: newAudio.src
-      });
       setIsPlaying(false);
     }
   }, [fadeVolume, currentIndex]);
@@ -363,7 +288,7 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     });
   }, [fadeVolume, currentIndex]);
 
-  // Reanudar con fade in
+  // Reanudar con fade in - simplificado como Timeline
   const play = useCallback(async () => {
     const currentAudio = audioElementsRef.current[currentIndex];
     if (!currentAudio) {
@@ -371,60 +296,15 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       return;
     }
 
-    // Verificar que el audio esté listo
-    if (currentAudio.readyState === 0) {
-      console.warn('[AudioContext] Audio no está listo (readyState: 0), esperando...');
-      // Esperar a que el audio se cargue
-      await new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error('Timeout esperando a que el audio se cargue'));
-        }, 5000);
-        
-        const handleCanPlay = () => {
-          clearTimeout(timeout);
-          currentAudio.removeEventListener('canplay', handleCanPlay);
-          currentAudio.removeEventListener('error', handleError);
-          resolve();
-        };
-        
-        const handleError = (e) => {
-          clearTimeout(timeout);
-          currentAudio.removeEventListener('canplay', handleCanPlay);
-          currentAudio.removeEventListener('error', handleError);
-          reject(new Error(`Error cargando audio: ${currentAudio.error?.message || 'Unknown error'}`));
-        };
-        
-        if (currentAudio.readyState >= 2) {
-          clearTimeout(timeout);
-          resolve();
-        } else {
-          currentAudio.addEventListener('canplay', handleCanPlay);
-          currentAudio.addEventListener('error', handleError);
-        }
-      });
-    }
-
-    // Verificar que no haya errores
-    if (currentAudio.error) {
-      console.error('[AudioContext] Error en el audio:', {
-        code: currentAudio.error.code,
-        message: currentAudio.error.message
-      });
-      return;
-    }
-
+    // Timeline simplemente llama a play() y maneja el error con catch
+    // No espera a que esté listo, el navegador lo maneja
     try {
       await currentAudio.play();
       setIsPlaying(true);
       fadeVolume(1, 0.5, null, currentIndex);
     } catch (error) {
       console.error('[AudioContext] Error resuming audio:', error);
-      console.error('[AudioContext] Audio state:', {
-        readyState: currentAudio.readyState,
-        networkState: currentAudio.networkState,
-        error: currentAudio.error,
-        src: currentAudio.src
-      });
+      // Timeline también solo hace catch y log, no hace nada más
     }
   }, [fadeVolume, currentIndex]);
 
