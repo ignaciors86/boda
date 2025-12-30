@@ -79,113 +79,10 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       const audioSrc = src.startsWith('/') || src.startsWith('http') ? src : `/${src}`;
       
       // Crear Audio exactamente como Timeline: new Audio(url) directamente
-      // Timeline NO usa crossOrigin, así que nosotros tampoco
+      // Timeline NO usa crossOrigin, NO hace validaciones complejas, NO usa blobs
       const audio = new Audio(audioSrc);
       audio.preload = 'auto';
       audio.volume = 0;
-      // NO establecer crossOrigin - Timeline no lo usa y funciona
-      
-      // Manejar errores de carga - intentar cargar como blob si falla
-      const handleError = async (e) => {
-        console.error(`[AudioContext] Error cargando audio ${index} (${audioSrc}):`, e);
-        console.error(`[AudioContext] Error details:`, {
-          code: audio.error?.code,
-          message: audio.error?.message,
-          networkState: audio.networkState,
-          readyState: audio.readyState,
-          src: audio.src
-        });
-        
-        // Si falla la carga directa, intentar cargar como blob (como fallback)
-        try {
-          console.log(`[AudioContext] Intentando cargar audio ${index} como blob desde:`, audioSrc);
-          const response = await fetch(audioSrc);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-          
-          // Obtener el tipo MIME del response o inferirlo de la extensión
-          let mimeType = response.headers.get('content-type');
-          if (!mimeType || !mimeType.startsWith('audio/')) {
-            // Inferir tipo MIME de la extensión
-            if (audioSrc.endsWith('.mp3')) {
-              mimeType = 'audio/mpeg';
-            } else if (audioSrc.endsWith('.wav')) {
-              mimeType = 'audio/wav';
-            } else if (audioSrc.endsWith('.ogg')) {
-              mimeType = 'audio/ogg';
-            } else {
-              mimeType = 'audio/mpeg'; // Default
-            }
-          }
-          
-          const arrayBuffer = await response.arrayBuffer();
-          // Crear un nuevo blob con el tipo MIME correcto desde el arrayBuffer
-          const typedBlob = new Blob([arrayBuffer], { type: mimeType });
-          const blobUrl = URL.createObjectURL(typedBlob);
-          console.log(`[AudioContext] Blob creado para audio ${index} con tipo:`, mimeType, 'size:', typedBlob.size);
-          
-          // Limpiar listeners del audio anterior
-          audio.removeEventListener('error', handleError);
-          audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-          audio.removeEventListener('ended', handleEnded);
-          
-          // Crear nuevo audio con blob URL - exactamente como Timeline
-          const newAudio = new Audio(blobUrl);
-          newAudio.preload = 'auto';
-          newAudio.volume = 0;
-          
-          // Nuevos handlers para el audio con blob
-          const newHandleLoadedMetadata = () => {
-            if (newAudio.duration && isFinite(newAudio.duration)) {
-              console.log(`[AudioContext] Audio ${index} (blob) metadata cargada:`, newAudio.duration);
-              setAudioDurations(prev => {
-                const newDurations = [...prev];
-                newDurations[index] = newAudio.duration;
-                return newDurations;
-              });
-            }
-          };
-          
-          const newHandleError = (e) => {
-            console.error(`[AudioContext] Error en audio ${index} (blob):`, e);
-            console.error(`[AudioContext] Blob error details:`, {
-              code: newAudio.error?.code,
-              message: newAudio.error?.message,
-              networkState: newAudio.networkState,
-              readyState: newAudio.readyState,
-              src: newAudio.src,
-              blobType: mimeType
-            });
-          };
-          
-          const newHandleEnded = () => {
-            setCurrentIndex(prevIndex => {
-              if (prevIndex === index && index < validSrcs.length - 1 && playAudioRef.current) {
-                playAudioRef.current(index + 1, 0);
-                return index + 1;
-              }
-              return prevIndex;
-            });
-          };
-          
-          newAudio.addEventListener('loadedmetadata', newHandleLoadedMetadata);
-          newAudio.addEventListener('error', newHandleError);
-          newAudio.addEventListener('ended', newHandleEnded);
-          newAudio.oncanplaythrough = () => {
-            console.log(`[AudioContext] Audio ${index} (blob) completamente cargado (canplaythrough)`);
-          };
-          
-          // Cargar el audio - igual que Timeline
-          newAudio.load();
-          audioElementsRef.current[index] = newAudio;
-          console.log(`[AudioContext] Audio ${index} cargado desde blob exitosamente`);
-        } catch (blobError) {
-          console.error(`[AudioContext] Error cargando audio ${index} como blob:`, blobError);
-        }
-      };
-      
-      audio.addEventListener('error', handleError);
       
       // Manejar metadata cargada - igual que Timeline
       const handleLoadedMetadata = () => {
@@ -201,11 +98,22 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       audio.addEventListener('loadedmetadata', handleLoadedMetadata);
       
       // Manejar cuando el audio puede reproducirse - usar oncanplaythrough como Timeline
-      const handleCanPlayThrough = () => {
+      audio.oncanplaythrough = () => {
         console.log(`[AudioContext] Audio ${index} completamente cargado (canplaythrough)`);
       };
       
-      audio.oncanplaythrough = handleCanPlayThrough;
+      // Manejar errores - Timeline solo hace log, no hace fallback
+      audio.onerror = (e) => {
+        console.error(`[AudioContext] Error cargando audio ${index} (${audioSrc}):`, e);
+        if (audio.error) {
+          console.error(`[AudioContext] Error details:`, {
+            code: audio.error.code,
+            message: audio.error.message,
+            networkState: audio.networkState,
+            readyState: audio.readyState
+          });
+        }
+      };
       
       // Manejar cuando el audio termina
       const handleEnded = () => {
@@ -221,30 +129,19 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
       audio.addEventListener('ended', handleEnded);
       
       // Cargar el audio - exactamente como Timeline: llamar load() después de crear
-      // Timeline hace: audio.load() inmediatamente después de crear el Audio
-      try {
-        audio.load(); // Forzar la carga del audio, igual que Timeline
-      } catch (error) {
-        console.error(`[AudioContext] Error en load() para audio ${index}:`, error);
-      }
+      audio.load(); // Forzar la carga del audio, igual que Timeline
 
       audioElementsRef.current.push(audio);
     });
 
     return () => {
-      audioElementsRef.current.forEach((audio, index) => {
+      audioElementsRef.current.forEach((audio) => {
         if (audio) {
           audio.pause();
           audio.removeEventListener('loadedmetadata', () => {});
-          audio.removeEventListener('error', () => {});
           audio.removeEventListener('ended', () => {});
-          audio.removeEventListener('canplay', () => {});
-          
-          // Limpiar blob URLs si existen
-          if (audio.src && audio.src.startsWith('blob:')) {
-            URL.revokeObjectURL(audio.src);
-          }
-          
+          audio.oncanplaythrough = null;
+          audio.onerror = null;
           audio.src = '';
           audio.load();
         }
