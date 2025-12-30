@@ -75,11 +75,11 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
     console.log('[AudioContext] Creando', validSrcs.length, 'elementos de audio');
     
     validSrcs.forEach((src, index) => {
-      // Normalizar la URL - exactamente como Timeline lo hace
-      const audioSrc = src.startsWith('/') || src.startsWith('http') ? src : `/${src}`;
+      // URLs directas desde public como /tracks/... (igual que el proyecto nuevo)
+      // NO normalizar - las URLs ya vienen correctas desde el manifest
+      const audioSrc = src;
       
-      // Crear Audio exactamente como Timeline: new Audio(url) directamente
-      // Timeline NO usa crossOrigin, NO hace validaciones complejas, NO usa blobs
+      // Crear Audio exactamente como el proyecto nuevo: new Audio(url) directamente
       const audio = new Audio(audioSrc);
       audio.preload = 'auto';
       audio.volume = 0;

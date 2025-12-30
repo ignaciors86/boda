@@ -80,16 +80,13 @@ function organizeByTrack(files, fileType = 'audio') {
       tracks[trackName][subfolder][fileType] = [];
     }
     
-    // URL: usar path relativo que webpack procesará
-    // Para audios, necesitamos importarlos directamente
-    // Para imágenes, también usamos imports
-    const importPath = `./${file}`;
+    // URL pública: /tracks/ + ruta relativa (igual que el proyecto nuevo)
+    const publicUrl = `/tracks/${file}`;
     
     tracks[trackName][subfolder][fileType].push({
       path: file,
-      url: importPath, // Será procesado por webpack cuando se importe
-      name: path.basename(file),
-      importPath: importPath // Path para importar
+      url: publicUrl, // URL absoluta desde public/tracks/
+      name: path.basename(file)
     });
   });
   
@@ -199,10 +196,19 @@ const manifest = {
   tracks: allTracks
 };
 
-// Escribir el manifest
+// Escribir el manifest en src y copiarlo a public
 fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 2), 'utf8');
 console.log(`✅ Manifest generado: ${manifestFile}`);
 console.log(`   ${Object.keys(allTracks).length} tracks procesados`);
+
+// Copiar manifest a public/tracks/ para que sea accesible en runtime
+const publicManifestFile = path.join(__dirname, '..', '..', '..', '..', 'public', 'tracks', 'tracks-manifest.json');
+try {
+  fs.copyFileSync(manifestFile, publicManifestFile);
+  console.log(`✅ Manifest copiado a: ${publicManifestFile}`);
+} catch (error) {
+  console.warn(`⚠️  No se pudo copiar manifest a public:`, error.message);
+}
 
 // Generar audioImports.js con imports estáticos
 const audioImportsFile = path.join(tracksDir, 'audioImports.js');

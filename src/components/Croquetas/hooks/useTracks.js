@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react';
-// Importar audioImports directamente (procesados por webpack)
-import { audioImports } from '../../../assets/images/tracks/audioImports.js';
 
 const normalizeName = (name) => name?.toLowerCase().replace(/\s+/g, '-') || '';
 
@@ -49,18 +47,10 @@ export const useTracks = () => {
               })));
             }
             
-            // Procesar audios - usar imports estáticos de audioImports
+            // Procesar audios - usar URLs directas desde public (igual que el proyecto nuevo)
             if (subfolderData.audio && subfolderData.audio.length > 0) {
-              // Obtener los imports estáticos para este track y subfolder
-              const trackImports = audioImports[trackName];
-              if (trackImports && trackImports[subfolder]) {
-                // Usar los imports estáticos (procesados por webpack)
-                track.audioBySubfolder.set(subfolder, trackImports[subfolder]);
-              } else {
-                // Fallback: usar URLs del manifest (pero esto no funcionará bien)
-                console.warn(`[useTracks] No se encontraron imports para ${trackName}/${subfolder}`);
-                track.audioBySubfolder.set(subfolder, subfolderData.audio.map(audio => audio.url));
-              }
+              // Usar URLs del manifest que apuntan a /tracks/ (public/tracks/)
+              track.audioBySubfolder.set(subfolder, subfolderData.audio.map(audio => audio.url));
             }
           });
           
@@ -96,18 +86,14 @@ export const useTracks = () => {
           let audioIndex = 0;
           let lastAudioIndex = -1;
 
-          // Primero, mapear audios existentes
+          // Primero, mapear audios existentes - URLs directas desde public
           audioSubfolders.forEach(subfolder => {
             const audios = track.audioBySubfolder.get(subfolder);
             if (audios && audios.length > 0) {
-              // Los imports de webpack pueden ser strings (URLs procesadas) o módulos
-              // Si es un módulo, extraer la URL default
+              // Las URLs del manifest ya son strings como /tracks/...
               let audioSrc = audios[0];
-              if (typeof audioSrc !== 'string') {
-                audioSrc = audioSrc?.default || audioSrc;
-              }
-              // Webpack procesa los imports y devuelve URLs válidas
-              if (audioSrc) {
+              // Verificar que sea un string válido antes de agregarlo
+              if (typeof audioSrc === 'string' && audioSrc.length > 0) {
                 subfolderToAudioIndex[subfolder] = audioIndex;
                 audioSrcs.push(audioSrc);
                 lastAudioIndex = audioIndex;
