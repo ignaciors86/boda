@@ -9,6 +9,7 @@ export const useTracks = () => {
   useEffect(() => {
     const loadTracks = async () => {
       try {
+        // Cargar manifest desde public
         const response = await fetch('/tracks/tracks-manifest.json');
         if (!response.ok) {
           throw new Error(`Failed to load tracks manifest: ${response.status}`);
@@ -24,6 +25,7 @@ export const useTracks = () => {
           const trackKey = normalizeName(trackName);
           const trackData = tracksData[trackName];
           
+          // Crear estructura del track
           const track = {
             id: trackKey,
             name: trackName,
@@ -45,7 +47,7 @@ export const useTracks = () => {
               })));
             }
             
-            // Procesar audios
+            // Procesar audios - usar URLs directamente del manifest, igual que Croquetas25
             if (subfolderData.audio && subfolderData.audio.length > 0) {
               track.audioBySubfolder.set(subfolder, subfolderData.audio.map(audio => audio.url));
             }
@@ -71,7 +73,7 @@ export const useTracks = () => {
             imagesArray.push(...track.imagesBySubfolder.get(subfolder));
           });
 
-          // Procesar audios
+          // Procesar audios - usar imports estáticos
           const audioSubfolders = Array.from(track.audioBySubfolder.keys()).sort((a, b) => {
             if (a === '__root__') return -1;
             if (b === '__root__') return 1;
@@ -83,21 +85,17 @@ export const useTracks = () => {
           let audioIndex = 0;
           let lastAudioIndex = -1;
 
-          // Mapear audios existentes
+          // Primero, mapear audios existentes
           audioSubfolders.forEach(subfolder => {
             const audios = track.audioBySubfolder.get(subfolder);
             if (audios && audios.length > 0) {
+              // Asegurar que el audio sea un string válido
               let audioSrc = audios[0];
               if (typeof audioSrc !== 'string') {
                 audioSrc = audioSrc?.default || String(audioSrc);
               }
+              // Verificar que sea un string válido antes de agregarlo
               if (typeof audioSrc === 'string' && audioSrc.length > 0) {
-                // Asegurar que la URL sea válida
-                // Si no empieza con / o http, agregar /
-                if (!audioSrc.startsWith('/') && !audioSrc.startsWith('http://') && !audioSrc.startsWith('https://')) {
-                  audioSrc = '/' + audioSrc;
-                }
-                console.log(`[useTracks] Agregando audio para ${track.name}/${subfolder}:`, audioSrc);
                 subfolderToAudioIndex[subfolder] = audioIndex;
                 audioSrcs.push(audioSrc);
                 lastAudioIndex = audioIndex;
@@ -119,8 +117,12 @@ export const useTracks = () => {
             }
           });
 
+          // Asegurar que todos los audioSrcs sean strings válidos
           const validAudioSrcs = audioSrcs.filter(src => {
-            return typeof src === 'string' && src.length > 0;
+            if (typeof src === 'string' && src.length > 0) {
+              return true;
+            }
+            return false;
           });
 
           const finalTrack = {
