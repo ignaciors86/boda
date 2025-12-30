@@ -30,7 +30,7 @@
       "headers": [
         {
           "key": "Content-Type",
-          "value": "audio/mpeg; charset=binary"
+          "value": "audio/mpeg"
         },
         {
           "key": "Access-Control-Allow-Origin",

@@ -103,24 +103,80 @@ export const AudioProvider = ({ children, audioSrcs = [] }) => {
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
-          const blob = await response.blob();
-          const blobUrl = URL.createObjectURL(blob);
-          console.log(`[AudioContext] Blob creado para audio ${index}`);
+          
+          // Obtener el tipo MIME del response o inferirlo de la extensión
+          let mimeType = response.headers.get('content-type');
+          if (!mimeType || !mimeType.startsWith('audio/')) {
+            // Inferir tipo MIME de la extensión
+            if (audioSrc.endsWith('.mp3')) {
+              mimeType = 'audio/mpeg';
+            } else if (audioSrc.endsWith('.wav')) {
+              mimeType = 'audio/wav';
+            } else if (audioSrc.endsWith('.ogg')) {
+              mimeType = 'audio/ogg';
+            } else {
+              mimeType = 'audio/mpeg'; // Default
+            }
+          }
+          
+          const arrayBuffer = await response.arrayBuffer();
+          // Crear un nuevo blob con el tipo MIME correcto desde el arrayBuffer
+          const typedBlob = new Blob([arrayBuffer], { type: mimeType });
+          const blobUrl = URL.createObjectURL(typedBlob);
+          console.log(`[AudioContext] Blob creado para audio ${index} con tipo:`, mimeType, 'size:', typedBlob.size);
           
           // Limpiar listeners del audio anterior
           audio.removeEventListener('error', handleError);
           audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
           audio.removeEventListener('ended', handleEnded);
           
-          // Crear nuevo audio con blob URL
+          // Crear nuevo audio con blob URL - exactamente como Timeline
           const newAudio = new Audio(blobUrl);
           newAudio.preload = 'auto';
           newAudio.volume = 0;
           
-          newAudio.addEventListener('loadedmetadata', handleLoadedMetadata);
-          newAudio.addEventListener('ended', handleEnded);
-          newAudio.oncanplaythrough = handleCanPlayThrough;
+          // Nuevos handlers para el audio con blob
+          const newHandleLoadedMetadata = () => {
+            if (newAudio.duration && isFinite(newAudio.duration)) {
+              console.log(`[AudioContext] Audio ${index} (blob) metadata cargada:`, newAudio.duration);
+              setAudioDurations(prev => {
+                const newDurations = [...prev];
+                newDurations[index] = newAudio.duration;
+                return newDurations;
+              });
+            }
+          };
           
+          const newHandleError = (e) => {
+            console.error(`[AudioContext] Error en audio ${index} (blob):`, e);
+            console.error(`[AudioContext] Blob error details:`, {
+              code: newAudio.error?.code,
+              message: newAudio.error?.message,
+              networkState: newAudio.networkState,
+              readyState: newAudio.readyState,
+              src: newAudio.src,
+              blobType: mimeType
+            });
+          };
+          
+          const newHandleEnded = () => {
+            setCurrentIndex(prevIndex => {
+              if (prevIndex === index && index < validSrcs.length - 1 && playAudioRef.current) {
+                playAudioRef.current(index + 1, 0);
+                return index + 1;
+              }
+              return prevIndex;
+            });
+          };
+          
+          newAudio.addEventListener('loadedmetadata', newHandleLoadedMetadata);
+          newAudio.addEventListener('error', newHandleError);
+          newAudio.addEventListener('ended', newHandleEnded);
+          newAudio.oncanplaythrough = () => {
+            console.log(`[AudioContext] Audio ${index} (blob) completamente cargado (canplaythrough)`);
+          };
+          
+          // Cargar el audio - igual que Timeline
           newAudio.load();
           audioElementsRef.current[index] = newAudio;
           console.log(`[AudioContext] Audio ${index} cargado desde blob exitosamente`);
